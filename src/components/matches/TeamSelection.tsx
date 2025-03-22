@@ -9,6 +9,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
 import Formation from './team-randomizer/Formation';
+import { PlayerHoverContent } from './team-randomizer/PlayerSelection';
 
 interface TeamSelectionProps {
   teamA: string[];
@@ -98,7 +99,8 @@ const TeamSelection = ({
                 <PlayerCard
                   key={player.id}
                   player={player}
-                  seasonStats={seasonStats.find(s => s.playerId === player.id)}
+                  currentSeason={currentSeason}
+                  seasonStats={seasonStats}
                   onClick={() => togglePlayer(teamA.length <= teamB.length ? 'A' : 'B', player.id)}
                 />
               ))}
@@ -112,18 +114,12 @@ const TeamSelection = ({
 
 interface PlayerCardProps {
   player: Player;
-  seasonStats?: { playerId: string; wins: number; losses: number; draws: number; played: number; points: number; };
+  currentSeason: any;
+  seasonStats: any[];
   onClick: () => void;
 }
 
-const PlayerCard = ({ player, seasonStats, onClick }: PlayerCardProps) => {
-  const winPercentage = player.stats.played > 0 
-    ? Math.round((player.stats.won / player.stats.played) * 100) 
-    : 0;
-  
-  const seasonWinPercentage = seasonStats?.played ? 
-    Math.round((seasonStats.wins / seasonStats.played) * 100) : 0;
-  
+const PlayerCard = ({ player, currentSeason, seasonStats, onClick }: PlayerCardProps) => {
   return (
     <div 
       onClick={onClick}
@@ -144,56 +140,12 @@ const PlayerCard = ({ player, seasonStats, onClick }: PlayerCardProps) => {
             <span className="text-sm font-medium truncate text-blue-50">{player.name}</span>
           </div>
         </HoverCardTrigger>
-        <HoverCardContent className="w-64 p-3 bg-blue-950 border border-blue-500/30 text-white">
-          <div className="flex space-x-3">
-            <Avatar className="h-12 w-12">
-              {player.image ? (
-                <AvatarImage src={player.image} alt={player.name} />
-              ) : (
-                <AvatarFallback className="bg-blue-700">
-                  {player.name.charAt(0)}
-                </AvatarFallback>
-              )}
-            </Avatar>
-            <div>
-              <h4 className="font-bold">{player.name}</h4>
-              <p className="text-xs text-blue-200">Win rate: {winPercentage}%</p>
-            </div>
-          </div>
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            <div className="bg-blue-900/50 p-2 rounded-md text-center">
-              <div className="text-sm font-bold">{player.stats?.played || 0}</div>
-              <div className="text-xs text-blue-300">Played</div>
-            </div>
-            <div className="bg-green-900/50 p-2 rounded-md text-center">
-              <div className="text-sm font-bold">{player.stats?.won || 0}</div>
-              <div className="text-xs text-green-300">Won</div>
-            </div>
-            <div className="bg-red-900/50 p-2 rounded-md text-center">
-              <div className="text-sm font-bold">{player.stats?.lost || 0}</div>
-              <div className="text-xs text-red-300">Lost</div>
-            </div>
-          </div>
-          
-          {seasonStats && seasonStats.played > 0 && (
-            <div className="mt-2 p-2 bg-blue-900/50 rounded-md">
-              <h5 className="text-xs font-medium text-blue-300 mb-1">Season Stats</h5>
-              <div className="grid grid-cols-3 gap-1 text-center">
-                <div>
-                  <span className="text-sm font-bold">{seasonStats.played}</span>
-                  <span className="text-xs block">Played</span>
-                </div>
-                <div>
-                  <span className="text-sm font-bold">{seasonStats.wins}</span>
-                  <span className="text-xs block">Won</span>
-                </div>
-                <div>
-                  <span className="text-sm font-bold">{seasonWinPercentage}%</span>
-                  <span className="text-xs block">Win Rate</span>
-                </div>
-              </div>
-            </div>
-          )}
+        <HoverCardContent className="w-72 p-3 bg-blue-950 border border-blue-500/30 text-white">
+          <PlayerHoverContent 
+            player={player} 
+            currentSeasonId={currentSeason?.id || null}
+            seasonPlayerStats={seasonStats}
+          />
         </HoverCardContent>
       </HoverCard>
     </div>

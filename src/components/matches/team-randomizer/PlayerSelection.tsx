@@ -6,6 +6,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useQuery } from "@tanstack/react-query";
+import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
+import { usePlayerForm } from "@/hooks/usePlayerForm";
+import PlayerFormDisplay from '@/components/players/PlayerFormDisplay';
+import { TrendingUp, TrendingDown, Trophy, Flag, MinusCircle } from "lucide-react";
 
 interface PlayerSelectionProps {
   players: Player[];
@@ -20,6 +25,19 @@ const PlayerSelection = ({
   togglePlayerSelection,
   disabled
 }: PlayerSelectionProps) => {
+  // Get current season for player stats
+  const { data: currentSeason } = useQuery({
+    queryKey: ['currentSeason'],
+    queryFn: getCurrentSeason
+  });
+  
+  // Get season stats for all players
+  const { data: seasonPlayerStats = [] } = useQuery({
+    queryKey: ['seasonStats', currentSeason?.id],
+    queryFn: () => currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
+    enabled: !!currentSeason
+  });
+  
   return (
     <div className="border rounded-md p-4 bg-card">
       <div className="mb-2 flex justify-between items-center">
@@ -62,38 +80,12 @@ const PlayerSelection = ({
                 <HoverCardTrigger>
                   <span className="hover:underline">{player.name}</span>
                 </HoverCardTrigger>
-                <HoverCardContent className="w-60 p-0">
-                  <div className="flex gap-2 p-2">
-                    <Avatar className="h-10 w-10">
-                      {player.image ? (
-                        <AvatarImage src={player.image} alt={player.name} />
-                      ) : (
-                        <AvatarFallback className="bg-gradient-blue text-white">
-                          {player.name.charAt(0)}
-                        </AvatarFallback>
-                      )}
-                    </Avatar>
-                    <div>
-                      <h4 className="text-sm font-semibold">{player.name}</h4>
-                      <div className="text-xs text-muted-foreground">
-                        {player.stats?.played || 0} Games Played
-                      </div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-1 p-2 pt-0 text-xs">
-                    <div className="flex flex-col items-center bg-green-50 dark:bg-green-950/40 rounded p-1">
-                      <span className="font-semibold">{player.stats?.won || 0}</span>
-                      <span className="text-muted-foreground">Wins</span>
-                    </div>
-                    <div className="flex flex-col items-center bg-red-50 dark:bg-red-950/40 rounded p-1">
-                      <span className="font-semibold">{player.stats?.lost || 0}</span>
-                      <span className="text-muted-foreground">Losses</span>
-                    </div>
-                    <div className="flex flex-col items-center bg-gray-50 dark:bg-gray-900/40 rounded p-1">
-                      <span className="font-semibold">{player.stats?.drawn || 0}</span>
-                      <span className="text-muted-foreground">Draws</span>
-                    </div>
-                  </div>
+                <HoverCardContent className="w-72 p-3 bg-blue-950 border border-blue-500/30 text-white">
+                  <PlayerHoverContent 
+                    player={player} 
+                    currentSeasonId={currentSeason?.id || null}
+                    seasonPlayerStats={seasonPlayerStats}
+                  />
                 </HoverCardContent>
               </HoverCard>
             </Label>
@@ -101,6 +93,123 @@ const PlayerSelection = ({
         ))}
       </div>
     </div>
+  );
+};
+
+// Extracted player hover content to a shared component
+interface PlayerHoverContentProps {
+  player: Player;
+  currentSeasonId: string | null;
+  seasonPlayerStats: Array<any>;
+}
+
+export const PlayerHoverContent = ({ player, currentSeasonId, seasonPlayerStats }: PlayerHoverContentProps) => {
+  // Get player form data
+  const { form, isLoading } = usePlayerForm(
+    currentSeasonId,
+    player.id
+  );
+  
+  const playerSeasonStats = seasonPlayerStats.find(stat => stat.playerId === player.id);
+  
+  // Calculate player's rank in current season
+  const playerRank = playerSeasonStats 
+    ? seasonPlayerStats
+        .sort((a, b) => b.points - a.points)
+        .findIndex(stat => stat.playerId === player.id) + 1
+    : null;
+  
+  // Display last 5 matches in form
+  const recentForm = form.slice(0, 5);
+  
+  return (
+    <>
+      <div className="flex space-x-3">
+        <Avatar className="h-12 w-12">
+          {player.image ? (
+            <AvatarImage src={player.image} alt={player.name} />
+          ) : (
+            <AvatarFallback className="bg-blue-700">
+              {player.name.charAt(0)}
+            </AvatarFallback>
+          )}
+        </Avatar>
+        <div>
+          <h4 className="font-bold">{player.name}</h4>
+          {playerRank && (
+            <div className="flex items-center text-xs">
+              <Flag className="h-3 w-3 text-yellow-500 mr-1" />
+              <span className="text-yellow-300">Season rank: {playerRank}</span>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Season Stats */}
+      {playerSeasonStats && (
+        <div className="mt-3 p-2 bg-blue-900/50 rounded-md">
+          <div className="flex items-center mb-1">
+            <Trophy className="h-3 w-3 text-blue-300 mr-1" />
+            <h5 className="text-xs font-medium text-blue-300">Season Stats</h5>
+          </div>
+          <div className="grid grid-cols-4 gap-1 text-center">
+            <div>
+              <span className="text-sm font-bold">{playerSeasonStats.played}</span>
+              <span className="text-xs block text-blue-200">Played</span>
+            </div>
+            <div>
+              <span className="text-sm font-bold">{playerSeasonStats.wins}</span>
+              <span className="text-xs block text-green-300">Won</span>
+            </div>
+            <div>
+              <span className="text-sm font-bold">{playerSeasonStats.losses}</span>
+              <span className="text-xs block text-red-300">Lost</span>
+            </div>
+            <div>
+              <span className="text-sm font-bold">{playerSeasonStats.draws}</span>
+              <span className="text-xs block text-amber-300">Draw</span>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Overall Stats */}
+      <div className="mt-3 grid grid-cols-4 gap-2">
+        <div className="bg-blue-900/50 p-2 rounded-md text-center">
+          <div className="text-sm font-bold">{player.stats?.played || 0}</div>
+          <div className="text-xs text-blue-300">Played</div>
+        </div>
+        <div className="bg-green-900/50 p-2 rounded-md text-center">
+          <div className="text-sm font-bold">{player.stats?.won || 0}</div>
+          <div className="text-xs text-green-300">Won</div>
+        </div>
+        <div className="bg-amber-900/50 p-2 rounded-md text-center">
+          <div className="text-sm font-bold">{player.stats?.drawn || 0}</div>
+          <div className="text-xs text-amber-300">Draw</div>
+        </div>
+        <div className="bg-red-900/50 p-2 rounded-md text-center">
+          <div className="text-sm font-bold">{player.stats?.lost || 0}</div>
+          <div className="text-xs text-red-300">Lost</div>
+        </div>
+      </div>
+      
+      {/* Player form display */}
+      <div className="mt-2 p-2 rounded-md bg-blue-900/30 border border-blue-500/20">
+        <div className="flex items-center mb-1">
+          <TrendingUp className="h-3 w-3 text-blue-300 mr-1" />
+          <h5 className="text-xs font-medium text-blue-300">Recent Form</h5>
+        </div>
+        <div className="flex space-x-1">
+          {isLoading ? (
+            <div className="w-full text-center text-xs opacity-70">Loading form data...</div>
+          ) : recentForm.length > 0 ? (
+            <PlayerFormDisplay results={recentForm} size="sm" />
+          ) : (
+            <div className="w-full text-center text-xs opacity-70">No recent matches</div>
+          )}
+        </div>
+      </div>
+    </>
   );
 };
 

@@ -8,7 +8,7 @@ interface PlayerFormDisplayProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-const PlayerFormDisplay = ({ results, size = 'md' }: PlayerFormDisplayProps) => {
+const PlayerFormDisplay = ({ results = [], size = 'md' }: PlayerFormDisplayProps) => {
   const sizeClass = size === 'sm' 
     ? 'w-6 h-6 text-xs' 
     : size === 'md' 
@@ -16,7 +16,9 @@ const PlayerFormDisplay = ({ results, size = 'md' }: PlayerFormDisplayProps) => 
       : 'w-10 h-10 text-base';
   
   if (!results || results.length === 0) {
-    return null;
+    return (
+      <div className="text-xs text-gray-400">No match data</div>
+    );
   }
   
   // Only show the 5 most recent results
@@ -30,7 +32,7 @@ const PlayerFormDisplay = ({ results, size = 'md' }: PlayerFormDisplayProps) => 
             <div 
               key={index} 
               className={cn(
-                "flex items-center justify-center rounded-full bg-green-100 text-green-700 font-semibold",
+                "flex items-center justify-center rounded-full bg-green-800 text-green-200 font-semibold",
                 sizeClass
               )}
               title="Win"
@@ -43,7 +45,7 @@ const PlayerFormDisplay = ({ results, size = 'md' }: PlayerFormDisplayProps) => 
             <div 
               key={index} 
               className={cn(
-                "flex items-center justify-center rounded-full bg-red-100 text-red-700 font-semibold",
+                "flex items-center justify-center rounded-full bg-red-800 text-red-200 font-semibold",
                 sizeClass
               )}
               title="Loss"
@@ -56,7 +58,7 @@ const PlayerFormDisplay = ({ results, size = 'md' }: PlayerFormDisplayProps) => 
             <div 
               key={index} 
               className={cn(
-                "flex items-center justify-center rounded-full bg-amber-100 text-amber-700 font-semibold",
+                "flex items-center justify-center rounded-full bg-amber-800 text-amber-200 font-semibold",
                 sizeClass
               )}
               title="Draw"
@@ -69,7 +71,7 @@ const PlayerFormDisplay = ({ results, size = 'md' }: PlayerFormDisplayProps) => 
             <div 
               key={index} 
               className={cn(
-                "flex items-center justify-center rounded-full bg-gray-100 text-gray-400 font-semibold",
+                "flex items-center justify-center rounded-full bg-gray-800 text-gray-400 font-semibold",
                 sizeClass
               )}
               title="No result"

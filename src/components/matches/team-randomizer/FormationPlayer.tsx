@@ -6,7 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { usePlayerForm } from "@/hooks/usePlayerForm";
 import { useQuery } from "@tanstack/react-query";
-import { getCurrentSeason } from "@/lib/db";
+import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
+import PlayerFormDisplay from '@/components/players/PlayerFormDisplay';
+import { TrendingUp, TrendingDown, Trophy, Flag, MinusCircle } from "lucide-react";
 
 interface FormationPlayerProps {
   player: Player;
@@ -32,6 +34,22 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
     currentSeason?.id || null,
     player.id
   );
+  
+  // Get season stats
+  const { data: seasonPlayerStats = [] } = useQuery({
+    queryKey: ['seasonStats', currentSeason?.id],
+    queryFn: () => currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
+    enabled: !!currentSeason
+  });
+  
+  const playerSeasonStats = seasonPlayerStats.find(stat => stat.playerId === player.id);
+  
+  // Calculate player's rank in current season
+  const playerRank = playerSeasonStats 
+    ? seasonPlayerStats
+        .sort((a, b) => b.points - a.points)
+        .findIndex(stat => stat.playerId === player.id) + 1
+    : null;
   
   // Display last 5 matches in form
   const recentForm = form.slice(0, 5);
@@ -64,7 +82,7 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
             </span>
           </div>
         </HoverCardTrigger>
-        <HoverCardContent className="w-64 p-3 bg-blue-950 border border-blue-500/30 text-white">
+        <HoverCardContent className="w-72 p-3 bg-blue-950 border border-blue-500/30 text-white">
           <div className="flex space-x-3">
             <Avatar className="h-12 w-12">
               {player.image ? (
@@ -77,9 +95,45 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
             </Avatar>
             <div>
               <h4 className="font-bold">{player.name}</h4>
+              {playerRank && (
+                <div className="flex items-center text-xs">
+                  <Flag className="h-3 w-3 text-yellow-500 mr-1" />
+                  <span className="text-yellow-300">Season rank: {playerRank}</span>
+                </div>
+              )}
             </div>
           </div>
-          <div className="mt-3 grid grid-cols-3 gap-2">
+          
+          {/* Season Stats */}
+          {playerSeasonStats && (
+            <div className="mt-3 p-2 bg-blue-900/50 rounded-md">
+              <div className="flex items-center mb-1">
+                <Trophy className="h-3 w-3 text-blue-300 mr-1" />
+                <h5 className="text-xs font-medium text-blue-300">Season Stats</h5>
+              </div>
+              <div className="grid grid-cols-4 gap-1 text-center">
+                <div>
+                  <span className="text-sm font-bold">{playerSeasonStats.played}</span>
+                  <span className="text-xs block text-blue-200">Played</span>
+                </div>
+                <div>
+                  <span className="text-sm font-bold">{playerSeasonStats.wins}</span>
+                  <span className="text-xs block text-green-300">Won</span>
+                </div>
+                <div>
+                  <span className="text-sm font-bold">{playerSeasonStats.losses}</span>
+                  <span className="text-xs block text-red-300">Lost</span>
+                </div>
+                <div>
+                  <span className="text-sm font-bold">{playerSeasonStats.draws}</span>
+                  <span className="text-xs block text-amber-300">Draw</span>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Overall Stats */}
+          <div className="mt-3 grid grid-cols-4 gap-2">
             <div className="bg-blue-900/50 p-2 rounded-md text-center">
               <div className="text-sm font-bold">{player.stats?.played || 0}</div>
               <div className="text-xs text-blue-300">Played</div>
@@ -87,6 +141,10 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
             <div className="bg-green-900/50 p-2 rounded-md text-center">
               <div className="text-sm font-bold">{player.stats?.won || 0}</div>
               <div className="text-xs text-green-300">Won</div>
+            </div>
+            <div className="bg-amber-900/50 p-2 rounded-md text-center">
+              <div className="text-sm font-bold">{player.stats?.drawn || 0}</div>
+              <div className="text-xs text-amber-300">Draw</div>
             </div>
             <div className="bg-red-900/50 p-2 rounded-md text-center">
               <div className="text-sm font-bold">{player.stats?.lost || 0}</div>
@@ -96,21 +154,15 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
           
           {/* Player form display */}
           <div className="mt-2 p-2 rounded-md bg-blue-900/30 border border-blue-500/20">
-            <h5 className="text-xs font-medium text-blue-300 mb-1">Recent Form</h5>
+            <div className="flex items-center mb-1">
+              <TrendingUp className="h-3 w-3 text-blue-300 mr-1" />
+              <h5 className="text-xs font-medium text-blue-300">Recent Form</h5>
+            </div>
             <div className="flex space-x-1">
               {isLoading ? (
                 <div className="w-full text-center text-xs opacity-70">Loading form data...</div>
               ) : recentForm.length > 0 ? (
-                recentForm.map((result, i) => (
-                  <div 
-                    key={i} 
-                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
-                      ${result === 'win' ? 'bg-green-700' : 
-                        result === 'loss' ? 'bg-red-700' : 'bg-gray-700'}`}
-                  >
-                    {result === 'win' ? 'W' : result === 'loss' ? 'L' : 'D'}
-                  </div>
-                ))
+                <PlayerFormDisplay results={recentForm} size="sm" />
               ) : (
                 <div className="w-full text-center text-xs opacity-70">No recent matches</div>
               )}
