@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ChevronRight, Edit, Trash, Calendar, Trophy, Lock, Check } from "lucide-react";
@@ -19,6 +20,7 @@ import MatchList from "@/components/matches/MatchList";
 import SeasonForm from "@/components/seasons/SeasonForm";
 import SeasonSelector from "@/components/seasons/SeasonSelector";
 import SeasonLeaderboard from "@/components/seasons/SeasonLeaderboard";
+import SeasonPositionChart from "@/components/seasons/SeasonPositionChart";
 import { useSeasonDetail } from "@/hooks/useSeasonDetail";
 
 const SeasonDetail = () => {
@@ -184,8 +186,9 @@ const SeasonDetail = () => {
           </Card>
 
           <Tabs defaultValue="leaderboard" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="leaderboard">League Table</TabsTrigger>
+              <TabsTrigger value="positions">Position Tracking</TabsTrigger>
               <TabsTrigger value="matches">Matches</TabsTrigger>
             </TabsList>
             
@@ -195,6 +198,14 @@ const SeasonDetail = () => {
                 playerForms={playerForms}
                 seasonName={season.name}
                 isFinished={season.isFinished}
+                seasonId={season.id}
+              />
+            </TabsContent>
+
+            <TabsContent value="positions" className="space-y-4">
+              <SeasonPositionChart
+                seasonId={season.id}
+                seasonName={season.name}
               />
             </TabsContent>
             
