@@ -1,4 +1,3 @@
-
 @layer components {
   /* Team randomizer styling */
   .team-randomizer-container {
@@ -47,7 +46,7 @@
   
   /* Player hover card styling */
   .player-hover-card {
-    @apply border border-blue-500/30 shadow-xl;
+    @apply border border-blue-500/30 shadow-xl z-50;
     background-color: #0F1420; /* Very dark blue/almost black background - completely solid */
   }
   

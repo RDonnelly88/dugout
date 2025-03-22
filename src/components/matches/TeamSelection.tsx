@@ -1,3 +1,4 @@
+
 import { Player } from "@/types";
 import { Label } from "@/components/ui/label";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
@@ -6,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { FormationConfig } from "./team-randomizer/types";
 import { formationConfigs } from "./team-randomizer/constants";
 import { Shield, Trophy, Users } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TeamSelectionProps {
   teamA: string[];
@@ -223,21 +225,32 @@ const PlayerFormationCard = ({ player, onClick, teamColor }: PlayerFormationCard
   return (
     <div className="player-position-card" onClick={onClick}>
       <div className="player-jersey">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className={`jersey ${jerseyColor}`}>
+                <Avatar className="player-avatar">
+                  {player.image ? (
+                    <AvatarImage src={player.image} alt={player.name} />
+                  ) : (
+                    <AvatarFallback className={jerseyColor}>
+                      {player.name.charAt(0)}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              {player.name}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
         <HoverCard>
           <HoverCardTrigger asChild>
-            <div className={`jersey ${jerseyColor}`}>
-              <Avatar className="player-avatar">
-                {player.image ? (
-                  <AvatarImage src={player.image} alt={player.name} />
-                ) : (
-                  <AvatarFallback className={jerseyColor}>
-                    {player.name.charAt(0)}
-                  </AvatarFallback>
-                )}
-              </Avatar>
-            </div>
+            <div className="player-name-label cursor-pointer">{player.name}</div>
           </HoverCardTrigger>
-          <HoverCardContent className="w-60 player-hover-card player-stats-card">
+          <HoverCardContent align="start" side="left" className="w-60 player-hover-card player-stats-card">
             <div className="flex justify-between items-start">
               <Avatar className="h-12 w-12 border border-white/20">
                 {player.image ? (
@@ -268,7 +281,6 @@ const PlayerFormationCard = ({ player, onClick, teamColor }: PlayerFormationCard
             </div>
           </HoverCardContent>
         </HoverCard>
-        <div className="player-name-label">{player.name}</div>
       </div>
     </div>
   );
