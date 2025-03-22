@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { usePlayerDetail } from "@/hooks/usePlayerDetail";
 import PlayerSeasonStats from "@/components/players/PlayerSeasonStats";
 import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
+import PlayerRelationships from "@/components/players/PlayerRelationships";
 
 const PlayerDetail = () => {
   const {
@@ -117,12 +118,28 @@ const PlayerDetail = () => {
         </CardContent>
       </Card>
 
-      <PlayerSeasonStats 
-        playerName={player.name}
-        overallStats={player.stats}
-        seasonStats={seasonStats}
-        onSeasonSelect={setSelectedSeasonId}
-      />
+      <Tabs defaultValue="stats" className="mb-8">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="stats">Stats</TabsTrigger>
+          <TabsTrigger value="relationships">Relationships</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="stats">
+          <PlayerSeasonStats 
+            playerName={player.name}
+            overallStats={player.stats}
+            seasonStats={seasonStats}
+            onSeasonSelect={setSelectedSeasonId}
+          />
+        </TabsContent>
+        
+        <TabsContent value="relationships">
+          <PlayerRelationships 
+            playerId={player.id}
+            playerName={player.name}
+          />
+        </TabsContent>
+      </Tabs>
 
       <div className="mt-8">
         <h2 className="text-xl font-semibold mb-4">

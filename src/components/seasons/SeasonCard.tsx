@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { Calendar, Trophy, Crown, Users } from "lucide-react";
+import { Calendar, Trophy, Users, LayoutGrid } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Season, SeasonChampion } from "@/types";
@@ -9,62 +9,65 @@ import { Season, SeasonChampion } from "@/types";
 interface SeasonCardProps {
   season: Season;
   champions?: SeasonChampion[];
-  totalPlayers?: number;
-  totalMatches?: number;
+  totalPlayers: number;
+  totalMatches: number;
 }
 
-const SeasonCard = ({ season, champions = [], totalPlayers = 0, totalMatches = 0 }: SeasonCardProps) => {
-  const champion = champions.find(c => c.rank === 1);
+const SeasonCard = ({ season, champions = [], totalPlayers, totalMatches }: SeasonCardProps) => {
+  const topPlayer = champions.length > 0 ? champions[0] : null;
   const startDate = new Date(season.startDate).toLocaleDateString();
   const endDate = season.endDate ? new Date(season.endDate).toLocaleDateString() : "Ongoing";
-  
+
   return (
     <Link to={`/seasons/${season.id}`}>
-      <Card className="hover-scale overflow-hidden">
+      <Card className="overflow-hidden hover:bg-muted/20 transition-colors h-full bg-gray-900 border-gray-800">
         <CardContent className="p-0">
-          <div className="p-5">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-xl font-semibold">{season.name}</h3>
-                <div className="flex items-center text-sm text-muted-foreground mt-1">
-                  <Calendar className="h-4 w-4 mr-1" />
-                  <span>{startDate} - {endDate}</span>
-                </div>
-              </div>
+          <div className="p-6">
+            <div className="flex justify-between items-start">
+              <h3 className="text-xl font-semibold mb-2">{season.name}</h3>
               {season.isCurrent && (
-                <Badge variant="default" className="bg-green-500 hover:bg-green-600">
-                  Current Season
-                </Badge>
+                <Badge className="bg-green-500 hover:bg-green-600">Current Season</Badge>
+              )}
+              {season.isFinished && (
+                <Badge variant="outline">Finished</Badge>
               )}
             </div>
             
-            <div className="flex flex-wrap gap-3 mt-4">
-              {champion && (
-                <div className="flex items-center p-2 bg-amber-50 text-amber-800 rounded-md">
-                  <Crown className="h-4 w-4 mr-2 text-amber-500" />
-                  <div className="flex flex-col">
-                    <span className="text-xs font-medium">Champion</span>
-                    <span className="text-sm">{champion.playerName}</span>
-                  </div>
-                </div>
-              )}
-              
-              <div className="flex items-center p-2 bg-blue-50 text-blue-800 rounded-md">
-                <Trophy className="h-4 w-4 mr-2 text-blue-500" />
-                <div className="flex flex-col">
-                  <span className="text-xs font-medium">Matches</span>
-                  <span className="text-sm">{totalMatches}</span>
-                </div>
+            <div className="flex items-center text-muted-foreground mb-4">
+              <Calendar className="h-4 w-4 mr-1" />
+              <span>{startDate} - {endDate}</span>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              <div className="p-2 bg-muted/20 rounded text-center">
+                <div className="text-xs text-muted-foreground">Matches</div>
+                <div className="font-semibold">{totalMatches}</div>
               </div>
-              
-              <div className="flex items-center p-2 bg-purple-50 text-purple-800 rounded-md">
-                <Users className="h-4 w-4 mr-2 text-purple-500" />
-                <div className="flex flex-col">
-                  <span className="text-xs font-medium">Players</span>
-                  <span className="text-sm">{totalPlayers}</span>
-                </div>
+              <div className="p-2 bg-muted/20 rounded text-center">
+                <div className="text-xs text-muted-foreground">Players</div>
+                <div className="font-semibold">{totalPlayers}</div>
+              </div>
+              <div className="p-2 bg-muted/20 rounded text-center">
+                <div className="text-xs text-muted-foreground">{season.isFinished ? "Final Rank" : "Current Rank"}</div>
+                <div className="font-semibold">{topPlayer ? "#1" : "-"}</div>
               </div>
             </div>
+            
+            {topPlayer && (
+              <div className="flex items-center p-3 bg-muted/20 rounded">
+                <Trophy className="h-5 w-5 text-amber-400 mr-2" />
+                <div>
+                  <div className="text-xs text-muted-foreground">
+                    {season.isFinished ? "Champion" : "Leader"}
+                  </div>
+                  <div className="font-medium">{topPlayer.playerName}</div>
+                </div>
+                <div className="ml-auto">
+                  <div className="text-xs text-muted-foreground">Points</div>
+                  <div className="font-semibold text-right">{topPlayer.points}</div>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
