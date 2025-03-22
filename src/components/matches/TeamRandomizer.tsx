@@ -160,10 +160,11 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
         <div className="text-center">
           <h3 className="text-xl mb-4">Players Selected for Randomization</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {availablePlayers.map((player) => (
+            {availablePlayers.map((player, index) => (
               <PlayerCard 
                 key={player.id} 
                 player={player} 
+                index={index}
                 revealed={true}
               />
             ))}
