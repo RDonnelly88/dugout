@@ -1,5 +1,5 @@
 
-import { Shuffle, Users } from "lucide-react";
+import { Shuffle, Users, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Player } from "@/types";
 import { 
@@ -19,6 +19,7 @@ import {
   DialogPortal,
   DialogOverlay,
 } from "@/components/ui/dialog";
+import PlayerSpotlight from "./team-randomizer/PlayerSpotlight";
 
 interface TeamRandomizerProps {
   players: Player[];
@@ -41,6 +42,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
     teamAPlayers,
     teamBPlayers,
     revealIndex,
+    spotlightPlayer,
     togglePlayerSelection,
     performRandomization,
     resetRandomizer,
@@ -79,7 +81,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
   }, [isRandomizing, showRandomizerModal]);
   
   const renderPlayerCards = () => {
-    // If in flashing stage, show the available players
+    // If in flashing stage, show the available players with dramatic flashing
     if (revealStage === 'flashing') {
       return (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 px-4">
@@ -97,12 +99,21 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
       );
     }
     
-    // During the team reveal stage, show the teams
+    // Spotlight stage - show the spotlighted player card
+    if (revealStage === 'spotlight' && spotlightPlayer) {
+      return <PlayerSpotlight player={spotlightPlayer} />;
+    }
+    
+    // During the team reveal stage, show the teams with cards revealing one by one
     if (revealStage === 'revealing') {
       return (
         <div className="flex justify-between gap-8 flex-wrap px-4">
           <div className="w-full md:w-5/12">
-            <h3 className="text-xl font-bold text-center mb-4 text-red-400">Team A</h3>
+            <h3 className="text-xl font-bold text-center mb-4 text-red-400 flex items-center justify-center gap-2">
+              <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
+              Team A
+              <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
+            </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {teamAPlayers.slice(0, revealIndex + 1).map((player, idx) => (
                 <PlayerCard 
@@ -117,9 +128,58 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
           </div>
           
           <div className="w-full md:w-5/12">
-            <h3 className="text-xl font-bold text-center mb-4 text-green-400">Team B</h3>
+            <h3 className="text-xl font-bold text-center mb-4 text-green-400 flex items-center justify-center gap-2">
+              <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
+              Team B
+              <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
+            </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {teamBPlayers.slice(0, revealIndex + 1).map((player, idx) => (
+                <PlayerCard 
+                  key={player.id} 
+                  player={player} 
+                  index={idx} 
+                  revealed={true}
+                  teamColor="B"
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    // Celebration stage - show both teams fully revealed with animation
+    if (revealStage === 'celebration') {
+      return (
+        <div className="flex justify-between gap-8 flex-wrap px-4">
+          <div className="w-full md:w-5/12 animate-tada">
+            <h3 className="text-xl font-bold text-center mb-4 text-red-400 flex items-center justify-center gap-2">
+              <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
+              Team A
+              <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {teamAPlayers.map((player, idx) => (
+                <PlayerCard 
+                  key={player.id} 
+                  player={player} 
+                  index={idx} 
+                  revealed={true}
+                  teamColor="A"
+                />
+              ))}
+            </div>
+          </div>
+          
+          <div className="w-full md:w-5/12 animate-tada">
+            <h3 className="text-xl font-bold text-center mb-4 text-green-400 flex items-center justify-center gap-2">
+              <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
+              Team B
+              <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {teamBPlayers.map((player, idx) => (
                 <PlayerCard 
                   key={player.id} 
                   player={player} 
@@ -190,28 +250,32 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
         </div>
       </div>
       
-      {/* Randomizer Modal Dialog */}
+      {/* Loot Box Style Randomizer Modal Dialog */}
       <Dialog open={showRandomizerModal} onOpenChange={setShowRandomizerModal}>
         <DialogPortal>
-          <DialogOverlay className="bg-black/90 backdrop-blur-sm" />
-          <DialogContent className="sm:max-w-[90%] md:max-w-[85%] lg:max-w-[80%] border-blue-500/30 neo-glassmorphism bg-black/80 p-0 overflow-hidden">
+          <DialogOverlay className="bg-black/95 backdrop-blur-sm" />
+          <DialogContent className="sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%] border-blue-500/30 neo-glassmorphism bg-black/90 p-0 overflow-hidden">
             <div className="randomizer-modal-container">
               <div className="randomizer-modal-header p-4 border-b border-blue-500/20">
-                <h2 className="text-2xl font-bold text-center bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                  {revealStage === 'flashing' ? "Randomizing Teams..." : "Team Reveal"}
+                <h2 className="text-2xl font-bold text-center bg-gradient-to-r from-blue-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent flex items-center justify-center gap-2">
+                  {revealStage === 'flashing' && "Preparing Team Selection..."}
+                  {revealStage === 'spotlight' && "Star Players Detected!"}
+                  {revealStage === 'revealing' && "Revealing Teams..."}
+                  {revealStage === 'celebration' && "Teams Assembled!"}
+                  <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
                 </h2>
               </div>
               
-              <div className="randomizer-modal-content p-6 max-h-[70vh] overflow-y-auto">
+              <div className={`randomizer-modal-content p-6 ${revealStage === 'spotlight' ? 'h-[70vh]' : 'max-h-[70vh] overflow-y-auto'}`}>
                 {renderPlayerCards()}
               </div>
               
               <div className="randomizer-modal-footer border-t border-blue-500/20 p-4 text-center text-sm text-blue-300/70">
-                {isRandomizing ? (
-                  <p>Creating balanced teams...</p>
-                ) : (
-                  <p>Teams have been created! The dialog will close automatically...</p>
-                )}
+                {revealStage === 'flashing' && <p>Scanning player database...</p>}
+                {revealStage === 'spotlight' && <p>Star players identified!</p>}
+                {revealStage === 'revealing' && <p>Generating balanced teams...</p>}
+                {revealStage === 'celebration' && <p>Team creation complete!</p>}
+                {!isRandomizing && <p>Teams have been saved! Returning to match creation...</p>}
               </div>
             </div>
           </DialogContent>
@@ -227,7 +291,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
         />
       )}
       
-      {/* Hidden audio element for randomization sound effect */}
+      {/* Hidden audio elements for sound effects */}
       <audio preload="auto" />
     </div>
   );
