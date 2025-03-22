@@ -3,6 +3,24 @@ import { PlayerFormResult } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { mapSupabaseMatchToMatch } from "./supabase-utils";
 
+// Type for the raw match data from Supabase
+interface RawMatchData {
+  id: string;
+  date: string;
+  location?: string;
+  status: string;
+  seasonId?: string;
+  team_a: any;
+  team_b: any;
+}
+
+// Type for the parsed team data
+interface ParsedTeam {
+  players: string[];
+  score?: number;
+  name: string;
+}
+
 // Get a player's form in a specific season
 export const getPlayerFormInSeason = async (
   seasonId: string,
@@ -21,16 +39,25 @@ export const getPlayerFormInSeason = async (
       return [];
     }
 
-    // Map the raw data to our expected format
+    // Map the raw data to our expected format with proper typing
     const matches = (matchesData || []).map(match => {
-      // Parse the team data from JSON
-      const teamA = typeof match.team_a === 'object' ? match.team_a : { players: [] };
-      const teamB = typeof match.team_b === 'object' ? match.team_b : { players: [] };
+      // Parse the team data from JSON, ensuring we have the correct structure
+      const teamA: ParsedTeam = typeof match.team_a === 'object' 
+        ? (match.team_a as ParsedTeam) 
+        : { players: [], name: "Team A" };
+        
+      const teamB: ParsedTeam = typeof match.team_b === 'object' 
+        ? (match.team_b as ParsedTeam) 
+        : { players: [], name: "Team B" };
       
       return {
         ...match,
         teamA,
         teamB
+      } as {
+        id: string;
+        teamA: ParsedTeam;
+        teamB: ParsedTeam;
       };
     });
 
@@ -82,16 +109,25 @@ export const getPlayerFormBatch = async (
       return {};
     }
 
-    // Map the raw data to our expected format
+    // Map the raw data to our expected format with proper typing
     const matches = (matchesData || []).map(match => {
-      // Parse the team data from JSON
-      const teamA = typeof match.team_a === 'object' ? match.team_a : { players: [] };
-      const teamB = typeof match.team_b === 'object' ? match.team_b : { players: [] };
+      // Parse the team data from JSON, ensuring we have the correct structure
+      const teamA: ParsedTeam = typeof match.team_a === 'object' 
+        ? (match.team_a as ParsedTeam) 
+        : { players: [], name: "Team A" };
+        
+      const teamB: ParsedTeam = typeof match.team_b === 'object' 
+        ? (match.team_b as ParsedTeam) 
+        : { players: [], name: "Team B" };
       
       return {
         ...match,
         teamA,
         teamB
+      } as {
+        id: string;
+        teamA: ParsedTeam;
+        teamB: ParsedTeam;
       };
     });
 
