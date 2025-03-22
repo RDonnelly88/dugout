@@ -1,7 +1,6 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Edit, CalendarDays, Clock, Users, MapPin, Trophy, TrendingUp, TrendingDown, MinusCircle } from "lucide-react";
+import { ArrowLeft, Edit, CalendarDays, Clock, Users, MapPin, Trophy, TrendingUp, TrendingDown, MinusCircle, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -28,9 +27,17 @@ const PlayerDetail = () => {
     navigate
   } = usePlayerDetail();
 
+  // Get current season
+  const currentSeason = seasons.find(s => s.isCurrent);
+  
+  // Get player's current season stats
+  const currentSeasonStats = currentSeason 
+    ? seasonStats.find(stat => stat.seasonId === currentSeason.id)
+    : null;
+    
   // Get player form for the currently selected season
   const { form: currentSeasonForm } = usePlayerForm(
-    selectedSeasonId, 
+    currentSeason?.id || null, 
     player?.id || null
   );
 
@@ -78,13 +85,9 @@ const PlayerDetail = () => {
   const recentResults = playerRecentMatches.map(match => getPlayerMatchResult(match).result);
 
   // Calculate player's rank in current season
-  const currentSeasonStat = seasonStats.find(stat => 
-    !selectedSeasonId ? stat.seasonId === seasons.find(s => s.isCurrent)?.id : stat.seasonId === selectedSeasonId
-  );
-  
-  const playerRank = currentSeasonStat ? 
+  const playerRank = currentSeasonStats && seasons.find(s => s.isCurrent) ? 
     seasonStats
-      .filter(stat => stat.seasonId === currentSeasonStat.seasonId)
+      .filter(stat => stat.seasonId === currentSeasonStats.seasonId)
       .sort((a, b) => b.points - a.points)
       .findIndex(stat => stat.playerId === player.id) + 1 
     : null;
@@ -144,54 +147,111 @@ const PlayerDetail = () => {
       </Card>
 
       {/* Season stats summary card */}
-      {currentSeasonStat && (
-        <Card className="mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {/* Current Season Stats */}
+        {currentSeasonStats && currentSeason && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <Trophy className="h-5 w-5 mr-2 text-amber-400" />
+                Current Season Stats ({currentSeason.name})
+                {playerRank && (
+                  <Badge className="ml-2" variant="outline">
+                    <Flag className="h-3 w-3 mr-1" />
+                    Rank #{playerRank}
+                  </Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-4 gap-4">
+                <div className="bg-blue-900/20 rounded-lg p-4 text-center">
+                  <div className="flex justify-center mb-2">
+                    <Users className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <div className="text-2xl font-bold">{currentSeasonStats.played}</div>
+                  <div className="text-sm text-blue-400">Played</div>
+                </div>
+                <div className="bg-green-900/20 rounded-lg p-4 text-center">
+                  <div className="flex justify-center mb-2">
+                    <TrendingUp className="h-5 w-5 text-green-400" />
+                  </div>
+                  <div className="text-2xl font-bold">{currentSeasonStats.wins}</div>
+                  <div className="text-sm text-green-400">Wins</div>
+                </div>
+                <div className="bg-amber-900/20 rounded-lg p-4 text-center">
+                  <div className="flex justify-center mb-2">
+                    <MinusCircle className="h-5 w-5 text-amber-400" />
+                  </div>
+                  <div className="text-2xl font-bold">{currentSeasonStats.draws}</div>
+                  <div className="text-sm text-amber-400">Draws</div>
+                </div>
+                <div className="bg-red-900/20 rounded-lg p-4 text-center">
+                  <div className="flex justify-center mb-2">
+                    <TrendingDown className="h-5 w-5 text-red-400" />
+                  </div>
+                  <div className="text-2xl font-bold">{currentSeasonStats.losses}</div>
+                  <div className="text-sm text-red-400">Losses</div>
+                </div>
+              </div>
+              <div className="mt-4 text-muted-foreground text-sm">
+                <p>
+                  In the current season, {player.name} has {currentSeasonStats.points} points
+                  with a win rate of {Math.round((currentSeasonStats.wins / Math.max(1, currentSeasonStats.played)) * 100)}%.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* All-time Stats */}
+        <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center">
-              <Trophy className="h-5 w-5 mr-2 text-amber-400" />
-              Current Season Stats
+              <Users className="h-5 w-5 mr-2 text-blue-400" />
+              All-Time Stats
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div className="bg-blue-900/20 rounded-lg p-4 text-center">
                 <div className="flex justify-center mb-2">
                   <Users className="h-5 w-5 text-blue-400" />
                 </div>
-                <div className="text-2xl font-bold">{currentSeasonStat.played}</div>
+                <div className="text-2xl font-bold">{player.stats.played}</div>
                 <div className="text-sm text-blue-400">Played</div>
               </div>
               <div className="bg-green-900/20 rounded-lg p-4 text-center">
                 <div className="flex justify-center mb-2">
                   <TrendingUp className="h-5 w-5 text-green-400" />
                 </div>
-                <div className="text-2xl font-bold">{currentSeasonStat.wins}</div>
+                <div className="text-2xl font-bold">{player.stats.won}</div>
                 <div className="text-sm text-green-400">Wins</div>
               </div>
               <div className="bg-amber-900/20 rounded-lg p-4 text-center">
                 <div className="flex justify-center mb-2">
                   <MinusCircle className="h-5 w-5 text-amber-400" />
                 </div>
-                <div className="text-2xl font-bold">{currentSeasonStat.draws}</div>
+                <div className="text-2xl font-bold">{player.stats.drawn}</div>
                 <div className="text-sm text-amber-400">Draws</div>
               </div>
               <div className="bg-red-900/20 rounded-lg p-4 text-center">
                 <div className="flex justify-center mb-2">
                   <TrendingDown className="h-5 w-5 text-red-400" />
                 </div>
-                <div className="text-2xl font-bold">{currentSeasonStat.losses}</div>
+                <div className="text-2xl font-bold">{player.stats.lost}</div>
                 <div className="text-sm text-red-400">Losses</div>
               </div>
             </div>
             <div className="mt-4 text-muted-foreground text-sm">
               <p>
-                In the current season, {player.name} has {currentSeasonStat.points} points
-                with a win rate of {Math.round((currentSeasonStat.wins / Math.max(1, currentSeasonStat.played)) * 100)}%.
+                All-time, {player.name} has played {player.stats.played} matches
+                with a win rate of {Math.round((player.stats.won / Math.max(1, player.stats.played)) * 100)}%.
               </p>
             </div>
           </CardContent>
         </Card>
-      )}
+      </div>
 
       <Tabs defaultValue="stats" className="mb-8">
         <TabsList className="grid w-full grid-cols-2">

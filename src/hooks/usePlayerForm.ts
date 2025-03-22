@@ -8,10 +8,9 @@ export const usePlayerForm = (seasonId: string | null, playerId: string | null) 
     queryKey: ['playerForm', seasonId, playerId],
     queryFn: () => getPlayerFormInSeason(seasonId!, playerId!),
     enabled: !!seasonId && !!playerId,
-    staleTime: 1000 * 60 * 5 // 5 minutes
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: false
   });
-  
-  console.log("Player form data for", playerId, "in season", seasonId, ":", form);
   
   return {
     form,

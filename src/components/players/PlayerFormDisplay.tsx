@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { PlayerFormResult } from "@/types";
 
 interface PlayerFormDisplayProps {
-  results: Array<'win' | 'loss' | 'draw' | null>;
+  results: Array<PlayerFormResult>;
   size?: 'xs' | 'sm' | 'md' | 'lg';
   showLabel?: boolean;
 }
@@ -24,7 +24,7 @@ const PlayerFormDisplay = ({
   // Only show the 5 most recent results
   const recentResults = results.slice(0, 5);
   
-  const getFormSquare = (result: 'win' | 'loss' | 'draw' | null, index: number) => {
+  const getFormSquare = (result: PlayerFormResult, index: number) => {
     let bgColor = "bg-gray-400";
     let textColor = "text-white";
     let letter = "-";

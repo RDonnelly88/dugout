@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -20,7 +19,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/components/ui/use-toast";
-import { usePlayerForm } from "@/hooks/usePlayerForm";
 import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 
 const Players = () => {
@@ -46,6 +44,17 @@ const Players = () => {
     staleTime: 0
   });
 
+  React.useEffect(() => {
+    if (currentSeason) {
+      players.forEach(player => {
+        queryClient.prefetchQuery({
+          queryKey: ['playerForm', currentSeason.id, player.id],
+          queryFn: () => getPlayerFormInSeason(currentSeason.id, player.id)
+        });
+      });
+    }
+  }, [players, currentSeason, queryClient]);
+
   const getPlayerRankAndForm = (playerId: string): { rank: number, formResults: PlayerFormResult[] } => {
     if (!currentSeason || !seasonPlayerStats.length) {
       return { rank: 0, formResults: [] };
@@ -63,27 +72,15 @@ const Players = () => {
       return { rank: 0, formResults: [] };
     }
     
-    // Get the actual form data for the player
-    const playerStat = sortedStats[playerIndex];
-    const formResults = playerStat.played > 0 
-      ? queryClient.getQueryData<PlayerFormResult[]>(['playerForm', currentSeason.id, playerId]) || []
-      : [];
-      
+    const formData = queryClient.getQueryData<PlayerFormResult[]>(
+      ['playerForm', currentSeason.id, playerId]
+    );
+    
     return { 
       rank: playerIndex + 1,
-      formResults
+      formResults: formData || []
     };
   };
-
-  // Prefetch form data for all players
-  players.forEach(player => {
-    if (currentSeason) {
-      queryClient.prefetchQuery({
-        queryKey: ['playerForm', currentSeason.id, player.id],
-        queryFn: () => getPlayerFormInSeason(currentSeason.id, player.id)
-      });
-    }
-  });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deletePlayer(id),
@@ -188,10 +185,8 @@ const Players = () => {
       ) : filteredPlayers.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPlayers.map((player) => {
-            // Get player rank and form data
             const { rank, formResults } = getPlayerRankAndForm(player.id);
             
-            // Get player's season stats
             const seasonStat = seasonPlayerStats.find(stat => stat.playerId === player.id);
             const hasPlayedMatches = player.stats.played > 0;
             
@@ -234,9 +229,8 @@ const Players = () => {
                       
                       {currentSeason && (
                         <div className="flex items-center mt-2">
-                          {/* Forms display component */}
                           <PlayerFormDisplay 
-                            results={formResults.length > 0 ? formResults : []} 
+                            results={formResults} 
                             size="sm" 
                           />
                         </div>
@@ -244,7 +238,6 @@ const Players = () => {
                     </div>
                   </div>
 
-                  {/* Season stats if available */}
                   {currentSeason && seasonStat && (
                     <div className="px-5 pb-3">
                       <div className="text-xs font-medium text-blue-400 mb-1 flex items-center">
