@@ -23,6 +23,7 @@ interface ParsedTeam {
 
 // Cache for player form data to improve performance
 const formDataCache: Record<string, { data: PlayerFormResult[], timestamp: number }> = {};
+const batchFormDataCache: Record<string, { data: Record<string, PlayerFormResult[]>, timestamp: number }> = {};
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache TTL
 
 // Function to safely parse team data from JSON
@@ -147,10 +148,10 @@ export const getPlayerFormBatch = async (
   const batchCacheKey = `batch_${seasonId}_${playerIds.sort().join('_')}`;
   
   // Check batch cache first
-  const batchCached = formDataCache[batchCacheKey];
+  const batchCached = batchFormDataCache[batchCacheKey];
   if (batchCached && Date.now() - batchCached.timestamp < CACHE_TTL) {
     console.log(`Using cached batch form data for season ${seasonId} with ${playerIds.length} players`);
-    return batchCached.data as Record<string, PlayerFormResult[]>;
+    return batchCached.data;
   }
   
   // Check individual player caches
@@ -235,7 +236,7 @@ export const getPlayerFormBatch = async (
     }
     
     // Store batch result in cache
-    formDataCache[batchCacheKey] = {
+    batchFormDataCache[batchCacheKey] = {
       data: batchResult,
       timestamp: Date.now()
     };
