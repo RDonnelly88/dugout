@@ -22,11 +22,11 @@ const PlayerDetail = () => {
     queryFn: getMatches
   });
 
-  // Filter matches this player participated in
+  // Filter matches this player participated in, safely handling undefined players arrays
   const playerMatches = allMatches.filter(match => {
     return (
-      match.teamA.players.includes(id!) || 
-      match.teamB.players.includes(id!)
+      match.teamA?.players?.includes(id!) || 
+      match.teamB?.players?.includes(id!)
     );
   }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -35,14 +35,14 @@ const PlayerDetail = () => {
     ? Math.round((player.stats.won / player.stats.played) * 100) 
     : 0;
 
-  // Helper to determine if this player won a specific match
+  // Helper to determine if this player won a specific match, safely handling undefined
   const didPlayerWin = (match: Match): boolean | null => {
-    if (match.status !== "completed" || match.teamA.score === undefined || match.teamB.score === undefined) {
+    if (match.status !== "completed" || match.teamA?.score === undefined || match.teamB?.score === undefined) {
       return null;
     }
 
-    const isInTeamA = match.teamA.players.includes(id!);
-    const isInTeamB = match.teamB.players.includes(id!);
+    const isInTeamA = match.teamA?.players?.includes(id!);
+    const isInTeamB = match.teamB?.players?.includes(id!);
     
     if (isInTeamA) {
       return match.teamA.score > match.teamB.score;
@@ -188,7 +188,7 @@ const PlayerDetail = () => {
             <div className="space-y-4">
               {playerMatches.map((match) => {
                 const playerWon = didPlayerWin(match);
-                const isInTeamA = match.teamA.players.includes(id!);
+                const isInTeamA = match.teamA?.players?.includes(id!);
                 const playerTeam = isInTeamA ? match.teamA : match.teamB;
                 const opposingTeam = isInTeamA ? match.teamB : match.teamA;
                 
@@ -222,18 +222,18 @@ const PlayerDetail = () => {
                       
                       <div className="flex justify-between items-center">
                         <div className="font-medium text-sm">
-                          {playerTeam.name}
+                          {playerTeam?.name || "Unknown Team"}
                           <span className="ml-1 text-xs text-muted-foreground">(Your Team)</span>
                         </div>
                         
-                        {match.status === "completed" && match.teamA.score !== undefined && match.teamB.score !== undefined && (
+                        {match.status === "completed" && match.teamA?.score !== undefined && match.teamB?.score !== undefined && (
                           <div className="font-bold">
-                            {isInTeamA ? match.teamA.score : match.teamB.score} - {isInTeamA ? match.teamB.score : match.teamA.score}
+                            {isInTeamA ? match.teamA.score : match.teamB?.score} - {isInTeamA ? match.teamB?.score : match.teamA.score}
                           </div>
                         )}
                         
                         <div className="font-medium text-sm">
-                          {opposingTeam.name}
+                          {opposingTeam?.name || "Unknown Team"}
                         </div>
                       </div>
                       

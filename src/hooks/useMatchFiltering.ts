@@ -5,7 +5,7 @@ import { Match } from "@/types";
 export function useMatchFiltering(matches: Match[]) {
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Filter matches by team name
+  // Filter matches by team name, safely handling undefined team names
   const filteredMatches = matches.filter(match => {
     const teamAName = match.teamA?.name || "";
     const teamBName = match.teamB?.name || "";
