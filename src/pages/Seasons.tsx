@@ -1,63 +1,106 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useQuery } from "@tanstack/react-query";
-import { getSeasons, getSeasonChampions, getPlayerFormInSeason } from "@/lib/db";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getSeasons, getSeasonChampions } from "@/lib/db";
 import SeasonCard from "@/components/seasons/SeasonCard";
 import SeasonsSummaryTable from "@/components/seasons/SeasonsSummaryTable";
-import { PlayerFormResult } from "@/types";
+import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
 
 const Seasons = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+  const queryClient = useQueryClient();
   
   // Get all seasons
   const { data: seasons = [], isLoading: isLoadingSeasons } = useQuery({
     queryKey: ['seasons'],
-    queryFn: getSeasons
+    queryFn: getSeasons,
+    staleTime: 0, // Always fetch fresh data
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 
   // Get champions for all seasons
   const { data: champions = [], isLoading: isLoadingChampions } = useQuery({
     queryKey: ['seasonChampions'],
-    queryFn: () => getSeasonChampions()
+    queryFn: () => getSeasonChampions(),
+    staleTime: 0, // Always fetch fresh data
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 
-  // Prepare data for the player forms
-  const [playerForms, setPlayerForms] = useState<Record<string, Record<string, PlayerFormResult[]>>>({});
-
-  // Load player forms for all seasons
-  useQuery({
-    queryKey: ['allPlayerForms'],
-    queryFn: async () => {
-      const allForms: Record<string, Record<string, PlayerFormResult[]>> = {};
+  // Prepare data for player forms for the current season
+  const currentSeason = seasons.find(s => s.isCurrent);
+  const currentSeasonChampions = currentSeason 
+    ? champions.filter(c => c.seasonId === currentSeason.id)
+    : [];
+  
+  const currentSeasonPlayerIds = currentSeasonChampions.map(p => p.playerId);
+  
+  // Use the batch form loader for the current season's top players
+  const { formData: currentSeasonForms, isLoading: isLoadingCurrentSeasonForms } = useBatchFormLoader(
+    currentSeason?.id || null,
+    currentSeasonPlayerIds
+  );
+  
+  // Collect player IDs for all seasons' champions to batch load form data
+  const allChampionPlayerIds: Record<string, string[]> = {};
+  
+  seasons.forEach(season => {
+    const seasonChampions = champions.filter(c => c.seasonId === season.id);
+    allChampionPlayerIds[season.id] = seasonChampions.map(c => c.playerId);
+  });
+  
+  // Create a map to store form data for all seasons
+  const [allSeasonsForms, setAllSeasonsForms] = useState<Record<string, Record<string, any>>>({});
+  
+  // Use separate hook calls for each season
+  useEffect(() => {
+    const loadAllSeasonsForms = async () => {
+      const formsMap: Record<string, Record<string, any>> = {};
       
-      for (const season of seasons) {
-        const seasonChampions = champions.filter(c => c.seasonId === season.id);
-        const seasonForms: Record<string, PlayerFormResult[]> = {};
-        
-        for (const player of seasonChampions) {
-          try {
-            const form = await getPlayerFormInSeason(season.id, player.playerId);
-            seasonForms[player.playerId] = form;
-          } catch (error) {
-            console.error(`Error fetching form for player ${player.playerId} in season ${season.id}:`, error);
-            seasonForms[player.playerId] = [];
+      // Use Promise.all to load form data for all seasons in parallel
+      await Promise.all(
+        seasons.map(async (season) => {
+          const playerIds = allChampionPlayerIds[season.id] || [];
+          
+          if (playerIds.length === 0) {
+            formsMap[season.id] = {};
+            return;
           }
-        }
-        
-        allForms[season.id] = seasonForms;
-      }
+          
+          try {
+            // Use the queryClient directly to fetch data
+            const data = await queryClient.fetchQuery({
+              queryKey: ['batchPlayerForms', season.id, playerIds],
+              queryFn: async () => {
+                // This will use the existing hook logic
+                const { formData } = useBatchFormLoader(season.id, playerIds);
+                return formData || {};
+              },
+              staleTime: 0
+            });
+            
+            formsMap[season.id] = data || {};
+          } catch (error) {
+            console.error(`Error loading forms for season ${season.id}:`, error);
+            formsMap[season.id] = {};
+          }
+        })
+      );
       
-      setPlayerForms(allForms);
-      return allForms;
-    },
-    enabled: seasons.length > 0 && champions.length > 0
-  });
+      setAllSeasonsForms(formsMap);
+    };
+    
+    if (seasons.length > 0 && Object.keys(allChampionPlayerIds).length > 0) {
+      loadAllSeasonsForms();
+    }
+  }, [seasons.length, Object.keys(allChampionPlayerIds).length]);
 
   // Filter seasons by search term
   const filteredSeasons = seasons.filter(season =>
@@ -96,8 +139,32 @@ const Seasons = () => {
       
       return stats;
     },
-    enabled: seasons.length > 0 && champions.length > 0
+    enabled: seasons.length > 0 && champions.length > 0,
+    staleTime: 0,
+    refetchOnMount: "always"
   });
+
+  // Force refresh of data when component mounts or seasons change
+  useEffect(() => {
+    if (seasons.length > 0) {
+      console.log("Seasons page mounted or seasons changed - refreshing data");
+      
+      // Force refetch of all relevant queries
+      queryClient.invalidateQueries({ queryKey: ['seasons'] });
+      queryClient.invalidateQueries({ queryKey: ['seasonChampions'] });
+      queryClient.invalidateQueries({ queryKey: ['seasonStats'] });
+      
+      // Invalidate form data for all seasons
+      seasons.forEach(season => {
+        const playerIds = allChampionPlayerIds[season.id] || [];
+        if (playerIds.length > 0) {
+          queryClient.invalidateQueries({ 
+            queryKey: ['batchPlayerForms', season.id, playerIds] 
+          });
+        }
+      });
+    }
+  }, []);
 
   const isLoading = isLoadingSeasons || isLoadingChampions;
 
@@ -161,7 +228,16 @@ const Seasons = () => {
           {filteredSeasons.map((season) => {
             const seasonChampions = champions.filter(c => c.seasonId === season.id);
             const stats = seasonStats[season.id] || { matchCount: 0, playerCount: 0 };
-            const seasonPlayerForms = playerForms[season.id] || {};
+            
+            // Get form data for this specific season
+            let seasonPlayerForms = {};
+            if (season.id === currentSeason?.id) {
+              // Use directly loaded current season forms
+              seasonPlayerForms = currentSeasonForms || {};
+            } else {
+              // Use form data from the allSeasonsForms state
+              seasonPlayerForms = allSeasonsForms[season.id] || {};
+            }
             
             return (
               <SeasonCard

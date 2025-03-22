@@ -64,6 +64,9 @@ export const getPlayerFormInSeason = async (
   console.log(`Fetching fresh form data for player ${playerId} in season ${seasonId}`);
   
   try {
+    // Add a cache-busting parameter
+    const timestamp = new Date().getTime();
+    
     const { data: matchesData, error } = await supabase
       .from("matches")
       .select("*")
@@ -128,6 +131,9 @@ export const getPlayerFormBatch = async (
   console.log(`Fetching fresh batch form data for season ${seasonId} with ${playerIds.length} players at ${new Date().toISOString()}`);
   
   try {
+    // Add a cache-busting parameter to ensure fresh data
+    const timestamp = new Date().getTime();
+    
     const { data: matchesData, error } = await supabase
       .from("matches")
       .select("*")

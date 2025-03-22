@@ -2,6 +2,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PlayerFormResult } from "@/types";
 import { getPlayerFormBatch } from "@/lib/player-form-service";
+import { useEffect } from "react";
 
 // Function to batch fetch player forms for multiple players in a single season
 export const useBatchFormLoader = (
@@ -9,6 +10,32 @@ export const useBatchFormLoader = (
   playerIds: string[]
 ) => {
   const queryClient = useQueryClient();
+  
+  // Force refetch on mount and when dependencies change
+  useEffect(() => {
+    if (seasonId && playerIds.length > 0) {
+      console.log(`Batch form loader refreshing data for season ${seasonId} with ${playerIds.length} players`);
+      
+      // Force refetch by removing query and then refetching
+      queryClient.removeQueries({ queryKey: ['batchPlayerForms', seasonId, playerIds] });
+      
+      // Short timeout to ensure UI is responsive
+      setTimeout(() => {
+        queryClient.fetchQuery({ 
+          queryKey: ['batchPlayerForms', seasonId, playerIds],
+          queryFn: async () => {
+            if (!seasonId || playerIds.length === 0) return {};
+            return getPlayerFormBatch(seasonId, playerIds);
+          }
+        });
+      }, 50);
+    }
+    
+    // Cleanup function
+    return () => {
+      // No cleanup needed
+    };
+  }, [seasonId, playerIds.join(','), queryClient]);
   
   const { data, isLoading, error } = useQuery({
     queryKey: ['batchPlayerForms', seasonId, playerIds],
@@ -27,12 +54,11 @@ export const useBatchFormLoader = (
       }
     },
     enabled: !!seasonId && playerIds.length > 0,
-    // Don't cache at all - always fetch fresh data
+    // Never cache - always fetch fresh data
     staleTime: 0,
     gcTime: 0,
     refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    refetchInterval: 0, // Don't automatically refetch - we'll control this from the component
+    refetchOnMount: "always",
   });
 
   return {

@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Trophy, Medal, Ghost } from "lucide-react";
@@ -49,29 +48,34 @@ const SeasonLeaderboard = ({
   // Get player IDs for batch loading
   const playerIds = displayStats.map(player => player.playerId);
   
-  // Ensure we have fresh data when the component renders or when we navigate back to this page
+  // Ensure we have fresh data when the component renders
   useEffect(() => {
     if (seasonId && playerIds.length > 0) {
-      console.log(`SeasonLeaderboard mounted/updated at ${new Date().toISOString()}, forcing fresh data`);
+      console.log(`SeasonLeaderboard for season ${seasonId} rendered, forcing data refresh`);
       
-      // Force immediate invalidation and refetch of form data
+      // Force immediate removal of any cached data
       queryClient.removeQueries({ queryKey: ['batchPlayerForms', seasonId, playerIds] });
       
-      // Manually trigger a refetch with a slight delay to ensure navigation completes
-      const refetchTimer = setTimeout(() => {
-        queryClient.refetchQueries({ 
+      // Schedule a fresh fetch (with small delay to avoid blocking UI)
+      const fetchTimer = setTimeout(() => {
+        queryClient.fetchQuery({ 
           queryKey: ['batchPlayerForms', seasonId, playerIds],
-          type: 'all'
+          queryFn: async () => {
+            // This directly uses the service without caching
+            const { getPlayerFormBatch } = await import('@/lib/player-form-service');
+            return getPlayerFormBatch(seasonId, playerIds);
+          },
+          staleTime: 0
         });
-      }, 100);
+      }, 50);
       
       return () => {
-        clearTimeout(refetchTimer);
+        clearTimeout(fetchTimer);
       };
     }
-  }, [seasonId, queryClient, playerIds.join(',')]);
+  }, [seasonId, JSON.stringify(playerIds)]);
   
-  // Use the batch loading hook if seasonId is provided
+  // Use the batch loading hook for real-time data
   const { formData, isLoading: isLoadingForms } = useBatchFormLoader(
     seasonId || null, 
     seasonId ? playerIds : []
@@ -80,33 +84,30 @@ const SeasonLeaderboard = ({
   // Combine provided forms with batch loaded forms - prioritize fresh data from the hook
   const combinedForms = { ...playerForms, ...formData };
   
-  // Fetch explicitly on route change or when we navigate back to this page
+  // Also refresh data when coming back to this tab/page
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && seasonId && playerIds.length > 0) {
-        console.log('Page became visible, refetching player forms');
-        queryClient.refetchQueries({ 
+        console.log('Page became visible, refreshing player forms');
+        
+        // Force refetch of form data
+        queryClient.removeQueries({ queryKey: ['batchPlayerForms', seasonId, playerIds] });
+        queryClient.fetchQuery({ 
           queryKey: ['batchPlayerForms', seasonId, playerIds],
-          type: 'all'
+          queryFn: async () => {
+            const { getPlayerFormBatch } = await import('@/lib/player-form-service');
+            return getPlayerFormBatch(seasonId, playerIds);
+          }
         });
       }
     };
 
-    // Listen for visibility changes (tab switching, app background/foreground)
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Also refetch on mount
-    if (seasonId && playerIds.length > 0) {
-      queryClient.refetchQueries({ 
-        queryKey: ['batchPlayerForms', seasonId, playerIds],
-        type: 'all'
-      });
-    }
     
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [seasonId, playerIds, queryClient]);
+  }, [seasonId, JSON.stringify(playerIds)]);
   
   const getRankBadge = (index: number) => {
     if (index === 0) {
