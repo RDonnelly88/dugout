@@ -1,4 +1,6 @@
 
+import { Player } from "@/types";
+
 // Position types for formation display
 export type PositionType = 
   | 'goalkeeper'
