@@ -36,6 +36,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
     revealComplete,
     revealIndex,
     formationView,
+    revealStage,
     togglePlayerSelection,
     performDramaticRandomization,
     setInitialSelectedPlayers
@@ -112,6 +113,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
         revealIndex={revealIndex}
         spotlightPlayer={spotlightPlayer}
         teamSize={teamSize}
+        revealStage={revealStage}
       />
       
       {showPlayerSelection && (
