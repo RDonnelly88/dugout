@@ -307,4 +307,14 @@
   .randomizer-grid {
     @apply grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4;
   }
+  
+  /* Team name overlay */
+  .team-name-overlay {
+    @apply absolute bottom-3 left-1/2 transform -translate-x-1/2 text-sm font-bold text-white/70 bg-black/30 px-3 py-1 rounded-full;
+  }
+  
+  /* Pitch formation label */
+  .pitch-formation-label {
+    @apply absolute top-3 left-1/2 transform -translate-x-1/2 z-10;
+  }
 }
