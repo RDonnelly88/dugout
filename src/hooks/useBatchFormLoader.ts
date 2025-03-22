@@ -1,6 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { PlayerFormResult } from "@/types";
+import { getPlayerFormBatch } from "@/lib/player-form-service";
 
 // Function to batch fetch player forms for multiple players in a single season
 export const useBatchFormLoader = (
@@ -13,16 +14,15 @@ export const useBatchFormLoader = (
       if (!seasonId || playerIds.length === 0) return {};
       
       try {
-        // Dynamic import to avoid circular dependencies
-        const { getPlayerFormBatch } = await import('@/lib/player-form-service');
-        return getPlayerFormBatch(seasonId, playerIds);
+        return await getPlayerFormBatch(seasonId, playerIds);
       } catch (err) {
         console.error("Error loading batch player forms:", err);
         return {};
       }
     },
     enabled: !!seasonId && playerIds.length > 0,
-    staleTime: 60000, // Cache results for 1 minute
+    staleTime: 300000, // Cache results for 5 minutes
+    gcTime: 600000, // Keep unused data for 10 minutes
   });
 
   return {

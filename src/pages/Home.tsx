@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -11,6 +12,7 @@ import { ArrowRight, Trophy, Calendar, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import SeasonLeaderboard from "@/components/seasons/SeasonLeaderboard";
+import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
 
 const Home = () => {
   // Get the current season
@@ -37,6 +39,18 @@ const Home = () => {
     queryFn: () => getSeasonPlayerStats(currentSeason!.id),
     enabled: !!currentSeason
   });
+  
+  // Get player IDs for batch form loading
+  const playerIds = seasonPlayerStats
+    .filter(player => player.played > 0)
+    .slice(0, 5)
+    .map(player => player.playerId);
+  
+  // Preload form data for top players
+  const { formData } = useBatchFormLoader(
+    currentSeason?.id || null,
+    currentSeason ? playerIds : []
+  );
 
   // Filter current season matches
   const currentSeasonMatches = currentSeason 
@@ -125,6 +139,8 @@ const Home = () => {
             limit={5}
             seasonName={currentSeason.name}
             isFinished={currentSeason.isFinished}
+            seasonId={currentSeason.id}
+            playerForms={formData}
           />
           
           <div className="flex justify-end">

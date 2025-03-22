@@ -21,6 +21,10 @@ interface ParsedTeam {
   name: string;
 }
 
+// Cache for player form data to improve performance
+const formDataCache: Record<string, { data: PlayerFormResult[], timestamp: number }> = {};
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache TTL
+
 // Function to safely parse team data from JSON
 function parseTeamData(teamData: any, defaultName: string): ParsedTeam {
   // Default team structure if parsing fails
@@ -62,6 +66,15 @@ export const getPlayerFormInSeason = async (
   seasonId: string,
   playerId: string
 ): Promise<PlayerFormResult[]> => {
+  const cacheKey = `form_${seasonId}_${playerId}`;
+  
+  // Check cache first
+  const cached = formDataCache[cacheKey];
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    console.log(`Using cached form data for player ${playerId} in season ${seasonId}`);
+    return cached.data;
+  }
+  
   try {
     const { data: matchesData, error } = await supabase
       .from("matches")
@@ -96,7 +109,7 @@ export const getPlayerFormInSeason = async (
     );
 
     // Calculate results
-    return playerMatches.map(match => {
+    const results = playerMatches.map(match => {
       const isTeamA = match.teamA.players && match.teamA.players.includes(playerId);
       
       if (match.teamA.score === match.teamB.score) {
@@ -109,6 +122,14 @@ export const getPlayerFormInSeason = async (
         return match.teamB.score > match.teamA.score ? 'win' : 'loss';
       }
     });
+    
+    // Store in cache
+    formDataCache[cacheKey] = {
+      data: results,
+      timestamp: Date.now()
+    };
+    
+    return results;
   } catch (error) {
     console.error("Error in getPlayerFormInSeason:", error);
     return [];
@@ -121,6 +142,36 @@ export const getPlayerFormBatch = async (
   playerIds: string[]
 ): Promise<Record<string, PlayerFormResult[]>> => {
   if (!playerIds.length) return {};
+  
+  // Generate batch cache key
+  const batchCacheKey = `batch_${seasonId}_${playerIds.sort().join('_')}`;
+  
+  // Check batch cache first
+  const batchCached = formDataCache[batchCacheKey];
+  if (batchCached && Date.now() - batchCached.timestamp < CACHE_TTL) {
+    console.log(`Using cached batch form data for season ${seasonId} with ${playerIds.length} players`);
+    return batchCached.data as Record<string, PlayerFormResult[]>;
+  }
+  
+  // Check individual player caches
+  const result: Record<string, PlayerFormResult[]> = {};
+  let allCached = true;
+  
+  for (const playerId of playerIds) {
+    const cacheKey = `form_${seasonId}_${playerId}`;
+    const cached = formDataCache[cacheKey];
+    
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      result[playerId] = cached.data;
+    } else {
+      allCached = false;
+      break;
+    }
+  }
+  
+  if (allCached && Object.keys(result).length === playerIds.length) {
+    return result;
+  }
   
   try {
     // Fetch all completed matches for this season in a single query
@@ -150,7 +201,7 @@ export const getPlayerFormBatch = async (
     });
 
     // Process all players at once
-    const result: Record<string, PlayerFormResult[]> = {};
+    const batchResult: Record<string, PlayerFormResult[]> = {};
     
     for (const playerId of playerIds) {
       // Filter matches where this player participated
@@ -161,7 +212,7 @@ export const getPlayerFormBatch = async (
       );
       
       // Calculate results
-      result[playerId] = playerMatches.map(match => {
+      const playerResults = playerMatches.map(match => {
         const isTeamA = match.teamA.players && match.teamA.players.includes(playerId);
         
         if (match.teamA.score === match.teamB.score) {
@@ -174,9 +225,22 @@ export const getPlayerFormBatch = async (
           return match.teamB.score > match.teamA.score ? 'win' : 'loss';
         }
       });
+      
+      // Store in individual cache and in result
+      formDataCache[`form_${seasonId}_${playerId}`] = {
+        data: playerResults,
+        timestamp: Date.now()
+      };
+      batchResult[playerId] = playerResults;
     }
     
-    return result;
+    // Store batch result in cache
+    formDataCache[batchCacheKey] = {
+      data: batchResult,
+      timestamp: Date.now()
+    };
+    
+    return batchResult;
   } catch (error) {
     console.error("Error in getPlayerFormBatch:", error);
     return {};
