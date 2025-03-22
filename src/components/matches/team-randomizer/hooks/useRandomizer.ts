@@ -82,23 +82,26 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     const playersForRandomization = players;
     const shuffledPlayers = shufflePlayers(playersForRandomization);
     
-    // Assign positions to players
-    const positions = assignPositions(shuffledPlayers, teamSize);
+    // Assign positions to players - only for visualization purposes
+    // We'll only visualize the first team's worth of players
+    const singleTeamSize = parseInt(teamSize);
+    const visualizationPlayers = shuffledPlayers.slice(0, singleTeamSize);
+    const positions = assignPositions(visualizationPlayers, teamSize);
     setAssignedPositions(positions);
     
-    // Set the randomizing players
-    setRandomizingPlayers(shuffledPlayers.slice(0, Object.keys(positions).length));
+    // Set the randomizing players - only showing the first team for the animation
+    setRandomizingPlayers(visualizationPlayers);
     
     // Dramatic pause before starting
     await new Promise(resolve => setTimeout(resolve, 2500));
     
     // Loop through each player and spotlight them
-    for (let i = 0; i < shuffledPlayers.length; i++) {
+    for (let i = 0; i < visualizationPlayers.length; i++) {
       // Skip if we've assigned enough players already
       if (i >= Object.keys(positions).length) break;
       
       // Set current player in spotlight
-      setSpotlightPlayer(shuffledPlayers[i]);
+      setSpotlightPlayer(visualizationPlayers[i]);
       
       // Wait for dramatic effect (longer for first players)
       const spotlightDuration = i === 0 ? 3500 : 3000;
@@ -145,8 +148,11 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     setSpotlightPlayer(null);
     setFormationView(false);
     
-    // Call the actual randomize function with the properly sized subset of players
-    const finalPlayers = shuffledPlayers.slice(0, parseInt(teamSize) * 2);
+    // Call the actual randomize function with players for both teams
+    // This is the key change - we're using the full set of shuffled players for both teams
+    const teamsCount = 2; // We want to create two teams
+    const totalPlayersNeeded = parseInt(teamSize) * teamsCount;
+    const finalPlayers = shuffledPlayers.slice(0, totalPlayersNeeded);
     onRandomize(finalPlayers, parseInt(teamSize));
   };
 
