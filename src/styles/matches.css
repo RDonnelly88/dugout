@@ -250,7 +250,7 @@
   }
   
   .available-players-card {
-    @apply rounded-xl py-4 px-3 bg-gradient-to-b from-blue-950/40 to-black/40;
+    @apply rounded-xl py-4 px-3 bg-gradient-to-b from-blue-950/40 to-black/40 border border-white/10;
   }
   
   /* Animation for player cards */

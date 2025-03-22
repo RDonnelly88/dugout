@@ -45,6 +45,21 @@ const TeamSelection = ({
     );
   }, [players, selectedPlayers, teamA, teamB]);
   
+  const getFormationName = (teamSize: number): string => {
+    if (teamSize <= 0) return "";
+    if (teamSize === 1) return "1";
+    if (teamSize === 2) return "1-1";
+    if (teamSize === 3) return "1-2";
+    if (teamSize === 4) return "1-2-1";
+    if (teamSize === 5) return "2-2-1";
+    if (teamSize === 6) return "2-3-1";
+    if (teamSize === 7) return "3-3-1";
+    if (teamSize === 8) return "3-3-2";
+    if (teamSize === 9) return "3-4-2";
+    if (teamSize === 10) return "4-4-2";
+    return "4-4-3";
+  };
+
   const getFormationSize = (teamSize: number): string => {
     if (teamSize <= 5) return "5";
     if (teamSize >= 11) return "11";
@@ -62,6 +77,7 @@ const TeamSelection = ({
 
     const teamPlayers = players.filter(player => team.includes(player.id));
     const formationConfig = formationConfigs[getFormationSize(teamPlayers.length)];
+    const formationName = getFormationName(teamPlayers.length);
     const { rows } = formationConfig;
     
     let playerIndex = 0;
@@ -79,7 +95,7 @@ const TeamSelection = ({
         
         <div className="text-center pitch-formation-label">
           <Badge variant="outline" className="px-4 py-1 text-sm font-medium bg-blue-500/10 text-primary border-blue-400/30">
-            {formationConfig.name} Formation
+            {formationName} Formation
           </Badge>
         </div>
         
@@ -171,7 +187,7 @@ const TeamSelection = ({
           <Users className="h-5 w-5 mr-2 text-gray-400" />
           <span className="text-xl font-bold">Available Players</span>
         </Label>
-        <div className="mt-3 available-players-card glass-card rounded-xl overflow-hidden border border-white/10 p-4">
+        <div className="mt-3 available-players-card">
           {renderAvailablePlayers()}
         </div>
       </div>
