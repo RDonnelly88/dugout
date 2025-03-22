@@ -30,7 +30,10 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>(players.map(p => p.id));
   const [isRandomizing, setIsRandomizing] = useState(false);
   const [randomizingPlayers, setRandomizingPlayers] = useState<Player[]>([]);
-  const [randomizingIndex, setRandomizingIndex] = useState(0);
+  const [randomizingIndex, setRandomizingIndex] = useState(-1);
+  const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
+  const [showFeaturedPlayer, setShowFeaturedPlayer] = useState(false);
+  const [revealComplete, setRevealComplete] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
   const availablePlayers = players.filter(player => selectedPlayers.includes(player.id));
@@ -59,6 +62,10 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
 
   const performDramaticRandomization = async () => {
     setIsRandomizing(true);
+    setRevealComplete(false);
+    setRandomizingIndex(-1);
+    setCurrentPlayer(null);
+    setShowFeaturedPlayer(false);
     
     // Create and play audio
     if (!audioRef.current) {
@@ -77,23 +84,43 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
     const playersForRandomization = players.filter(player => selectedPlayers.includes(player.id));
     const shuffledPlayers = shufflePlayers(playersForRandomization);
     
-    // Show sequential animation of player cards
+    // Set the randomizing players and start the sequence
     setRandomizingPlayers(shuffledPlayers);
     
-    // Animate through each player
+    // Slow down - wait before starting the sequence
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Animate through each player with more time between each reveal
     for (let i = 0; i < Math.min(shuffledPlayers.length, 10); i++) {
+      // Show the current player in the spotlight
+      setCurrentPlayer(shuffledPlayers[i]);
+      setShowFeaturedPlayer(true);
+      
+      // Pause for the featured player to be shown
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Add to the revealed players list
       setRandomizingIndex(i);
-      // Wait a short time between each player reveal
-      await new Promise(resolve => setTimeout(resolve, 300));
+      setShowFeaturedPlayer(false);
+      
+      // Pause between player reveals
+      await new Promise(resolve => setTimeout(resolve, 800));
     }
     
     // Pause for dramatic effect before finalizing
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Mark the reveal as complete
+    setRevealComplete(true);
+    
+    // Wait for user to see the final result before proceeding
+    await new Promise(resolve => setTimeout(resolve, 2500));
     
     // Complete randomization
     setIsRandomizing(false);
     setRandomizingPlayers([]);
-    setRandomizingIndex(0);
+    setRandomizingIndex(-1);
+    setCurrentPlayer(null);
     
     // Call the actual randomize function
     onRandomize(playersForRandomization, parseInt(teamSize));
@@ -157,12 +184,53 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
       
       {/* Dramatic randomization animation overlay */}
       {isRandomizing && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="max-w-3xl w-full mx-auto px-4">
             <h2 className="text-center text-2xl font-bold text-white mb-8 animate-fade-in">
-              Randomizing Teams
+              {revealComplete ? "Teams Assigned!" : "Randomizing Teams"}
             </h2>
             
+            {/* Featured player spotlight */}
+            {showFeaturedPlayer && currentPlayer && (
+              <div className="fixed inset-0 flex items-center justify-center z-[60] bg-black/50">
+                <div className="animate-scale-in animate-float max-w-xs w-full">
+                  <Card className="overflow-hidden h-full border-4 border-primary shadow-2xl animate-glow bg-card/90 backdrop-blur">
+                    <CardContent className="p-6 flex flex-col items-center">
+                      <div className="mb-4 relative">
+                        <Avatar className="h-32 w-32 mb-2">
+                          {currentPlayer.image ? (
+                            <AvatarImage src={currentPlayer.image} alt={currentPlayer.name} className="object-cover" />
+                          ) : (
+                            <AvatarFallback className="text-4xl bg-gradient-blue text-white">
+                              {currentPlayer.name.charAt(0)}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                      </div>
+                      
+                      <h3 className="font-bold text-xl text-center mb-2">{currentPlayer.name}</h3>
+                      
+                      <div className="mt-2 grid grid-cols-3 gap-2 w-full">
+                        <div className="bg-blue-50 dark:bg-blue-950/40 rounded p-2 text-center">
+                          <div className="font-semibold text-lg">{currentPlayer.stats?.played || 0}</div>
+                          <div className="text-muted-foreground text-xs">Played</div>
+                        </div>
+                        <div className="bg-green-50 dark:bg-green-950/40 rounded p-2 text-center">
+                          <div className="font-semibold text-lg">{currentPlayer.stats?.won || 0}</div>
+                          <div className="text-muted-foreground text-xs">Won</div>
+                        </div>
+                        <div className="bg-red-50 dark:bg-red-950/40 rounded p-2 text-center">
+                          <div className="font-semibold text-lg">{currentPlayer.stats?.lost || 0}</div>
+                          <div className="text-muted-foreground text-xs">Lost</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
+            
+            {/* Team grid of assigned players */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
               {randomizingPlayers.map((player, idx) => (
                 <div 
@@ -171,6 +239,10 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
                     ${idx <= randomizingIndex ? 'animate-scale-in' : 'opacity-0'}
                     duration-500 transition-all player-card-mini
                   `}
+                  style={{
+                    animationDelay: `${idx * 0.2}s`,
+                    transitionDelay: `${idx * 0.2}s`
+                  }}
                 >
                   <Card className="overflow-hidden h-full border-2 border-primary/50 hover:border-primary bg-card/80 backdrop-blur">
                     <CardContent className="p-4 flex flex-col items-center">
@@ -201,6 +273,14 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
                 </div>
               ))}
             </div>
+            
+            {revealComplete && (
+              <div className="mt-6 text-center">
+                <p className="text-white text-lg animate-fade-in">
+                  Your teams are ready!
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}
