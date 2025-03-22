@@ -1,26 +1,28 @@
 
-import { Outlet, NavLink } from "react-router-dom";
-import { Home, Users, Trophy, Menu, X } from "lucide-react";
+import { Outlet, NavLink, useLocation } from "react-router-dom";
+import { Home, Users, Trophy, Menu, X, Settings } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel
+} from "@/components/ui/sidebar";
 
 const Layout = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
   const isMobile = useIsMobile();
   
-  // Close menu when changing route on mobile
-  useEffect(() => {
-    setIsMenuOpen(false);
-  }, [location.pathname]);
-
-  // Close menu when resizing from mobile to desktop
-  useEffect(() => {
-    if (!isMobile) {
-      setIsMenuOpen(false);
-    }
-  }, [isMobile]);
-
   const navItems = [
     { path: "/", label: "Home", icon: <Home className="h-5 w-5" /> },
     { path: "/players", label: "Players", icon: <Users className="h-5 w-5" /> },
@@ -28,83 +30,76 @@ const Layout = () => {
   ];
 
   return (
-    <div className="flex h-screen flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex items-center">
-          <h1 className="text-xl font-semibold tracking-tight">
-            <NavLink to="/" className="flex items-center gap-2">
-              <span className="hidden sm:inline-block">5-A-Side Tracker</span>
-              <span className="sm:hidden">5-A-Side</span>
-            </NavLink>
-          </h1>
+    <SidebarProvider defaultOpen={!isMobile}>
+      <div className="flex h-screen w-full">
+        {/* Sidebar */}
+        <Sidebar>
+          <SidebarHeader>
+            <div className="flex h-16 items-center px-4">
+              <h1 className="text-xl font-semibold tracking-tight">
+                <span className="flex items-center gap-2 text-foreground">
+                  <Trophy className="h-6 w-6" />
+                  5-A-Side Tracker
+                </span>
+              </h1>
+            </div>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {navItems.map((item) => (
+                    <SidebarMenuItem key={item.path}>
+                      <SidebarMenuButton 
+                        asChild 
+                        isActive={location.pathname === item.path || 
+                          (item.path !== "/" && location.pathname.startsWith(item.path))}
+                        tooltip={item.label}
+                      >
+                        <NavLink to={item.path}>
+                          {item.icon}
+                          <span>{item.label}</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarFooter>
+            <div className="px-4 pb-4">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
+                  5-A-Side Tracker v1.0
+                </p>
+              </div>
+            </div>
+          </SidebarFooter>
+        </Sidebar>
+        
+        {/* Main Content */}
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {/* Header for small screens */}
+          {isMobile && (
+            <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <div className="flex items-center gap-2">
+                <SidebarTrigger />
+                <h1 className="text-xl font-semibold">
+                  <NavLink to="/">5-A-Side</NavLink>
+                </h1>
+              </div>
+            </header>
+          )}
+
+          {/* Main content */}
+          <main className="flex-1 overflow-auto">
+            <Outlet />
+          </main>
         </div>
-
-        {/* Mobile menu button */}
-        {isMobile && (
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="flex h-10 w-10 items-center justify-center rounded-md text-foreground"
-            aria-label="Toggle menu"
-          >
-            {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        )}
-
-        {/* Desktop navigation */}
-        {!isMobile && (
-          <nav className="flex items-center space-x-4">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-foreground/70 hover:text-foreground hover:bg-secondary"
-                  )
-                }
-              >
-                {item.icon}
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-        )}
-      </header>
-
-      {/* Mobile navigation */}
-      {isMobile && isMenuOpen && (
-        <div className="fixed inset-0 top-16 z-40 animate-fade-in bg-background">
-          <nav className="flex flex-col space-y-2 p-4">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-2 px-4 py-3 text-base font-medium rounded-lg transition-colors",
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-foreground/70 hover:text-foreground hover:bg-secondary"
-                  )
-                }
-              >
-                {item.icon}
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-        </div>
-      )}
-
-      {/* Main content */}
-      <main className="flex-1 overflow-auto">
-        <Outlet />
-      </main>
-    </div>
+      </div>
+    </SidebarProvider>
   );
 };
 

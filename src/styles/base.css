@@ -42,3 +42,7 @@
     @apply bg-muted-foreground/50;
   }
 }
+
+.page-container {
+  @apply container mx-auto p-6 max-w-7xl animate-fade-in;
+}

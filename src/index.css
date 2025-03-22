@@ -8,11 +8,3 @@
 @import './styles/cards.css';
 @import './styles/matches.css';
 @import './styles/animations.css';
-
-/* Override for App.css legacy styles */
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
