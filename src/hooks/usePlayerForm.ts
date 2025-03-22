@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { getPlayerFormInSeason } from "@/lib/db";
+import { getPlayerFormInSeason } from "@/lib/player-form-service";
 import { PlayerFormResult } from "@/types";
 
 // Single player form loading hook

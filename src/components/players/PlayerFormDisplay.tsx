@@ -73,6 +73,11 @@ const PlayerFormDisplay = ({
         textColor = "text-white";
         letter = "D";
         break;
+      case 'dnp':
+        bgColor = "bg-gray-600/50";
+        textColor = "text-gray-200";
+        letter = "DNP";
+        break;
     }
     
     return (
@@ -82,13 +87,18 @@ const PlayerFormDisplay = ({
           "flex items-center justify-center rounded font-semibold",
           bgColor,
           textColor,
-          size === 'xs' ? 'w-4 h-4 text-[10px]' : 
-          size === 'sm' ? 'w-5 h-5 text-xs' : 
-          size === 'md' ? 'w-6 h-6 text-sm' : 'w-8 h-8'
+          size === 'xs' ? 'w-4 h-4 text-[8px]' : 
+          size === 'sm' ? 'w-5 h-5 text-[10px]' : 
+          size === 'md' ? 'w-6 h-6 text-xs' : 'w-8 h-8 text-sm'
         )}
-        title={result === 'win' ? 'Win' : result === 'loss' ? 'Loss' : result === 'draw' ? 'Draw' : 'No result'}
+        title={
+          result === 'win' ? 'Win' : 
+          result === 'loss' ? 'Loss' : 
+          result === 'draw' ? 'Draw' : 
+          result === 'dnp' ? 'Did Not Play' : 'No result'
+        }
       >
-        {letter}
+        {result === 'dnp' && size === 'xs' ? '-' : letter}
       </div>
     );
   };

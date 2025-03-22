@@ -1,3 +1,4 @@
+
 export interface Player {
   id: string;
   name: string;
@@ -72,7 +73,7 @@ export interface SeasonChampion {
   rank: number;
 }
 
-export type PlayerFormResult = 'win' | 'loss' | 'draw';
+export type PlayerFormResult = 'win' | 'loss' | 'draw' | 'dnp';
 
 export interface PlayerForm {
   seasonId: string;

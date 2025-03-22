@@ -87,21 +87,31 @@ export const getPlayerFormInSeason = async (
       
       return {
         id: match.id,
+        date: match.date,
         teamA,
         teamB
       };
     });
 
-    // Filter matches where player participated
-    const playerMatches = matches.filter(
-      match => 
-        (match.teamA.players && match.teamA.players.includes(playerId)) || 
-        (match.teamB.players && match.teamB.players.includes(playerId))
-    );
-
-    // Calculate results
-    const results = playerMatches.map(match => {
-      const isTeamA = match.teamA.players && match.teamA.players.includes(playerId);
+    // Sort matches by date (newest first)
+    matches.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    // Get the five most recent matches in the season
+    const recentMatches = matches.slice(0, 5);
+    
+    // Calculate results for recent matches
+    const results = recentMatches.map(match => {
+      // Check if player participated in this match
+      const playerInTeamA = match.teamA.players && match.teamA.players.includes(playerId);
+      const playerInTeamB = match.teamB.players && match.teamB.players.includes(playerId);
+      
+      // If player didn't participate, mark as DNP
+      if (!playerInTeamA && !playerInTeamB) {
+        return 'dnp';
+      }
+      
+      // Player participated, determine win/loss/draw
+      const isTeamA = playerInTeamA;
       
       if (match.teamA.score === match.teamB.score) {
         return 'draw';
@@ -154,25 +164,35 @@ export const getPlayerFormBatch = async (
       
       return {
         id: match.id,
+        date: match.date,
         teamA,
         teamB
       };
     });
+    
+    // Sort matches by date (newest first)
+    matches.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    // Get the five most recent matches in the season
+    const recentMatches = matches.slice(0, 5);
 
     // Process all players at once
     const batchResult: Record<string, PlayerFormResult[]> = {};
     
     for (const playerId of playerIds) {
-      // Filter matches where this player participated
-      const playerMatches = matches.filter(
-        match => 
-          (match.teamA.players && match.teamA.players.includes(playerId)) || 
-          (match.teamB.players && match.teamB.players.includes(playerId))
-      );
-      
-      // Calculate results
-      const playerResults = playerMatches.map(match => {
-        const isTeamA = match.teamA.players && match.teamA.players.includes(playerId);
+      // Calculate results for the player's recent matches
+      const playerResults = recentMatches.map(match => {
+        // Check if player participated in this match
+        const playerInTeamA = match.teamA.players && match.teamA.players.includes(playerId);
+        const playerInTeamB = match.teamB.players && match.teamB.players.includes(playerId);
+        
+        // If player didn't participate, mark as DNP
+        if (!playerInTeamA && !playerInTeamB) {
+          return 'dnp';
+        }
+        
+        // Player participated, determine win/loss/draw
+        const isTeamA = playerInTeamA;
         
         if (match.teamA.score === match.teamB.score) {
           return 'draw';
