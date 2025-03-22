@@ -45,6 +45,12 @@
     @apply p-4 bg-muted/30 flex justify-between items-center;
   }
   
+  /* Player hover card styling */
+  .player-hover-card {
+    @apply bg-blue-950 backdrop-blur-lg border border-blue-500/30 shadow-xl;
+    /* Reduced transparency with solid background */
+  }
+  
   /* Football pitch styling */
   .football-pitch {
     @apply relative rounded-xl overflow-hidden flex flex-col items-center justify-center py-8 h-[300px] md:h-[400px];

@@ -176,7 +176,7 @@ const PlayerCard = ({ player, onClick }: PlayerCardProps) => {
             <span className="text-sm font-medium truncate text-blue-50">{player.name}</span>
           </div>
         </HoverCardTrigger>
-        <HoverCardContent className="w-72 bg-blue-950/95 backdrop-blur-lg border border-blue-500/30 shadow-xl">
+        <HoverCardContent className="w-72 player-hover-card">
           <div className="flex justify-between items-start">
             <Avatar className="h-16 w-16 border-2 border-blue-500/50 shadow-md">
               {player.image ? (
@@ -237,7 +237,7 @@ const PlayerFormationCard = ({ player, onClick, teamColor }: PlayerFormationCard
               </Avatar>
             </div>
           </HoverCardTrigger>
-          <HoverCardContent className="w-60 bg-blue-950/95 backdrop-blur-lg border border-blue-500/30 shadow-xl player-stats-card">
+          <HoverCardContent className="w-60 player-hover-card player-stats-card">
             <div className="flex justify-between items-start">
               <Avatar className="h-12 w-12 border border-white/20">
                 {player.image ? (
