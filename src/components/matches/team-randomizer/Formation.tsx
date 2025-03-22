@@ -12,7 +12,8 @@ interface FormationProps {
 const Formation = ({ players, positions }: FormationProps) => {
   return (
     <div className="animate-fade-in">
-      <div className="formation-grid">
+      {/* Simple line display instead of formation grid */}
+      <div className="flex flex-wrap justify-center gap-4 my-8">
         {players.map((player, idx) => {
           const position = positions[player.id];
           if (!position) return null;
@@ -29,9 +30,9 @@ const Formation = ({ players, positions }: FormationProps) => {
       </div>
       
       <div className="text-center mt-8">
-        <h3 className="text-2xl font-bold text-white mb-2">TEAM STARTING XI</h3>
+        <h3 className="text-2xl font-bold text-white mb-2">TEAM LINEUP</h3>
         <p className="text-blue-200">
-          Formation: {players.length === 5 ? "2-1-1" : players.length === 6 ? "2-2-1" : "3-2-1"}
+          {players.length} Player{players.length !== 1 ? 's' : ''}
         </p>
       </div>
     </div>

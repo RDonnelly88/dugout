@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Player } from "@/types";
 import { PositionType } from '../types';
-import { formationPositions } from '../constants';
+import { formationPositions, linePositions } from '../constants';
 
 export const useRandomizer = (onRandomize: (players: Player[], teamSize: number) => void) => {
   const [teamSize, setTeamSize] = useState<string>("5");
@@ -38,8 +38,8 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
   };
 
   const assignPositions = (players: Player[], teamSize: string) => {
-    // Get the positions for the selected team size
-    const positions = formationPositions[teamSize] || formationPositions["5"];
+    // Get the positions for the selected team size using linePositions instead of formationPositions
+    const positions = linePositions[teamSize] || linePositions["5"];
     
     // Cap the number of players to the available positions
     const cappedPlayers = players.slice(0, positions.length);
@@ -112,7 +112,7 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
     
-    // Show the formation view
+    // Show the formation view (now a line view)
     setFormationView(true);
     
     // Longer pause to view the final formation

@@ -41,3 +41,11 @@ export const formationPositions: Record<string, PositionType[]> = {
     'forward-right'
   ]
 };
+
+// Line positions for displaying players in a simple row
+export const linePositions: Record<string, PositionType[]> = {
+  "5": Array(5).fill('line-player'),
+  "6": Array(6).fill('line-player'),
+  "7": Array(7).fill('line-player'),
+  "11": Array(11).fill('line-player')
+};

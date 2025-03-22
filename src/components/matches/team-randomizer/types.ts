@@ -12,4 +12,6 @@ export type PositionType =
   | 'midfielder-right'
   | 'forward-left'
   | 'forward-center'
-  | 'forward-right';
+  | 'forward-right'
+  | 'line-player'; // Added line-player type for simple line display
+
