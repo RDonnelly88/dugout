@@ -15,6 +15,7 @@ interface SeasonLeaderboardProps {
   limit?: number;
   showTitle?: boolean;
   seasonName?: string;
+  isFinished?: boolean;
 }
 
 const SeasonLeaderboard = ({ 
@@ -22,7 +23,8 @@ const SeasonLeaderboard = ({
   playerForms = {}, 
   limit, 
   showTitle = true,
-  seasonName
+  seasonName,
+  isFinished = false
 }: SeasonLeaderboardProps) => {
   // Sort stats by points (descending), then wins (descending)
   const sortedStats = [...stats].sort((a, b) => {
@@ -44,7 +46,7 @@ const SeasonLeaderboard = ({
       return (
         <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
           <Trophy className="h-3 w-3 mr-1 text-amber-500" />
-          Champion
+          {isFinished ? "Champion" : "Leader"}
         </Badge>
       );
     }

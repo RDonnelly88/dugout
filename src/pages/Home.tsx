@@ -124,12 +124,13 @@ const Home = () => {
             stats={seasonPlayerStats}
             limit={5}
             seasonName={currentSeason.name}
+            isFinished={currentSeason.isFinished}
           />
           
           <div className="flex justify-end">
             <Link to={`/seasons/${currentSeason.id}`}>
               <Button variant="outline">
-                View Full Leaderboard
+                View Full League Table
                 <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
             </Link>

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ChevronRight, Edit, Trash, Calendar, Trophy, Lock, Check } from "lucide-react";
@@ -195,6 +194,7 @@ const SeasonDetail = () => {
                 stats={playerStats}
                 playerForms={playerForms}
                 seasonName={season.name}
+                isFinished={season.isFinished}
               />
             </TabsContent>
             
