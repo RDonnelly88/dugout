@@ -1,4 +1,3 @@
-
 import { Player } from "@/types";
 import { Label } from "@/components/ui/label";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
@@ -48,8 +47,11 @@ const TeamSelection = ({
       <div className={`football-pitch ${teamLetter === 'A' ? 'team-a-pitch' : 'team-b-pitch'}`}>
         <div className="field-markings">
           <div className="center-circle"></div>
-          <div className="penalty-area"></div>
-          <div className="goal-area"></div>
+          <div className="halfway-line"></div>
+          <div className="penalty-area-top"></div>
+          <div className="penalty-area-bottom"></div>
+          <div className="goal-area-top"></div>
+          <div className="goal-area-bottom"></div>
         </div>
         
         <div className="text-center pitch-formation-label">
@@ -72,7 +74,6 @@ const TeamSelection = ({
                     key={player.id} 
                     player={player}
                     onClick={() => togglePlayer(teamLetter, player.id)}
-                    index={playerIndex - 1}
                     teamColor={teamLetter === 'A' ? 'red' : 'green'}
                   />
                 );
@@ -213,19 +214,15 @@ const PlayerCard = ({ player, onClick }: PlayerCardProps) => {
 interface PlayerFormationCardProps {
   player: Player;
   onClick: () => void;
-  index: number;
   teamColor: 'red' | 'green';
 }
 
-const PlayerFormationCard = ({ player, onClick, index, teamColor }: PlayerFormationCardProps) => {
+const PlayerFormationCard = ({ player, onClick, teamColor }: PlayerFormationCardProps) => {
   const jerseyColor = teamColor === 'red' ? 'bg-red-600' : 'bg-green-600';
   
   return (
     <div className="player-position-card" onClick={onClick}>
       <div className="player-jersey">
-        <div className={`player-number ${teamColor === 'red' ? 'bg-red-500' : 'bg-green-500'}`}>
-          {index + 1}
-        </div>
         <HoverCard>
           <HoverCardTrigger asChild>
             <div className={`jersey ${jerseyColor}`}>
@@ -253,7 +250,6 @@ const PlayerFormationCard = ({ player, onClick, index, teamColor }: PlayerFormat
               </Avatar>
               <div>
                 <h4 className="text-md font-semibold">{player.name}</h4>
-                <div className="text-xs opacity-70">{`Player #${index + 1}`}</div>
               </div>
             </div>
             <div className="mt-3 grid grid-cols-3 gap-1">

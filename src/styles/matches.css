@@ -72,7 +72,14 @@
     transform: translate(-50%, -50%);
   }
   
-  .penalty-area {
+  .halfway-line {
+    @apply absolute border-t border-white/20;
+    width: 100%;
+    top: 50%;
+    left: 0;
+  }
+  
+  .penalty-area-bottom {
     @apply absolute border-t border-r border-l border-white/20;
     width: 150px;
     height: 70px;
@@ -81,11 +88,29 @@
     transform: translateX(-50%);
   }
   
-  .goal-area {
+  .penalty-area-top {
+    @apply absolute border-b border-r border-l border-white/20;
+    width: 150px;
+    height: 70px;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .goal-area-bottom {
     @apply absolute border-t border-r border-l border-white/20;
     width: 60px;
     height: 30px;
     bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .goal-area-top {
+    @apply absolute border-b border-r border-l border-white/20;
+    width: 60px;
+    height: 30px;
+    top: 0;
     left: 50%;
     transform: translateX(-50%);
   }
@@ -144,19 +169,15 @@
   }
   
   .jersey {
-    @apply relative flex items-center justify-center rounded-full h-10 w-10 md:h-12 md:w-12 border-2 border-white/30 shadow-lg;
-  }
-  
-  .player-number {
-    @apply absolute -top-2 -right-2 w-5 h-5 rounded-full text-xs flex items-center justify-center font-bold text-white z-10;
+    @apply relative flex items-center justify-center rounded-full h-9 w-9 border-2 border-white/30 shadow-lg;
   }
   
   .player-avatar {
-    @apply h-8 w-8 md:h-10 md:w-10;
+    @apply h-7 w-7;
   }
   
   .player-name-label {
-    @apply mt-1 text-[10px] md:text-xs font-medium text-white text-center max-w-[50px] md:max-w-[60px] truncate;
+    @apply mt-1 text-[10px] font-medium text-white text-center max-w-[50px] truncate;
     text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
   }
   
