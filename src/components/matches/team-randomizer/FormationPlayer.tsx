@@ -11,11 +11,13 @@ interface FormationPlayerProps {
 }
 
 const FormationPlayer = ({ player, position, index }: FormationPlayerProps) => {
+  console.log(`Rendering FormationPlayer for ${player.name} at position ${position} with index ${index}`);
+  
   return (
-    <div key={player.id} className={`player-position ${position}`}>
+    <div className={`player-position ${position}`}>
       <div className="player-card-formation animate-pop-in" style={{ animationDelay: `${index * 0.15}s` }}>
         <div className="player-number">{index + 1}</div>
-        <Avatar className="h-full w-full">
+        <Avatar className="h-16 w-16 border-2 border-blue-500/30">
           {player.image ? (
             <AvatarImage src={player.image} alt={player.name} className="object-cover" />
           ) : (
@@ -24,7 +26,7 @@ const FormationPlayer = ({ player, position, index }: FormationPlayerProps) => {
             </AvatarFallback>
           )}
         </Avatar>
-        <div className="player-name">{player.name.toUpperCase()}</div>
+        <div className="player-name">{player.name}</div>
       </div>
     </div>
   );

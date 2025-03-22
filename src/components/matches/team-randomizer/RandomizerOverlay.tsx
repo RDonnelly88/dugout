@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 interface RandomizerOverlayProps {
   isRandomizing: boolean;
   revealComplete: boolean;
-  formationView: boolean;
+  formationView: boolean;  // This is always true now
   randomizingPlayers: Player[];
   teamAPlayers: Player[];
   teamBPlayers: Player[];
@@ -34,71 +34,16 @@ const RandomizerOverlay = ({
   teamSize,
   revealStage
 }: RandomizerOverlayProps) => {
+  console.log("RandomizerOverlay render:", {
+    isRandomizing,
+    revealComplete,
+    teamSize,
+    revealStage,
+    teamACount: teamAPlayers.length,
+    teamBCount: teamBPlayers.length
+  });
+  
   if (!isRandomizing) return null;
-
-  // Function to render simplified team player lists after the dramatic reveal
-  const renderSimpleTeams = () => {
-    // Determine the longer team to use as reference
-    const maxLength = Math.max(teamAPlayers.length, teamBPlayers.length);
-    const rows = [];
-    
-    for (let i = 0; i < maxLength; i++) {
-      rows.push(
-        <div key={`player-row-${i}`} className="grid grid-cols-2 gap-8 mb-4">
-          <div className="flex items-center justify-start">
-            {i < teamAPlayers.length && (
-              <div className="team-player-card animate-pop-in" style={{ animationDelay: `${i * 0.15}s` }}>
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10 border-2 border-red-500/30">
-                    {teamAPlayers[i].image ? (
-                      <AvatarImage src={teamAPlayers[i].image} alt={teamAPlayers[i].name} />
-                    ) : (
-                      <AvatarFallback className="bg-red-700 text-white">
-                        {teamAPlayers[i].name.charAt(0)}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
-                  <span className="text-lg font-medium text-red-100">{teamAPlayers[i].name}</span>
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center justify-start">
-            {i < teamBPlayers.length && (
-              <div className="team-player-card animate-pop-in" style={{ animationDelay: `${i * 0.15}s` }}>
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10 border-2 border-green-500/30">
-                    {teamBPlayers[i].image ? (
-                      <AvatarImage src={teamBPlayers[i].image} alt={teamBPlayers[i].name} />
-                    ) : (
-                      <AvatarFallback className="bg-green-700 text-white">
-                        {teamBPlayers[i].name.charAt(0)}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
-                  <span className="text-lg font-medium text-green-100">{teamBPlayers[i].name}</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
-    
-    return (
-      <div className="simple-teams-container mt-8">
-        <div className="grid grid-cols-2 gap-8 mb-6">
-          <div className="text-center">
-            <h3 className="text-xl font-bold text-red-300">TEAM A</h3>
-          </div>
-          <div className="text-center">
-            <h3 className="text-xl font-bold text-green-300">TEAM B</h3>
-          </div>
-        </div>
-        {rows}
-      </div>
-    );
-  };
 
   // Function to render the dramatic player spotlight reveal
   const renderSpotlightReveal = () => {
@@ -130,6 +75,7 @@ const RandomizerOverlay = ({
                 player={player}
                 index={idx}
                 revealed={true}
+                teamColor="A"
               />
             ))}
           </div>
@@ -143,6 +89,7 @@ const RandomizerOverlay = ({
                 player={player}
                 index={idx}
                 revealed={true}
+                teamColor="B"
               />
             ))}
           </div>
@@ -175,6 +122,19 @@ const RandomizerOverlay = ({
     );
   };
 
+  // When teams are complete, ALWAYS show formation view
+  const renderCompletedTeams = () => {
+    console.log("Rendering completed teams in formation view");
+    return (
+      <Formation 
+        teamA={teamAPlayers} 
+        teamB={teamBPlayers} 
+        positions={assignedPositions} 
+        teamSize={teamSize}
+      />
+    );
+  };
+
   return (
     <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center">
       <div className="max-w-4xl w-full mx-auto px-4">
@@ -188,15 +148,7 @@ const RandomizerOverlay = ({
         {revealStage === "shuffling" && renderShufflingPlayers()}
         {revealStage === "spotlight" && renderSpotlightReveal()}
         {revealStage === "assigning" && renderAssigningPlayers()}
-        {formationView && revealComplete && (
-          <Formation 
-            teamA={teamAPlayers} 
-            teamB={teamBPlayers} 
-            positions={assignedPositions} 
-            teamSize={teamSize}
-          />
-        )}
-        {!formationView && revealComplete && renderSimpleTeams()}
+        {revealComplete && renderCompletedTeams()}
       </div>
     </div>
   );

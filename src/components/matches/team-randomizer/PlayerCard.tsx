@@ -21,6 +21,8 @@ const PlayerCard = ({
   selected = false,
   teamColor
 }: PlayerCardProps) => {
+  console.log(`Rendering PlayerCard for ${player.name}, team ${teamColor}, revealed: ${revealed}`);
+  
   const borderColor = teamColor ? 
     (teamColor === 'A' ? 'border-red-500' : 'border-green-500') : 
     (selected ? 'border-yellow-400' : 'border-primary/50');

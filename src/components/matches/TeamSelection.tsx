@@ -48,41 +48,42 @@ const TeamSelection = ({
   // Debug logging
   useEffect(() => {
     console.log("TeamSelection render - Team A:", teamA);
-    console.log("TeamSelection render - Team B:", teamB);
     console.log("TeamSelection render - Team A players:", players.filter(p => teamA.includes(p.id)));
+    console.log("TeamSelection render - Team B:", teamB);
     console.log("TeamSelection render - Team B players:", players.filter(p => teamB.includes(p.id)));
   }, [teamA, teamB, players]);
 
   const getFormationName = (teamSize: number): string => {
     console.log("getFormationName called with teamSize:", teamSize);
-    if (teamSize <= 0) return "";
-    if (teamSize === 1) return "1";
-    if (teamSize === 2) return "1-1";
-    if (teamSize === 3) return "1-2";
-    if (teamSize === 4) return "1-2-1";
-    if (teamSize === 5) return "2-2-1";
-    if (teamSize === 6) return "2-3-1";
-    if (teamSize === 7) return "3-3-1";
-    if (teamSize === 8) return "3-3-2";
-    if (teamSize === 9) return "3-4-2";
-    if (teamSize === 10) return "4-4-2";
-    return "4-4-3";
+    const sizeKey = teamSize.toString() as keyof typeof formationConfigs;
+    const config = formationConfigs[sizeKey];
+    
+    if (config) {
+      console.log("Found formation config with name:", config.name);
+      return config.name;
+    }
+    
+    // Fallback formation names
+    if (teamSize <= 0) return "0-0-0";
+    if (teamSize === 1) return "1-0-0";
+    if (teamSize === 2) return "1-1-0";
+    return "Unknown";
   };
 
-  const getFormationConfig = (teamSize: number): { rows: number[] } => {
+  const getFormationConfig = (teamSize: number): { rows: number[], name: string } => {
     console.log("getFormationConfig called with teamSize:", teamSize);
     console.log("Available formation configs:", Object.keys(formationConfigs));
     
-    // If we don't have a specific config, return a default formation
+    // Get exact configuration or default to a fallback
     const sizeKey = teamSize.toString() as keyof typeof formationConfigs;
-    const config = formationConfigs[sizeKey] || { rows: [1] };
+    const config = formationConfigs[sizeKey] || formationConfigs["1"];
     
     console.log("Selected formation config:", config);
     return config;
   };
 
   const renderTeamFormation = (team: string[], teamName: string, teamLetter: 'A' | 'B') => {
-    console.log(`Rendering team formation for ${teamName}:`, team);
+    console.log(`Rendering team formation for ${teamName} with ${team.length} players`);
     
     if (team.length === 0) {
       console.log(`${teamName} has no players, rendering empty pitch`);
@@ -96,10 +97,10 @@ const TeamSelection = ({
     }
 
     const teamPlayers = players.filter(player => team.includes(player.id));
-    console.log(`${teamName} filtered players:`, teamPlayers);
+    console.log(`${teamName} filtered players:`, teamPlayers.map(p => p.name));
     
     const formationConfig = getFormationConfig(teamPlayers.length);
-    const formationName = getFormationName(teamPlayers.length);
+    const formationName = formationConfig.name; // Use the name from config directly
     const { rows } = formationConfig;
     
     console.log(`${teamName} formation name:`, formationName);
@@ -120,7 +121,7 @@ const TeamSelection = ({
         
         <div className="text-center pitch-formation-label">
           <Badge variant="outline" className="px-4 py-1 text-sm font-medium bg-blue-500/10 text-primary border-blue-400/30">
-            {formationName} Formation
+            {formationName}
           </Badge>
         </div>
         
@@ -133,13 +134,14 @@ const TeamSelection = ({
                 className={`formation-row row-${rowIndex} ${rows.length === 3 ? 'three-row-formation' : rows.length === 4 ? 'four-row-formation' : 'five-row-formation'}`}
               >
                 {Array(playersInRow).fill(0).map((_, posIndex) => {
-                  console.log(`Checking player at index ${playerIndex} for row ${rowIndex}, position ${posIndex}`);
                   if (playerIndex >= teamPlayers.length) {
-                    console.log(`No player available for this position, skipping`);
+                    console.log(`No player available for row ${rowIndex}, position ${posIndex}`);
                     return null;
                   }
+                  
                   const player = teamPlayers[playerIndex++];
-                  console.log(`Rendering player at row ${rowIndex}, position ${posIndex}:`, player.name);
+                  console.log(`Rendering player at row ${rowIndex}, position ${posIndex}: ${player.name}`);
+                  
                   const playerStats = seasonStats.find(s => s.playerId === player.id);
                   return (
                     <PlayerFormationCard 
@@ -148,6 +150,8 @@ const TeamSelection = ({
                       seasonStats={playerStats}
                       onClick={() => togglePlayer(teamLetter, player.id)}
                       teamColor={teamLetter === 'A' ? 'red' : 'green'}
+                      position={rowIndex === 0 ? 'goalkeeper' : rowIndex === 1 ? 'defender' : rowIndex === 2 ? 'midfielder' : 'forward'}
+                      index={playerIndex - 1}
                     />
                   );
                 })}
@@ -164,7 +168,7 @@ const TeamSelection = ({
   };
 
   const renderAvailablePlayers = () => {
-    console.log("Rendering available players:", availablePlayers);
+    console.log("Rendering available players:", availablePlayers.map(p => p.name));
     
     if (availablePlayers.length === 0) {
       return (
@@ -334,12 +338,15 @@ interface PlayerFormationCardProps {
   seasonStats?: { playerId: string; wins: number; losses: number; draws: number; played: number; points: number; };
   onClick: () => void;
   teamColor: 'red' | 'green';
+  position: 'goalkeeper' | 'defender' | 'midfielder' | 'forward';
+  index: number;
 }
 
-const PlayerFormationCard = ({ player, seasonStats, onClick, teamColor }: PlayerFormationCardProps) => {
-  console.log(`Rendering PlayerFormationCard for ${player.name} with teamColor: ${teamColor}`);
+const PlayerFormationCard = ({ player, seasonStats, onClick, teamColor, position, index }: PlayerFormationCardProps) => {
+  console.log(`Rendering PlayerFormationCard for ${player.name} with teamColor: ${teamColor}, position: ${position}`);
   
-  const jerseyColor = teamColor === 'red' ? 'bg-red-600' : 'bg-green-600';
+  const jerseyColorClass = teamColor === 'red' ? 'bg-red-600' : 'bg-green-600';
+  const teamColorClass = teamColor === 'red' ? 'team-a-player' : 'team-b-player';
   
   const winPercentage = player.stats.played > 0 
     ? Math.round((player.stats.won / player.stats.played) * 100) 
@@ -349,21 +356,22 @@ const PlayerFormationCard = ({ player, seasonStats, onClick, teamColor }: Player
     Math.round((seasonStats.wins / seasonStats.played) * 100) : 0;
   
   return (
-    <div className="player-position-card" onClick={onClick}>
+    <div className={`player-position-card ${position} ${teamColorClass}`} onClick={onClick}>
       <div className="player-jersey">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className={`jersey ${jerseyColor}`}>
+              <div className={`jersey ${jerseyColorClass}`}>
                 <Avatar className="player-avatar">
                   {player.image ? (
                     <AvatarImage src={player.image} alt={player.name} />
                   ) : (
-                    <AvatarFallback className={jerseyColor}>
+                    <AvatarFallback className={jerseyColorClass}>
                       {player.name.charAt(0)}
                     </AvatarFallback>
                   )}
                 </Avatar>
+                <div className="player-number">{index + 1}</div>
               </div>
             </TooltipTrigger>
             <TooltipContent>
@@ -372,9 +380,11 @@ const PlayerFormationCard = ({ player, seasonStats, onClick, teamColor }: Player
           </Tooltip>
         </TooltipProvider>
         
+        <div className="player-name-label">{player.name}</div>
+        
         <HoverCard>
           <HoverCardTrigger asChild>
-            <div className="player-name-label cursor-pointer">{player.name}</div>
+            <div className="player-stats-trigger"></div>
           </HoverCardTrigger>
           <HoverCardContent 
             className="w-64 player-compact-card" 
@@ -385,7 +395,7 @@ const PlayerFormationCard = ({ player, seasonStats, onClick, teamColor }: Player
                 {player.image ? (
                   <AvatarImage src={player.image} alt={player.name} />
                 ) : (
-                  <AvatarFallback className={jerseyColor}>
+                  <AvatarFallback className={jerseyColorClass}>
                     {player.name.charAt(0)}
                   </AvatarFallback>
                 )}

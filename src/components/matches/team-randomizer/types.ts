@@ -16,7 +16,11 @@ export type PositionType =
   | 'forward-center'
   | 'forward-right'
   | 'line-player'
-  | 'formation-player'; // Added for formation display
+  | 'formation-player'
+  | 'goalkeeper'
+  | 'defender'
+  | 'midfielder'
+  | 'forward';
 
 // Formation configuration
 export interface FormationConfig {

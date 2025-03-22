@@ -33,17 +33,23 @@ const CreateMatch = () => {
   
   // Initialize selected players with all players
   useEffect(() => {
-    console.log("CreateMatch: Setting initial selected players");
+    console.log("CreateMatch: Setting initial selected players from", players.length, "players");
     setSelectedPlayers(players.map(player => player.id));
   }, [players]);
 
   // Handle player selection from the TeamRandomizer
   const handlePlayerSelectionChange = (playerIds: string[]) => {
-    console.log("CreateMatch: Player selection changed:", playerIds);
+    console.log("CreateMatch: Player selection changed to", playerIds.length, "players");
     setSelectedPlayers(playerIds);
   };
 
-  console.log("CreateMatch: Rendering with teamA:", teamA, "teamB:", teamB, "selectedPlayers:", selectedPlayers);
+  // Debugging log for teams
+  useEffect(() => {
+    console.log("CreateMatch: Team A updated:", teamA);
+    console.log("CreateMatch: Team A players:", players.filter(p => teamA.includes(p.id)).map(p => p.name));
+    console.log("CreateMatch: Team B updated:", teamB);
+    console.log("CreateMatch: Team B players:", players.filter(p => teamB.includes(p.id)).map(p => p.name));
+  }, [teamA, teamB, players]);
 
   return (
     <div className="page-container animate-slide-up">
