@@ -34,28 +34,34 @@ const CreateMatch = () => {
       <div className="page-header">
         <h1 className="page-title">Create Match</h1>
         <p className="mt-2 text-muted-foreground">
-          Set up your next match with customizable team sizes
+          Set up your next match with customizable team formations
         </p>
       </div>
 
       <Card className="glass-card">
         <CardContent className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <TeamRandomizer 
-              players={players} 
-              onRandomize={randomizeTeams}
-              disabled={createMatchMutation.isPending}
-            />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="team-randomizer-container">
+              <TeamRandomizer 
+                players={players} 
+                onRandomize={randomizeTeams}
+                disabled={createMatchMutation.isPending}
+              />
+            </div>
             
-            <TeamSelection 
-              teamA={teamA}
-              teamB={teamB}
-              players={players}
-              togglePlayer={togglePlayer}
-              availablePlayers={availablePlayers}
-            />
+            <div className="team-selection-container">
+              <TeamSelection 
+                teamA={teamA}
+                teamB={teamB}
+                players={players}
+                togglePlayer={togglePlayer}
+                availablePlayers={availablePlayers}
+              />
+            </div>
             
-            <DatePicker date={date} setDate={setDate} />
+            <div className="date-picker-container bg-black/10 p-4 rounded-lg">
+              <DatePicker date={date} setDate={setDate} />
+            </div>
 
             <Button 
               type="submit" 

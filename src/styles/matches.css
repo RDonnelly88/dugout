@@ -88,6 +88,16 @@
     @apply mt-2 text-xs font-semibold text-center text-white max-w-16 truncate;
   }
   
+  /* Team selection container */
+  .team-selection-container {
+    @apply bg-blue-950/30 rounded-xl p-6 backdrop-blur-sm;
+  }
+  
+  /* Available players section */
+  .available-players {
+    @apply mt-6 p-4 bg-black/20 rounded-xl;
+  }
+  
   /* Animation for player cards */
   .animate-pop-in {
     animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
@@ -106,5 +116,14 @@
       opacity: 1;
       transform: scale(1);
     }
+  }
+  
+  /* Hover effect for selectable players */
+  .hover-scale {
+    @apply transition-all duration-200;
+  }
+  
+  .hover-scale:hover {
+    @apply transform scale-110;
   }
 }
