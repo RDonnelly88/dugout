@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { getSeasonPlayerStats } from "@/lib/db";
@@ -44,14 +45,14 @@ export const usePlayerRank = (
       // Filter to include only players who have played at least one match
       const activePlayers = seasonPlayerStats.filter(s => s.played > 0);
       
-      // Sort by points (descending), then by games played (ascending if points are equal), then wins (descending)
+      // Sort by points (descending), then by games played (descending), then wins (descending)
       const sortedStats = [...activePlayers].sort((a, b) => {
         if (b.points !== a.points) {
           return b.points - a.points;
         }
-        // Prioritize fewer games played when points are equal
+        // Prioritize MORE games played when points are equal
         if (a.played !== b.played) {
-          return a.played - b.played;
+          return b.played - a.played;
         }
         return b.wins - a.wins;
       });

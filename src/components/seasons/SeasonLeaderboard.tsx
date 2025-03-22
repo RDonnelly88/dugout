@@ -34,14 +34,14 @@ const SeasonLeaderboard = ({
   // Filter out players with zero matches played
   const activeStats = stats.filter(player => player.played > 0);
   
-  // Sort stats by points (descending), then games played (ascending if points are equal), then wins (descending)
+  // Sort stats by points (descending), then games played (descending if points are equal), then wins (descending)
   const sortedStats = [...activeStats].sort((a, b) => {
     if (b.points !== a.points) {
       return b.points - a.points;
     }
-    // Prioritize fewer games played when points are equal
+    // Prioritize MORE games played when points are equal
     if (a.played !== b.played) {
-      return a.played - b.played;
+      return b.played - a.played;
     }
     return b.wins - a.wins;
   });

@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -156,13 +157,13 @@ export const usePlayerPositionHistory = (seasonId: string | null) => {
           const sortedPlayers = Array.from(playerStats.entries())
             .filter(([_, stats]) => stats.played > 0) // Only include players who have played
             .sort(([id1, statsA], [id2, statsB]) => {
-              // Sort by points (descending), then games played (ascending if points are equal), then wins (descending)
+              // Sort by points (descending), then games played (descending if points are equal), then wins (descending)
               if (statsB.points !== statsA.points) {
                 return statsB.points - statsA.points;
               }
-              // Prioritize fewer games played when points are equal
+              // Prioritize MORE games played when points are equal
               if (statsA.played !== statsB.played) {
-                return statsA.played - statsB.played;
+                return statsB.played - statsA.played;
               }
               return statsB.wins - statsA.wins;
             });
