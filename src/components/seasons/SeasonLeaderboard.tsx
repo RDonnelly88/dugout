@@ -83,7 +83,7 @@ const SeasonLeaderboard = ({
   }
   
   return (
-    <Card>
+    <Card className="bg-gray-900 border-gray-800">
       {showTitle && (
         <CardHeader>
           <CardTitle>{seasonName ? `${seasonName} League Table` : "League Table"}</CardTitle>
@@ -112,7 +112,7 @@ const SeasonLeaderboard = ({
                 <TableCell className="font-medium">{index + 1}</TableCell>
                 <TableCell>
                   <Link to={`/players/${stat.playerId}`} className="flex items-center space-x-2 hover:underline">
-                    <Avatar className="h-8 w-8">
+                    <Avatar className="h-8 w-8 bg-gray-800">
                       <AvatarImage src={stat.playerImage} alt={stat.playerName} />
                       <AvatarFallback>{stat.playerName.charAt(0)}</AvatarFallback>
                     </Avatar>

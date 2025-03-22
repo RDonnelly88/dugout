@@ -1,10 +1,120 @@
 
-/* Import base styles and theme */
-@import './styles/base.css';
-@import './styles/theme.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* Import components and UI elements */
-@import './styles/components.css';
-@import './styles/cards.css';
-@import './styles/matches.css';
-@import './styles/animations.css';
+@layer base {
+  :root {
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+
+    --muted: 223 47% 11%;
+    --muted-foreground: 215 16% 56%;
+
+    --popover: 224 71% 4%;
+    --popover-foreground: 215 20% 65%;
+
+    --card: 224 71% 4%;
+    --card-foreground: 213 31% 91%;
+
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222 47% 1%;
+
+    --secondary: 222 47% 11%;
+    --secondary-foreground: 210 40% 98%;
+
+    --accent: 216 34% 17%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --sidebar: 223 47% 11%;
+    --sidebar-foreground: 213 31% 91%;
+    --sidebar-border: 224 37% 16%;
+    --sidebar-accent: 224 53% 16%;
+    --sidebar-accent-foreground: 213 31% 91%;
+    --sidebar-ring: 224 53% 16%;
+
+    --ring: 216 34% 17%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  .page-container {
+    @apply w-full max-w-[1200px] mx-auto px-4 py-6 md:px-6 md:py-8;
+  }
+  
+  .page-header {
+    @apply mb-8;
+  }
+  
+  .page-title {
+    @apply text-2xl font-bold tracking-tight;
+  }
+  
+  .stat-item {
+    @apply flex flex-col items-center justify-center;
+  }
+  
+  .shimmer {
+    @apply relative overflow-hidden;
+  }
+  
+  .shimmer::after {
+    @apply absolute inset-0;
+    content: "";
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.05) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    animation: shimmer 1.5s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+  
+  .hover-scale {
+    @apply transition-transform duration-200;
+  }
+  
+  .hover-scale:hover {
+    @apply transform scale-[1.02];
+  }
+  
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+  }
+  
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
