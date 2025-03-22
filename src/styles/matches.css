@@ -47,8 +47,8 @@
   
   /* Player hover card styling */
   .player-hover-card {
-    @apply bg-blue-950/95 backdrop-blur-lg border border-blue-500/30 shadow-xl;
-    background-color: #1A1F2C; /* Dark purple background for better opacity */
+    @apply border border-blue-500/30 shadow-xl;
+    background-color: #0F1420; /* Very dark blue/almost black background - completely solid */
   }
   
   /* Football pitch styling */
@@ -190,10 +190,12 @@
   /* Player stats styling */
   .player-stats-card {
     @apply p-3 text-xs;
+    background-color: #0F1420; /* Match the hover card background */
   }
   
   .stat-box {
-    @apply bg-blue-900/30 rounded p-1 text-center border border-blue-500/20 text-[11px];
+    @apply rounded p-1 text-center border border-blue-500/20 text-[11px];
+    background-color: #1A2642; /* Slightly lighter than the card background */
   }
   
   .stat-label {
@@ -201,11 +203,13 @@
   }
   
   .win-stat {
-    @apply bg-green-900/30 border-green-500/20;
+    background-color: rgba(6, 78, 59, 0.8); /* More solid green */
+    border-color: rgba(16, 185, 129, 0.3);
   }
   
   .loss-stat {
-    @apply bg-red-900/30 border-red-500/20;
+    background-color: rgba(127, 29, 29, 0.8); /* More solid red */
+    border-color: rgba(239, 68, 68, 0.3);
   }
   
   /* Team selection container */
