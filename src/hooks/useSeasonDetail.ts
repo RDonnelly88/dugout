@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
@@ -39,17 +39,24 @@ export const useSeasonDetail = () => {
   const { data: playerStats = [], isLoading: isLoadingStats } = useQuery({
     queryKey: ['seasonPlayerStats', id],
     queryFn: () => getSeasonPlayerStats(id!),
-    enabled: !!id
+    enabled: !!id,
+    staleTime: 0, // Don't cache results to ensure fresh data
+    refetchOnWindowFocus: true // Refetch when window gets focus
   });
+
+  console.log("Season player stats:", playerStats);
 
   // Get matches for this season
   const { data: allMatches = [], isLoading: isLoadingMatches } = useQuery({
     queryKey: ['matches'],
-    queryFn: getMatches
+    queryFn: getMatches,
+    staleTime: 0 // Don't cache results
   });
 
   // Filter matches for this season
   const seasonMatches = allMatches.filter(match => match.seasonId === id);
+  
+  console.log("Season matches:", seasonMatches);
 
   // Get form for each player
   const [playerForms, setPlayerForms] = useState<Record<string, PlayerFormResult[]>>({});
@@ -68,7 +75,8 @@ export const useSeasonDetail = () => {
       setPlayerForms(forms);
       return forms;
     },
-    enabled: !!id && playerStats.length > 0
+    enabled: !!id && playerStats.length > 0,
+    staleTime: 0 // Don't cache results
   });
 
   // Update season mutation
@@ -133,6 +141,14 @@ export const useSeasonDetail = () => {
     
     deleteSeasonMutation.mutate(season.id);
   };
+
+  // Force a refetch of player stats when the component mounts
+  useEffect(() => {
+    if (id) {
+      queryClient.invalidateQueries({ queryKey: ['seasonPlayerStats', id] });
+      queryClient.invalidateQueries({ queryKey: ['playerForms', id] });
+    }
+  }, [id, queryClient]);
 
   return {
     id,

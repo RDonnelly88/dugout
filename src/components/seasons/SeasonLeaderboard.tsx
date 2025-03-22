@@ -24,8 +24,20 @@ const SeasonLeaderboard = ({
   showTitle = true,
   seasonName
 }: SeasonLeaderboardProps) => {
+  // Sort stats by points (descending), then wins (descending)
+  const sortedStats = [...stats].sort((a, b) => {
+    if (b.points !== a.points) {
+      return b.points - a.points;
+    }
+    return b.wins - a.wins;
+  });
+  
   // Limit the number of players shown if requested
-  const displayStats = limit ? stats.slice(0, limit) : stats;
+  const displayStats = limit ? sortedStats.slice(0, limit) : sortedStats;
+  
+  console.log("SeasonLeaderboard - stats:", stats);
+  console.log("SeasonLeaderboard - sortedStats:", sortedStats);
+  console.log("SeasonLeaderboard - displayStats:", displayStats);
   
   const getRankBadge = (index: number) => {
     if (index === 0) {
