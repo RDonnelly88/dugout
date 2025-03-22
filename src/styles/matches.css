@@ -1,3 +1,4 @@
+
 @layer components {
   /* Team randomizer styling */
   .team-randomizer-container {
@@ -53,6 +54,25 @@
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 9999;
+  }
+  
+  /* Compact player card */
+  .player-compact-card {
+    @apply border border-blue-500/30 shadow-lg p-3;
+    background-color: #0F1420;
+    max-width: 280px;
+  }
+  
+  .stat-section {
+    @apply bg-blue-950/30 rounded-md p-2 border border-blue-500/20;
+  }
+  
+  .stat-value {
+    @apply text-sm font-semibold block;
+  }
+  
+  .stat-label {
+    @apply text-[9px] opacity-70 mt-0.5 block;
   }
   
   /* Football pitch styling */
@@ -207,10 +227,6 @@
   .stat-box {
     @apply rounded p-1 text-center border border-blue-500/20 text-[11px];
     background-color: #1A2642;
-  }
-  
-  .stat-label {
-    @apply text-[9px] opacity-70 mt-0.5;
   }
   
   .win-stat {
