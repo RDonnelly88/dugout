@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { formationConfigs } from "./team-randomizer/constants";
 import { Shield, Trophy, Users, Percent } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
 
@@ -45,7 +45,16 @@ const TeamSelection = ({
     );
   }, [players, selectedPlayers, teamA, teamB]);
   
+  // Debug logging
+  useEffect(() => {
+    console.log("TeamSelection render - Team A:", teamA);
+    console.log("TeamSelection render - Team B:", teamB);
+    console.log("TeamSelection render - Team A players:", players.filter(p => teamA.includes(p.id)));
+    console.log("TeamSelection render - Team B players:", players.filter(p => teamB.includes(p.id)));
+  }, [teamA, teamB, players]);
+
   const getFormationName = (teamSize: number): string => {
+    console.log("getFormationName called with teamSize:", teamSize);
     if (teamSize <= 0) return "";
     if (teamSize === 1) return "1";
     if (teamSize === 2) return "1-1";
@@ -61,24 +70,40 @@ const TeamSelection = ({
   };
 
   const getFormationConfig = (teamSize: number): { rows: number[] } => {
+    console.log("getFormationConfig called with teamSize:", teamSize);
+    console.log("Available formation configs:", Object.keys(formationConfigs));
+    
     // If we don't have a specific config, return a default formation
     const sizeKey = teamSize.toString() as keyof typeof formationConfigs;
-    return formationConfigs[sizeKey] || { rows: [1] };
+    const config = formationConfigs[sizeKey] || { rows: [1] };
+    
+    console.log("Selected formation config:", config);
+    return config;
   };
 
   const renderTeamFormation = (team: string[], teamName: string, teamLetter: 'A' | 'B') => {
-    if (team.length === 0) return (
-      <div className="team-empty-pitch flex flex-col items-center justify-center text-muted-foreground">
-        <Shield className="h-12 w-12 mb-2 opacity-30" />
-        <p className="text-lg font-medium">No players selected</p>
-        <p className="text-sm mt-1">Add players to build your {teamName}</p>
-      </div>
-    );
+    console.log(`Rendering team formation for ${teamName}:`, team);
+    
+    if (team.length === 0) {
+      console.log(`${teamName} has no players, rendering empty pitch`);
+      return (
+        <div className="team-empty-pitch flex flex-col items-center justify-center text-muted-foreground">
+          <Shield className="h-12 w-12 mb-2 opacity-30" />
+          <p className="text-lg font-medium">No players selected</p>
+          <p className="text-sm mt-1">Add players to build your {teamName}</p>
+        </div>
+      );
+    }
 
     const teamPlayers = players.filter(player => team.includes(player.id));
+    console.log(`${teamName} filtered players:`, teamPlayers);
+    
     const formationConfig = getFormationConfig(teamPlayers.length);
     const formationName = getFormationName(teamPlayers.length);
     const { rows } = formationConfig;
+    
+    console.log(`${teamName} formation name:`, formationName);
+    console.log(`${teamName} formation rows:`, rows);
     
     let playerIndex = 0;
     
@@ -100,27 +125,35 @@ const TeamSelection = ({
         </div>
         
         <div className="formation-rows">
-          {rows.map((playersInRow, rowIndex) => (
-            <div 
-              key={`${teamName}-row-${rowIndex}`} 
-              className={`formation-row row-${rowIndex} ${rows.length === 3 ? 'three-row-formation' : rows.length === 4 ? 'four-row-formation' : 'five-row-formation'}`}
-            >
-              {Array(playersInRow).fill(0).map((_, posIndex) => {
-                if (playerIndex >= teamPlayers.length) return null;
-                const player = teamPlayers[playerIndex++];
-                const playerStats = seasonStats.find(s => s.playerId === player.id);
-                return (
-                  <PlayerFormationCard 
-                    key={`${player.id}-${rowIndex}-${posIndex}`} 
-                    player={player}
-                    seasonStats={playerStats}
-                    onClick={() => togglePlayer(teamLetter, player.id)}
-                    teamColor={teamLetter === 'A' ? 'red' : 'green'}
-                  />
-                );
-              })}
-            </div>
-          ))}
+          {rows.map((playersInRow, rowIndex) => {
+            console.log(`Rendering row ${rowIndex} with ${playersInRow} players`);
+            return (
+              <div 
+                key={`${teamName}-row-${rowIndex}`} 
+                className={`formation-row row-${rowIndex} ${rows.length === 3 ? 'three-row-formation' : rows.length === 4 ? 'four-row-formation' : 'five-row-formation'}`}
+              >
+                {Array(playersInRow).fill(0).map((_, posIndex) => {
+                  console.log(`Checking player at index ${playerIndex} for row ${rowIndex}, position ${posIndex}`);
+                  if (playerIndex >= teamPlayers.length) {
+                    console.log(`No player available for this position, skipping`);
+                    return null;
+                  }
+                  const player = teamPlayers[playerIndex++];
+                  console.log(`Rendering player at row ${rowIndex}, position ${posIndex}:`, player.name);
+                  const playerStats = seasonStats.find(s => s.playerId === player.id);
+                  return (
+                    <PlayerFormationCard 
+                      key={`${player.id}-${rowIndex}-${posIndex}`} 
+                      player={player}
+                      seasonStats={playerStats}
+                      onClick={() => togglePlayer(teamLetter, player.id)}
+                      teamColor={teamLetter === 'A' ? 'red' : 'green'}
+                    />
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
         
         <div className="team-name-overlay">
@@ -131,6 +164,8 @@ const TeamSelection = ({
   };
 
   const renderAvailablePlayers = () => {
+    console.log("Rendering available players:", availablePlayers);
+    
     if (availablePlayers.length === 0) {
       return (
         <div className="text-center p-8 text-muted-foreground">
@@ -302,6 +337,8 @@ interface PlayerFormationCardProps {
 }
 
 const PlayerFormationCard = ({ player, seasonStats, onClick, teamColor }: PlayerFormationCardProps) => {
+  console.log(`Rendering PlayerFormationCard for ${player.name} with teamColor: ${teamColor}`);
+  
   const jerseyColor = teamColor === 'red' ? 'bg-red-600' : 'bg-green-600';
   
   const winPercentage = player.stats.played > 0 
