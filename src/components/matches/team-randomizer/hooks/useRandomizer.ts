@@ -47,27 +47,7 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     return shuffled;
   };
   
-  // Helper function to play sound with fallback
-  const playSound = async (soundPath: string, volume: number = 0.5, loop: boolean = false) => {
-    try {
-      const sound = new Audio(soundPath);
-      sound.volume = volume;
-      sound.loop = loop;
-      const playPromise = sound.play();
-      
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.log(`Sound playback failed: ${soundPath}`, error);
-          // Don't show error toasts to user for sound issues
-        });
-      }
-      return sound;
-    } catch (error) {
-      console.log(`Sound error: ${soundPath}`, error);
-      return null;
-    }
-  };
-
+  // Simplified version that doesn't depend on sound files
   const performRandomization = async (players: Player[]) => {
     if (players.length === 0) return;
     
@@ -76,10 +56,9 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     setRevealStage("flashing");
     setRevealIndex(-1);
     
-    // Try to play background sound
-    const bgSound = await playSound("/randomizer-sound.mp3", 0.3, true);
-    
-    // Dramatic flashing animation
+    // STAGE 1: FLASHING - Dramatic flashing animation
+    console.log("Starting flashing stage");
+    const flashDuration = 3000; // 3 seconds
     const flashInterval = setInterval(() => {
       const availablePlayerIds = selectedPlayers;
       const randomPlayerIds = availablePlayerIds
@@ -89,15 +68,15 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
       setFlashingPlayers(randomPlayerIds);
     }, 200);
     
-    // Flashing animation for dramatic effect
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    // Wait for flashing animation to complete
+    await new Promise(resolve => setTimeout(resolve, flashDuration));
     clearInterval(flashInterval);
     
-    // LOOT BOX REVEAL: Dramatic Spotlight Phase
+    // STAGE 2: SPOTLIGHT - Dramatic Spotlight Phase
     console.log("Moving to spotlight stage");
     setRevealStage("spotlight");
     
-    // Get the player list ready
+    // Prepare the randomized teams
     const playersForRandomization = players;
     const shuffledPlayers = shufflePlayers(playersForRandomization);
     
@@ -113,26 +92,21 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     const finalTeamA = shuffledPlayers.slice(0, teamASize);
     const finalTeamB = shuffledPlayers.slice(teamASize, teamASize * 2);
     
-    // Show spotlight for several star players with dramatic pauses
+    // Show spotlight for several star players
     const starPlayers = [...shuffledPlayers].sort(() => Math.random() - 0.5).slice(0, 3);
     
     for (const player of starPlayers) {
       setSpotlightPlayer(player);
-      // Add dramatic sound effect for each spotlight player
-      await playSound("/spotlight-sound.mp3", 0.5);
       await new Promise(resolve => setTimeout(resolve, 1500));
     }
     
     setSpotlightPlayer(null);
     
-    // Now start the team reveal phase
+    // STAGE 3: REVEALING - Team Reveal Phase
     console.log("Moving to revealing stage");
     setRevealStage("revealing");
     setTeamAPlayers(finalTeamA);
     setTeamBPlayers(finalTeamB);
-    
-    // Try to play a drum roll or suspense sound
-    await playSound("/drumroll-sound.mp3", 0.5);
     
     // Brief pause before starting the reveal
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -141,20 +115,12 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     const maxRevealCount = Math.max(finalTeamA.length, finalTeamB.length);
     for (let i = 0; i < maxRevealCount; i++) {
       setRevealIndex(i);
-      // Play a reveal sound for each player card
-      await playSound("/card-reveal-sound.mp3", 0.3);
       await new Promise(resolve => setTimeout(resolve, 300));
     }
     
-    // Final celebration stage
+    // STAGE 4: CELEBRATION - Final celebration stage
     console.log("Moving to celebration stage");
     setRevealStage("celebration");
-    
-    // Stop background sounds and play victory fanfare
-    if (bgSound) {
-      bgSound.pause();
-    }
-    await playSound("/fanfare-sound.mp3", 0.5);
     
     // Keep the final result visible for celebration moment
     await new Promise(resolve => setTimeout(resolve, 2000));

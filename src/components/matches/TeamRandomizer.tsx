@@ -65,16 +65,23 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
   const canRandomize = availablePlayers.length > 0;
   const playerCount = availablePlayers.length;
   
+  // This function opens the modal and starts the randomization process
   const handleRandomizeClick = () => {
     setShowRandomizerModal(true);
-    performRandomization(availablePlayers);
+    
+    // Slight delay to ensure modal is visible before animation starts
+    setTimeout(() => {
+      performRandomization(availablePlayers);
+    }, 100);
   };
   
-  // Close the modal when randomization completes
+  // Manually close the modal with delay when randomization completes
   useEffect(() => {
     if (!isRandomizing && showRandomizerModal && revealStage !== "idle") {
-      // Add a small delay before closing the modal to show the final teams
+      console.log("Animation completed, closing modal soon...");
+      // Add a longer delay before closing the modal to show the final teams
       const timer = setTimeout(() => {
+        console.log("Closing randomizer modal");
         setShowRandomizerModal(false);
       }, 3000);
       
@@ -255,12 +262,15 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
       </div>
       
       {/* Loot Box Style Randomizer Modal Dialog */}
-      <Dialog open={showRandomizerModal} onOpenChange={(open) => {
-        // Only allow closing if not in the middle of randomization
-        if (!isRandomizing || !open) {
-          setShowRandomizerModal(open);
-        }
-      }}>
+      <Dialog 
+        open={showRandomizerModal} 
+        onOpenChange={(open) => {
+          // Only allow closing if not in the middle of randomization
+          if (!isRandomizing || !open) {
+            setShowRandomizerModal(open);
+          }
+        }}
+      >
         <DialogPortal>
           <DialogOverlay className="bg-black/95 backdrop-blur-sm" />
           <DialogContent className="sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%] border-blue-500/30 neo-glassmorphism bg-black/90 p-0 overflow-hidden">
@@ -287,7 +297,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
                 {revealStage === 'spotlight' && <p>Star players identified!</p>}
                 {revealStage === 'revealing' && <p>Generating balanced teams...</p>}
                 {revealStage === 'celebration' && <p>Team creation complete!</p>}
-                {!isRandomizing && <p>Teams have been saved! Returning to match creation...</p>}
+                {!isRandomizing && revealStage !== "idle" && <p>Teams have been saved! Returning to match creation...</p>}
               </div>
             </div>
           </DialogContent>
