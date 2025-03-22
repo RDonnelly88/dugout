@@ -49,7 +49,7 @@ const Layout = () => {
           <ScrollArea className="h-screen">
             <div className="py-4">
               <div className="flex items-center h-12 px-4 mb-4">
-                <h2 className="text-lg font-semibold">League Manager</h2>
+                <h2 className="text-lg font-semibold">Football Tracker</h2>
               </div>
               
               {/* Main navigation */}
