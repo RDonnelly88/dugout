@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Calendar, Trophy, Users, LayoutGrid, Medal } from "lucide-react";
@@ -29,11 +28,44 @@ const SeasonCard = ({
   const startDate = new Date(season.startDate).toLocaleDateString();
   const endDate = season.endDate ? new Date(season.endDate).toLocaleDateString() : "Ongoing";
   
-  // Sort champions by rank or points if available
+  // Calculate consistent golf-style rankings
+  const playerRanks: Record<string, number> = {};
+  let currentRank = 1;
+  
+  // Sort champions by points, games played, and wins
   const sortedChampions = [...champions].sort((a, b) => {
-    if (a.rank && b.rank) return a.rank - b.rank;
-    return b.points - a.points;
+    if (b.points !== a.points) {
+      return b.points - a.points;
+    }
+    // Prioritize MORE games played when points are equal
+    if (a.played !== b.played) {
+      return b.played - a.played;
+    }
+    return b.wins - a.wins;
   });
+  
+  // Calculate golf-style ranks (players with identical stats share the same rank)
+  if (sortedChampions.length > 0) {
+    playerRanks[sortedChampions[0].playerId] = currentRank;
+  }
+  
+  for (let i = 1; i < sortedChampions.length; i++) {
+    const prevPlayer = sortedChampions[i - 1];
+    const currentPlayer = sortedChampions[i];
+    
+    // If current player has same stats as previous, they get the same rank
+    if (
+      prevPlayer.points === currentPlayer.points && 
+      prevPlayer.played === currentPlayer.played && 
+      prevPlayer.wins === currentPlayer.wins
+    ) {
+      playerRanks[currentPlayer.playerId] = playerRanks[prevPlayer.playerId];
+    } else {
+      // Otherwise, current rank is i+1 (position in the sorted array)
+      currentRank = i + 1;
+      playerRanks[currentPlayer.playerId] = currentRank;
+    }
+  }
   
   // Take top 5 for mini leaderboard
   const top5Players = sortedChampions.slice(0, 5);
@@ -127,14 +159,14 @@ const SeasonCard = ({
                     {top5Players.map((player, index) => (
                       <TableRow key={player.playerId}>
                         <TableCell className="py-1">
-                          {index === 0 ? (
+                          {playerRanks[player.playerId] === 1 ? (
                             <Trophy className="h-4 w-4 text-amber-400" />
-                          ) : index === 1 ? (
+                          ) : playerRanks[player.playerId] === 2 ? (
                             <Medal className="h-4 w-4 text-slate-400" />
-                          ) : index === 2 ? (
+                          ) : playerRanks[player.playerId] === 3 ? (
                             <Medal className="h-4 w-4 text-amber-700" />
                           ) : (
-                            <span>{index + 1}</span>
+                            <span>{playerRanks[player.playerId]}</span>
                           )}
                         </TableCell>
                         <TableCell className="py-1">

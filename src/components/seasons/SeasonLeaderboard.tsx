@@ -9,6 +9,7 @@ import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import { SeasonPlayerStats, PlayerFormResult } from "@/types";
 import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
 import { useQueryClient } from "@tanstack/react-query";
+import { calculatePlayerRanks, sortPlayersByRank } from "@/lib/ranking-utils";
 
 interface SeasonLeaderboardProps {
   stats: SeasonPlayerStats[];
@@ -34,45 +35,11 @@ const SeasonLeaderboard = ({
   // Filter out players with zero matches played
   const activeStats = stats.filter(player => player.played > 0);
   
-  // Sort stats by points (descending), then games played (descending if points are equal), then wins (descending)
-  const sortedStats = [...activeStats].sort((a, b) => {
-    if (b.points !== a.points) {
-      return b.points - a.points;
-    }
-    // Prioritize MORE games played when points are equal
-    if (a.played !== b.played) {
-      return b.played - a.played;
-    }
-    return b.wins - a.wins;
-  });
+  // Sort stats using our shared utility function
+  const sortedStats = sortPlayersByRank(activeStats);
   
-  // Calculate ranks using golf-style ranking
-  const playerRanks: Record<string, number> = {};
-  let currentRank = 1;
-  
-  // First player always gets rank 1
-  if (sortedStats.length > 0) {
-    playerRanks[sortedStats[0].playerId] = currentRank;
-  }
-  
-  // Calculate ranks for the rest of the players
-  for (let i = 1; i < sortedStats.length; i++) {
-    const prevPlayer = sortedStats[i - 1];
-    const currentPlayer = sortedStats[i];
-    
-    // If current player has same stats as previous, they get the same rank
-    if (
-      prevPlayer.points === currentPlayer.points && 
-      prevPlayer.played === currentPlayer.played && 
-      prevPlayer.wins === currentPlayer.wins
-    ) {
-      playerRanks[currentPlayer.playerId] = playerRanks[prevPlayer.playerId];
-    } else {
-      // Otherwise, current rank is i+1 (position in the sorted array)
-      currentRank = i + 1;
-      playerRanks[currentPlayer.playerId] = currentRank;
-    }
-  }
+  // Calculate ranks using golf-style ranking from our shared utility
+  const playerRanks = calculatePlayerRanks(activeStats);
   
   // Limit the number of players shown if requested
   const displayStats = limit ? sortedStats.slice(0, limit) : sortedStats;
