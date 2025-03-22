@@ -1,4 +1,3 @@
-
 @layer components {
   /* Shimmer loading effect */
   .shimmer {
@@ -97,6 +96,28 @@
     100% { transform: scale(1); }
   }
   
+  @keyframes card-flip {
+    0% { transform: perspective(1000px) rotateY(0deg); opacity: 1; }
+    50% { transform: perspective(1000px) rotateY(90deg); opacity: 0.9; }
+    100% { transform: perspective(1000px) rotateY(0deg); opacity: 1; }
+  }
+  
+  @keyframes card-reveal {
+    0% { transform: perspective(1000px) rotateY(90deg) scale(0.9); opacity: 0.5; }
+    100% { transform: perspective(1000px) rotateY(0deg) scale(1); opacity: 1; }
+  }
+  
+  @keyframes card-float-in {
+    0% { transform: translateY(30px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+  
+  @keyframes card-add-to-team {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1) translateX(0) translateY(0); }
+  }
+  
   .animate-pop-in {
     animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
   }
@@ -123,6 +144,24 @@
   
   .animate-spotlight {
     animation: spotlight-glow 3s ease-in-out infinite, zoom-in-slight 3s ease-in-out infinite;
+  }
+  
+  .animate-card-flip {
+    animation: card-flip 0.6s ease-in-out;
+    transform-style: preserve-3d;
+  }
+  
+  .animate-card-reveal {
+    animation: card-reveal 0.6s ease-out;
+    transform-style: preserve-3d;
+  }
+  
+  .animate-card-float-in {
+    animation: card-float-in 0.4s ease-out;
+  }
+  
+  .animate-card-add-to-team {
+    animation: card-add-to-team 0.5s ease-in-out;
   }
   
   /* Formation grid for team layout */
@@ -266,4 +305,34 @@
     @apply text-blue-100 text-sm mt-1;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   }
+  
+  .card-pack {
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease;
+  }
+  
+  .card-pack:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+  }
+  
+  .card-pack::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+    border-radius: 0.5rem;
+    z-index: 2;
+  }
+  
+  .revealed-card {
+    position: relative;
+    transform-style: preserve-3d;
+    animation: card-reveal 0.8s ease-out forwards;
+  }
 }
+

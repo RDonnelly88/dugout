@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -46,19 +47,8 @@ export const useCreateMatch = () => {
       return [];
     }
     
-    // Create a copy of player IDs and shuffle them
-    const playerIds = players.map(player => player.id);
-    for (let i = playerIds.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [playerIds[i], playerIds[j]] = [playerIds[j], playerIds[i]];
-    }
-    
-    // Split into teams based on selected team size
-    // If there are not enough players for even teams, distribute them as evenly as possible
-    const totalPlayers = playerIds.length;
-    
-    // Ensure we have enough players for at least one per team
-    if (totalPlayers < 2) {
+    // Need at least 2 players to form teams
+    if (players.length < 2) {
       toast({
         title: "Not enough players",
         description: "You need at least 2 players to create teams.",
@@ -67,8 +57,26 @@ export const useCreateMatch = () => {
       return [];
     }
     
+    // Create a copy of player IDs and shuffle them
+    const playerIds = players.map(player => player.id);
+    for (let i = playerIds.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [playerIds[i], playerIds[j]] = [playerIds[j], playerIds[i]];
+    }
+    
     // Calculate how many players should be on each team
+    const totalPlayers = playerIds.length;
     const playersPerTeam = Math.min(teamSize, Math.floor(totalPlayers / 2));
+    
+    // Ensure at least one player per team
+    if (playersPerTeam < 1) {
+      toast({
+        title: "Team size too small",
+        description: "Each team must have at least one player.",
+        variant: "destructive"
+      });
+      return [];
+    }
     
     setTeamA(playerIds.slice(0, playersPerTeam));
     setTeamB(playerIds.slice(playersPerTeam, playersPerTeam * 2));
