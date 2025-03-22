@@ -21,8 +21,9 @@ export const useBatchFormLoader = (
       }
     },
     enabled: !!seasonId && playerIds.length > 0,
-    staleTime: 300000, // Cache results for 5 minutes
-    gcTime: 600000, // Keep unused data for 10 minutes
+    staleTime: 60000, // Reduced cache time to 1 minute
+    refetchOnWindowFocus: true, // Refresh when window gets focus
+    refetchOnMount: true, // Refresh when component mounts
   });
 
   return {

@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPlayers, deletePlayer, getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
 import { Player } from "@/types";
@@ -41,6 +40,15 @@ const Players = () => {
     currentSeason?.id || null, 
     playerIds
   );
+
+  // Force a refetch of batch form data when navigating to the page
+  useEffect(() => {
+    if (currentSeason?.id) {
+      queryClient.invalidateQueries({ 
+        queryKey: ['batchPlayerForms', currentSeason.id] 
+      });
+    }
+  }, [currentSeason?.id, queryClient]);
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deletePlayer(id),

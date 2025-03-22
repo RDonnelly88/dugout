@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Player, PlayerFormResult, SeasonPlayerStats } from "@/types";
 import { Trophy, Edit, Trash2, Ghost } from "lucide-react";
@@ -7,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import { usePlayerRank } from "@/hooks/usePlayerRank";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface PlayerCardProps {
   player: Player;
@@ -25,6 +25,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
   isLoadingForms,
   onDeleteClick,
 }) => {
+  const queryClient = useQueryClient();
   const hasPlayedMatches = player.stats.played > 0;
   
   // Use the usePlayerRank hook to get consistent rank data
@@ -32,6 +33,15 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
     seasonId,
     player.id
   );
+  
+  // Ensure form data is always fresh when viewing the player card
+  useEffect(() => {
+    if (seasonId && player.id) {
+      queryClient.invalidateQueries({ 
+        queryKey: ['playerForm', seasonId, player.id] 
+      });
+    }
+  }, [seasonId, player.id, queryClient]);
 
   return (
     <Card key={player.id} className="player-card hover-scale overflow-hidden bg-gray-900 border-gray-800">

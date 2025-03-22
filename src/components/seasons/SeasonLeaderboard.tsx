@@ -58,6 +58,15 @@ const SeasonLeaderboard = ({
   // Combine provided forms with batch loaded forms
   const combinedForms = { ...playerForms, ...formData };
   
+  // Force a refetch of form data when stats change
+  useEffect(() => {
+    if (seasonId && playerIds.length > 0) {
+      queryClient.invalidateQueries({ 
+        queryKey: ['batchPlayerForms', seasonId]
+      });
+    }
+  }, [seasonId, playerIds.length, queryClient]);
+  
   // Prefetch individual player forms for when users navigate to player details
   useEffect(() => {
     if (seasonId && displayStats.length > 0) {
