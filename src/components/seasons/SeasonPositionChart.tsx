@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -96,6 +97,20 @@ const SeasonPositionChart: React.FC<SeasonPositionChartProps> = ({
       return dataPoint;
     });
   }, [positionHistories]);
+  
+  // Limit the number of players shown if there are many
+  const playersToShow = useMemo(() => {
+    if (showAllPlayers) return positionHistories;
+    
+    // Only show top players by default (players with lowest final position)
+    return positionHistories
+      .sort((a, b) => {
+        const aLastPos = a.history[a.history.length - 1]?.position || 999;
+        const bLastPos = b.history[b.history.length - 1]?.position || 999;
+        return aLastPos - bLastPos;
+      })
+      .slice(0, 5);
+  }, [positionHistories, showAllPlayers]);
   
   if (isLoading) {
     return (
