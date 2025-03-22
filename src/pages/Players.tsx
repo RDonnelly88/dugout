@@ -116,7 +116,7 @@ const Players = () => {
       <div className="page-header">
         <h1 className="page-title">Players</h1>
         <p className="mt-2 text-muted-foreground">
-          Manage your player roster
+          Manage Players
         </p>
       </div>
 
