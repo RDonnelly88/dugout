@@ -18,6 +18,8 @@ import {
   DialogContent,
   DialogPortal,
   DialogOverlay,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import PlayerSpotlight from "./team-randomizer/PlayerSpotlight";
 
@@ -81,6 +83,8 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
   }, [isRandomizing, showRandomizerModal]);
   
   const renderPlayerCards = () => {
+    console.log("Current reveal stage:", revealStage);
+    
     // If in flashing stage, show the available players with dramatic flashing
     if (revealStage === 'flashing') {
       return (
@@ -255,6 +259,9 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
         <DialogPortal>
           <DialogOverlay className="bg-black/95 backdrop-blur-sm" />
           <DialogContent className="sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%] border-blue-500/30 neo-glassmorphism bg-black/90 p-0 overflow-hidden">
+            <DialogTitle className="sr-only">Team Randomization</DialogTitle>
+            <DialogDescription className="sr-only">Randomizing teams with dramatic effects</DialogDescription>
+            
             <div className="randomizer-modal-container">
               <div className="randomizer-modal-header p-4 border-b border-blue-500/20">
                 <h2 className="text-2xl font-bold text-center bg-gradient-to-r from-blue-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent flex items-center justify-center gap-2">

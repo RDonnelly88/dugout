@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Player } from "@/types";
+import { useToast } from "@/components/ui/use-toast";
 
 export const useRandomizer = (onRandomize: (players: Player[], teamSize: number) => void) => {
   const [teamSize, setTeamSize] = useState<string>("5");
@@ -13,6 +14,7 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
   const [revealIndex, setRevealIndex] = useState(-1);
   const [spotlightPlayer, setSpotlightPlayer] = useState<Player | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { toast } = useToast();
 
   // Clear any randomization state when component unmounts
   useEffect(() => {
@@ -44,26 +46,38 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     }
     return shuffled;
   };
+  
+  // Helper function to play sound with fallback
+  const playSound = async (soundPath: string, volume: number = 0.5, loop: boolean = false) => {
+    try {
+      const sound = new Audio(soundPath);
+      sound.volume = volume;
+      sound.loop = loop;
+      const playPromise = sound.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.log(`Sound playback failed: ${soundPath}`, error);
+          // Don't show error toasts to user for sound issues
+        });
+      }
+      return sound;
+    } catch (error) {
+      console.log(`Sound error: ${soundPath}`, error);
+      return null;
+    }
+  };
 
   const performRandomization = async (players: Player[]) => {
     if (players.length === 0) return;
     
+    console.log("Starting randomization with stages");
     setIsRandomizing(true);
     setRevealStage("flashing");
     setRevealIndex(-1);
     
-    if (!audioRef.current) {
-      audioRef.current = new Audio("/randomizer-sound.mp3");
-      audioRef.current.volume = 0.5;
-      audioRef.current.loop = true;
-    }
-    
-    try {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(e => console.error("Audio playback failed:", e));
-    } catch (error) {
-      console.error("Audio error:", error);
-    }
+    // Try to play background sound
+    const bgSound = await playSound("/randomizer-sound.mp3", 0.3, true);
     
     // Dramatic flashing animation
     const flashInterval = setInterval(() => {
@@ -80,6 +94,7 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     clearInterval(flashInterval);
     
     // LOOT BOX REVEAL: Dramatic Spotlight Phase
+    console.log("Moving to spotlight stage");
     setRevealStage("spotlight");
     
     // Get the player list ready
@@ -104,31 +119,20 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     for (const player of starPlayers) {
       setSpotlightPlayer(player);
       // Add dramatic sound effect for each spotlight player
-      try {
-        const spotlightSound = new Audio("/spotlight-sound.mp3");
-        spotlightSound.volume = 0.6;
-        spotlightSound.play().catch(e => console.error("Spotlight audio failed:", e));
-      } catch (error) {
-        console.error("Spotlight audio error:", error);
-      }
-      await new Promise(resolve => setTimeout(resolve, 1800));
+      await playSound("/spotlight-sound.mp3", 0.5);
+      await new Promise(resolve => setTimeout(resolve, 1500));
     }
     
     setSpotlightPlayer(null);
     
     // Now start the team reveal phase
+    console.log("Moving to revealing stage");
     setRevealStage("revealing");
     setTeamAPlayers(finalTeamA);
     setTeamBPlayers(finalTeamB);
     
     // Try to play a drum roll or suspense sound
-    try {
-      const drumrollSound = new Audio("/drumroll-sound.mp3");
-      drumrollSound.volume = 0.5;
-      drumrollSound.play().catch(e => console.error("Drumroll audio failed:", e));
-    } catch (error) {
-      console.error("Drumroll audio error:", error);
-    }
+    await playSound("/drumroll-sound.mp3", 0.5);
     
     // Brief pause before starting the reveal
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -138,30 +142,19 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     for (let i = 0; i < maxRevealCount; i++) {
       setRevealIndex(i);
       // Play a reveal sound for each player card
-      try {
-        const cardRevealSound = new Audio("/card-reveal-sound.mp3");
-        cardRevealSound.volume = 0.3;
-        cardRevealSound.play().catch(e => console.error("Card reveal audio failed:", e));
-      } catch (error) {
-        console.error("Card reveal audio error:", error);
-      }
+      await playSound("/card-reveal-sound.mp3", 0.3);
       await new Promise(resolve => setTimeout(resolve, 300));
     }
     
     // Final celebration stage
+    console.log("Moving to celebration stage");
     setRevealStage("celebration");
     
-    // Play victory fanfare
-    try {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        const fanfareSound = new Audio("/fanfare-sound.mp3");
-        fanfareSound.volume = 0.5;
-        fanfareSound.play().catch(e => console.error("Fanfare audio failed:", e));
-      }
-    } catch (error) {
-      console.error("Fanfare audio error:", error);
+    // Stop background sounds and play victory fanfare
+    if (bgSound) {
+      bgSound.pause();
     }
+    await playSound("/fanfare-sound.mp3", 0.5);
     
     // Keep the final result visible for celebration moment
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -172,6 +165,11 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     // Call the callback with the randomized players
     const allRandomizedPlayers = [...finalTeamA, ...finalTeamB];
     onRandomize(allRandomizedPlayers, singleTeamSize);
+    
+    toast({
+      title: "Teams Randomized",
+      description: `Created balanced ${teamSize}-a-side teams`,
+    });
   };
 
   const resetRandomizer = () => {
