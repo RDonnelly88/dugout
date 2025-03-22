@@ -1,50 +1,66 @@
 
-import { Player } from "@/types";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import PlayerImageUpload from "./PlayerImageUpload";
+import React from "react";
+import { TrendingUp, TrendingDown, CircleDot } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { PlayerFormResult } from "@/types";
 
 interface PlayerFormProps {
-  name: string;
-  setName: (name: string) => void;
-  imageUrl: string | null;
-  setImageUrl: (url: string | null) => void;
-  onSubmit: (e: React.FormEvent) => void;
-  isSubmitting: boolean;
+  form: PlayerFormResult[];
+  size?: 'sm' | 'md' | 'lg';
+  showLabel?: boolean;
 }
 
-const PlayerForm = ({ 
-  name, 
-  setName, 
-  imageUrl, 
-  setImageUrl, 
-  onSubmit, 
-  isSubmitting 
-}: PlayerFormProps) => {
+const PlayerForm = ({ form = [], size = 'md', showLabel = false }: PlayerFormProps) => {
+  if (!form.length) {
+    return null;
+  }
+
+  // Limit to last 5 results
+  const recentForm = form.slice(0, 5);
+  
+  const getFormIcon = (result: PlayerFormResult) => {
+    switch (result) {
+      case 'win':
+        return <TrendingUp className={cn(
+          "text-green-500",
+          size === 'sm' ? 'h-3 w-3' : size === 'md' ? 'h-4 w-4' : 'h-5 w-5'
+        )} />;
+      case 'loss':
+        return <TrendingDown className={cn(
+          "text-red-500",
+          size === 'sm' ? 'h-3 w-3' : size === 'md' ? 'h-4 w-4' : 'h-5 w-5'
+        )} />;
+      case 'draw':
+        return <CircleDot className={cn(
+          "text-amber-500",
+          size === 'sm' ? 'h-3 w-3' : size === 'md' ? 'h-4 w-4' : 'h-5 w-5'
+        )} />;
+      default:
+        return null;
+    }
+  };
+
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <div>
-        <Label htmlFor="name">Name</Label>
-        <Input
-          type="text"
-          id="name"
-          placeholder="Player Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
+    <div className="flex flex-col">
+      {showLabel && (
+        <div className="text-xs text-muted-foreground mb-1">
+          Recent Form
+        </div>
+      )}
+      <div className="flex space-x-1 items-center">
+        {recentForm.map((result, index) => (
+          <div 
+            key={index}
+            className={cn(
+              "flex items-center justify-center rounded",
+              size === 'sm' ? 'w-4 h-4' : size === 'md' ? 'w-5 h-5' : 'w-6 h-6'
+            )}
+          >
+            {getFormIcon(result)}
+          </div>
+        ))}
       </div>
-      
-      <PlayerImageUpload 
-        imageUrl={imageUrl} 
-        onImageChange={setImageUrl} 
-      />
-      
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? "Saving..." : "Save Player"}
-      </Button>
-    </form>
+    </div>
   );
 };
 

@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import TeamSelection from "@/components/matches/TeamSelection";
 import TeamRandomizer from "@/components/matches/TeamRandomizer";
 import DatePicker from "@/components/matches/DatePicker";
+import SeasonSelect from "@/components/matches/SeasonSelect";
 import { useCreateMatch } from "@/hooks/useCreateMatch";
 
 const CreateMatch = () => {
@@ -13,7 +14,9 @@ const CreateMatch = () => {
     teamA, 
     teamB, 
     date, 
-    setDate, 
+    seasonId,
+    setDate,
+    setSeasonId, 
     togglePlayer, 
     randomizeTeams,
     createMatchMutation, 
@@ -60,8 +63,17 @@ const CreateMatch = () => {
             </div>
             
             <div className="date-picker-container glass-card p-6 rounded-xl border border-blue-500/20 shadow-lg">
-              <h3 className="text-xl font-semibold mb-4 text-center">Match Date</h3>
-              <DatePicker date={date} setDate={setDate} />
+              <h3 className="text-xl font-semibold mb-4 text-center">Match Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Match Date</label>
+                  <DatePicker date={date} setDate={setDate} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Season</label>
+                  <SeasonSelect value={seasonId} onChange={setSeasonId} />
+                </div>
+              </div>
             </div>
 
             <Button 

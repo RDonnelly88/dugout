@@ -15,6 +15,7 @@ export type Database = {
           date: string
           id: string
           location: string | null
+          season_id: string | null
           status: string
           team_a: Json
           team_b: Json
@@ -25,6 +26,7 @@ export type Database = {
           date: string
           id?: string
           location?: string | null
+          season_id?: string | null
           status: string
           team_a: Json
           team_b: Json
@@ -35,12 +37,35 @@ export type Database = {
           date?: string
           id?: string
           location?: string | null
+          season_id?: string | null
           status?: string
           team_a?: Json
           team_b?: Json
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "matches_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "season_champions"
+            referencedColumns: ["season_id"]
+          },
+          {
+            foreignKeyName: "matches_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "season_player_stats"
+            referencedColumns: ["season_id"]
+          },
+          {
+            foreignKeyName: "matches_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       players: {
         Row: {
@@ -69,9 +94,101 @@ export type Database = {
         }
         Relationships: []
       }
+      seasons: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          id: string
+          is_current: boolean | null
+          name: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_current?: boolean | null
+          name: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_current?: boolean | null
+          name?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      player_match_results: {
+        Row: {
+          date: string | null
+          match_id: string | null
+          player_id: string | null
+          result: string | null
+          season_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "season_champions"
+            referencedColumns: ["season_id"]
+          },
+          {
+            foreignKeyName: "matches_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "season_player_stats"
+            referencedColumns: ["season_id"]
+          },
+          {
+            foreignKeyName: "matches_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      season_champions: {
+        Row: {
+          draws: number | null
+          losses: number | null
+          played: number | null
+          player_id: string | null
+          player_image: string | null
+          player_name: string | null
+          points: number | null
+          rank: number | null
+          season_id: string | null
+          season_name: string | null
+          wins: number | null
+        }
+        Relationships: []
+      }
+      season_player_stats: {
+        Row: {
+          draws: number | null
+          losses: number | null
+          played: number | null
+          player_id: string | null
+          player_image: string | null
+          player_name: string | null
+          points: number | null
+          season_id: string | null
+          season_name: string | null
+          wins: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never

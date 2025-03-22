@@ -10,6 +10,7 @@ export const useCreateMatch = () => {
   const [teamA, setTeamA] = useState<string[]>([]);
   const [teamB, setTeamB] = useState<string[]>([]);
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [seasonId, setSeasonId] = useState<string | undefined>(undefined);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -134,7 +135,8 @@ export const useCreateMatch = () => {
         score: 0
       },
       date: date.toISOString(),
-      status: "scheduled"
+      status: "scheduled",
+      seasonId: seasonId === "none" ? undefined : seasonId
     };
 
     createMatchMutation.mutate(matchData);
@@ -144,7 +146,9 @@ export const useCreateMatch = () => {
     teamA,
     teamB,
     date,
+    seasonId,
     setDate,
+    setSeasonId,
     togglePlayer,
     randomizeTeams,
     createMatchMutation,

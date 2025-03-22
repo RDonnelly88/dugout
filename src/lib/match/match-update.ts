@@ -42,6 +42,7 @@ export const updateMatch = async (id: string, updates: Partial<Omit<Match, "id" 
   if (updates.status) formattedUpdates.status = updates.status;
   if (updates.teamA) formattedUpdates.team_a = updates.teamA as any;
   if (updates.teamB) formattedUpdates.team_b = updates.teamB as any;
+  if (updates.seasonId !== undefined) formattedUpdates.season_id = updates.seasonId;
   
   try {
     const { data, error } = await supabase

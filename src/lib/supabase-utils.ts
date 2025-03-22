@@ -1,6 +1,6 @@
 
 import { Json } from "@/integrations/supabase/types";
-import { Player, Match, PlayerStats, TeamInfo, MatchStatus } from "@/types";
+import { Player, Match, PlayerStats, TeamInfo, MatchStatus, Season } from "@/types";
 
 // Helper function to map Supabase player response to our Player type
 export const mapSupabasePlayerToPlayer = (data: any): Player => {
@@ -37,7 +37,8 @@ export const mapSupabaseMatchToMatch = (data: any): Match => {
     teamB: data.team_b as unknown as TeamInfo,
     status: data.status as MatchStatus,
     createdAt: data.created_at,
-    updatedAt: data.updated_at
+    updatedAt: data.updated_at,
+    seasonId: data.season_id
   };
 };
 
@@ -48,6 +49,32 @@ export const mapMatchToSupabase = (match: Omit<Match, "id" | "createdAt" | "upda
     location: match.location,
     team_a: match.teamA as unknown as Json,
     team_b: match.teamB as unknown as Json,
-    status: match.status
+    status: match.status,
+    season_id: match.seasonId
+  };
+};
+
+// Helper function to map Supabase season response to our Season type
+export const mapSupabaseToSeason = (data: any): Season => {
+  if (!data) return data;
+  
+  return {
+    id: data.id,
+    name: data.name,
+    startDate: data.start_date,
+    endDate: data.end_date,
+    isCurrent: data.is_current,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
+};
+
+// Helper function to map our Season type to Supabase format
+export const mapSeasonToSupabase = (season: Omit<Season, "id" | "createdAt" | "updatedAt">): any => {
+  return {
+    name: season.name,
+    start_date: season.startDate,
+    end_date: season.endDate,
+    is_current: season.isCurrent
   };
 };
