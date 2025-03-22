@@ -32,7 +32,7 @@ export const useCreateMatch = () => {
     }
   };
 
-  const randomizeTeams = (players: Player[]) => {
+  const randomizeTeams = (players: Player[], teamSize: number = 5) => {
     // Reset current teams
     setTeamA([]);
     setTeamB([]);
@@ -44,14 +44,17 @@ export const useCreateMatch = () => {
       [playerIds[i], playerIds[j]] = [playerIds[j], playerIds[i]];
     }
     
-    // Split into two equal teams
-    const halfIndex = Math.floor(playerIds.length / 2);
-    setTeamA(playerIds.slice(0, halfIndex));
-    setTeamB(playerIds.slice(halfIndex, playerIds.length));
+    // Split into teams based on selected team size
+    // If there are not enough players for even teams, distribute them as evenly as possible
+    const totalPlayers = playerIds.length;
+    const playersPerTeam = Math.min(teamSize, Math.floor(totalPlayers / 2));
+    
+    setTeamA(playerIds.slice(0, playersPerTeam));
+    setTeamB(playerIds.slice(playersPerTeam, playersPerTeam * 2));
     
     toast({
       title: "Teams randomized",
-      description: "Players have been randomly assigned to teams."
+      description: `Players have been randomly assigned to ${playersPerTeam}-a-side teams.`
     });
   };
 

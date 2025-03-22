@@ -34,7 +34,7 @@ const CreateMatch = () => {
       <div className="page-header">
         <h1 className="page-title">Create Match</h1>
         <p className="mt-2 text-muted-foreground">
-          Set up your next 5-a-side match
+          Set up your next match with customizable team sizes
         </p>
       </div>
 
