@@ -1,7 +1,7 @@
 
 import { PlayerFormResult } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
-import { getMatch } from "./match-service";
+import { mapSupabaseMatchToMatch } from "./supabase-utils";
 
 // Get a player's form in a specific season
 export const getPlayerFormInSeason = async (
@@ -21,11 +21,18 @@ export const getPlayerFormInSeason = async (
       return [];
     }
 
-    const matches = (matchesData || []).map(match => ({
-      ...match,
-      teamA: match.teamA || { players: [] },
-      teamB: match.teamB || { players: [] },
-    }));
+    // Map the raw data to our expected format
+    const matches = (matchesData || []).map(match => {
+      // Parse the team data from JSON
+      const teamA = typeof match.team_a === 'object' ? match.team_a : { players: [] };
+      const teamB = typeof match.team_b === 'object' ? match.team_b : { players: [] };
+      
+      return {
+        ...match,
+        teamA,
+        teamB
+      };
+    });
 
     // Filter matches where player participated
     const playerMatches = matches.filter(
@@ -75,11 +82,18 @@ export const getPlayerFormBatch = async (
       return {};
     }
 
-    const matches = (matchesData || []).map(match => ({
-      ...match,
-      teamA: match.teamA || { players: [] },
-      teamB: match.teamB || { players: [] },
-    }));
+    // Map the raw data to our expected format
+    const matches = (matchesData || []).map(match => {
+      // Parse the team data from JSON
+      const teamA = typeof match.team_a === 'object' ? match.team_a : { players: [] };
+      const teamB = typeof match.team_b === 'object' ? match.team_b : { players: [] };
+      
+      return {
+        ...match,
+        teamA,
+        teamB
+      };
+    });
 
     // Process all players at once
     const result: Record<string, PlayerFormResult[]> = {};
