@@ -27,4 +27,35 @@
   .confetti-piece {
     @apply absolute w-[10px] h-[10px] opacity-80;
   }
+  
+  /* Randomizer card styles */
+  .player-card-randomizer {
+    @apply relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-900/70 via-indigo-900/70 to-blue-950/70 backdrop-blur-sm border-2 border-white/20 shadow-xl;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+                box-shadow 0.3s ease;
+  }
+  
+  .player-card-randomizer:hover {
+    @apply transform scale-105 border-primary/50 shadow-2xl;
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+  }
+  
+  .player-card-stat {
+    @apply text-xs rounded-md font-medium p-1.5 flex items-center justify-center flex-col;
+    transition: all 0.2s ease;
+  }
+  
+  .player-card-stat:hover {
+    @apply transform scale-110;
+  }
+  
+  .player-card-mini {
+    @apply relative overflow-hidden rounded-lg;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+                box-shadow 0.3s ease;
+  }
+  
+  .player-card-mini:hover {
+    @apply transform scale-105 shadow-lg;
+  }
 }

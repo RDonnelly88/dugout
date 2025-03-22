@@ -22,7 +22,7 @@
   }
   
   .player-card-mini {
-    @apply flex items-center p-3 rounded-lg mb-2 bg-white/5 backdrop-blur-sm transition-all duration-300 border border-white/10;
+    @apply flex items-center p-3 rounded-lg mb-2 transition-all duration-300 border border-white/10;
   }
   
   .match-card {
@@ -39,5 +39,46 @@
   
   .match-footer {
     @apply p-4 bg-muted/30 flex justify-between items-center;
+  }
+  
+  /* Randomization animation styles */
+  .randomizer-overlay {
+    @apply fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center;
+    animation: fade-in 0.5s ease-out forwards;
+  }
+  
+  .randomizer-container {
+    @apply max-w-4xl w-full mx-auto px-4 py-8;
+  }
+  
+  .randomizer-title {
+    @apply text-center text-3xl font-bold text-white mb-8;
+    animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards 0.2s;
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  
+  .randomizer-grid {
+    @apply grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4;
+  }
+  
+  .randomizer-card {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  
+  .randomizer-card-active {
+    animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+  
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes pop-in {
+    0% { transform: scale(0.5); opacity: 0; }
+    70% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
   }
 }
