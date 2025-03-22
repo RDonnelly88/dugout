@@ -105,7 +105,7 @@ const Layout = () => {
         )}
       >
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-800">
-          {!isSidebarCollapsed && <h2 className="text-lg font-semibold">League Manager</h2>}
+          {!isSidebarCollapsed && <h2 className="text-lg font-semibold">Football Tracker</h2>}
           <Button
             variant="ghost"
             size="icon"
