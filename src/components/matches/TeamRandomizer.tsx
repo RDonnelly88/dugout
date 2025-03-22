@@ -53,7 +53,12 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
         className="gap-2"
       >
         <Shuffle className="h-4 w-4" />
-        Randomize Teams {playerCount > 0 && `(${playerCount} players)`}
+        Randomize Teams
+        {playerCount > 0 && (
+          <span className="ml-1 text-xs text-muted-foreground">
+            ({playerCount} available)
+          </span>
+        )}
       </Button>
     </div>
   );
