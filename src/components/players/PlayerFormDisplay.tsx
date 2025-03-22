@@ -1,20 +1,20 @@
 
 import React from "react";
-import { ArrowUp, ArrowDown, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PlayerFormResult } from "@/types";
 
 interface PlayerFormDisplayProps {
   results: Array<'win' | 'loss' | 'draw' | null>;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
+  showLabel?: boolean;
 }
 
-const PlayerFormDisplay = ({ results = [], size = 'md' }: PlayerFormDisplayProps) => {
-  const sizeClass = size === 'sm' 
-    ? 'w-6 h-6 text-xs' 
-    : size === 'md' 
-      ? 'w-8 h-8 text-sm' 
-      : 'w-10 h-10 text-base';
-  
+const PlayerFormDisplay = ({ 
+  results = [], 
+  size = 'md',
+  showLabel = false
+}: PlayerFormDisplayProps) => {
+  // Don't render anything if there's no form data or it's empty
   if (!results || results.length === 0) {
     return (
       <div className="text-xs text-gray-400">No match data</div>
@@ -24,63 +24,57 @@ const PlayerFormDisplay = ({ results = [], size = 'md' }: PlayerFormDisplayProps
   // Only show the 5 most recent results
   const recentResults = results.slice(0, 5);
   
+  const getFormSquare = (result: 'win' | 'loss' | 'draw' | null, index: number) => {
+    let bgColor = "bg-gray-400";
+    let textColor = "text-white";
+    let letter = "-";
+    
+    switch (result) {
+      case 'win':
+        bgColor = "bg-green-500";
+        textColor = "text-white";
+        letter = "W";
+        break;
+      case 'loss':
+        bgColor = "bg-red-500";
+        textColor = "text-white";
+        letter = "L";
+        break;
+      case 'draw':
+        bgColor = "bg-amber-400";
+        textColor = "text-white";
+        letter = "D";
+        break;
+    }
+    
+    return (
+      <div 
+        key={index}
+        className={cn(
+          "flex items-center justify-center rounded font-semibold",
+          bgColor,
+          textColor,
+          size === 'xs' ? 'w-4 h-4 text-[10px]' : 
+          size === 'sm' ? 'w-5 h-5 text-xs' : 
+          size === 'md' ? 'w-6 h-6 text-sm' : 'w-8 h-8'
+        )}
+        title={result === 'win' ? 'Win' : result === 'loss' ? 'Loss' : result === 'draw' ? 'Draw' : 'No result'}
+      >
+        {letter}
+      </div>
+    );
+  };
+
   return (
-    <div className="flex gap-1">
-      {recentResults.map((result, index) => {
-        if (result === 'win') {
-          return (
-            <div 
-              key={index} 
-              className={cn(
-                "flex items-center justify-center rounded-full bg-green-800 text-green-200 font-semibold",
-                sizeClass
-              )}
-              title="Win"
-            >
-              <ArrowUp className={size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'} />
-            </div>
-          );
-        } else if (result === 'loss') {
-          return (
-            <div 
-              key={index} 
-              className={cn(
-                "flex items-center justify-center rounded-full bg-red-800 text-red-200 font-semibold",
-                sizeClass
-              )}
-              title="Loss"
-            >
-              <ArrowDown className={size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'} />
-            </div>
-          );
-        } else if (result === 'draw') {
-          return (
-            <div 
-              key={index} 
-              className={cn(
-                "flex items-center justify-center rounded-full bg-amber-800 text-amber-200 font-semibold",
-                sizeClass
-              )}
-              title="Draw"
-            >
-              <Circle className={size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'} strokeWidth={3} />
-            </div>
-          );
-        } else {
-          return (
-            <div 
-              key={index} 
-              className={cn(
-                "flex items-center justify-center rounded-full bg-gray-800 text-gray-400 font-semibold",
-                sizeClass
-              )}
-              title="No result"
-            >
-              -
-            </div>
-          );
-        }
-      })}
+    <div className="flex flex-col">
+      {showLabel && (
+        <div className="text-xs text-muted-foreground mb-1">
+          Recent Form
+        </div>
+      )}
+      <div className="flex space-x-1 items-center">
+        {recentResults.map((result, index) => getFormSquare(result, index))}
+      </div>
     </div>
   );
 };
