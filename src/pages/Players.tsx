@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPlayers, deletePlayer, getCurrentSeason, getSeasonPlayerStats, getPlayerFormInSeason } from "@/lib/db";
@@ -44,7 +44,7 @@ const Players = () => {
     staleTime: 0
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (currentSeason) {
       players.forEach(player => {
         queryClient.prefetchQuery({
