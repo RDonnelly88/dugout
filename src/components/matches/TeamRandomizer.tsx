@@ -72,7 +72,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
   
   // Close the modal when randomization completes
   useEffect(() => {
-    if (!isRandomizing && showRandomizerModal) {
+    if (!isRandomizing && showRandomizerModal && revealStage !== "idle") {
       // Add a small delay before closing the modal to show the final teams
       const timer = setTimeout(() => {
         setShowRandomizerModal(false);
@@ -80,7 +80,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
       
       return () => clearTimeout(timer);
     }
-  }, [isRandomizing, showRandomizerModal]);
+  }, [isRandomizing, showRandomizerModal, revealStage]);
   
   const renderPlayerCards = () => {
     console.log("Current reveal stage:", revealStage);
@@ -255,7 +255,12 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
       </div>
       
       {/* Loot Box Style Randomizer Modal Dialog */}
-      <Dialog open={showRandomizerModal} onOpenChange={setShowRandomizerModal}>
+      <Dialog open={showRandomizerModal} onOpenChange={(open) => {
+        // Only allow closing if not in the middle of randomization
+        if (!isRandomizing || !open) {
+          setShowRandomizerModal(open);
+        }
+      }}>
         <DialogPortal>
           <DialogOverlay className="bg-black/95 backdrop-blur-sm" />
           <DialogContent className="sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%] border-blue-500/30 neo-glassmorphism bg-black/90 p-0 overflow-hidden">
@@ -297,9 +302,6 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
           disabled={isRandomizing || disabled}
         />
       )}
-      
-      {/* Hidden audio elements for sound effects */}
-      <audio preload="auto" />
     </div>
   );
 };
