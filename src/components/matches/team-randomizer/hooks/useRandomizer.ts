@@ -1,7 +1,5 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Player } from "@/types";
-import { PositionType } from '../types';
 
 export const useRandomizer = (onRandomize: (players: Player[], teamSize: number) => void) => {
   const [teamSize, setTeamSize] = useState<string>("5");
@@ -16,17 +14,26 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    // Cleanup audio on unmount
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
       }
+      setFlashingPlayers([]);
+      setIsRandomizing(false);
+      setRevealStage("idle");
     };
   }, []);
 
+  useEffect(() => {
+    if (!isRandomizing) {
+      setFlashingPlayers([]);
+      setRevealIndex(-1);
+      setRevealStage("idle");
+    }
+  }, [isRandomizing]);
+
   const shufflePlayers = (players: Player[]) => {
-    // Fisher-Yates shuffle algorithm
     const shuffled = [...players];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -38,12 +45,10 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
   const performRandomization = async (players: Player[]) => {
     if (players.length === 0) return;
     
-    // Reset all state
     setIsRandomizing(true);
     setRevealStage("flashing");
     setRevealIndex(-1);
     
-    // Start audio
     if (!audioRef.current) {
       audioRef.current = new Audio("/randomizer-sound.mp3");
       audioRef.current.volume = 0.5;
@@ -57,7 +62,6 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
       console.error("Audio error:", error);
     }
     
-    // STAGE 1: Flash players for 3 seconds
     const flashInterval = setInterval(() => {
       const availablePlayerIds = selectedPlayers;
       const randomPlayerIds = availablePlayerIds
@@ -70,39 +74,31 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     await new Promise(resolve => setTimeout(resolve, 3000));
     clearInterval(flashInterval);
     
-    // Get filtered players and shuffle them
     const playersForRandomization = players;
     const shuffledPlayers = shufflePlayers(playersForRandomization);
     
-    // Determine how many players per team
     const singleTeamSize = parseInt(teamSize);
     const totalPlayersNeeded = singleTeamSize * 2;
     
-    // Cap to available players, ensuring even distribution
     const cappedPlayerCount = Math.min(shuffledPlayers.length, totalPlayersNeeded);
-    // Make sure we have an even number to split evenly
     const adjustedPlayerCount = cappedPlayerCount % 2 === 0 ? 
       cappedPlayerCount : 
       cappedPlayerCount - 1;
     
-    // Split players into two teams
     const teamASize = Math.floor(adjustedPlayerCount / 2);
     const finalTeamA = shuffledPlayers.slice(0, teamASize);
     const finalTeamB = shuffledPlayers.slice(teamASize, teamASize * 2);
     
-    // STAGE 2: Reveal teams
     setRevealStage("revealing");
     setTeamAPlayers(finalTeamA);
     setTeamBPlayers(finalTeamB);
     
-    // Reveal players one by one
     const maxRevealCount = Math.max(finalTeamA.length, finalTeamB.length);
     for (let i = 0; i < maxRevealCount; i++) {
       setRevealIndex(i);
       await new Promise(resolve => setTimeout(resolve, 300));
     }
     
-    // Fade out audio
     if (audioRef.current) {
       const fadeOut = () => {
         if (audioRef.current && audioRef.current.volume > 0.05) {
@@ -116,18 +112,27 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
       fadeOut();
     }
     
-    // Wait for 2 seconds to see the final result
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Reset state and call the actual randomize function
     setIsRandomizing(false);
     setFlashingPlayers([]);
     setRevealIndex(-1);
     setRevealStage("idle");
     
-    // Call the actual randomize function with all players
     const allRandomizedPlayers = [...finalTeamA, ...finalTeamB];
     onRandomize(allRandomizedPlayers, singleTeamSize);
+  };
+
+  const resetRandomizer = () => {
+    setIsRandomizing(false);
+    setFlashingPlayers([]);
+    setRevealIndex(-1);
+    setRevealStage("idle");
+    
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
   };
 
   const togglePlayerSelection = (playerId: string) => {
@@ -159,6 +164,7 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     revealIndex,
     audioRef,
     performRandomization,
+    resetRandomizer,
     togglePlayerSelection,
     setInitialSelectedPlayers
   };

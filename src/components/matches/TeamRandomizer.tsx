@@ -35,13 +35,19 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
     revealIndex,
     togglePlayerSelection,
     performRandomization,
+    resetRandomizer,
     setInitialSelectedPlayers
   } = useRandomizer(onRandomize);
   
   // Set initial selected players when the component mounts
   useEffect(() => {
     setInitialSelectedPlayers(players);
-  }, [players, setInitialSelectedPlayers]);
+    
+    // Make sure to reset the randomizer when unmounting
+    return () => {
+      resetRandomizer();
+    };
+  }, [players, setInitialSelectedPlayers, resetRandomizer]);
   
   const availablePlayers = players.filter(player => selectedPlayers.includes(player.id));
   const canRandomize = availablePlayers.length > 0;

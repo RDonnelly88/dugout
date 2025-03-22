@@ -29,11 +29,14 @@ const PlayerCard = ({
     (teamColor === 'A' ? 'from-red-900 to-red-950' : 'from-green-900 to-green-950') : 
     'from-blue-900 to-blue-950';
   
+  // Only apply flashing animation if explicitly set to flash and not in a team yet
+  const shouldFlash = flashing && !teamColor;
+  
   return (
     <div 
       className={`
         ${revealed ? 'animate-pop-in' : 'opacity-0'}
-        ${flashing ? 'animate-pulse' : ''}
+        ${shouldFlash ? 'animate-pulse' : ''}
         ${selected ? 'scale-105 shadow-lg shadow-yellow-500/20' : ''}
         duration-500 transition-all player-card-mini
       `}
