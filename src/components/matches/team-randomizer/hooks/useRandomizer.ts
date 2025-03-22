@@ -51,12 +51,12 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     
     // STAGE 1: FLASHING - Dramatic flashing animation
     console.log("Starting flashing stage");
-    let flashInterval: number;
+    let flashInterval: NodeJS.Timeout;
     
     // Create a Promise that resolves after the flashing animation completes
     await new Promise<void>(resolve => {
       // Start the flashing animation
-      flashInterval = window.setInterval(() => {
+      flashInterval = setInterval(() => {
         const availablePlayerIds = selectedPlayers;
         const randomPlayerIds = availablePlayerIds
           .sort(() => Math.random() - 0.5)
@@ -67,7 +67,7 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
       
       // Wait for 3 seconds, then clean up and move to next stage
       setTimeout(() => {
-        window.clearInterval(flashInterval);
+        clearInterval(flashInterval);
         resolve();
       }, 3000);
     });
@@ -130,9 +130,6 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     
     // Animation is completed
     setAnimationCompleted(true);
-    
-    // Keep randomizing flag true until user closes the modal
-    // Don't set it to false here or the modal will close automatically
     
     // Call the callback with the randomized players
     const allRandomizedPlayers = [...finalTeamA, ...finalTeamB];

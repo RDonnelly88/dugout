@@ -47,7 +47,6 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
     revealIndex,
     spotlightPlayer,
     animationCompleted,
-    togglePlayerSelection,
     performRandomization,
     resetRandomizer,
     setInitialSelectedPlayers
@@ -76,7 +75,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
     setTimeout(() => {
       console.log("Starting randomization process");
       performRandomization(availablePlayers);
-    }, 300);
+    }, 500); // Increased delay to ensure modal is fully rendered
   };
   
   // Handle modal closing
@@ -84,6 +83,13 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
     // Only allow closing if animation is completed or user is forcing it closed
     if (!open) {
       console.log("Modal closing requested, animation completed:", animationCompleted);
+      
+      if (!animationCompleted && isRandomizing) {
+        // If still animating, prevent closing
+        console.log("Preventing close while animation is running");
+        return;
+      }
+      
       resetRandomizer();
       setShowRandomizerModal(false);
     }
@@ -205,8 +211,12 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
       );
     }
     
-    // Default case
-    return null;
+    // Default case - show a loading message when stage is idle
+    return (
+      <div className="flex items-center justify-center h-[200px]">
+        <p className="text-blue-400 animate-pulse">Preparing teams...</p>
+      </div>
+    );
   };
   
   return (
@@ -263,7 +273,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
       
       {/* Loot Box Style Randomizer Modal Dialog */}
       <Dialog 
-        open={showRandomizerModal} 
+        open={showRandomizerModal}
         onOpenChange={handleModalClose}
       >
         <DialogPortal>
@@ -279,6 +289,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
                   {revealStage === 'spotlight' && "Star Players Detected!"}
                   {revealStage === 'revealing' && "Revealing Teams..."}
                   {revealStage === 'celebration' && "Teams Assembled!"}
+                  {revealStage === 'idle' && "Getting Ready..."}
                   <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
                 </h2>
               </div>
@@ -292,6 +303,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
                 {revealStage === 'spotlight' && <p>Star players identified!</p>}
                 {revealStage === 'revealing' && <p>Generating balanced teams...</p>}
                 {revealStage === 'celebration' && <p>Team creation complete!</p>}
+                {revealStage === 'idle' && <p>Initializing randomizer...</p>}
                 {animationCompleted && <p>Teams have been saved! Click the X or outside to close.</p>}
               </div>
             </div>
