@@ -47,8 +47,8 @@
   
   /* Player hover card styling */
   .player-hover-card {
-    @apply bg-blue-950 backdrop-blur-lg border border-blue-500/30 shadow-xl;
-    /* Reduced transparency with solid background */
+    @apply bg-blue-950/95 backdrop-blur-lg border border-blue-500/30 shadow-xl;
+    background-color: #1A1F2C; /* Dark purple background for better opacity */
   }
   
   /* Football pitch styling */
