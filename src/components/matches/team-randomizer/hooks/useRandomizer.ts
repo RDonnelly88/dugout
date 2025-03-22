@@ -1,8 +1,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Player } from "@/types";
-import { PositionType } from '../types';
-import { formationPositions, linePositions } from '../constants';
+import { PositionType, FormationConfig } from '../types';
+import { formationConfigs, linePositions } from '../constants';
 
 export const useRandomizer = (onRandomize: (players: Player[], teamSize: number) => void) => {
   const [teamSize, setTeamSize] = useState<string>("5");
@@ -10,6 +10,8 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [isRandomizing, setIsRandomizing] = useState(false);
   const [randomizingPlayers, setRandomizingPlayers] = useState<Player[]>([]);
+  const [teamAPlayers, setTeamAPlayers] = useState<Player[]>([]);
+  const [teamBPlayers, setTeamBPlayers] = useState<Player[]>([]);
   const [assignedPositions, setAssignedPositions] = useState<Record<string, PositionType>>({});
   const [spotlightPlayer, setSpotlightPlayer] = useState<Player | null>(null);
   const [revealComplete, setRevealComplete] = useState(false);
@@ -37,19 +39,11 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     return shuffled;
   };
 
-  const assignPositions = (players: Player[], teamSize: string) => {
-    // Get the positions for the selected team size using linePositions instead of formationPositions
-    const positions = linePositions[teamSize] || linePositions["5"];
-    
-    // Cap the number of players to the available positions
-    const cappedPlayers = players.slice(0, positions.length);
-    
-    // Create a mapping of player IDs to positions
+  const assignPositions = (players: Player[]) => {
+    // Create a mapping of player IDs to 'formation-player' position type
     const positionMap: Record<string, PositionType> = {};
-    cappedPlayers.forEach((player, index) => {
-      if (index < positions.length) {
-        positionMap[player.id] = positions[index];
-      }
+    players.forEach((player) => {
+      positionMap[player.id] = 'formation-player';
     });
     
     return positionMap;
@@ -82,14 +76,28 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     const playersForRandomization = players;
     const shuffledPlayers = shufflePlayers(playersForRandomization);
     
-    // Assign positions to players - only for visualization purposes
-    // We'll only visualize the first team's worth of players
+    // Determine how many players per team
     const singleTeamSize = parseInt(teamSize);
-    const visualizationPlayers = shuffledPlayers.slice(0, singleTeamSize);
-    const positions = assignPositions(visualizationPlayers, teamSize);
+    const totalPlayersNeeded = singleTeamSize * 2;
+    
+    // Cap to available players, ensuring even distribution
+    const cappedPlayerCount = Math.min(shuffledPlayers.length, totalPlayersNeeded);
+    // Make sure we have an even number to split evenly
+    const adjustedPlayerCount = cappedPlayerCount % 2 === 0 ? 
+      cappedPlayerCount : 
+      cappedPlayerCount - 1;
+    
+    // Split players into two teams
+    const teamASize = Math.floor(adjustedPlayerCount / 2);
+    setTeamAPlayers(shuffledPlayers.slice(0, teamASize));
+    setTeamBPlayers(shuffledPlayers.slice(teamASize, teamASize * 2));
+    
+    // For the animation, just show a subset of players initially
+    const visualizationPlayers = shuffledPlayers.slice(0, Math.min(6, teamASize));
+    const positions = assignPositions(visualizationPlayers);
     setAssignedPositions(positions);
     
-    // Set the randomizing players - only showing the first team for the animation
+    // Set the randomizing players for the initial animation
     setRandomizingPlayers(visualizationPlayers);
     
     // Dramatic pause before starting
@@ -97,9 +105,6 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     
     // Loop through each player and spotlight them
     for (let i = 0; i < visualizationPlayers.length; i++) {
-      // Skip if we've assigned enough players already
-      if (i >= Object.keys(positions).length) break;
-      
       // Set current player in spotlight
       setSpotlightPlayer(visualizationPlayers[i]);
       
@@ -115,7 +120,7 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
     
-    // Show the formation view (now a line view)
+    // After revealing individual players, show the formation view with both teams
     setFormationView(true);
     
     // Longer pause to view the final formation
@@ -149,11 +154,8 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     setFormationView(false);
     
     // Call the actual randomize function with players for both teams
-    // This is the key change - we're using the full set of shuffled players for both teams
-    const teamsCount = 2; // We want to create two teams
-    const totalPlayersNeeded = parseInt(teamSize) * teamsCount;
     const finalPlayers = shuffledPlayers.slice(0, totalPlayersNeeded);
-    onRandomize(finalPlayers, parseInt(teamSize));
+    onRandomize(finalPlayers, singleTeamSize);
   };
 
   const togglePlayerSelection = (playerId: string) => {
@@ -179,6 +181,8 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     setSelectedPlayers,
     isRandomizing,
     randomizingPlayers,
+    teamAPlayers,
+    teamBPlayers,
     assignedPositions,
     spotlightPlayer,
     revealComplete,

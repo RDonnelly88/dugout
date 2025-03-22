@@ -62,75 +62,49 @@
     @apply grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4;
   }
   
-  .soccer-field {
-    @apply relative w-full max-w-2xl mx-auto aspect-[3/4] rounded-xl overflow-hidden mb-8;
-    background: linear-gradient(180deg, #0a224a 0%, #0d3876 100%);
-    box-shadow: 0 0 30px rgba(0,0,0,0.5);
-    border: 2px solid rgba(255,255,255,0.2);
+  /* Formation styling */
+  .team-formation {
+    @apply bg-gradient-to-b from-blue-900/20 to-black/30 rounded-xl p-6 border border-blue-500/20;
   }
   
-  .soccer-field::before {
-    @apply absolute inset-0 content-[''] z-[1];
-    background-image: 
-      linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px);
-    background-size: 33.33% 25%;
+  .formation-rows {
+    @apply flex flex-col items-center;
   }
   
-  .field-centerline {
-    @apply absolute left-0 right-0 h-px bg-white/30 top-1/2 z-[2];
+  .formation-row {
+    @apply flex justify-center gap-6;
   }
   
-  .field-centerline::before {
-    @apply absolute content-[''] w-16 h-16 rounded-full border-2 border-white/30 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
+  .player-card-formation {
+    @apply relative flex flex-col items-center;
+    width: 64px;
   }
   
-  .field-goal-box-top {
-    @apply absolute left-1/2 -translate-x-1/2 top-[2%] w-[40%] h-[12%] border-2 border-white/30 border-t-0 z-[2];
+  .player-number {
+    @apply absolute -top-1 -right-1 w-5 h-5 rounded-full bg-blue-500 text-xs flex items-center justify-center font-bold text-white z-10;
   }
   
-  .field-goal-box-bottom {
-    @apply absolute left-1/2 -translate-x-1/2 bottom-[2%] w-[40%] h-[12%] border-2 border-white/30 border-b-0 z-[2];
+  .player-name {
+    @apply mt-2 text-xs font-semibold text-center text-white max-w-16 truncate;
   }
   
-  .field-penalty-box-top {
-    @apply absolute left-1/2 -translate-x-1/2 top-[2%] w-[60%] h-[20%] border-2 border-white/30 border-t-0 z-[2];
+  /* Animation for player cards */
+  .animate-pop-in {
+    animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
   }
   
-  .field-penalty-box-bottom {
-    @apply absolute left-1/2 -translate-x-1/2 bottom-[2%] w-[60%] h-[20%] border-2 border-white/30 border-b-0 z-[2];
+  @keyframes pop-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    70% {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
-  
-  /* Team formation styling */
-  .formation-player {
-    @apply absolute flex flex-col items-center justify-center transition-all z-[5];
-    width: 50px;
-    height: 50px;
-  }
-  
-  .formation-player-avatar {
-    @apply rounded-full overflow-hidden border-2 border-white/30 w-full h-full shadow-lg;
-    box-shadow: 0 0 15px rgba(0,0,0,0.4);
-  }
-  
-  .formation-player-name {
-    @apply text-[10px] font-bold text-white absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
-  }
-  
-  .formation-player-number {
-    @apply absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white text-[10px] flex items-center justify-center font-bold text-blue-900;
-  }
-  
-  /* Formation positions */
-  .position-gk { @apply bottom-[5%] left-1/2 -translate-x-1/2; }
-  .position-lb { @apply bottom-[20%] left-[20%]; }
-  .position-cb { @apply bottom-[20%] left-1/2 -translate-x-1/2; }
-  .position-rb { @apply bottom-[20%] left-[80%]; }
-  .position-lm { @apply bottom-[50%] left-[20%]; }
-  .position-cm { @apply bottom-[50%] left-1/2 -translate-x-1/2; }
-  .position-rm { @apply bottom-[50%] left-[80%]; }
-  .position-lw { @apply bottom-[80%] left-[30%]; }
-  .position-st { @apply bottom-[80%] left-1/2 -translate-x-1/2; }
-  .position-rw { @apply bottom-[80%] left-[70%]; }
 }

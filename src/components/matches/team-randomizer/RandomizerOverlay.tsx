@@ -11,6 +11,8 @@ interface RandomizerOverlayProps {
   revealComplete: boolean;
   formationView: boolean;
   randomizingPlayers: Player[];
+  teamAPlayers: Player[];
+  teamBPlayers: Player[];
   assignedPositions: Record<string, PositionType>;
   revealIndex: number;
   spotlightPlayer: Player | null;
@@ -22,6 +24,8 @@ const RandomizerOverlay = ({
   revealComplete,
   formationView,
   randomizingPlayers,
+  teamAPlayers,
+  teamBPlayers,
   assignedPositions,
   revealIndex,
   spotlightPlayer,
@@ -33,13 +37,15 @@ const RandomizerOverlay = ({
     <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center">
       <div className="max-w-4xl w-full mx-auto px-4">
         <h2 className="text-center text-3xl font-bold text-white mb-8 animate-fade-in">
-          {revealComplete ? "Team Formation Ready!" : "Building Your Team..."}
+          {revealComplete ? "Teams Ready!" : "Building Your Teams..."}
         </h2>
         
         {formationView && (
           <Formation 
-            players={randomizingPlayers} 
-            positions={assignedPositions} 
+            teamA={teamAPlayers}
+            teamB={teamBPlayers}
+            positions={assignedPositions}
+            teamSize={teamSize}
           />
         )}
         

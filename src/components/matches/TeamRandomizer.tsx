@@ -29,6 +29,8 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
     selectedPlayers,
     isRandomizing,
     randomizingPlayers,
+    teamAPlayers,
+    teamBPlayers,
     assignedPositions,
     spotlightPlayer,
     revealComplete,
@@ -65,6 +67,10 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
               <SelectItem value="5">5-a-side</SelectItem>
               <SelectItem value="6">6-a-side</SelectItem>
               <SelectItem value="7">7-a-side</SelectItem>
+              <SelectItem value="8">8-a-side</SelectItem>
+              <SelectItem value="9">9-a-side</SelectItem>
+              <SelectItem value="10">10-a-side</SelectItem>
+              <SelectItem value="11">11-a-side</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -100,6 +106,8 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
         revealComplete={revealComplete}
         formationView={formationView}
         randomizingPlayers={randomizingPlayers}
+        teamAPlayers={teamAPlayers}
+        teamBPlayers={teamBPlayers}
         assignedPositions={assignedPositions}
         revealIndex={revealIndex}
         spotlightPlayer={spotlightPlayer}

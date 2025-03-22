@@ -1,45 +1,15 @@
 
-import { PositionType } from './types';
+import { PositionType, FormationConfig } from './types';
 
-// Formation positions for different team sizes
-export const formationPositions: Record<string, PositionType[]> = {
-  "5": [
-    'goalkeeper',
-    'defender-left',
-    'defender-right',
-    'midfielder-center-left',
-    'forward-center'
-  ],
-  "6": [
-    'goalkeeper',
-    'defender-left',
-    'defender-right',
-    'midfielder-left',
-    'midfielder-right',
-    'forward-center'
-  ],
-  "7": [
-    'goalkeeper',
-    'defender-left',
-    'defender-center-left',
-    'defender-right',
-    'midfielder-left',
-    'midfielder-right',
-    'forward-center'
-  ],
-  "11": [
-    'goalkeeper',
-    'defender-left',
-    'defender-center-left',
-    'defender-center-right',
-    'defender-right',
-    'midfielder-left',
-    'midfielder-center-left',
-    'midfielder-center-right',
-    'midfielder-right',
-    'forward-left',
-    'forward-right'
-  ]
+// Formation configurations for different team sizes
+export const formationConfigs: Record<string, FormationConfig> = {
+  "5": { rows: [2, 2, 1], name: "2-2-1" },
+  "6": { rows: [2, 2, 2], name: "2-2-2" },
+  "7": { rows: [2, 3, 2], name: "2-3-2" },
+  "8": { rows: [3, 3, 2], name: "3-3-2" },
+  "9": { rows: [3, 4, 2], name: "3-4-2" },
+  "10": { rows: [4, 4, 2], name: "4-4-2" },
+  "11": { rows: [4, 4, 3], name: "4-4-3" }
 };
 
 // Line positions for displaying players in a simple row
@@ -47,5 +17,8 @@ export const linePositions: Record<string, PositionType[]> = {
   "5": Array(5).fill('line-player'),
   "6": Array(6).fill('line-player'),
   "7": Array(7).fill('line-player'),
+  "8": Array(8).fill('line-player'),
+  "9": Array(9).fill('line-player'),
+  "10": Array(10).fill('line-player'),
   "11": Array(11).fill('line-player')
 };

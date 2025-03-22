@@ -13,5 +13,17 @@ export type PositionType =
   | 'forward-left'
   | 'forward-center'
   | 'forward-right'
-  | 'line-player'; // Added line-player type for simple line display
+  | 'line-player'
+  | 'formation-player'; // Added for formation display
 
+// Formation configuration
+export interface FormationConfig {
+  rows: number[];
+  name: string;
+}
+
+// Team data structure
+export interface Team {
+  name: string;
+  players: Player[];
+}
