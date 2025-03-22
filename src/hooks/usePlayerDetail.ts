@@ -70,33 +70,6 @@ export const usePlayerDetail = () => {
     ? seasonStats.find(stat => stat.seasonId === selectedSeasonId)
     : null;
 
-  // Calculate player's rank in current season
-  const getCurrentSeasonPlayerRank = (playerId: string, seasonId: string | undefined) => {
-    if (!seasonId || !playerId) return null;
-    
-    // Get all player stats for this season
-    const allSeasonPlayerStats = seasons.find(s => s.id === seasonId)?.id
-      ? getSeasonPlayerStats(seasonId).then(stats => {
-          // Filter to include only players who have played at least one match
-          const activePlayers = stats.filter(s => s.played > 0);
-          
-          // Sort by points (descending), then by wins if points are equal
-          const sortedStats = [...activePlayers].sort((a, b) => {
-            if (b.points !== a.points) {
-              return b.points - a.points;
-            }
-            return b.wins - a.wins;
-          });
-          
-          // Find the player's position in the sorted array
-          const playerIndex = sortedStats.findIndex(s => s.playerId === playerId);
-          return playerIndex !== -1 ? playerIndex + 1 : null;
-        })
-      : Promise.resolve(null);
-    
-    return allSeasonPlayerStats;
-  };
-
   // Function to determine player's team and result
   const getPlayerMatchResult = (match: Match): { team: 'A' | 'B', result: 'win' | 'loss' | 'draw' | null } => {
     if (match.status !== 'completed' || match.teamA.score === undefined || match.teamB.score === undefined) {
@@ -128,7 +101,6 @@ export const usePlayerDetail = () => {
     selectedSeason,
     selectedSeasonStats,
     getPlayerMatchResult,
-    getCurrentSeasonPlayerRank,
     isLoading: isLoadingPlayer || isLoadingMatches || isLoadingSeasons || isLoadingSeasonStats,
     navigate
   };

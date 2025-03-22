@@ -31,6 +31,7 @@ const PlayerDetail = () => {
   } = usePlayerDetail();
 
   const [playerRank, setPlayerRank] = useState<number | null>(null);
+  const [hasPlayedCurrentSeason, setHasPlayedCurrentSeason] = useState<boolean>(false);
 
   // Get current season
   const currentSeason = seasons.find(s => s.isCurrent);
@@ -44,26 +45,32 @@ const PlayerDetail = () => {
   const { data: allCurrentSeasonStats = [], isLoading: isLoadingAllStats } = useQuery({
     queryKey: ['allSeasonStats', currentSeason?.id],
     queryFn: () => currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
-    enabled: !!currentSeason && !!player,
-    onSuccess: (data) => {
-      if (player && currentSeason) {
-        // Filter to include only players who have played at least one match
-        const activePlayers = data.filter(s => s.played > 0);
-        
-        // Sort by points (descending), then by wins if points are equal
-        const sortedStats = [...activePlayers].sort((a, b) => {
-          if (b.points !== a.points) {
-            return b.points - a.points;
-          }
-          return b.wins - a.wins;
-        });
-        
-        // Find the player's position in the sorted array
-        const playerIndex = sortedStats.findIndex(s => s.playerId === player.id);
-        setPlayerRank(playerIndex !== -1 ? playerIndex + 1 : null);
-      }
-    }
+    enabled: !!currentSeason && !!player
   });
+  
+  // Calculate player rank whenever allCurrentSeasonStats changes
+  useEffect(() => {
+    if (player && currentSeason && allCurrentSeasonStats.length > 0) {
+      // Check if player has played in current season
+      const playerCurrentSeasonStats = allCurrentSeasonStats.find(s => s.playerId === player.id);
+      setHasPlayedCurrentSeason(!!playerCurrentSeasonStats && playerCurrentSeasonStats.played > 0);
+      
+      // Filter to include only players who have played at least one match
+      const activePlayers = allCurrentSeasonStats.filter(s => s.played > 0);
+      
+      // Sort by points (descending), then by wins if points are equal
+      const sortedStats = [...activePlayers].sort((a, b) => {
+        if (b.points !== a.points) {
+          return b.points - a.points;
+        }
+        return b.wins - a.wins;
+      });
+      
+      // Find the player's position in the sorted array
+      const playerIndex = sortedStats.findIndex(s => s.playerId === player.id);
+      setPlayerRank(playerIndex !== -1 ? playerIndex + 1 : null);
+    }
+  }, [allCurrentSeasonStats, player, currentSeason]);
     
   // Get player form for the currently selected season with improved loading state handling
   const { form: currentSeasonForm, isLoading: isLoadingForm } = usePlayerForm(
@@ -149,10 +156,12 @@ const PlayerDetail = () => {
                   <CalendarDays className="h-3 w-3 mr-1" />
                   {seasons.length} Seasons
                 </Badge>
-                {playerRank && (
+                {currentSeason && (
                   <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200">
                     <Trophy className="h-3 w-3 mr-1" />
-                    Rank: #{playerRank}
+                    {hasPlayedCurrentSeason && playerRank 
+                      ? `Rank: #${playerRank}` 
+                      : "Rank: N/A"}
                   </Badge>
                 )}
               </div>
@@ -180,12 +189,12 @@ const PlayerDetail = () => {
               <CardTitle className="text-lg flex items-center">
                 <Trophy className="h-5 w-5 mr-2 text-amber-400" />
                 Current Season Stats ({currentSeason.name})
-                {playerRank && (
-                  <Badge className="ml-2" variant="outline">
-                    <Flag className="h-3 w-3 mr-1" />
-                    Rank #{playerRank}
-                  </Badge>
-                )}
+                <Badge className="ml-2" variant="outline">
+                  <Flag className="h-3 w-3 mr-1" />
+                  {hasPlayedCurrentSeason && playerRank 
+                    ? `Rank #${playerRank}` 
+                    : "Rank N/A"}
+                </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
