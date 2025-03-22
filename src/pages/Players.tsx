@@ -1,9 +1,8 @@
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPlayers, deletePlayer, getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
-import { Player, PlayerFormResult, SeasonPlayerStats } from "@/types";
+import { Player, PlayerFormResult } from "@/types";
 import { Plus, Search, Trophy, Edit, Trash2, AlertTriangle, CalendarDays, Ghost } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -22,6 +21,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
+import { usePlayerRank } from "@/hooks/usePlayerRank";
 
 const Players = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,7 +41,7 @@ const Players = () => {
 
   const { data: seasonPlayerStats = [], isLoading: isLoadingStats } = useQuery({
     queryKey: ['seasonPlayerStats', currentSeason?.id],
-    queryFn: () => getSeasonPlayerStats(currentSeason!.id),
+    queryFn: () => currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
     enabled: !!currentSeason,
     staleTime: 60000
   });
@@ -55,28 +55,13 @@ const Players = () => {
     playerIds
   );
 
-  const getPlayerRankAndForm = (playerId: string): { rank: number, formResults: PlayerFormResult[] } => {
-    if (!currentSeason || !seasonPlayerStats.length) {
-      return { rank: 0, formResults: [] };
-    }
-    
-    const sortedStats = [...seasonPlayerStats].sort((a, b) => {
-      if (b.points !== a.points) {
-        return b.points - a.points;
-      }
-      return b.wins - a.wins;
-    });
-    
-    const playerIndex = sortedStats.findIndex(stat => stat.playerId === playerId);
-    if (playerIndex === -1) {
-      return { rank: 0, formResults: [] };
-    }
-    
-    // Get form data from batch results
+  // Function to get player's season stats and form data
+  const getPlayerSeasonData = (playerId: string): { seasonStats: any, formResults: PlayerFormResult[] } => {
+    const playerStats = seasonPlayerStats.find(stat => stat.playerId === playerId);
     const formResults = batchFormData[playerId] || [];
     
     return { 
-      rank: playerIndex + 1,
+      seasonStats: playerStats,
       formResults
     };
   };
@@ -184,9 +169,15 @@ const Players = () => {
       ) : filteredPlayers.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPlayers.map((player) => {
-            const { rank, formResults } = getPlayerRankAndForm(player.id);
+            // Use our custom hook for each player's rank
+            const { seasonStats, formResults } = getPlayerSeasonData(player.id);
             
-            const seasonStat = seasonPlayerStats.find(stat => stat.playerId === player.id);
+            // Use the usePlayerRank hook to get consistent rank data
+            const { rank, hasPlayedCurrentSeason } = usePlayerRank(
+              currentSeason?.id || null,
+              player.id
+            );
+            
             const hasPlayedMatches = player.stats.played > 0;
             
             return (
@@ -209,9 +200,11 @@ const Players = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <h3 className="text-lg font-medium truncate">{player.name}</h3>
-                        {rank > 0 && currentSeason && (
+                        {currentSeason && (
                           <Badge className="bg-gray-800 text-white">
-                            #{rank} in League
+                            {hasPlayedCurrentSeason && rank
+                              ? `#${rank} in League`
+                              : "Rank: N/A"}
                           </Badge>
                         )}
                       </div>
@@ -238,7 +231,7 @@ const Players = () => {
                     </div>
                   </div>
 
-                  {currentSeason && seasonStat && (
+                  {currentSeason && seasonStats && (
                     <div className="px-5 pb-3">
                       <div className="text-xs font-medium text-blue-400 mb-1 flex items-center">
                         <Trophy className="h-3 w-3 mr-1" />
@@ -246,19 +239,19 @@ const Players = () => {
                       </div>
                       <div className="grid grid-cols-4 gap-2 text-center text-xs">
                         <div className="bg-blue-900/30 rounded p-1">
-                          <div className="font-bold">{seasonStat.played}</div>
+                          <div className="font-bold">{seasonStats.played}</div>
                           <div className="text-blue-300">Played</div>
                         </div>
                         <div className="bg-green-900/30 rounded p-1">
-                          <div className="font-bold">{seasonStat.wins}</div>
+                          <div className="font-bold">{seasonStats.wins}</div>
                           <div className="text-green-300">Wins</div>
                         </div>
                         <div className="bg-amber-900/30 rounded p-1">
-                          <div className="font-bold">{seasonStat.draws}</div>
+                          <div className="font-bold">{seasonStats.draws}</div>
                           <div className="text-amber-300">Draws</div>
                         </div>
                         <div className="bg-red-900/30 rounded p-1">
-                          <div className="font-bold">{seasonStat.losses}</div>
+                          <div className="font-bold">{seasonStats.losses}</div>
                           <div className="text-red-300">Losses</div>
                         </div>
                       </div>
