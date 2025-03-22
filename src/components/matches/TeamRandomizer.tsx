@@ -1,3 +1,4 @@
+
 import { Shuffle, Users, Sparkles, ChevronRight, ArrowRight, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Player } from "@/types";
@@ -68,28 +69,17 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
     };
   }, [players, setInitialSelectedPlayers, resetRandomizer]);
   
-  useEffect(() => {
-    console.log(`Modal state: ${showRandomizerModal ? 'open' : 'closed'}, Animation completed: ${animationCompleted}`);
-  }, [showRandomizerModal, animationCompleted]);
-  
   const availablePlayers = players.filter(player => selectedPlayers.includes(player.id));
   const canRandomize = availablePlayers.length > 0;
   const playerCount = availablePlayers.length;
   
   const handleRandomizeClick = () => {
     setShowRandomizerModal(true);
-    setTimeout(() => {
-      console.log("Starting randomization process from click handler");
-      prepareRandomization(availablePlayers);
-    }, 500);
   };
   
   const handleModalClose = (open: boolean) => {
     if (!open) {
-      console.log("Modal closing requested, animation completed:", animationCompleted);
-      
       if (isRandomizing && !animationCompleted) {
-        console.log("Preventing close while animation is running");
         return;
       }
       
@@ -98,17 +88,31 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
     }
   };
   
+  // This function is now critical - it will actually start the randomization when the user clicks
+  // the action button in the idle stage
+  const handleStartRandomization = () => {
+    if (availablePlayers.length === 0) {
+      return;
+    }
+    
+    // Start the randomization process with the selected players
+    prepareRandomization(availablePlayers);
+  };
+  
   const getActionButton = () => {
+    // If we're in idle stage, show a button to start the randomization
+    if (revealStage === 'idle') {
+      return (
+        <Button 
+          className="transition-all mt-4 w-full"
+          onClick={handleStartRandomization}
+        >
+          Start Team Selection <ArrowRight className="ml-2" />
+        </Button>
+      );
+    }
+    
     switch (revealStage) {
-      case 'player-selection':
-        return (
-          <Button 
-            className="transition-all mt-4 w-full" 
-            onClick={startFlashingStage}
-          >
-            Begin Team Selection <ArrowRight className="ml-2" />
-          </Button>
-        );
       case 'flashing':
         return (
           <Button 
@@ -155,19 +159,16 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
   const renderPlayerCards = () => {
     console.log("Rendering player cards for stage:", revealStage);
     
-    if (revealStage === 'player-selection') {
+    // If we're in idle stage, show a message indicating we need to start
+    if (revealStage === 'idle') {
       return (
-        <div className="text-center">
-          <h3 className="text-xl mb-4">Players Selected for Randomization</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {availablePlayers.map((player, index) => (
-              <PlayerCard 
-                key={player.id} 
-                player={player} 
-                index={index}
-                revealed={true}
-              />
-            ))}
+        <div className="flex flex-col items-center justify-center h-[300px]">
+          <div className="animate-pulse flex flex-col items-center">
+            <div className="h-20 w-20 rounded-full bg-blue-500/20 mb-4 flex items-center justify-center">
+              <Shuffle className="h-10 w-10 text-blue-400" />
+            </div>
+            <p className="text-blue-400 text-xl">Preparing teams...</p>
+            <p className="text-blue-300/60 text-sm mt-2">Click the button below to begin</p>
           </div>
         </div>
       );
@@ -282,23 +283,30 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
       );
     }
     
+    // Default case - should never happen but just in case
     return (
-      <div className="flex flex-col items-center justify-center h-[300px]">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="h-20 w-20 rounded-full bg-blue-500/20 mb-4 flex items-center justify-center">
-            <Shuffle className="h-10 w-10 text-blue-400" />
-          </div>
-          <p className="text-blue-400 text-xl">Preparing teams...</p>
-          <p className="text-blue-300/60 text-sm mt-2">Click the randomize button to begin</p>
+      <div className="text-center">
+        <h3 className="text-xl mb-4">Players Selected for Randomization</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {availablePlayers.map((player, index) => (
+            <PlayerCard 
+              key={player.id} 
+              player={player} 
+              index={index}
+              revealed={true}
+            />
+          ))}
         </div>
       </div>
     );
   };
   
   const getStageTitle = () => {
+    if (revealStage === 'idle') {
+      return "Team Randomizer";
+    }
+    
     switch (revealStage) {
-      case 'player-selection':
-        return "Players Ready for Randomization";
       case 'flashing':
         return "Preparing Team Selection...";
       case 'spotlight':
@@ -391,12 +399,11 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
               </div>
               
               <div className="randomizer-modal-footer border-t border-blue-500/20 p-4 text-center text-sm text-blue-300/70">
-                {revealStage === 'player-selection' && <p>Review selected players, then click to begin</p>}
+                {revealStage === 'idle' && <p>Click the button above to begin team randomization</p>}
                 {revealStage === 'flashing' && <p>Click to continue when ready</p>}
                 {revealStage === 'spotlight' && <p>Click to view star players</p>}
                 {revealStage === 'revealing' && <p>Click to reveal players one by one</p>}
                 {revealStage === 'celebration' && <p>Click to confirm and save these teams</p>}
-                {revealStage === 'idle' && <p>Click outside or the X to close</p>}
                 {animationCompleted && <p>Teams have been saved! Click the X or outside to close.</p>}
               </div>
             </div>

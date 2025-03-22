@@ -37,6 +37,16 @@ export const useCreateMatch = () => {
     setTeamA([]);
     setTeamB([]);
     
+    // If no players were randomized, don't proceed
+    if (players.length === 0) {
+      toast({
+        title: "No players selected",
+        description: "Please select players to randomize teams.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     // Create a copy of player IDs and shuffle them
     const playerIds = players.map(player => player.id);
     for (let i = playerIds.length - 1; i > 0; i--) {
@@ -48,6 +58,16 @@ export const useCreateMatch = () => {
     // If there are not enough players for even teams, distribute them as evenly as possible
     const totalPlayers = playerIds.length;
     const playersPerTeam = Math.min(teamSize, Math.floor(totalPlayers / 2));
+    
+    // Ensure we have at least one player per team
+    if (playersPerTeam < 1) {
+      toast({
+        title: "Not enough players",
+        description: "You need at least 2 players to create teams.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setTeamA(playerIds.slice(0, playersPerTeam));
     setTeamB(playerIds.slice(playersPerTeam, playersPerTeam * 2));
