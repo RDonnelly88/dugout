@@ -20,6 +20,7 @@ import {
   DialogOverlay,
   DialogTitle,
   DialogDescription,
+  DialogClose,
 } from "@/components/ui/dialog";
 import PlayerSpotlight from "./team-randomizer/PlayerSpotlight";
 
@@ -45,6 +46,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
     teamBPlayers,
     revealIndex,
     spotlightPlayer,
+    animationCompleted,
     togglePlayerSelection,
     performRandomization,
     resetRandomizer,
@@ -68,26 +70,24 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
   // This function opens the modal and starts the randomization process
   const handleRandomizeClick = () => {
     setShowRandomizerModal(true);
+    console.log("Modal opened, starting randomization shortly");
     
     // Slight delay to ensure modal is visible before animation starts
     setTimeout(() => {
+      console.log("Starting randomization process");
       performRandomization(availablePlayers);
-    }, 100);
+    }, 300);
   };
   
-  // Manually close the modal with delay when randomization completes
-  useEffect(() => {
-    if (!isRandomizing && showRandomizerModal && revealStage !== "idle") {
-      console.log("Animation completed, closing modal soon...");
-      // Add a longer delay before closing the modal to show the final teams
-      const timer = setTimeout(() => {
-        console.log("Closing randomizer modal");
-        setShowRandomizerModal(false);
-      }, 3000);
-      
-      return () => clearTimeout(timer);
+  // Handle modal closing
+  const handleModalClose = (open: boolean) => {
+    // Only allow closing if animation is completed or user is forcing it closed
+    if (!open) {
+      console.log("Modal closing requested, animation completed:", animationCompleted);
+      resetRandomizer();
+      setShowRandomizerModal(false);
     }
-  }, [isRandomizing, showRandomizerModal, revealStage]);
+  };
   
   const renderPlayerCards = () => {
     console.log("Current reveal stage:", revealStage);
@@ -264,12 +264,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
       {/* Loot Box Style Randomizer Modal Dialog */}
       <Dialog 
         open={showRandomizerModal} 
-        onOpenChange={(open) => {
-          // Only allow closing if not in the middle of randomization
-          if (!isRandomizing || !open) {
-            setShowRandomizerModal(open);
-          }
-        }}
+        onOpenChange={handleModalClose}
       >
         <DialogPortal>
           <DialogOverlay className="bg-black/95 backdrop-blur-sm" />
@@ -297,9 +292,17 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
                 {revealStage === 'spotlight' && <p>Star players identified!</p>}
                 {revealStage === 'revealing' && <p>Generating balanced teams...</p>}
                 {revealStage === 'celebration' && <p>Team creation complete!</p>}
-                {!isRandomizing && revealStage !== "idle" && <p>Teams have been saved! Returning to match creation...</p>}
+                {animationCompleted && <p>Teams have been saved! Click the X or outside to close.</p>}
               </div>
             </div>
+            
+            {/* Only show the close button when animation is complete */}
+            {animationCompleted && (
+              <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+                <Sparkles className="h-5 w-5" />
+                <span className="sr-only">Close</span>
+              </DialogClose>
+            )}
           </DialogContent>
         </DialogPortal>
       </Dialog>
