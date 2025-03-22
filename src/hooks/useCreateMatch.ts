@@ -57,37 +57,24 @@ export const useCreateMatch = () => {
       return [];
     }
     
-    // Create a copy of player IDs and shuffle them
+    // Extract the player IDs
     const playerIds = players.map(player => player.id);
-    for (let i = playerIds.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [playerIds[i], playerIds[j]] = [playerIds[j], playerIds[i]];
-    }
     
-    // Calculate how many players should be on each team
-    const totalPlayers = playerIds.length;
-    const playersPerTeam = Math.min(teamSize, Math.floor(totalPlayers / 2));
+    // Split the player IDs into teams
+    const halfIndex = Math.floor(playerIds.length / 2);
+    const teamAIds = playerIds.slice(0, halfIndex);
+    const teamBIds = playerIds.slice(halfIndex);
     
-    // Ensure at least one player per team
-    if (playersPerTeam < 1) {
-      toast({
-        title: "Team size too small",
-        description: "Each team must have at least one player.",
-        variant: "destructive"
-      });
-      return [];
-    }
-    
-    setTeamA(playerIds.slice(0, playersPerTeam));
-    setTeamB(playerIds.slice(playersPerTeam, playersPerTeam * 2));
+    // Update the state with the new teams
+    setTeamA(teamAIds);
+    setTeamB(teamBIds);
     
     toast({
-      title: "Teams randomized",
-      description: `Players have been randomly assigned to ${playersPerTeam}-a-side teams.`
+      title: "Teams created",
+      description: `Players have been assigned to teams.`
     });
     
-    // Return the randomized players so we can tell if the operation succeeded
-    return players.filter(p => playerIds.slice(0, playersPerTeam * 2).includes(p.id));
+    return players;
   };
 
   const createMatchMutation = useMutation({

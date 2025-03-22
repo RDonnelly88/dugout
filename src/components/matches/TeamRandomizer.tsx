@@ -53,16 +53,13 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
   
   const handleRandomizeClick = () => {
     if (!canRandomize) return;
+    setIsRandomizing(true);
     setShowRandomizerModal(true);
   };
   
   const handleRandomizerComplete = (teamAPlayers: Player[], teamBPlayers: Player[]) => {
     setShowRandomizerModal(false);
     setIsRandomizing(false);
-    
-    // Convert player objects to IDs for the onRandomize callback
-    const teamAIds = teamAPlayers.map(p => p.id);
-    const teamBIds = teamBPlayers.map(p => p.id);
     
     // Call onRandomize with all players and team size
     const allPlayers = [...teamAPlayers, ...teamBPlayers];

@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect } from "react";
 import { Player } from "@/types";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Sparkles, PackageOpen } from "lucide-react";
-import PlayerCard from "./PlayerCard";
+import { PackageOpen, Check, User } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 
 interface CardPackRandomizerProps {
@@ -94,52 +93,50 @@ const CardPackRandomizer = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Team A */}
         <div className="team-column">
-          <h3 className="text-xl font-bold text-center mb-4 text-red-400 flex items-center justify-center gap-2">
-            <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
-            Team A
-            <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
-          </h3>
-          <div className="team-players space-y-3 min-h-[300px] border border-dashed border-red-500/30 rounded-lg p-4">
+          <div className="team-header bg-gradient-to-r from-red-600 to-red-700 text-white py-3 px-4 rounded-t-lg text-center">
+            <h3 className="text-xl font-bold">TEAM A</h3>
+          </div>
+          <div className="team-list-container bg-gradient-to-b from-red-900/40 to-red-950/60 rounded-b-lg p-1 min-h-[300px] border border-red-500/30">
             {teamA.length === 0 ? (
-              <div className="text-center p-8 text-red-300/50">
+              <div className="empty-state text-center py-8 text-red-300/50">
                 No players yet
               </div>
             ) : (
-              teamA.map((player, index) => (
-                <PlayerCard
-                  key={player.id}
-                  player={player}
-                  index={index}
-                  revealed={true}
-                  teamColor="A"
-                />
-              ))
+              <div className="player-list">
+                {teamA.map((player, index) => (
+                  <PlayerListItem 
+                    key={player.id} 
+                    player={player} 
+                    index={index} 
+                    teamColor="A"
+                  />
+                ))}
+              </div>
             )}
           </div>
         </div>
 
         {/* Team B */}
         <div className="team-column">
-          <h3 className="text-xl font-bold text-center mb-4 text-green-400 flex items-center justify-center gap-2">
-            <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
-            Team B
-            <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
-          </h3>
-          <div className="team-players space-y-3 min-h-[300px] border border-dashed border-green-500/30 rounded-lg p-4">
+          <div className="team-header bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-4 rounded-t-lg text-center">
+            <h3 className="text-xl font-bold">TEAM B</h3>
+          </div>
+          <div className="team-list-container bg-gradient-to-b from-green-900/40 to-green-950/60 rounded-b-lg p-1 min-h-[300px] border border-green-500/30">
             {teamB.length === 0 ? (
-              <div className="text-center p-8 text-green-300/50">
+              <div className="empty-state text-center py-8 text-green-300/50">
                 No players yet
               </div>
             ) : (
-              teamB.map((player, index) => (
-                <PlayerCard
-                  key={player.id}
-                  player={player}
-                  index={index}
-                  revealed={true}
-                  teamColor="B"
-                />
-              ))
+              <div className="player-list">
+                {teamB.map((player, index) => (
+                  <PlayerListItem 
+                    key={player.id} 
+                    player={player} 
+                    index={index}
+                    teamColor="B" 
+                  />
+                ))}
+              </div>
             )}
           </div>
         </div>
@@ -151,20 +148,28 @@ const CardPackRandomizer = ({
           <>
             {currentCard && isRevealing ? (
               <div className="revealed-card animate-pop-in">
-                <PlayerCard
-                  player={currentCard}
-                  index={0}
-                  revealed={true}
-                  flashing={true}
-                />
+                <div className="player-card-panel bg-blue-600 p-4 rounded-lg shadow-lg border-2 border-yellow-400">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10 border-2 border-white">
+                      {currentCard.image ? (
+                        <AvatarImage src={currentCard.image} alt={currentCard.name} />
+                      ) : (
+                        <AvatarFallback className="bg-blue-800 text-white">
+                          {currentCard.name.charAt(0)}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    <span className="text-lg font-bold text-white">{currentCard.name}</span>
+                  </div>
+                </div>
               </div>
             ) : (
               <Button
                 onClick={revealNextCard}
                 disabled={isRevealing || remainingCards.length === 0}
-                className="card-pack p-8 h-auto flex flex-col items-center gap-4 bg-gradient-to-br from-blue-700 to-indigo-900 hover:from-blue-600 hover:to-indigo-800"
+                className="card-pack py-4 px-6 h-auto flex flex-col items-center gap-3 bg-gradient-to-br from-blue-700 to-indigo-900 hover:from-blue-600 hover:to-indigo-800"
               >
-                <PackageOpen className="h-16 w-16 text-blue-200" />
+                <PackageOpen className="h-12 w-12 text-blue-200" />
                 <span className="text-lg font-medium">
                   {remainingCards.length > 0
                     ? `Click to reveal next player (${remainingCards.length} left)`
@@ -176,8 +181,9 @@ const CardPackRandomizer = ({
         ) : (
           <Button
             onClick={handleComplete}
-            className="complete-button bg-green-600 hover:bg-green-700 p-6 h-auto animate-pulse"
+            className="complete-button bg-green-600 hover:bg-green-700 py-4 px-6 h-auto"
           >
+            <Check className="mr-2 h-5 w-5" />
             <span className="text-lg font-medium">Confirm Teams</span>
           </Button>
         )}
@@ -189,6 +195,36 @@ const CardPackRandomizer = ({
           Cancel
         </Button>
       </div>
+    </div>
+  );
+};
+
+// New PlayerListItem component for the simplified list view
+interface PlayerListItemProps {
+  player: Player;
+  index: number;
+  teamColor: 'A' | 'B';
+}
+
+const PlayerListItem = ({ player, index, teamColor }: PlayerListItemProps) => {
+  const bgColor = teamColor === 'A' 
+    ? 'bg-gradient-to-r from-red-950 to-red-900 hover:from-red-900 hover:to-red-800' 
+    : 'bg-gradient-to-r from-green-950 to-green-900 hover:from-green-900 hover:to-green-800';
+  
+  const borderColor = teamColor === 'A' 
+    ? 'border-red-500/30' 
+    : 'border-green-500/30';
+  
+  return (
+    <div 
+      className={`player-list-item ${bgColor} my-1 p-2 rounded-md border ${borderColor} flex items-center gap-3 transition-colors animate-pop-in`}
+      style={{ animationDelay: `${index * 0.1}s` }}
+    >
+      <div className="player-number w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
+        {index + 1}
+      </div>
+      <User className="h-4 w-4 text-white/70" />
+      <span className="text-white font-medium">{player.name}</span>
     </div>
   );
 };
