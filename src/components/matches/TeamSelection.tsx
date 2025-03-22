@@ -250,7 +250,13 @@ const PlayerFormationCard = ({ player, onClick, teamColor }: PlayerFormationCard
           <HoverCardTrigger asChild>
             <div className="player-name-label cursor-pointer">{player.name}</div>
           </HoverCardTrigger>
-          <HoverCardContent align="start" side="left" className="w-60 player-hover-card player-stats-card">
+          <HoverCardContent 
+            className="w-60 player-hover-card player-stats-card" 
+            align="start" 
+            side="left" 
+            sideOffset={100}
+            alignOffset={-50}
+          >
             <div className="flex justify-between items-start">
               <Avatar className="h-12 w-12 border border-white/20">
                 {player.image ? (
