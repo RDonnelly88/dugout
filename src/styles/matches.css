@@ -75,173 +75,47 @@
     @apply text-[9px] opacity-70 mt-0.5 block;
   }
   
-  /* Football pitch styling */
-  .football-pitch {
-    @apply relative rounded-xl overflow-hidden flex flex-col items-center justify-center py-8 h-[300px] md:h-[400px];
-    background: linear-gradient(to bottom, #034694, #0a2351);
+  /* Team formation list styling */
+  .team-formation-list {
+    @apply relative p-4 rounded-xl overflow-hidden flex flex-col items-center;
+    min-height: 260px;
   }
   
-  .team-a-pitch {
-    background: linear-gradient(to bottom, #034694, #0a2351);
+  .team-a-list {
+    background: linear-gradient(to bottom, #8B0000, #4B0000);
   }
   
-  .team-b-pitch {
-    background: linear-gradient(to bottom, #025214, #053b12);
+  .team-b-list {
+    background: linear-gradient(to bottom, #006400, #003200);
   }
   
-  /* Field markings for pitch */
-  .field-markings {
-    @apply absolute inset-0 pointer-events-none;
+  .formation-header {
+    @apply flex justify-center mb-4;
   }
   
-  .center-circle {
-    @apply absolute rounded-full border border-white/20;
-    width: 80px;
-    height: 80px;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+  .player-list-container {
+    @apply w-full flex flex-col;
   }
   
-  .halfway-line {
-    @apply absolute border-t border-white/20;
-    width: 100%;
-    top: 50%;
-    left: 0;
+  .player-list-item {
+    @apply flex items-center cursor-pointer transition-all duration-300 hover:shadow-lg;
   }
   
-  .penalty-area-bottom {
-    @apply absolute border-t border-r border-l border-white/20;
-    width: 150px;
-    height: 70px;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
+  .player-position {
+    @apply h-10 w-10 flex-shrink-0 text-xl font-bold;
   }
   
-  .penalty-area-top {
-    @apply absolute border-b border-r border-l border-white/20;
-    width: 150px;
-    height: 70px;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
+  .player-info {
+    @apply flex p-2;
   }
   
-  .goal-area-bottom {
-    @apply absolute border-t border-r border-l border-white/20;
-    width: 60px;
-    height: 30px;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
+  .team-label-footer {
+    @apply mt-auto text-center text-sm font-bold text-white/70 bg-black/30 px-3 py-1 rounded-full;
   }
   
-  .goal-area-top {
-    @apply absolute border-b border-r border-l border-white/20;
-    width: 60px;
-    height: 30px;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-  }
-  
-  /* Team empty pitch */
-  .team-empty-pitch {
+  /* Team empty list */
+  .team-empty-list {
     @apply min-h-[260px] rounded-xl p-6;
-    background: linear-gradient(to bottom, #034694, #0a2351);
-  }
-  
-  /* Formation rows positioning */
-  .formation-rows {
-    @apply flex flex-col h-full justify-between py-4;
-  }
-  
-  .formation-row {
-    @apply flex justify-center items-center gap-16;
-  }
-  
-  /* Row-specific positioning for different formations */
-  .three-row-formation.row-0 {
-    @apply mt-6;
-  }
-  
-  .three-row-formation.row-2 {
-    @apply mb-6;
-  }
-  
-  .four-row-formation.row-0 {
-    @apply mt-4;
-  }
-  
-  .four-row-formation.row-3 {
-    @apply mb-4;
-  }
-  
-  /* Simple teams display for randomizer */
-  .simple-teams-container {
-    @apply bg-blue-950/20 rounded-xl p-6;
-  }
-  
-  .team-player-card {
-    @apply bg-blue-950/40 rounded-lg p-3 w-full border border-blue-500/20;
-  }
-  
-  /* Player jersey and positioning */
-  .player-position-card {
-    @apply relative mx-4;
-  }
-  
-  .player-jersey {
-    @apply flex flex-col items-center cursor-pointer transition-all duration-300;
-  }
-  
-  .player-jersey:hover {
-    @apply transform scale-110;
-  }
-  
-  .jersey {
-    @apply relative flex items-center justify-center rounded-full h-12 w-12 border-2 border-white/30 shadow-lg;
-  }
-  
-  .player-avatar {
-    @apply h-10 w-10;
-  }
-  
-  .player-name-label {
-    @apply mt-2 text-sm font-medium text-white text-center max-w-[90px] text-base;
-    text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
-  }
-  
-  /* Player stats styling */
-  .player-stats-card {
-    @apply p-3 text-xs;
-    background-color: #0F1420;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 9999;
-  }
-  
-  .stat-box {
-    @apply rounded p-1 text-center border border-blue-500/20 text-[11px];
-    background-color: #1A2642;
-  }
-  
-  .win-stat {
-    background-color: rgba(6, 78, 59, 0.8);
-    border-color: rgba(16, 185, 129, 0.3);
-  }
-  
-  .loss-stat {
-    background-color: rgba(127, 29, 29, 0.8);
-    border-color: rgba(239, 68, 68, 0.3);
-  }
-  
-  /* Team selection container */
-  .team-selection-container {
-    @apply bg-blue-950/30 rounded-xl p-6 backdrop-blur-sm;
   }
   
   /* Available players section */
