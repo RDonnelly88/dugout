@@ -4,17 +4,15 @@ import { Player } from "@/types";
 import PlayerCard from './PlayerCard';
 import PlayerSpotlight from './PlayerSpotlight';
 import Formation from './Formation';
-import { PositionType } from './types';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface RandomizerOverlayProps {
   isRandomizing: boolean;
   revealComplete: boolean;
-  formationView: boolean;  // This is always true now
+  formationView: boolean;
   randomizingPlayers: Player[];
   teamAPlayers: Player[];
   teamBPlayers: Player[];
-  assignedPositions: Record<string, PositionType>;
   revealIndex: number;
   spotlightPlayer: Player | null;
   teamSize: string;
@@ -28,7 +26,6 @@ const RandomizerOverlay = ({
   randomizingPlayers,
   teamAPlayers,
   teamBPlayers,
-  assignedPositions,
   revealIndex,
   spotlightPlayer,
   teamSize,
@@ -122,14 +119,13 @@ const RandomizerOverlay = ({
     );
   };
 
-  // When teams are complete, ALWAYS show formation view
+  // When teams are complete, always show formation view
   const renderCompletedTeams = () => {
     console.log("Rendering completed teams in formation view");
     return (
       <Formation 
         teamA={teamAPlayers} 
         teamB={teamBPlayers} 
-        positions={assignedPositions} 
         teamSize={teamSize}
       />
     );

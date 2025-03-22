@@ -2,81 +2,94 @@
 import React from 'react';
 import { Player } from "@/types";
 import FormationPlayer from './FormationPlayer';
-import { PositionType } from './types';
+import { Badge } from "@/components/ui/badge";
 import { formationConfigs } from './constants';
 
 interface FormationProps {
   teamA: Player[];
   teamB: Player[];
-  positions: Record<string, PositionType>;
   teamSize: string;
 }
 
-const Formation = ({ teamA, teamB, positions, teamSize }: FormationProps) => {
+const Formation = ({ teamA, teamB, teamSize }: FormationProps) => {
   console.log("Formation rendering with teamSize:", teamSize);
   console.log("Team A players:", teamA.map(p => p.name));
   console.log("Team B players:", teamB.map(p => p.name));
   
   const formationConfig = formationConfigs[teamSize] || formationConfigs["5"];
   console.log("Using formation config:", formationConfig);
-  
-  const renderTeamFormation = (players: Player[], teamName: string) => {
+
+  const renderTeam = (players: Player[], teamName: string, teamColor: 'red' | 'green') => {
     if (!players.length) {
       console.log(`No players to render for ${teamName}`);
-      return null;
+      return (
+        <div className="empty-team-pitch flex flex-col items-center justify-center h-full text-white/70">
+          <p>No players selected</p>
+        </div>
+      );
     }
     
-    // Calculate how many players to show in each row based on the formation config
     const { rows } = formationConfig;
+    console.log(`Rendering formation rows for ${teamName}:`, rows);
+    
     let playerIndex = 0;
     
-    console.log(`Rendering ${teamName} with ${players.length} players in formation:`, rows);
-    
     return (
-      <div className="team-formation mb-8">
-        <h3 className="text-xl font-bold text-white mb-4">{teamName}</h3>
+      <div className="relative h-full flex flex-col justify-between">
+        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10">
+          <Badge variant="outline" className="bg-blue-950/80 text-white border-blue-500/30 px-3">
+            {formationConfig.name}
+          </Badge>
+        </div>
         
-        <div className="formation-rows space-y-6">
-          {rows.map((playersInRow, rowIndex) => {
-            console.log(`Rendering row ${rowIndex} with ${playersInRow} players`);
-            return (
-              <div key={`${teamName}-row-${rowIndex}`} className="formation-row flex justify-center gap-4">
-                {Array(playersInRow).fill(0).map((_, posIndex) => {
-                  if (playerIndex >= players.length) {
-                    console.log(`No player available for row ${rowIndex}, position ${posIndex}`);
-                    return null;
-                  }
-                  const player = players[playerIndex++];
-                  console.log(`Adding player to formation:`, player.name);
-                  return (
-                    <FormationPlayer 
-                      key={`${player.id}-${rowIndex}-${posIndex}`} 
-                      player={player}
-                      position={'formation-player'}
-                      index={playerIndex - 1}
-                    />
-                  );
-                })}
-              </div>
-            );
-          })}
+        {rows.map((playersInRow, rowIndex) => {
+          console.log(`Rendering row ${rowIndex} with ${playersInRow} players for ${teamName}`);
+          const positions = rowIndex === 0 ? 'Goalkeeper' : 
+                          rowIndex === 1 ? 'Defender' : 
+                          rowIndex === 2 ? 'Midfielder' : 'Forward';
+          
+          return (
+            <div 
+              key={`${teamName}-row-${rowIndex}`} 
+              className="formation-row flex justify-center items-center gap-6"
+            >
+              {Array(playersInRow).fill(0).map((_, posIndex) => {
+                if (playerIndex >= players.length) {
+                  console.log(`No player available for ${teamName} at row ${rowIndex}, position ${posIndex}`);
+                  return null;
+                }
+                
+                const player = players[playerIndex++];
+                console.log(`Adding ${player.name} to ${teamName} at row ${rowIndex}, position ${posIndex}`);
+                
+                return (
+                  <FormationPlayer 
+                    key={`${player.id}-${rowIndex}-${posIndex}`} 
+                    player={player}
+                    position={positions}
+                    index={playerIndex - 1}
+                    teamColor={teamColor}
+                  />
+                );
+              })}
+            </div>
+          );
+        })}
+        
+        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-white font-bold text-lg">
+          {teamName}
         </div>
       </div>
     );
   };
   
   return (
-    <div className="animate-fade-in">
-      <div className="formation-container space-y-10">
-        {renderTeamFormation(teamA, "TEAM A")}
-        {renderTeamFormation(teamB, "TEAM B")}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+      <div className="team-pitch bg-blue-800 rounded-lg overflow-hidden h-[300px] relative">
+        {renderTeam(teamA, "Team A", "red")}
       </div>
-      
-      <div className="text-center mt-8">
-        <h3 className="text-2xl font-bold text-white mb-2">TEAM LINEUP</h3>
-        <p className="text-blue-200">
-          {formationConfig.name} Formation
-        </p>
+      <div className="team-pitch bg-blue-800 rounded-lg overflow-hidden h-[300px] relative">
+        {renderTeam(teamB, "Team B", "green")}
       </div>
     </div>
   );
