@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -134,14 +135,14 @@ const Matches = () => {
 
                   <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-4">
                     <div className="text-center md:text-right flex-1">
-                      <h3 className="text-lg font-bold">{match.teamA.name}</h3>
+                      <h3 className="text-lg font-bold">{match.teamA?.name || "Team A"}</h3>
                       <div className="mt-1 text-sm text-muted-foreground">
-                        {match.teamA.players.length} players
+                        {match.teamA?.players?.length || 0} players
                       </div>
                     </div>
 
                     <div className="flex items-center justify-center px-6">
-                      {match.status === "completed" && match.teamA.score !== undefined && match.teamB.score !== undefined ? (
+                      {match.status === "completed" && match.teamA?.score !== undefined && match.teamB?.score !== undefined ? (
                         <div className="text-3xl font-bold">
                           {match.teamA.score} - {match.teamB.score}
                         </div>
@@ -151,9 +152,9 @@ const Matches = () => {
                     </div>
 
                     <div className="text-center md:text-left flex-1">
-                      <h3 className="text-lg font-bold">{match.teamB.name}</h3>
+                      <h3 className="text-lg font-bold">{match.teamB?.name || "Team B"}</h3>
                       <div className="mt-1 text-sm text-muted-foreground">
-                        {match.teamB.players.length} players
+                        {match.teamB?.players?.length || 0} players
                       </div>
                     </div>
                   </div>
@@ -162,11 +163,11 @@ const Matches = () => {
                     <div className="flex justify-center mb-4">
                       <div className="inline-flex items-center bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm">
                         <Trophy className="h-3.5 w-3.5 mr-1" />
-                        {match.teamA.score !== undefined && match.teamB.score !== undefined ? (
+                        {match.teamA?.score !== undefined && match.teamB?.score !== undefined ? (
                           match.teamA.score > match.teamB.score 
-                            ? `${match.teamA.name} won` 
+                            ? `${match.teamA.name || "Team A"} won` 
                             : match.teamB.score > match.teamA.score 
-                              ? `${match.teamB.name} won` 
+                              ? `${match.teamB.name || "Team B"} won` 
                               : "Match Drawn"
                         ) : "Result Recorded"}
                       </div>
