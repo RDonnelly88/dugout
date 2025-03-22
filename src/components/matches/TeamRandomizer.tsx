@@ -47,6 +47,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
     revealIndex,
     spotlightPlayer,
     animationCompleted,
+    hasStartedRandomization,
     performRandomization,
     resetRandomizer,
     togglePlayerSelection,
@@ -63,30 +64,33 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
     };
   }, [players, setInitialSelectedPlayers, resetRandomizer]);
   
+  // Effect to log modal state for debugging
+  useEffect(() => {
+    console.log(`Modal state: ${showRandomizerModal ? 'open' : 'closed'}, Animation completed: ${animationCompleted}`);
+  }, [showRandomizerModal, animationCompleted]);
+  
   const availablePlayers = players.filter(player => selectedPlayers.includes(player.id));
   const canRandomize = availablePlayers.length > 0;
   const playerCount = availablePlayers.length;
   
   // This function opens the modal and starts the randomization process
   const handleRandomizeClick = () => {
+    // First open the modal
     setShowRandomizerModal(true);
-    console.log("Modal opened, starting randomization shortly");
     
-    // Slight delay to ensure modal is visible before animation starts
+    // Start randomization after a slight delay to ensure modal is visible
     setTimeout(() => {
-      console.log("Starting randomization process");
+      console.log("Starting randomization process from click handler");
       performRandomization(availablePlayers);
-    }, 500); // Increased delay to ensure modal is fully rendered
+    }, 1000);
   };
   
   // Handle modal closing
   const handleModalClose = (open: boolean) => {
-    // Only allow closing if animation is completed or user is forcing it closed
     if (!open) {
       console.log("Modal closing requested, animation completed:", animationCompleted);
       
-      if (!animationCompleted && isRandomizing) {
-        // If still animating, prevent closing
+      if (isRandomizing && !animationCompleted) {
         console.log("Preventing close while animation is running");
         return;
       }
@@ -97,7 +101,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
   };
   
   const renderPlayerCards = () => {
-    console.log("Current reveal stage:", revealStage);
+    console.log("Rendering player cards for stage:", revealStage);
     
     // If in flashing stage, show the available players with dramatic flashing
     if (revealStage === 'flashing') {
@@ -212,10 +216,16 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
       );
     }
     
-    // Default case - show a loading message when stage is idle
+    // Default case - show a loading message or initial state
     return (
-      <div className="flex items-center justify-center h-[200px]">
-        <p className="text-blue-400 animate-pulse">Preparing teams...</p>
+      <div className="flex flex-col items-center justify-center h-[300px]">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="h-20 w-20 rounded-full bg-blue-500/20 mb-4 flex items-center justify-center">
+            <Shuffle className="h-10 w-10 text-blue-400" />
+          </div>
+          <p className="text-blue-400 text-xl">Preparing teams...</p>
+          <p className="text-blue-300/60 text-sm mt-2">Please wait while we set up the randomizer</p>
+        </div>
       </div>
     );
   };
@@ -290,7 +300,8 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
                   {revealStage === 'spotlight' && "Star Players Detected!"}
                   {revealStage === 'revealing' && "Revealing Teams..."}
                   {revealStage === 'celebration' && "Teams Assembled!"}
-                  {revealStage === 'idle' && "Getting Ready..."}
+                  {revealStage === 'idle' && hasStartedRandomization && "Getting Ready..."}
+                  {revealStage === 'idle' && !hasStartedRandomization && "Team Randomizer"}
                   <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
                 </h2>
               </div>
@@ -304,13 +315,14 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
                 {revealStage === 'spotlight' && <p>Star players identified!</p>}
                 {revealStage === 'revealing' && <p>Generating balanced teams...</p>}
                 {revealStage === 'celebration' && <p>Team creation complete!</p>}
-                {revealStage === 'idle' && <p>Initializing randomizer...</p>}
+                {revealStage === 'idle' && hasStartedRandomization && <p>Initializing randomizer...</p>}
+                {revealStage === 'idle' && !hasStartedRandomization && <p>Click outside or the X to close</p>}
                 {animationCompleted && <p>Teams have been saved! Click the X or outside to close.</p>}
               </div>
             </div>
             
-            {/* Only show the close button when animation is complete */}
-            {animationCompleted && (
+            {/* Only show the close button when animation is complete or if randomization hasn't started */}
+            {(animationCompleted || !hasStartedRandomization) && (
               <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
                 <Sparkles className="h-5 w-5" />
                 <span className="sr-only">Close</span>
