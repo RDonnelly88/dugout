@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addMatch } from "@/lib/db";
 import { useToast } from "@/components/ui/use-toast";
+import { Player } from "@/types";
 
 export const useCreateMatch = () => {
   const [teamA, setTeamA] = useState<string[]>([]);
@@ -29,6 +30,29 @@ export const useCreateMatch = () => {
       }
       setTeamA(teamA.filter(id => id !== playerId));
     }
+  };
+
+  const randomizeTeams = (players: Player[]) => {
+    // Reset current teams
+    setTeamA([]);
+    setTeamB([]);
+    
+    // Create a copy of player IDs and shuffle them
+    const playerIds = players.map(player => player.id);
+    for (let i = playerIds.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [playerIds[i], playerIds[j]] = [playerIds[j], playerIds[i]];
+    }
+    
+    // Split into two equal teams
+    const halfIndex = Math.floor(playerIds.length / 2);
+    setTeamA(playerIds.slice(0, halfIndex));
+    setTeamB(playerIds.slice(halfIndex, playerIds.length));
+    
+    toast({
+      title: "Teams randomized",
+      description: "Players have been randomly assigned to teams."
+    });
   };
 
   const createMatchMutation = useMutation({
@@ -88,6 +112,7 @@ export const useCreateMatch = () => {
     date,
     setDate,
     togglePlayer,
+    randomizeTeams,
     createMatchMutation,
     handleSubmit
   };

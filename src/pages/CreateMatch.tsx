@@ -4,6 +4,7 @@ import { getPlayers } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import TeamSelection from "@/components/matches/TeamSelection";
+import TeamRandomizer from "@/components/matches/TeamRandomizer";
 import DatePicker from "@/components/matches/DatePicker";
 import { useCreateMatch } from "@/hooks/useCreateMatch";
 
@@ -14,6 +15,7 @@ const CreateMatch = () => {
     date, 
     setDate, 
     togglePlayer, 
+    randomizeTeams,
     createMatchMutation, 
     handleSubmit 
   } = useCreateMatch();
@@ -39,6 +41,12 @@ const CreateMatch = () => {
       <Card className="glass-card">
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
+            <TeamRandomizer 
+              players={players} 
+              onRandomize={randomizeTeams}
+              disabled={createMatchMutation.isPending}
+            />
+            
             <TeamSelection 
               teamA={teamA}
               teamB={teamB}
