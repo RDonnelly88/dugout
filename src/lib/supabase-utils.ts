@@ -64,6 +64,7 @@ export const mapSupabaseToSeason = (data: any): Season => {
     startDate: data.start_date,
     endDate: data.end_date,
     isCurrent: data.is_current,
+    isFinished: data.is_finished || false,
     createdAt: data.created_at,
     updatedAt: data.updated_at
   };
@@ -75,6 +76,7 @@ export const mapSeasonToSupabase = (season: Omit<Season, "id" | "createdAt" | "u
     name: season.name,
     start_date: season.startDate,
     end_date: season.endDate,
-    is_current: season.isCurrent
+    is_current: season.isCurrent,
+    is_finished: season.isFinished
   };
 };
