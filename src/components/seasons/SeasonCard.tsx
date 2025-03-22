@@ -1,22 +1,41 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { Calendar, Trophy, Users, LayoutGrid } from "lucide-react";
+import { Calendar, Trophy, Users, LayoutGrid, Medal } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Season, SeasonChampion } from "@/types";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import PlayerForm from "@/components/players/PlayerForm";
+import { Season, SeasonChampion, PlayerFormResult } from "@/types";
 
 interface SeasonCardProps {
   season: Season;
   champions?: SeasonChampion[];
   totalPlayers: number;
   totalMatches: number;
+  playerForms?: Record<string, PlayerFormResult[]>;
 }
 
-const SeasonCard = ({ season, champions = [], totalPlayers, totalMatches }: SeasonCardProps) => {
+const SeasonCard = ({ 
+  season, 
+  champions = [], 
+  totalPlayers, 
+  totalMatches,
+  playerForms = {}
+}: SeasonCardProps) => {
   const topPlayer = champions.length > 0 ? champions[0] : null;
   const startDate = new Date(season.startDate).toLocaleDateString();
   const endDate = season.endDate ? new Date(season.endDate).toLocaleDateString() : "Ongoing";
+  
+  // Sort champions by rank or points if available
+  const sortedChampions = [...champions].sort((a, b) => {
+    if (a.rank && b.rank) return a.rank - b.rank;
+    return b.points - a.points;
+  });
+  
+  // Take top 5 for mini leaderboard
+  const top5Players = sortedChampions.slice(0, 5);
 
   return (
     <Link to={`/seasons/${season.id}`}>
@@ -48,7 +67,7 @@ const SeasonCard = ({ season, champions = [], totalPlayers, totalMatches }: Seas
                 <div className="font-semibold">{totalPlayers}</div>
               </div>
               <div className="p-2 bg-muted/20 rounded text-center">
-                <div className="text-xs text-muted-foreground">{season.isFinished ? "Final Rank" : "Current Rank"}</div>
+                <div className="text-xs text-muted-foreground">Current Rank</div>
                 <div className="font-semibold">{topPlayer ? "#1" : "-"}</div>
               </div>
             </div>
@@ -66,6 +85,61 @@ const SeasonCard = ({ season, champions = [], totalPlayers, totalMatches }: Seas
                   <div className="text-xs text-muted-foreground">Points</div>
                   <div className="font-semibold text-right">{topPlayer.points}</div>
                 </div>
+              </div>
+            )}
+            
+            {top5Players.length > 0 && (
+              <div className="mt-4">
+                <div className="text-sm font-medium mb-2">Top {Math.min(5, top5Players.length)} Players</div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[50px]">Rank</TableHead>
+                      <TableHead>Player</TableHead>
+                      <TableHead className="text-right">Form</TableHead>
+                      <TableHead className="text-right">P</TableHead>
+                      <TableHead className="text-right">Pts</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {top5Players.map((player, index) => (
+                      <TableRow key={player.playerId}>
+                        <TableCell className="py-1">
+                          {index === 0 ? (
+                            <Trophy className="h-4 w-4 text-amber-400" />
+                          ) : index === 1 ? (
+                            <Medal className="h-4 w-4 text-slate-400" />
+                          ) : index === 2 ? (
+                            <Medal className="h-4 w-4 text-amber-700" />
+                          ) : (
+                            <span>{index + 1}</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-1">
+                          <div className="flex items-center">
+                            <Avatar className="h-5 w-5 mr-2">
+                              <AvatarImage src={player.playerImage} alt={player.playerName} />
+                              <AvatarFallback>{player.playerName.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <span className="truncate">{player.playerName}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right py-1">
+                          <PlayerForm 
+                            form={playerForms[player.playerId] || []} 
+                            size="xs" 
+                          />
+                        </TableCell>
+                        <TableCell className="text-right py-1">
+                          {player.played}
+                        </TableCell>
+                        <TableCell className="text-right py-1 font-medium">
+                          {player.points}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             )}
           </div>

@@ -1,14 +1,15 @@
 
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Search, ArrowDown, ArrowUp } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
-import { getSeasons, getSeasonChampions } from "@/lib/db";
+import { getSeasons, getSeasonChampions, getPlayerFormInSeason } from "@/lib/db";
 import SeasonCard from "@/components/seasons/SeasonCard";
 import SeasonsSummaryTable from "@/components/seasons/SeasonsSummaryTable";
+import { PlayerFormResult } from "@/types";
 
 const Seasons = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -24,6 +25,38 @@ const Seasons = () => {
   const { data: champions = [], isLoading: isLoadingChampions } = useQuery({
     queryKey: ['seasonChampions'],
     queryFn: () => getSeasonChampions()
+  });
+
+  // Prepare data for the player forms
+  const [playerForms, setPlayerForms] = useState<Record<string, Record<string, PlayerFormResult[]>>>({});
+
+  // Load player forms for all seasons
+  useQuery({
+    queryKey: ['allPlayerForms'],
+    queryFn: async () => {
+      const allForms: Record<string, Record<string, PlayerFormResult[]>> = {};
+      
+      for (const season of seasons) {
+        const seasonChampions = champions.filter(c => c.seasonId === season.id);
+        const seasonForms: Record<string, PlayerFormResult[]> = {};
+        
+        for (const player of seasonChampions) {
+          try {
+            const form = await getPlayerFormInSeason(season.id, player.playerId);
+            seasonForms[player.playerId] = form;
+          } catch (error) {
+            console.error(`Error fetching form for player ${player.playerId} in season ${season.id}:`, error);
+            seasonForms[player.playerId] = [];
+          }
+        }
+        
+        allForms[season.id] = seasonForms;
+      }
+      
+      setPlayerForms(allForms);
+      return allForms;
+    },
+    enabled: seasons.length > 0 && champions.length > 0
   });
 
   // Filter seasons by search term
@@ -128,6 +161,7 @@ const Seasons = () => {
           {filteredSeasons.map((season) => {
             const seasonChampions = champions.filter(c => c.seasonId === season.id);
             const stats = seasonStats[season.id] || { matchCount: 0, playerCount: 0 };
+            const seasonPlayerForms = playerForms[season.id] || {};
             
             return (
               <SeasonCard
@@ -136,6 +170,7 @@ const Seasons = () => {
                 champions={seasonChampions}
                 totalPlayers={stats.playerCount}
                 totalMatches={stats.matchCount}
+                playerForms={seasonPlayerForms}
               />
             );
           })}
