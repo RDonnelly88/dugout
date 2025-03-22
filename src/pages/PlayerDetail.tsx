@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Edit, CalendarDays, Clock, Users, MapPin, Trophy, TrendingUp, TrendingDown, MinusCircle, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,8 @@ import { usePlayerForm } from "@/hooks/usePlayerForm";
 import PlayerSeasonStats from "@/components/players/PlayerSeasonStats";
 import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import PlayerRelationships from "@/components/players/PlayerRelationships";
+import { useQuery } from "@tanstack/react-query";
+import { getSeasonPlayerStats } from "@/lib/db";
 
 const PlayerDetail = () => {
   const {
@@ -27,6 +30,8 @@ const PlayerDetail = () => {
     navigate
   } = usePlayerDetail();
 
+  const [playerRank, setPlayerRank] = useState<number | null>(null);
+
   // Get current season
   const currentSeason = seasons.find(s => s.isCurrent);
   
@@ -34,6 +39,31 @@ const PlayerDetail = () => {
   const currentSeasonStats = currentSeason 
     ? seasonStats.find(stat => stat.seasonId === currentSeason.id)
     : null;
+
+  // Fetch all player stats for the current season to calculate rank
+  const { data: allCurrentSeasonStats = [], isLoading: isLoadingAllStats } = useQuery({
+    queryKey: ['allSeasonStats', currentSeason?.id],
+    queryFn: () => currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
+    enabled: !!currentSeason && !!player,
+    onSuccess: (data) => {
+      if (player && currentSeason) {
+        // Filter to include only players who have played at least one match
+        const activePlayers = data.filter(s => s.played > 0);
+        
+        // Sort by points (descending), then by wins if points are equal
+        const sortedStats = [...activePlayers].sort((a, b) => {
+          if (b.points !== a.points) {
+            return b.points - a.points;
+          }
+          return b.wins - a.wins;
+        });
+        
+        // Find the player's position in the sorted array
+        const playerIndex = sortedStats.findIndex(s => s.playerId === player.id);
+        setPlayerRank(playerIndex !== -1 ? playerIndex + 1 : null);
+      }
+    }
+  });
     
   // Get player form for the currently selected season with improved loading state handling
   const { form: currentSeasonForm, isLoading: isLoadingForm } = usePlayerForm(
@@ -83,14 +113,6 @@ const PlayerDetail = () => {
     .slice(0, 5);
   
   const recentResults = playerRecentMatches.map(match => getPlayerMatchResult(match).result);
-
-  // Calculate player's rank in current season
-  const playerRank = currentSeasonStats && seasons.find(s => s.isCurrent) ? 
-    seasonStats
-      .filter(stat => stat.seasonId === currentSeasonStats.seasonId)
-      .sort((a, b) => b.points - a.points)
-      .findIndex(stat => stat.playerId === player.id) + 1 
-    : null;
 
   return (
     <div className="page-container animate-slide-up">
