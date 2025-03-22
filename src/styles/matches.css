@@ -1,3 +1,4 @@
+
 @layer components {
   /* Team randomizer styling */
   .team-randomizer-container {
@@ -309,7 +310,7 @@
   
   /* Team name overlay */
   .team-name-overlay {
-    @apply absolute bottom-3 left-1/2 transform -translate-x-1/2 text-sm font-bold text-white/70 bg-black/30 px-3 py-1 rounded-full;
+    @apply absolute bottom-3 left-1/2 transform -translate-x-1/2 px-4 py-1 rounded-full z-10;
   }
   
   /* Pitch formation label */
@@ -336,20 +337,9 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-image: url("data:image/svg+xml,%3Csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='none' stroke='rgba(255,255,255,0.1)' stroke-width='4' stroke-dasharray='6,9' stroke-dashoffset='0' stroke-linecap='square'/%3E%3C/svg%3E");
-    opacity: 0.3;
+    background-image: url("data:image/svg+xml,%3Csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='none' stroke='rgba(255,255,255,0.1)' stroke-width='2' stroke-dasharray='6,9' stroke-dashoffset='0' stroke-linecap='square'/%3E%3C/svg%3E");
+    opacity: 0.2;
     pointer-events: none;
-  }
-  
-  .team-pitch::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-50%);
   }
   
   /* Formation row positioning */

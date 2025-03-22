@@ -26,7 +26,7 @@ const FormationPlayer = ({ player, position, index, teamColor }: FormationPlayer
         <HoverCardTrigger asChild>
           <div className="flex flex-col items-center">
             <div className="relative">
-              <Badge variant="outline" className={`absolute -top-3 -right-3 ${bgColor} ${textColor} w-6 h-6 flex items-center justify-center p-0 rounded-full text-xs font-bold`}>
+              <Badge variant="outline" className={`absolute -top-3 -right-3 ${bgColor} ${textColor} w-6 h-6 flex items-center justify-center p-0 rounded-full text-xs font-bold shadow-md`}>
                 {index + 1}
               </Badge>
               <Avatar className="h-12 w-12 border-2 border-white/50 shadow-lg">
@@ -72,6 +72,27 @@ const FormationPlayer = ({ player, position, index, teamColor }: FormationPlayer
             <div className="bg-red-900/50 p-2 rounded-md text-center">
               <div className="text-sm font-bold">{player.stats?.lost || 0}</div>
               <div className="text-xs text-red-300">Lost</div>
+            </div>
+          </div>
+          
+          {/* Form display */}
+          <div className="mt-2 p-2 rounded-md bg-blue-900/30 border border-blue-500/20">
+            <h5 className="text-xs font-medium text-blue-300 mb-1">Recent Form</h5>
+            <div className="flex space-x-1">
+              {[...Array(5)].map((_, i) => {
+                // This is just placeholder form - in a real implementation you'd use actual form data
+                const formResult = Math.random() > 0.5 ? 'W' : (Math.random() > 0.5 ? 'L' : 'D');
+                return (
+                  <div 
+                    key={i} 
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
+                      ${formResult === 'W' ? 'bg-green-700' : 
+                        formResult === 'L' ? 'bg-red-700' : 'bg-gray-700'}`}
+                  >
+                    {formResult}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </HoverCardContent>

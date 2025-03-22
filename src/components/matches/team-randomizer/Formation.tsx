@@ -35,11 +35,21 @@ const Formation = ({ teamA, teamB, teamSize }: FormationProps) => {
     let playerIndex = 0;
     
     return (
-      <div className="relative h-full flex flex-col justify-between">
+      <div className="relative h-full flex flex-col justify-between py-6">
         <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10">
           <Badge variant="outline" className="bg-blue-950/80 text-white border-blue-500/30 px-3">
             {formationConfig.name}
           </Badge>
+        </div>
+        
+        {/* Pitch markings */}
+        <div className="field-markings">
+          <div className="center-circle"></div>
+          <div className="halfway-line"></div>
+          <div className="penalty-area-top"></div>
+          <div className="penalty-area-bottom"></div>
+          <div className="goal-area-top"></div>
+          <div className="goal-area-bottom"></div>
         </div>
         
         {rows.map((playersInRow, rowIndex) => {
@@ -75,21 +85,23 @@ const Formation = ({ teamA, teamB, teamSize }: FormationProps) => {
             </div>
           );
         })}
-        
-        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-white font-bold text-lg">
-          {teamName}
-        </div>
       </div>
     );
   };
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-      <div className="team-pitch bg-blue-800 rounded-lg overflow-hidden h-[300px] relative">
+      <div className="team-pitch bg-blue-900/80 rounded-lg overflow-hidden h-[300px] relative">
         {renderTeam(teamA, "Team A", "red")}
+        <div className="team-name-overlay bg-red-700/80 text-white px-4 py-1 rounded-full font-semibold text-sm">
+          Team A
+        </div>
       </div>
-      <div className="team-pitch bg-blue-800 rounded-lg overflow-hidden h-[300px] relative">
+      <div className="team-pitch bg-blue-900/80 rounded-lg overflow-hidden h-[300px] relative">
         {renderTeam(teamB, "Team B", "green")}
+        <div className="team-name-overlay bg-green-700/80 text-white px-4 py-1 rounded-full font-semibold text-sm">
+          Team B
+        </div>
       </div>
     </div>
   );
