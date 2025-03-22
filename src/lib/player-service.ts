@@ -1,26 +1,28 @@
 
-import { Player, PlayerStats } from "@/types";
+import { Player, PlayerStats, Match } from "@/types";
 import { v4 as uuidv4 } from "@/lib/uuid";
 import { supabase } from "@/integrations/supabase/client";
 import { mapSupabasePlayerToPlayer, mapPlayerToSupabase } from "./supabase-utils";
+import { Json } from "@/integrations/supabase/types";
 
-// Get players from Supabase
+// Get all players from Supabase
 export const getPlayers = async (): Promise<Player[]> => {
   try {
     const { data, error } = await supabase
       .from("players")
       .select("*")
-      .order("name");
+      .order("created_at", { ascending: false });
     
     if (error) {
       console.error("Error fetching players:", error);
       return [];
     }
     
+    // Map data to ensure it matches the Player type
     return (data || []).map(mapSupabasePlayerToPlayer);
   } catch (error) {
     console.error("Error fetching players:", error);
-    // Fallback to localStorage if Supabase fails
+    // Fallback to localStorage
     const players = localStorage.getItem("football-tracker-players");
     return players ? JSON.parse(players) : [];
   }
@@ -40,10 +42,13 @@ export const getPlayer = async (id: string): Promise<Player | undefined> => {
       return undefined;
     }
     
-    return data ? mapSupabasePlayerToPlayer(data) : undefined;
+    if (!data) return undefined;
+    
+    // Map data to ensure it matches the Player type
+    return mapSupabasePlayerToPlayer(data);
   } catch (error) {
     console.error("Error fetching player:", error);
-    // Fallback to localStorage if Supabase fails
+    // Fallback to localStorage
     const players = localStorage.getItem("football-tracker-players");
     const parsedPlayers = players ? JSON.parse(players) : [];
     return parsedPlayers.find((player: Player) => player.id === id);
@@ -51,33 +56,20 @@ export const getPlayer = async (id: string): Promise<Player | undefined> => {
 };
 
 // Add a new player
-export const addPlayer = async (player: Omit<Player, "id" | "stats" | "createdAt" | "updatedAt">): Promise<Player> => {
+export const addPlayer = async (player: Omit<Player, "id" | "createdAt" | "updatedAt">): Promise<Player> => {
   const now = new Date().toISOString();
   
-  const newPlayer: Omit<Player, "id"> = {
-    ...player,
-    stats: {
-      played: 0,
-      won: 0,
-      lost: 0,
-      drawn: 0
-    },
-    createdAt: now,
-    updatedAt: now
-  };
-
-  const supabasePlayer = {
-    name: player.name,
-    image: player.image,
-    stats: newPlayer.stats,
-    created_at: now,
-    updated_at: now
-  };
+  // Convert to the format expected by Supabase
+  const supabasePlayer = mapPlayerToSupabase(player);
   
   try {
     const { data, error } = await supabase
       .from("players")
-      .insert(supabasePlayer)
+      .insert({
+        ...supabasePlayer,
+        created_at: now,
+        updated_at: now
+      })
       .select()
       .single();
     
@@ -87,13 +79,16 @@ export const addPlayer = async (player: Omit<Player, "id" | "stats" | "createdAt
       const players = await getPlayers();
       const playerWithId = {
         id: uuidv4(),
-        ...newPlayer
+        ...player,
+        createdAt: now,
+        updatedAt: now
       };
       players.push(playerWithId);
       localStorage.setItem("football-tracker-players", JSON.stringify(players));
       return playerWithId;
     }
     
+    // Map data to ensure it matches the Player type
     return mapSupabasePlayerToPlayer(data);
   } catch (error) {
     console.error("Error adding player:", error);
@@ -101,7 +96,9 @@ export const addPlayer = async (player: Omit<Player, "id" | "stats" | "createdAt
     const players = await getPlayers();
     const playerWithId = {
       id: uuidv4(),
-      ...newPlayer
+      ...player,
+      createdAt: now,
+      updatedAt: now
     };
     players.push(playerWithId);
     localStorage.setItem("football-tracker-players", JSON.stringify(players));
@@ -113,15 +110,19 @@ export const addPlayer = async (player: Omit<Player, "id" | "stats" | "createdAt
 export const updatePlayer = async (id: string, updates: Partial<Omit<Player, "id" | "createdAt" | "updatedAt">>): Promise<Player | undefined> => {
   const now = new Date().toISOString();
   
-  const supabaseUpdates: any = { updated_at: now };
-  if (updates.name) supabaseUpdates.name = updates.name;
-  if (updates.image) supabaseUpdates.image = updates.image;
-  if (updates.stats) supabaseUpdates.stats = updates.stats;
+  // Format updates for Supabase
+  const formattedUpdates: any = {
+    updated_at: now
+  };
+  
+  if (updates.name) formattedUpdates.name = updates.name;
+  if (updates.image) formattedUpdates.image = updates.image;
+  if (updates.stats) formattedUpdates.stats = updates.stats as unknown as Json;
   
   try {
     const { data, error } = await supabase
       .from("players")
-      .update(supabaseUpdates)
+      .update(formattedUpdates)
       .eq("id", id)
       .select()
       .single();
@@ -138,13 +139,14 @@ export const updatePlayer = async (id: string, updates: Partial<Omit<Player, "id
           ...updates,
           updatedAt: now
         };
-        await localStorage.setItem("football-tracker-players", JSON.stringify(players));
+        localStorage.setItem("football-tracker-players", JSON.stringify(players));
         return players[index];
       }
       
       return undefined;
     }
     
+    // Map data to ensure it matches the Player type
     return mapSupabasePlayerToPlayer(data);
   } catch (error) {
     console.error("Error updating player:", error);
@@ -158,7 +160,7 @@ export const updatePlayer = async (id: string, updates: Partial<Omit<Player, "id
         ...updates,
         updatedAt: now
       };
-      await localStorage.setItem("football-tracker-players", JSON.stringify(players));
+      localStorage.setItem("football-tracker-players", JSON.stringify(players));
       return players[index];
     }
     
@@ -181,7 +183,7 @@ export const deletePlayer = async (id: string): Promise<boolean> => {
       const filteredPlayers = players.filter(player => player.id !== id);
       
       if (filteredPlayers.length !== players.length) {
-        await localStorage.setItem("football-tracker-players", JSON.stringify(filteredPlayers));
+        localStorage.setItem("football-tracker-players", JSON.stringify(filteredPlayers));
         return true;
       }
       
@@ -196,7 +198,7 @@ export const deletePlayer = async (id: string): Promise<boolean> => {
     const filteredPlayers = players.filter(player => player.id !== id);
     
     if (filteredPlayers.length !== players.length) {
-      await localStorage.setItem("football-tracker-players", JSON.stringify(filteredPlayers));
+      localStorage.setItem("football-tracker-players", JSON.stringify(filteredPlayers));
       return true;
     }
     
@@ -204,88 +206,45 @@ export const deletePlayer = async (id: string): Promise<boolean> => {
   }
 };
 
-// Update player stats
-export const updatePlayerStats = async (match: any): Promise<void> => {
+// Update player stats based on match results
+export const updatePlayerStats = async (match: Match): Promise<void> => {
   if (match.status !== "completed" || match.teamA.score === undefined || match.teamB.score === undefined) {
     return;
   }
   
-  const players = await getPlayers();
-  const updatedPlayers = [...players];
   const teamAWon = match.teamA.score > match.teamB.score;
   const teamBWon = match.teamB.score > match.teamA.score;
-  const isDraw = match.teamA.score === match.teamB.score;
+  const draw = match.teamA.score === match.teamB.score;
   
-  // Update Team A players
-  for (const playerId of match.teamA.players) {
-    const playerIndex = updatedPlayers.findIndex(p => p.id === playerId);
-    if (playerIndex !== -1) {
-      const player = updatedPlayers[playerIndex];
-      const stats: PlayerStats = {
-        ...player.stats,
-        played: player.stats.played + 1
-      };
-      
-      if (teamAWon) stats.won = player.stats.won + 1;
-      else if (teamBWon) stats.lost = player.stats.lost + 1;
-      else if (isDraw) stats.drawn = player.stats.drawn + 1;
-      
-      // Update player stats in Supabase
-      try {
-        await supabase
-          .from("players")
-          .update({ 
-            stats: stats as any,
-            updated_at: new Date().toISOString() 
-          })
-          .eq("id", playerId);
-      } catch (error) {
-        console.error("Error updating player stats in Supabase:", error);
+  // Update each player's stats
+  const updatePromises = [
+    ...match.teamA.players.map(async (playerId) => {
+      const player = await getPlayer(playerId);
+      if (player) {
+        const stats = {
+          ...player.stats,
+          played: player.stats.played + 1,
+          won: player.stats.won + (teamAWon ? 1 : 0),
+          lost: player.stats.lost + (teamBWon ? 1 : 0),
+          drawn: player.stats.drawn + (draw ? 1 : 0)
+        };
+        await updatePlayer(playerId, { stats });
       }
-
-      updatedPlayers[playerIndex] = {
-        ...player,
-        stats,
-        updatedAt: new Date().toISOString()
-      };
-    }
-  }
-  
-  // Update Team B players
-  for (const playerId of match.teamB.players) {
-    const playerIndex = updatedPlayers.findIndex(p => p.id === playerId);
-    if (playerIndex !== -1) {
-      const player = updatedPlayers[playerIndex];
-      const stats: PlayerStats = {
-        ...player.stats,
-        played: player.stats.played + 1
-      };
-      
-      if (teamBWon) stats.won = player.stats.won + 1;
-      else if (teamAWon) stats.lost = player.stats.lost + 1;
-      else if (isDraw) stats.drawn = player.stats.drawn + 1;
-      
-      // Update player stats in Supabase
-      try {
-        await supabase
-          .from("players")
-          .update({ 
-            stats: stats as any,
-            updated_at: new Date().toISOString() 
-          })
-          .eq("id", playerId);
-      } catch (error) {
-        console.error("Error updating player stats in Supabase:", error);
+    }),
+    ...match.teamB.players.map(async (playerId) => {
+      const player = await getPlayer(playerId);
+      if (player) {
+        const stats = {
+          ...player.stats,
+          played: player.stats.played + 1,
+          won: player.stats.won + (teamBWon ? 1 : 0),
+          lost: player.stats.lost + (teamAWon ? 1 : 0),
+          drawn: player.stats.drawn + (draw ? 1 : 0)
+        };
+        await updatePlayer(playerId, { stats });
       }
-
-      updatedPlayers[playerIndex] = {
-        ...player,
-        stats,
-        updatedAt: new Date().toISOString()
-      };
-    }
-  }
+    })
+  ];
   
-  // Update localStorage as a fallback
-  localStorage.setItem("football-tracker-players", JSON.stringify(updatedPlayers));
+  await Promise.all(updatePromises);
 };
