@@ -1,0 +1,43 @@
+
+@layer components {
+  /* Team randomizer styling */
+  .team-randomizer-container {
+    @apply relative overflow-hidden rounded-2xl p-8 mb-8 bg-gradient-to-br from-blue-900/40 to-black/60;
+  }
+  
+  .randomizer-title {
+    @apply text-2xl font-bold mb-6 text-center;
+  }
+  
+  .team-container {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-8;
+  }
+  
+  .team-column {
+    @apply glass-card rounded-xl p-6;
+  }
+  
+  .team-name {
+    @apply text-xl font-semibold mb-4 text-center;
+  }
+  
+  .player-card-mini {
+    @apply flex items-center p-3 rounded-lg mb-2 bg-white/5 backdrop-blur-sm transition-all duration-300 border border-white/10;
+  }
+  
+  .match-card {
+    @apply glass-card rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl;
+  }
+  
+  .match-header {
+    @apply p-4 border-b border-border/50;
+  }
+  
+  .match-content {
+    @apply p-6;
+  }
+  
+  .match-footer {
+    @apply p-4 bg-muted/30 flex justify-between items-center;
+  }
+}

@@ -1,0 +1,55 @@
+
+@layer components {
+  /* Shimmer loading effect */
+  .shimmer {
+    @apply relative overflow-hidden bg-white/5 rounded-md;
+  }
+  
+  .shimmer::after {
+    @apply absolute top-0 left-0 right-0 bottom-0;
+    content: "";
+    background: linear-gradient(90deg, 
+      rgba(255, 255, 255, 0) 0%, 
+      rgba(255, 255, 255, 0.2) 50%, 
+      rgba(255, 255, 255, 0) 100%);
+    animation: shimmer 1.5s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  
+  /* Page transitions */
+  .page-transition-enter {
+    @apply opacity-0;
+  }
+  
+  .page-transition-enter-active {
+    @apply opacity-100 transition-opacity duration-300;
+  }
+  
+  .page-transition-exit {
+    @apply opacity-100;
+  }
+  
+  .page-transition-exit-active {
+    @apply opacity-0 transition-opacity duration-300;
+  }
+  
+  /* Gradient Backgrounds */
+  .bg-gradient-blue {
+    @apply bg-gradient-to-br from-blue-900 via-indigo-900 to-blue-950;
+  }
+  
+  .bg-mesh-gradient {
+    background-image: 
+      radial-gradient(at 40% 20%, hsla(225, 65%, 55%, 0.2) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, hsla(238, 70%, 50%, 0.2) 0px, transparent 50%),
+      radial-gradient(at 0% 50%, hsla(250, 65%, 55%, 0.2) 0px, transparent 50%),
+      radial-gradient(at 80% 50%, hsla(266, 65%, 55%, 0.25) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(219, 65%, 55%, 0.2) 0px, transparent 50%),
+      radial-gradient(at 80% 100%, hsla(260, 65%, 55%, 0.2) 0px, transparent 50%);
+    @apply bg-[#0f172a];
+  }
+}
