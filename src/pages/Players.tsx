@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getPlayers, deletePlayer, getCurrentSeason, getSeasonPlayerStats, getPlayerFormInSeason } from "@/lib/db";
+import { getPlayers, deletePlayer, getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
 import { Player, PlayerFormResult, SeasonPlayerStats } from "@/types";
-import { Plus, Search, Trophy, Edit, Trash2, AlertTriangle, CalendarDays } from "lucide-react";
+import { Plus, Search, Trophy, Edit, Trash2, AlertTriangle, CalendarDays, Ghost } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/components/ui/use-toast";
 import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
+import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
 
 const Players = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,19 +43,17 @@ const Players = () => {
     queryKey: ['seasonPlayerStats', currentSeason?.id],
     queryFn: () => getSeasonPlayerStats(currentSeason!.id),
     enabled: !!currentSeason,
-    staleTime: 0
+    staleTime: 60000
   });
 
-  useEffect(() => {
-    if (currentSeason) {
-      players.forEach(player => {
-        queryClient.prefetchQuery({
-          queryKey: ['playerForm', currentSeason.id, player.id],
-          queryFn: () => getPlayerFormInSeason(currentSeason.id, player.id)
-        });
-      });
-    }
-  }, [players, currentSeason, queryClient]);
+  // Get all player IDs for the current season
+  const playerIds = currentSeason ? players.map(player => player.id) : [];
+  
+  // Use batch form loader for current season
+  const { formData: batchFormData, isLoading: isLoadingForms } = useBatchFormLoader(
+    currentSeason?.id || null, 
+    playerIds
+  );
 
   const getPlayerRankAndForm = (playerId: string): { rank: number, formResults: PlayerFormResult[] } => {
     if (!currentSeason || !seasonPlayerStats.length) {
@@ -72,13 +72,12 @@ const Players = () => {
       return { rank: 0, formResults: [] };
     }
     
-    const formData = queryClient.getQueryData<PlayerFormResult[]>(
-      ['playerForm', currentSeason.id, playerId]
-    );
+    // Get form data from batch results
+    const formResults = batchFormData[playerId] || [];
     
     return { 
       rank: playerIndex + 1,
-      formResults: formData || []
+      formResults
     };
   };
 
@@ -203,7 +202,7 @@ const Players = () => {
                         />
                       ) : (
                         <span className="text-2xl font-medium text-blue-400">
-                          {player.name.charAt(0)}
+                          <Ghost className="h-8 w-8" />
                         </span>
                       )}
                     </div>
@@ -232,6 +231,7 @@ const Players = () => {
                           <PlayerFormDisplay 
                             results={formResults} 
                             size="sm" 
+                            isLoading={isLoadingForms && formResults.length === 0}
                           />
                         </div>
                       )}

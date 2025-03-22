@@ -3,6 +3,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { PlayerFormResult } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Loader2 } from "lucide-react";
 
 interface PlayerFormDisplayProps {
   results: Array<PlayerFormResult>;
@@ -27,17 +28,15 @@ const PlayerFormDisplay = ({
           </div>
         )}
         <div className="flex space-x-1 items-center">
-          {[...Array(5)].map((_, index) => (
-            <Skeleton 
-              key={index}
-              className={cn(
-                size === 'xs' ? 'w-4 h-4' : 
-                size === 'sm' ? 'w-5 h-5' : 
-                size === 'md' ? 'w-6 h-6' : 'w-8 h-8',
-                "bg-gray-800"
-              )}
-            />
-          ))}
+          <Loader2 
+            className={cn(
+              size === 'xs' ? 'w-4 h-4' : 
+              size === 'sm' ? 'w-5 h-5' : 
+              size === 'md' ? 'w-6 h-6' : 'w-8 h-8',
+              "text-blue-400 animate-spin"
+            )}
+          />
+          <span className="text-xs text-muted-foreground ml-2">Loading form data...</span>
         </div>
       </div>
     );

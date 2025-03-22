@@ -1,15 +1,15 @@
 
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Trophy, Medal } from "lucide-react";
+import { Trophy, Medal, Ghost } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import { SeasonPlayerStats, PlayerFormResult } from "@/types";
+import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
 import { useQueryClient } from "@tanstack/react-query";
-import { useBatchPlayerForms } from "@/hooks/usePlayerForm";
 
 interface SeasonLeaderboardProps {
   stats: SeasonPlayerStats[];
@@ -50,13 +50,13 @@ const SeasonLeaderboard = ({
   const playerIds = displayStats.map(player => player.playerId);
   
   // Use the batch loading hook if seasonId is provided
-  const { forms: batchForms, isLoading: isLoadingForms } = useBatchPlayerForms(
+  const { formData, isLoading: isLoadingForms } = useBatchFormLoader(
     seasonId || null, 
     seasonId ? playerIds : []
   );
   
   // Combine provided forms with batch loaded forms
-  const combinedForms = { ...playerForms, ...batchForms };
+  const combinedForms = { ...playerForms, ...formData };
   
   // Prefetch individual player forms for when users navigate to player details
   useEffect(() => {
@@ -64,7 +64,7 @@ const SeasonLeaderboard = ({
       displayStats.forEach(player => {
         queryClient.prefetchQuery({
           queryKey: ['playerForm', seasonId, player.playerId],
-          queryFn: () => import('@/lib/db').then(m => m.getPlayerFormInSeason(seasonId, player.playerId))
+          queryFn: () => import('@/lib/player-form-service').then(m => m.getPlayerFormInSeason(seasonId, player.playerId))
         });
       });
     }
@@ -145,7 +145,9 @@ const SeasonLeaderboard = ({
                   <Link to={`/players/${stat.playerId}`} className="flex items-center space-x-2 hover:underline">
                     <Avatar className="h-8 w-8 bg-gray-800">
                       <AvatarImage src={stat.playerImage} alt={stat.playerName} />
-                      <AvatarFallback>{stat.playerName.charAt(0)}</AvatarFallback>
+                      <AvatarFallback>
+                        {stat.playerImage ? stat.playerName.charAt(0) : <Ghost className="h-4 w-4" />}
+                      </AvatarFallback>
                     </Avatar>
                     <div>
                       <div className="font-medium">{stat.playerName}</div>

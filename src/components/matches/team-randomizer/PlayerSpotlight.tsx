@@ -2,7 +2,8 @@
 import React from 'react';
 import { Player } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Award, Star } from "lucide-react";
+import { Award, Star, Ghost } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 interface PlayerSpotlightProps {
   player: Player;
@@ -10,6 +11,11 @@ interface PlayerSpotlightProps {
 
 const PlayerSpotlight = ({ player }: PlayerSpotlightProps) => {
   if (!player) return null;
+  
+  // Calculate win rate
+  const winRate = player.stats.played > 0 
+    ? Math.round((player.stats.won / player.stats.played) * 100)
+    : 0;
   
   return (
     <div className="player-spotlight">
@@ -22,7 +28,7 @@ const PlayerSpotlight = ({ player }: PlayerSpotlightProps) => {
                   <AvatarImage src={player.image} alt={player.name} className="object-cover" />
                 ) : (
                   <AvatarFallback className="text-5xl font-bold bg-gradient-to-br from-blue-500 to-indigo-700 text-white">
-                    {player.name.charAt(0)}
+                    <Ghost className="h-16 w-16" />
                   </AvatarFallback>
                 )}
               </Avatar>
@@ -51,11 +57,12 @@ const PlayerSpotlight = ({ player }: PlayerSpotlightProps) => {
             </div>
             
             {player.stats && player.stats.played > 0 && (
-              <div className="mt-6 text-center">
-                <div className="text-sm text-blue-200 mb-1">Win Rate</div>
-                <div className="text-3xl font-bold text-white">
-                  {Math.round((player.stats.won / player.stats.played) * 100)}%
+              <div className="mt-6">
+                <div className="flex justify-between items-center mb-1">
+                  <div className="text-sm text-blue-200">Win Rate</div>
+                  <div className="text-sm font-bold text-white">{winRate}%</div>
                 </div>
+                <Progress value={winRate} className="h-2 bg-blue-900/50" />
               </div>
             )}
           </div>
