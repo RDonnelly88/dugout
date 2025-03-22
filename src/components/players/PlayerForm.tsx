@@ -10,7 +10,8 @@ interface PlayerFormProps {
 }
 
 const PlayerForm = ({ form = [], size = 'md', showLabel = false }: PlayerFormProps) => {
-  if (!form.length) {
+  // Don't render anything if there's no form data or it's empty
+  if (!form || form.length === 0) {
     return null;
   }
 
@@ -72,4 +73,3 @@ const PlayerForm = ({ form = [], size = 'md', showLabel = false }: PlayerFormPro
 };
 
 export default PlayerForm;
-

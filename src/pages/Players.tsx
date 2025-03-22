@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -28,19 +27,16 @@ const Players = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch players
   const { data: players = [], isLoading: isLoadingPlayers } = useQuery({
     queryKey: ['players'],
     queryFn: getPlayers
   });
 
-  // Fetch current season
   const { data: currentSeason, isLoading: isLoadingSeason } = useQuery({
     queryKey: ['currentSeason'],
     queryFn: getCurrentSeason
   });
 
-  // Fetch season stats for players if current season exists
   const { data: seasonPlayerStats = [], isLoading: isLoadingStats } = useQuery({
     queryKey: ['seasonPlayerStats', currentSeason?.id],
     queryFn: () => getSeasonPlayerStats(currentSeason!.id),
@@ -48,13 +44,11 @@ const Players = () => {
     staleTime: 0
   });
 
-  // Get player ranks and forms for the current season
   const getPlayerRankAndForm = (playerId: string): { rank: number, form: PlayerFormResult[] } => {
     if (!seasonPlayerStats.length) {
       return { rank: 0, form: [] };
     }
     
-    // Sort by points (desc), then wins (desc)
     const sortedStats = [...seasonPlayerStats].sort((a, b) => {
       if (b.points !== a.points) {
         return b.points - a.points;
@@ -67,12 +61,14 @@ const Players = () => {
       return { rank: 0, form: [] };
     }
     
+    const playerStat = sortedStats[playerIndex];
+    
     return { 
       rank: playerIndex + 1,
-      // This would need a real implementation to get form
-      form: playerIndex === 0 ? ['win', 'win', 'loss'] : 
+      form: playerStat.played > 0 ? 
+            (playerIndex === 0 ? ['win', 'win', 'loss'] : 
             playerIndex === 1 ? ['win', 'draw'] : 
-            playerIndex === 2 ? ['win', 'loss', 'loss'] : []
+            playerIndex === 2 ? ['win', 'loss', 'loss'] : []) : []
     };
   };
 
@@ -120,7 +116,6 @@ const Players = () => {
         </p>
       </div>
 
-      {/* Current Season Summary Card */}
       {currentSeason && (
         <Card className="mb-6 bg-gray-900 border-gray-800">
           <CardHeader className="pb-2">
@@ -181,6 +176,8 @@ const Players = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPlayers.map((player) => {
             const { rank, form } = getPlayerRankAndForm(player.id);
+            const hasPlayedMatches = player.stats.played > 0;
+            
             return (
               <Card key={player.id} className="player-card hover-scale overflow-hidden bg-gray-900 border-gray-800">
                 <CardContent className="p-0 flex flex-col h-full">
@@ -201,7 +198,7 @@ const Players = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <h3 className="text-lg font-medium truncate">{player.name}</h3>
-                        {rank > 0 && currentSeason && (
+                        {rank > 0 && hasPlayedMatches && currentSeason && (
                           <Badge className="bg-gray-800 text-white">
                             #{rank} in League
                           </Badge>
@@ -211,7 +208,7 @@ const Players = () => {
                         <div className="text-sm text-muted-foreground">
                           {player.stats.won} wins in {player.stats.played} games
                         </div>
-                        {form.length > 0 && (
+                        {hasPlayedMatches && form.length > 0 && (
                           <PlayerForm form={form} size="sm" />
                         )}
                       </div>
@@ -282,7 +279,6 @@ const Players = () => {
         </div>
       )}
 
-      {/* Delete confirmation dialog */}
       <AlertDialog open={!!playerToDelete} onOpenChange={(open) => !open && setPlayerToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -307,3 +303,4 @@ const Players = () => {
 };
 
 export default Players;
+
