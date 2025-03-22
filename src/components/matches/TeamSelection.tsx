@@ -24,7 +24,6 @@ const TeamSelection = ({
   availablePlayers 
 }: TeamSelectionProps) => {
   const getFormationSize = (teamSize: number): string => {
-    // Convert team size to closest available formation
     if (teamSize <= 5) return "5";
     if (teamSize >= 11) return "11";
     return teamSize.toString();
@@ -32,7 +31,7 @@ const TeamSelection = ({
 
   const renderTeamFormation = (team: string[], teamName: string, teamLetter: 'A' | 'B') => {
     if (team.length === 0) return (
-      <div className="team-empty-state flex flex-col items-center justify-center p-10 text-muted-foreground">
+      <div className="team-empty-pitch flex flex-col items-center justify-center text-muted-foreground">
         <Shield className="h-12 w-12 mb-2 opacity-30" />
         <p className="text-lg font-medium">No players selected</p>
         <p className="text-sm mt-1">Add players to build your {teamName}</p>
@@ -46,16 +45,25 @@ const TeamSelection = ({
     let playerIndex = 0;
     
     return (
-      <div className="team-formation mb-4 py-8 px-4 bg-gradient-to-b from-blue-950/40 to-indigo-950/20 rounded-xl border border-blue-500/20 shadow-inner">
-        <div className="text-center mb-6">
+      <div className={`football-pitch ${teamLetter === 'A' ? 'team-a-pitch' : 'team-b-pitch'}`}>
+        <div className="field-markings">
+          <div className="center-circle"></div>
+          <div className="penalty-area"></div>
+          <div className="goal-area"></div>
+        </div>
+        
+        <div className="text-center pitch-formation-label">
           <Badge variant="outline" className="px-4 py-1 text-sm font-medium bg-blue-500/10 text-primary border-blue-400/30">
             {formationConfig.name} Formation
           </Badge>
         </div>
         
-        <div className="formation-rows space-y-10">
+        <div className="formation-rows">
           {rows.map((playersInRow, rowIndex) => (
-            <div key={`${teamName}-row-${rowIndex}`} className="formation-row flex justify-center gap-8">
+            <div 
+              key={`${teamName}-row-${rowIndex}`} 
+              className={`formation-row row-${rowIndex} ${rows.length === 3 ? 'three-row-formation' : rows.length === 4 ? 'four-row-formation' : 'five-row-formation'}`}
+            >
               {Array(playersInRow).fill(0).map((_, posIndex) => {
                 if (playerIndex >= teamPlayers.length) return null;
                 const player = teamPlayers[playerIndex++];
@@ -65,12 +73,16 @@ const TeamSelection = ({
                     player={player}
                     onClick={() => togglePlayer(teamLetter, player.id)}
                     index={playerIndex - 1}
-                    teamColor={teamLetter === 'A' ? 'blue' : 'indigo'}
+                    teamColor={teamLetter === 'A' ? 'red' : 'green'}
                   />
                 );
               })}
             </div>
           ))}
+        </div>
+        
+        <div className="team-name-overlay">
+          {teamLetter === 'A' ? 'Team A' : 'Team B'}
         </div>
       </div>
     );
@@ -88,7 +100,7 @@ const TeamSelection = ({
     }
     
     return (
-      <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+      <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
         {availablePlayers.map(player => (
           <PlayerCard
             key={player.id}
@@ -102,23 +114,23 @@ const TeamSelection = ({
 
   return (
     <div className="space-y-8">
-      <div className="teams-container grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="teams-container grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="team-column">
           <Label htmlFor="teamA" className="team-label">
-            <Shield className="h-5 w-5 mr-2 text-blue-400" />
-            <span className="text-xl font-bold text-blue-100">Team A</span>
+            <Shield className="h-5 w-5 mr-2 text-red-400" />
+            <span className="text-xl font-bold text-red-100">Team A</span>
           </Label>
-          <div className="mt-3 team-card bg-blue-950/30 rounded-xl overflow-hidden border border-blue-500/30 shadow-lg">
+          <div className="mt-3 team-card">
             {renderTeamFormation(teamA, "Team A", 'A')}
           </div>
         </div>
 
         <div className="team-column">
           <Label htmlFor="teamB" className="team-label">
-            <Shield className="h-5 w-5 mr-2 text-indigo-400" />
-            <span className="text-xl font-bold text-indigo-100">Team B</span>
+            <Shield className="h-5 w-5 mr-2 text-green-400" />
+            <span className="text-xl font-bold text-green-100">Team B</span>
           </Label>
-          <div className="mt-3 team-card bg-indigo-950/30 rounded-xl overflow-hidden border border-indigo-500/30 shadow-lg">
+          <div className="mt-3 team-card">
             {renderTeamFormation(teamB, "Team B", 'B')}
           </div>
         </div>
@@ -202,67 +214,65 @@ interface PlayerFormationCardProps {
   player: Player;
   onClick: () => void;
   index: number;
-  teamColor: 'blue' | 'indigo';
+  teamColor: 'red' | 'green';
 }
 
 const PlayerFormationCard = ({ player, onClick, index, teamColor }: PlayerFormationCardProps) => {
-  const borderColor = teamColor === 'blue' ? 'border-blue-500/50' : 'border-indigo-500/50';
-  const hoverBorderColor = teamColor === 'blue' ? 'hover:border-blue-400' : 'hover:border-indigo-400';
-  const bgColor = teamColor === 'blue' ? 'bg-blue-700' : 'bg-indigo-700';
+  const jerseyColor = teamColor === 'red' ? 'bg-red-600' : 'bg-green-600';
   
   return (
-    <div className="player-position formation-player" onClick={onClick}>
-      <div className="player-card-formation hover-scale cursor-pointer">
-        <div className={`player-number ${teamColor === 'blue' ? 'bg-blue-600' : 'bg-indigo-600'}`}>{index + 1}</div>
+    <div className="player-position-card" onClick={onClick}>
+      <div className="player-jersey">
+        <div className={`player-number ${teamColor === 'red' ? 'bg-red-500' : 'bg-green-500'}`}>
+          {index + 1}
+        </div>
         <HoverCard>
           <HoverCardTrigger asChild>
-            <Avatar className={`h-16 w-16 border-2 ${borderColor} ${hoverBorderColor} shadow-lg transition-all duration-300 hover:shadow-xl`}>
-              {player.image ? (
-                <AvatarImage src={player.image} alt={player.name} />
-              ) : (
-                <AvatarFallback className={`${bgColor} text-white text-lg`}>
-                  {player.name.charAt(0)}
-                </AvatarFallback>
-              )}
-            </Avatar>
-          </HoverCardTrigger>
-          <HoverCardContent className="w-72 bg-blue-950/95 backdrop-blur-lg border border-blue-500/30 shadow-xl">
-            <div className="flex justify-between items-start">
-              <Avatar className="h-16 w-16 border-2 border-blue-500/50 shadow-md">
+            <div className={`jersey ${jerseyColor}`}>
+              <Avatar className="player-avatar">
                 {player.image ? (
                   <AvatarImage src={player.image} alt={player.name} />
                 ) : (
-                  <AvatarFallback className={`${bgColor} text-white text-xl`}>
+                  <AvatarFallback className={jerseyColor}>
                     {player.name.charAt(0)}
                   </AvatarFallback>
                 )}
               </Avatar>
-              <div className="space-y-1">
-                <h4 className="text-lg font-semibold">{player.name}</h4>
-                {player.stats?.won && player.stats.won > 3 && (
-                  <Badge className="bg-amber-600/80 text-amber-50">
-                    <Trophy className="h-3 w-3 mr-1" /> Top Player
-                  </Badge>
+            </div>
+          </HoverCardTrigger>
+          <HoverCardContent className="w-60 bg-blue-950/95 backdrop-blur-lg border border-blue-500/30 shadow-xl player-stats-card">
+            <div className="flex justify-between items-start">
+              <Avatar className="h-12 w-12 border border-white/20">
+                {player.image ? (
+                  <AvatarImage src={player.image} alt={player.name} />
+                ) : (
+                  <AvatarFallback className={jerseyColor}>
+                    {player.name.charAt(0)}
+                  </AvatarFallback>
                 )}
+              </Avatar>
+              <div>
+                <h4 className="text-md font-semibold">{player.name}</h4>
+                <div className="text-xs opacity-70">{`Player #${index + 1}`}</div>
               </div>
             </div>
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              <div className="bg-blue-900/30 rounded-lg p-3 text-center border border-blue-500/20">
-                <div className="font-semibold text-lg">{player.stats?.played || 0}</div>
-                <div className="text-xs text-blue-300 mt-1">Matches Played</div>
+            <div className="mt-3 grid grid-cols-3 gap-1">
+              <div className="stat-box">
+                <div className="font-bold">{player.stats?.played || 0}</div>
+                <div className="stat-label">Played</div>
               </div>
-              <div className="bg-green-900/30 rounded-lg p-3 text-center border border-green-500/20">
-                <div className="font-semibold text-lg text-green-300">{player.stats?.won || 0}</div>
-                <div className="text-xs text-green-300 mt-1">Wins</div>
+              <div className="stat-box win-stat">
+                <div className="font-bold">{player.stats?.won || 0}</div>
+                <div className="stat-label">Wins</div>
               </div>
-              <div className="bg-red-900/30 rounded-lg p-3 text-center border border-red-500/20">
-                <div className="font-semibold text-lg text-red-300">{player.stats?.lost || 0}</div>
-                <div className="text-xs text-red-300 mt-1">Losses</div>
+              <div className="stat-box loss-stat">
+                <div className="font-bold">{player.stats?.lost || 0}</div>
+                <div className="stat-label">Losses</div>
               </div>
             </div>
           </HoverCardContent>
         </HoverCard>
-        <div className="player-name mt-2 text-sm font-medium max-w-20 text-center">{player.name}</div>
+        <div className="player-name-label">{player.name}</div>
       </div>
     </div>
   );

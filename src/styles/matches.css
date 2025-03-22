@@ -45,55 +45,140 @@
     @apply p-4 bg-muted/30 flex justify-between items-center;
   }
   
-  .team-empty-state {
-    @apply min-h-[260px] bg-blue-950/10 rounded-xl border border-blue-500/10;
+  /* Football pitch styling */
+  .football-pitch {
+    @apply relative rounded-xl overflow-hidden flex flex-col items-center justify-center py-8 h-[300px] md:h-[400px];
+    background: linear-gradient(to bottom, #034694, #0a2351);
   }
   
-  /* Randomization animation styles */
-  .randomizer-overlay {
-    @apply fixed inset-0 bg-black/95 backdrop-blur-md z-50 flex items-center justify-center;
-    animation: fade-in 0.6s ease-out forwards;
+  .team-a-pitch {
+    background: linear-gradient(to bottom, #034694, #0a2351);
   }
   
-  .randomizer-container {
-    @apply max-w-4xl w-full mx-auto px-4 py-8;
+  .team-b-pitch {
+    background: linear-gradient(to bottom, #025214, #053b12);
   }
   
-  .randomizer-title {
-    @apply text-center text-3xl font-bold text-white mb-8;
-    animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards 0.2s;
-    opacity: 0;
-    transform: scale(0.5);
+  .field-markings {
+    @apply absolute inset-0 pointer-events-none;
   }
   
-  .randomizer-grid {
-    @apply grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4;
+  .center-circle {
+    @apply absolute rounded-full border border-white/20;
+    width: 80px;
+    height: 80px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
   }
   
-  /* Formation styling */
-  .team-formation {
-    @apply relative;
+  .penalty-area {
+    @apply absolute border-t border-r border-l border-white/20;
+    width: 150px;
+    height: 70px;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
   }
   
+  .goal-area {
+    @apply absolute border-t border-r border-l border-white/20;
+    width: 60px;
+    height: 30px;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .team-empty-pitch {
+    @apply min-h-[260px] rounded-xl p-6;
+    background: linear-gradient(to bottom, #034694, #0a2351);
+  }
+  
+  .pitch-formation-label {
+    @apply absolute top-2 right-2 z-10;
+  }
+  
+  .team-name-overlay {
+    @apply absolute bottom-2 text-xl font-bold text-white text-center;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+  }
+  
+  /* Formation rows positioning */
   .formation-rows {
-    @apply flex flex-col items-center;
+    @apply flex flex-col h-full justify-between py-4;
   }
   
   .formation-row {
-    @apply flex justify-center gap-6;
+    @apply flex justify-center items-center;
   }
   
-  .player-card-formation {
-    @apply relative flex flex-col items-center;
-    width: 80px;
+  /* Row-specific positioning for different formations */
+  .three-row-formation.row-0 {
+    @apply mt-6;
+  }
+  
+  .three-row-formation.row-2 {
+    @apply mb-6;
+  }
+  
+  .four-row-formation.row-0 {
+    @apply mt-4;
+  }
+  
+  .four-row-formation.row-3 {
+    @apply mb-4;
+  }
+  
+  /* Player jersey and positioning */
+  .player-position-card {
+    @apply relative mx-2;
+  }
+  
+  .player-jersey {
+    @apply flex flex-col items-center cursor-pointer transition-all duration-300;
+  }
+  
+  .player-jersey:hover {
+    @apply transform scale-110;
+  }
+  
+  .jersey {
+    @apply relative flex items-center justify-center rounded-full h-10 w-10 md:h-12 md:w-12 border-2 border-white/30 shadow-lg;
   }
   
   .player-number {
-    @apply absolute -top-2 -right-2 w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold text-white z-10 shadow-md;
+    @apply absolute -top-2 -right-2 w-5 h-5 rounded-full text-xs flex items-center justify-center font-bold text-white z-10;
   }
   
-  .player-name {
-    @apply text-xs font-semibold text-center text-white;
+  .player-avatar {
+    @apply h-8 w-8 md:h-10 md:w-10;
+  }
+  
+  .player-name-label {
+    @apply mt-1 text-[10px] md:text-xs font-medium text-white text-center max-w-[50px] md:max-w-[60px] truncate;
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  }
+  
+  /* Player stats styling */
+  .player-stats-card {
+    @apply p-3 text-xs;
+  }
+  
+  .stat-box {
+    @apply bg-blue-900/30 rounded p-1 text-center border border-blue-500/20 text-[11px];
+  }
+  
+  .stat-label {
+    @apply text-[9px] opacity-70 mt-0.5;
+  }
+  
+  .win-stat {
+    @apply bg-green-900/30 border-green-500/20;
+  }
+  
+  .loss-stat {
+    @apply bg-red-900/30 border-red-500/20;
   }
   
   /* Team selection container */
@@ -142,5 +227,26 @@
   /* Match teams container */
   .match-teams-container {
     @apply bg-gradient-to-b from-blue-950/20 to-indigo-950/10 rounded-xl p-6 border border-blue-500/20 shadow-lg;
+  }
+  
+  /* Randomization animation styles */
+  .randomizer-overlay {
+    @apply fixed inset-0 bg-black/95 backdrop-blur-md z-50 flex items-center justify-center;
+    animation: fade-in 0.6s ease-out forwards;
+  }
+  
+  .randomizer-container {
+    @apply max-w-4xl w-full mx-auto px-4 py-8;
+  }
+  
+  .randomizer-title {
+    @apply text-center text-3xl font-bold text-white mb-8;
+    animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards 0.2s;
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  
+  .randomizer-grid {
+    @apply grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4;
   }
 }

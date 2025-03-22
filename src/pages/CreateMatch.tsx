@@ -49,7 +49,7 @@ const CreateMatch = () => {
               />
             </div>
             
-            <div className="match-teams-container grid grid-cols-1 gap-6">
+            <div className="match-teams-container p-6 rounded-xl border border-blue-500/20 shadow-lg bg-gradient-to-b from-blue-950/40 to-indigo-950/20">
               <TeamSelection 
                 teamA={teamA}
                 teamB={teamB}
