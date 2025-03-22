@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getPlayers, createMatch } from "@/lib/db";
+import { getPlayers, addMatch } from "@/lib/db";
 import { Player } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,7 +52,7 @@ const CreateMatch = () => {
   };
 
   const createMatchMutation = useMutation({
-    mutationFn: (matchData: any) => createMatch(matchData),
+    mutationFn: (matchData: any) => addMatch(matchData),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['matches'] });
       const typedData = data as any; // Type cast to 'any' to resolve the TS error
