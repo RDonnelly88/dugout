@@ -1,3 +1,4 @@
+
 @layer components {
   /* Team randomizer styling */
   .team-randomizer-container {
@@ -46,9 +47,13 @@
   
   /* Player hover card styling */
   .player-hover-card {
-    @apply border border-blue-500/30 shadow-xl z-[100];
+    @apply border border-blue-500/30 shadow-xl;
     background-color: #0F1420; /* Very dark blue/almost black background - completely solid */
-    position: absolute;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
   }
   
   /* Football pitch styling */
@@ -141,7 +146,7 @@
   }
   
   .formation-row {
-    @apply flex justify-center items-center gap-10;
+    @apply flex justify-center items-center gap-16;
   }
   
   /* Row-specific positioning for different formations */
@@ -183,7 +188,7 @@
   }
   
   .player-name-label {
-    @apply mt-2 text-sm font-medium text-white text-center max-w-[80px];
+    @apply mt-2 text-sm font-medium text-white text-center max-w-[90px] text-base;
     text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
   }
   
@@ -195,7 +200,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 999;
+    z-index: 9999;
   }
   
   .stat-box {
