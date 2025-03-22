@@ -22,16 +22,10 @@ import {
 interface TeamRandomizerProps {
   players: Player[];
   onRandomize: (players: Player[], teamSize: number) => void;
-  onSelectionChange?: (selectedPlayerIds: string[]) => void;
   disabled?: boolean;
 }
 
-const TeamRandomizer = ({ 
-  players, 
-  onRandomize, 
-  onSelectionChange,
-  disabled = false 
-}: TeamRandomizerProps) => {
+const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomizerProps) => {
   const [teamSize, setTeamSize] = useState<string>("5");
   const [showPlayerSelection, setShowPlayerSelection] = useState(false);
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
@@ -42,13 +36,6 @@ const TeamRandomizer = ({
   useEffect(() => {
     setSelectedPlayers(players.map(p => p.id));
   }, [players]);
-  
-  // Notify parent component when selection changes
-  useEffect(() => {
-    if (onSelectionChange) {
-      onSelectionChange(selectedPlayers);
-    }
-  }, [selectedPlayers, onSelectionChange]);
   
   const availablePlayers = players.filter(player => selectedPlayers.includes(player.id));
   const canRandomize = availablePlayers.length >= 2; // Need at least 2 players
