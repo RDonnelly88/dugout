@@ -284,7 +284,7 @@
   
   /* Match teams container */
   .match-teams-container {
-    @apply bg-gradient-to-b from-blue-950/20 to-indigo-950/10 rounded-xl p-6 border border-blue-500/20 shadow-lg;
+    @apply bg-gradient-to-b from-blue-950/20 to-indigo-950/10 rounded-xl p-6 border border-blue-500/30 shadow-lg;
   }
   
   /* Randomization animation styles */
