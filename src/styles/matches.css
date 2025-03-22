@@ -1,4 +1,3 @@
-
 @layer components {
   /* Team randomizer styling */
   .team-randomizer-container {
@@ -142,7 +141,7 @@
   }
   
   .formation-row {
-    @apply flex justify-center items-center;
+    @apply flex justify-center items-center gap-10;
   }
   
   /* Row-specific positioning for different formations */
@@ -164,7 +163,7 @@
   
   /* Player jersey and positioning */
   .player-position-card {
-    @apply relative mx-2;
+    @apply relative mx-4;
   }
   
   .player-jersey {
@@ -176,28 +175,31 @@
   }
   
   .jersey {
-    @apply relative flex items-center justify-center rounded-full h-9 w-9 border-2 border-white/30 shadow-lg;
+    @apply relative flex items-center justify-center rounded-full h-12 w-12 border-2 border-white/30 shadow-lg;
   }
   
   .player-avatar {
-    @apply h-7 w-7;
+    @apply h-10 w-10;
   }
   
   .player-name-label {
-    @apply mt-1 text-[10px] font-medium text-white text-center max-w-[50px] truncate;
+    @apply mt-2 text-sm font-medium text-white text-center max-w-[80px];
     text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
   }
   
   /* Player stats styling */
   .player-stats-card {
     @apply p-3 text-xs;
-    background-color: #0F1420; /* Match the hover card background */
-    left: -300px; /* Position far to the left of the player */
+    background-color: #0F1420;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
   }
   
   .stat-box {
     @apply rounded p-1 text-center border border-blue-500/20 text-[11px];
-    background-color: #1A2642; /* Slightly lighter than the card background */
+    background-color: #1A2642;
   }
   
   .stat-label {
@@ -205,12 +207,12 @@
   }
   
   .win-stat {
-    background-color: rgba(6, 78, 59, 0.8); /* More solid green */
+    background-color: rgba(6, 78, 59, 0.8);
     border-color: rgba(16, 185, 129, 0.3);
   }
   
   .loss-stat {
-    background-color: rgba(127, 29, 29, 0.8); /* More solid red */
+    background-color: rgba(127, 29, 29, 0.8);
     border-color: rgba(239, 68, 68, 0.3);
   }
   

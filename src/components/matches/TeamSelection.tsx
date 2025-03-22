@@ -1,4 +1,3 @@
-
 import { Player } from "@/types";
 import { Label } from "@/components/ui/label";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
@@ -251,11 +250,8 @@ const PlayerFormationCard = ({ player, onClick, teamColor }: PlayerFormationCard
             <div className="player-name-label cursor-pointer">{player.name}</div>
           </HoverCardTrigger>
           <HoverCardContent 
-            className="w-60 player-hover-card player-stats-card" 
-            align="start" 
-            side="left" 
-            sideOffset={100}
-            alignOffset={-50}
+            className="w-72 player-hover-card player-stats-card" 
+            align="center"
           >
             <div className="flex justify-between items-start">
               <Avatar className="h-12 w-12 border border-white/20">
