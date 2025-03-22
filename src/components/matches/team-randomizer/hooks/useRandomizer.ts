@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { Player } from "@/types";
 
@@ -13,23 +14,17 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
   const [revealIndex, setRevealIndex] = useState(-1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Clear any randomization state when component unmounts
   useEffect(() => {
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-      }
-      setFlashingPlayers([]);
-      setIsRandomizing(false);
-      setRevealStage("idle");
+      resetRandomizer();
     };
   }, []);
 
+  // Always reset state when isRandomizing changes to false
   useEffect(() => {
     if (!isRandomizing) {
-      setFlashingPlayers([]);
-      setRevealIndex(-1);
-      setRevealStage("idle");
+      resetRandomizer();
     }
   }, [isRandomizing]);
 
@@ -114,11 +109,13 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     
     await new Promise(resolve => setTimeout(resolve, 2000));
     
+    // Reset UI state but save the randomization results
     setIsRandomizing(false);
     setFlashingPlayers([]);
     setRevealIndex(-1);
     setRevealStage("idle");
     
+    // Call the callback with the randomized players
     const allRandomizedPlayers = [...finalTeamA, ...finalTeamB];
     onRandomize(allRandomizedPlayers, singleTeamSize);
   };

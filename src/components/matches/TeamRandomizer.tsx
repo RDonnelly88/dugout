@@ -54,8 +54,13 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
   const playerCount = availablePlayers.length;
   
   const renderPlayerCards = () => {
-    // If not randomizing or in flashing stage, show the available players
-    if (!isRandomizing || revealStage === 'flashing') {
+    // Only show player cards when we're actively randomizing
+    if (!isRandomizing) {
+      return null; // Don't show anything when not randomizing
+    }
+    
+    // If in flashing stage, show the available players
+    if (revealStage === 'flashing') {
       return (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {availablePlayers.map((player, index) => (
@@ -165,7 +170,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
         </div>
       </div>
       
-      {/* Main randomization area */}
+      {/* Main randomization area - only shown during randomization */}
       <div className="team-randomization-area mt-4">
         {renderPlayerCards()}
       </div>
