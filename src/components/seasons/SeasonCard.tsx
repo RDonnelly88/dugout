@@ -2,6 +2,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Calendar, Trophy, Users, LayoutGrid, Medal } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
@@ -36,6 +37,31 @@ const SeasonCard = ({
   
   // Take top 5 for mini leaderboard
   const top5Players = sortedChampions.slice(0, 5);
+
+  // Helper to render avatar with icon support
+  const renderAvatar = (playerImage: string | null, playerName: string) => {
+    // Check if it's an icon format
+    if (playerImage && playerImage.startsWith('icon:')) {
+      const iconName = playerImage.replace('icon:', '');
+      const IconComponent = (LucideIcons as any)[iconName];
+      
+      return (
+        <Avatar className="h-5 w-5 mr-2">
+          <AvatarFallback className="bg-secondary text-secondary-foreground">
+            {IconComponent ? <IconComponent className="h-3 w-3" /> : playerName.charAt(0)}
+          </AvatarFallback>
+        </Avatar>
+      );
+    }
+    
+    // Regular image avatar
+    return (
+      <Avatar className="h-5 w-5 mr-2">
+        <AvatarImage src={playerImage || undefined} alt={playerName} />
+        <AvatarFallback>{playerName.charAt(0)}</AvatarFallback>
+      </Avatar>
+    );
+  };
 
   return (
     <Link to={`/seasons/${season.id}`}>
@@ -113,10 +139,7 @@ const SeasonCard = ({
                         </TableCell>
                         <TableCell className="py-1">
                           <div className="flex items-center">
-                            <Avatar className="h-5 w-5 mr-2">
-                              <AvatarImage src={player.playerImage} alt={player.playerName} />
-                              <AvatarFallback>{player.playerName.charAt(0)}</AvatarFallback>
-                            </Avatar>
+                            {renderAvatar(player.playerImage, player.playerName)}
                             <span className="truncate">{player.playerName}</span>
                           </div>
                         </TableCell>

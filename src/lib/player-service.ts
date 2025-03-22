@@ -116,7 +116,7 @@ export const updatePlayer = async (id: string, updates: Partial<Omit<Player, "id
   };
   
   if (updates.name) formattedUpdates.name = updates.name;
-  if (updates.image) formattedUpdates.image = updates.image;
+  if (updates.image !== undefined) formattedUpdates.image = updates.image;
   if (updates.stats) formattedUpdates.stats = updates.stats as unknown as Json;
   
   try {
