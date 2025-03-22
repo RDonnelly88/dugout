@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -70,10 +69,13 @@ const Matches = () => {
     return player ? player.name : "Unknown Player";
   };
 
-  const filteredMatches = matches.filter(match =>
-    match.teamA.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    match.teamB.name.toLowerCase().includes(searchTerm.toLowerCase())
-  ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const filteredMatches = matches.filter(match => {
+    const teamAName = match.teamA?.name || "";
+    const teamBName = match.teamB?.name || "";
+    
+    return teamAName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           teamBName.toLowerCase().includes(searchTerm.toLowerCase());
+  }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
     <div className="page-container animate-slide-up">

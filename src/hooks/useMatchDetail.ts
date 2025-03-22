@@ -78,7 +78,7 @@ export const useMatchDetail = () => {
       return;
     }
 
-    if (!match) return;
+    if (!match || !match.teamA || !match.teamB) return;
 
     const updates = {
       teamA: {
@@ -103,10 +103,10 @@ export const useMatchDetail = () => {
   // Initialize form values when match data is loaded
   useEffect(() => {
     if (match) {
-      if (match.teamA && match.teamA.score !== undefined) {
+      if (match.teamA?.score !== undefined) {
         setTeamAScore(match.teamA.score);
       }
-      if (match.teamB && match.teamB.score !== undefined) {
+      if (match.teamB?.score !== undefined) {
         setTeamBScore(match.teamB.score);
       }
     }
