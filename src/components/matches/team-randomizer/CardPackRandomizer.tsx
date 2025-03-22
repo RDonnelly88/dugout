@@ -2,9 +2,13 @@
 import React, { useState, useEffect } from "react";
 import { Player } from "@/types";
 import { Button } from "@/components/ui/button";
-import { PackageOpen, Check, User } from "lucide-react";
+import { PackageOpen, Check, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 interface CardPackRandomizerProps {
   players: Player[];
@@ -69,6 +73,11 @@ const CardPackRandomizer = ({
       }
       
       setIsRevealing(false);
+      
+      // Automatically set to complete if this was the last card
+      if (updatedRemainingCards.length === 0) {
+        setIsComplete(true);
+      }
     }, 1000); // Delay to allow the card reveal animation to play
   };
 
@@ -78,6 +87,12 @@ const CardPackRandomizer = ({
 
   return (
     <div className="card-pack-randomizer">
+      {/* Dialog title and description for accessibility */}
+      <DialogTitle className="sr-only">Team Randomizer</DialogTitle>
+      <DialogDescription className="sr-only">
+        Randomly assign players to teams
+      </DialogDescription>
+      
       {/* Header */}
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">
@@ -181,7 +196,7 @@ const CardPackRandomizer = ({
         ) : (
           <Button
             onClick={handleComplete}
-            className="complete-button bg-green-600 hover:bg-green-700 py-4 px-6 h-auto"
+            className="complete-button py-4 px-6 h-auto bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg border border-green-500/50 transition-all duration-300"
           >
             <Check className="mr-2 h-5 w-5" />
             <span className="text-lg font-medium">Confirm Teams</span>
@@ -191,7 +206,8 @@ const CardPackRandomizer = ({
 
       {/* Footer with cancel button */}
       <div className="mt-8 flex justify-end">
-        <Button variant="ghost" onClick={onCancel}>
+        <Button variant="ghost" onClick={onCancel} className="flex items-center gap-2">
+          <X className="h-4 w-4" />
           Cancel
         </Button>
       </div>
@@ -199,7 +215,7 @@ const CardPackRandomizer = ({
   );
 };
 
-// New PlayerListItem component for the simplified list view
+// Player list item component
 interface PlayerListItemProps {
   player: Player;
   index: number;
