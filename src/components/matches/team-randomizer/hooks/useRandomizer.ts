@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { Player } from "@/types";
 import { useToast } from "@/components/ui/use-toast";
@@ -19,26 +20,13 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
   const [hasStartedRandomization, setHasStartedRandomization] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
-
-  // Clear any randomization state when component unmounts
-  useEffect(() => {
-    return () => {
-      resetRandomizer();
-    };
-  }, []);
-
-  // Reset animation completed flag when isRandomizing changes to true
-  useEffect(() => {
-    if (isRandomizing) {
-      setAnimationCompleted(false);
-    }
-  }, [isRandomizing]);
-
-  // Debug effect to log state changes
+  
+  // Log the current stage for debugging
   useEffect(() => {
     console.log(`RevealStage changed to: ${revealStage}`);
   }, [revealStage]);
 
+  // Simple shuffle function to randomize players
   const shufflePlayers = (players: Player[]) => {
     const shuffled = [...players];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -47,53 +35,20 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     }
     return shuffled;
   };
-  
+
+  // Simplified randomization function with reliable timeouts
   const performRandomization = async (players: Player[]) => {
-    if (players.length === 0) return;
+    if (players.length === 0 || isRandomizing) return;
     
-    console.log("Starting randomization with stages");
+    console.log("Starting randomization process");
     setIsRandomizing(true);
     setHasStartedRandomization(true);
     setAnimationCompleted(false);
-    
+    setRevealStage("idle");
+
     try {
-      // Force reset to idle first to ensure a clean start
-      setRevealStage("idle");
-      
-      // Small delay to ensure UI updates
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // STAGE 1: FLASHING - Dramatic flashing animation
-      console.log("Starting flashing stage");
-      setRevealStage("flashing");
-      let flashCount = 0;
-      
-      // Create a Promise that resolves after the flashing animation completes
-      await new Promise<void>(resolve => {
-        const flashInterval = setInterval(() => {
-          const availablePlayerIds = selectedPlayers;
-          const randomPlayerIds = availablePlayerIds
-            .sort(() => Math.random() - 0.5)
-            .slice(0, Math.floor(availablePlayerIds.length / 2));
-          
-          setFlashingPlayers(randomPlayerIds);
-          flashCount++;
-          
-          if (flashCount >= 10) {
-            clearInterval(flashInterval);
-            resolve();
-          }
-        }, 200);
-      });
-      
-      // STAGE 2: SPOTLIGHT - Dramatic Spotlight Phase
-      console.log("Moving to spotlight stage");
-      setRevealStage("spotlight");
-      setFlashingPlayers([]);
-      
-      // Prepare the randomized teams
+      // Create shuffled teams
       const shuffledPlayers = shufflePlayers(players);
-      
       const singleTeamSize = parseInt(teamSize);
       const totalPlayersNeeded = singleTeamSize * 2;
       
@@ -106,52 +61,62 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
       const finalTeamA = shuffledPlayers.slice(0, teamASize);
       const finalTeamB = shuffledPlayers.slice(teamASize, teamASize * 2);
       
-      // Show spotlight for several star players (up to 3 or fewer if not enough players)
+      // STAGE 1: FLASHING
+      setRevealStage("flashing");
+      console.log("Starting flashing stage");
+      
+      // Flash for 2 seconds total (10 intervals of 200ms)
+      for (let i = 0; i < 10; i++) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        const randomPlayerIds = selectedPlayers
+          .sort(() => Math.random() - 0.5)
+          .slice(0, Math.floor(selectedPlayers.length / 2));
+        setFlashingPlayers(randomPlayerIds);
+      }
+      
+      // Clear flashing effect
+      setFlashingPlayers([]);
+      
+      // STAGE 2: SPOTLIGHT
+      setRevealStage("spotlight");
+      console.log("Starting spotlight stage");
+      
+      // Show spotlight for up to 3 star players
       const starPlayerCount = Math.min(3, shuffledPlayers.length);
       const starPlayers = shuffledPlayers.slice(0, starPlayerCount);
       
       for (const player of starPlayers) {
         setSpotlightPlayer(player);
-        console.log("Spotlight on player:", player.name);
-        // Wait for 1.5 seconds between each spotlight
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
       
       setSpotlightPlayer(null);
       
-      // STAGE 3: REVEALING - Team Reveal Phase
-      console.log("Moving to revealing stage");
+      // STAGE 3: REVEALING
+      console.log("Starting revealing stage");
       setRevealStage("revealing");
       setTeamAPlayers(finalTeamA);
       setTeamBPlayers(finalTeamB);
       
-      // Brief pause before starting the reveal
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Reveal players one by one with dramatic effect
+      // Reveal players one by one
       const maxRevealCount = Math.max(finalTeamA.length, finalTeamB.length);
       for (let i = 0; i < maxRevealCount; i++) {
         setRevealIndex(i);
-        console.log(`Revealing player at index ${i}`);
         await new Promise(resolve => setTimeout(resolve, 300));
       }
       
-      // STAGE 4: CELEBRATION - Final celebration stage
-      console.log("Moving to celebration stage");
+      // STAGE 4: CELEBRATION
+      console.log("Starting celebration stage");
       setRevealStage("celebration");
       
-      // Keep the final result visible for celebration moment
+      // Show completion for 2 seconds
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Animation is completed
+      // Complete the animation
       setAnimationCompleted(true);
       
-      // Call the callback with the randomized players
-      const teamAPlayerIds = finalTeamA.map(p => p.id);
-      const teamBPlayerIds = finalTeamB.map(p => p.id);
-      const allRandomizedPlayers = [...finalTeamA, ...finalTeamB];
-      
-      onRandomize(allRandomizedPlayers, singleTeamSize);
+      // Call the callback with the randomized teams
+      onRandomize([...finalTeamA, ...finalTeamB], singleTeamSize);
       
       toast({
         title: "Teams Randomized",
@@ -159,15 +124,15 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
       });
     } catch (error) {
       console.error("Error during randomization:", error);
-      setRevealStage("idle");
-      setAnimationCompleted(true);
-      setIsRandomizing(false);
+      resetRandomizer();
       
       toast({
         title: "Randomization Error",
         description: "There was an error during team randomization. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsRandomizing(false);
     }
   };
 
