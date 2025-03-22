@@ -4,7 +4,7 @@ import { Player } from "@/types";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Shield, Users } from "lucide-react";
+import { Shield, Users, Flag } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
@@ -120,6 +120,14 @@ interface PlayerCardProps {
 }
 
 const PlayerCard = ({ player, currentSeason, seasonStats, onClick }: PlayerCardProps) => {
+  // Get player rank
+  const playerSeasonStat = seasonStats.find(stat => stat.playerId === player.id);
+  const playerRank = playerSeasonStat && playerSeasonStat.played > 0
+    ? seasonStats
+        .sort((a, b) => b.points - a.points)
+        .findIndex(stat => stat.playerId === player.id) + 1
+    : null;
+
   return (
     <div 
       onClick={onClick}
@@ -137,7 +145,21 @@ const PlayerCard = ({ player, currentSeason, seasonStats, onClick }: PlayerCardP
                 </AvatarFallback>
               )}
             </Avatar>
-            <span className="text-sm font-medium truncate text-blue-50">{player.name}</span>
+            <div>
+              <span className="text-sm font-medium truncate text-blue-50">{player.name}</span>
+              {playerRank && (
+                <div className="flex items-center text-xs">
+                  <Flag className="h-3 w-3 text-yellow-500 mr-1" />
+                  <span className="text-yellow-300">#{playerRank}</span>
+                </div>
+              )}
+              {!playerRank && playerSeasonStat && (
+                <div className="flex items-center text-xs">
+                  <Flag className="h-3 w-3 text-yellow-500 mr-1" />
+                  <span className="text-yellow-300">N/A</span>
+                </div>
+              )}
+            </div>
           </div>
         </HoverCardTrigger>
         <HoverCardContent className="w-72 p-3 bg-blue-950 border border-blue-500/30 text-white">

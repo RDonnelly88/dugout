@@ -45,7 +45,7 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
   const playerSeasonStats = seasonPlayerStats.find(stat => stat.playerId === player.id);
   
   // Calculate player's rank in current season
-  const playerRank = playerSeasonStats 
+  const playerRank = playerSeasonStats && playerSeasonStats.played > 0
     ? seasonPlayerStats
         .sort((a, b) => b.points - a.points)
         .findIndex(stat => stat.playerId === player.id) + 1
@@ -95,12 +95,12 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
             </Avatar>
             <div>
               <h4 className="font-bold">{player.name}</h4>
-              {playerRank && (
-                <div className="flex items-center text-xs">
-                  <Flag className="h-3 w-3 text-yellow-500 mr-1" />
-                  <span className="text-yellow-300">Season rank: {playerRank}</span>
-                </div>
-              )}
+              <div className="flex items-center text-xs">
+                <Flag className="h-3 w-3 text-yellow-500 mr-1" />
+                <span className="text-yellow-300">
+                  Season rank: {playerRank ? `#${playerRank}` : 'N/A'}
+                </span>
+              </div>
             </div>
           </div>
           
