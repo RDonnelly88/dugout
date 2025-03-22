@@ -26,8 +26,11 @@ const SeasonLeaderboard = ({
   seasonName,
   isFinished = false
 }: SeasonLeaderboardProps) => {
+  // Filter out players with zero matches played
+  const activeStats = stats.filter(player => player.played > 0);
+  
   // Sort stats by points (descending), then wins (descending)
-  const sortedStats = [...stats].sort((a, b) => {
+  const sortedStats = [...activeStats].sort((a, b) => {
     if (b.points !== a.points) {
       return b.points - a.points;
     }
@@ -38,6 +41,7 @@ const SeasonLeaderboard = ({
   const displayStats = limit ? sortedStats.slice(0, limit) : sortedStats;
   
   console.log("SeasonLeaderboard - stats:", stats);
+  console.log("SeasonLeaderboard - activeStats:", activeStats);
   console.log("SeasonLeaderboard - sortedStats:", sortedStats);
   console.log("SeasonLeaderboard - displayStats:", displayStats);
   
@@ -69,14 +73,14 @@ const SeasonLeaderboard = ({
     return null;
   };
   
-  if (stats.length === 0) {
+  if (activeStats.length === 0) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>{showTitle ? (seasonName ? `${seasonName} League Table` : "League Table") : "No Data Available"}</CardTitle>
           {showTitle && (
             <CardDescription>
-              No player stats available for this season yet.
+              No players with matches in this season yet.
             </CardDescription>
           )}
         </CardHeader>
