@@ -108,6 +108,7 @@ const TeamSelection = ({
                   player={player}
                   currentSeason={currentSeason}
                   seasonStats={seasonStats}
+                  playerRanks={playerRanks}
                   onClick={() => togglePlayer(teamA.length <= teamB.length ? 'A' : 'B', player.id)}
                 />
               ))}
@@ -130,9 +131,12 @@ interface PlayerCardProps {
 const PlayerCard = ({ player, currentSeason, seasonStats, onClick, playerRanks = {} }: PlayerCardProps) => {
   // Get player rank from the pre-calculated ranks
   const playerSeasonStat = seasonStats.find(stat => stat.playerId === player.id);
-  const playerRank = playerSeasonStat && playerSeasonStat.played > 0 
-    ? playerRanks[player.id] || null 
-    : null;
+  
+  // Only show rank if the player has played games this season
+  const hasPlayedGames = playerSeasonStat && playerSeasonStat.played > 0;
+  
+  // Get the player's rank from the playerRanks object (will be undefined if not ranked)
+  const playerRank = hasPlayedGames ? playerRanks[player.id] : null;
 
   return (
     <div 
@@ -159,10 +163,16 @@ const PlayerCard = ({ player, currentSeason, seasonStats, onClick, playerRanks =
                   <span className="text-yellow-300">#{playerRank}</span>
                 </div>
               )}
-              {!playerRank && playerSeasonStat && (
+              {!playerRank && hasPlayedGames && (
                 <div className="flex items-center text-xs">
                   <Flag className="h-3 w-3 text-yellow-500 mr-1" />
-                  <span className="text-yellow-300">N/A</span>
+                  <span className="text-yellow-300">Not ranked</span>
+                </div>
+              )}
+              {!hasPlayedGames && (
+                <div className="flex items-center text-xs">
+                  <Flag className="h-3 w-3 text-gray-500 mr-1" />
+                  <span className="text-gray-400">No games</span>
                 </div>
               )}
             </div>

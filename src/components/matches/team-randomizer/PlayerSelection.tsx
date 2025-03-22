@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Player } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -26,20 +25,17 @@ const PlayerSelection = ({
   togglePlayerSelection,
   disabled
 }: PlayerSelectionProps) => {
-  // Get current season for player stats
   const { data: currentSeason } = useQuery({
     queryKey: ['currentSeason'],
     queryFn: getCurrentSeason
   });
   
-  // Get season stats for all players
   const { data: seasonPlayerStats = [] } = useQuery({
     queryKey: ['seasonStats', currentSeason?.id],
     queryFn: () => currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
     enabled: !!currentSeason
   });
   
-  // Calculate player ranks using our shared utility
   const playerRanks = React.useMemo(() => {
     if (!seasonPlayerStats.length) return {};
     return calculatePlayerRanks(seasonPlayerStats);
@@ -104,7 +100,6 @@ const PlayerSelection = ({
   );
 };
 
-// Extracted player hover content to a shared component
 interface PlayerHoverContentProps {
   player: Player;
   currentSeasonId: string | null;
@@ -118,7 +113,6 @@ export const PlayerHoverContent = ({
   seasonPlayerStats,
   playerRanks = {}
 }: PlayerHoverContentProps) => {
-  // Get player form data
   const { form, isLoading } = usePlayerForm(
     currentSeasonId,
     player.id
@@ -126,12 +120,10 @@ export const PlayerHoverContent = ({
   
   const playerSeasonStats = seasonPlayerStats.find(stat => stat.playerId === player.id);
   
-  // Use the rank from the pre-calculated ranks
-  const playerRank = playerSeasonStats && playerSeasonStats.played > 0
-    ? playerRanks[player.id] || null
-    : null;
+  const hasPlayedGames = playerSeasonStats && playerSeasonStats.played > 0;
   
-  // Display last 5 matches in form
+  const playerRank = hasPlayedGames ? playerRanks[player.id] : null;
+  
   const recentForm = form.slice(0, 5);
   
   return (
@@ -151,13 +143,12 @@ export const PlayerHoverContent = ({
           <div className="flex items-center text-xs">
             <Flag className="h-3 w-3 text-yellow-500 mr-1" />
             <span className="text-yellow-300">
-              Season rank: {playerRank ? `#${playerRank}` : 'N/A'}
+              {playerRank ? `Season rank: #${playerRank}` : hasPlayedGames ? 'Not ranked' : 'No games played'}
             </span>
           </div>
         </div>
       </div>
       
-      {/* Season Stats */}
       {playerSeasonStats && (
         <div className="mt-3 p-2 bg-blue-900/50 rounded-md">
           <div className="flex items-center mb-1">
@@ -185,7 +176,6 @@ export const PlayerHoverContent = ({
         </div>
       )}
       
-      {/* Overall Stats */}
       <div className="mt-3 grid grid-cols-4 gap-2">
         <div className="bg-blue-900/50 p-2 rounded-md text-center">
           <div className="text-sm font-bold">{player.stats?.played || 0}</div>
@@ -205,7 +195,6 @@ export const PlayerHoverContent = ({
         </div>
       </div>
       
-      {/* Player form display */}
       <div className="mt-2 p-2 rounded-md bg-blue-900/30 border border-blue-500/20">
         <div className="flex items-center mb-1">
           <TrendingUp className="h-3 w-3 text-blue-300 mr-1" />
