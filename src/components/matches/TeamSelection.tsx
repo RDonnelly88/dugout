@@ -60,10 +60,10 @@ const TeamSelection = ({
     return "4-4-3";
   };
 
-  const getFormationSize = (teamSize: number): string => {
-    if (teamSize <= 5) return "5";
-    if (teamSize >= 11) return "11";
-    return teamSize.toString();
+  const getFormationConfig = (teamSize: number): { rows: number[] } => {
+    // If we don't have a specific config, return a default formation
+    const sizeKey = teamSize.toString() as keyof typeof formationConfigs;
+    return formationConfigs[sizeKey] || { rows: [1] };
   };
 
   const renderTeamFormation = (team: string[], teamName: string, teamLetter: 'A' | 'B') => {
@@ -76,7 +76,7 @@ const TeamSelection = ({
     );
 
     const teamPlayers = players.filter(player => team.includes(player.id));
-    const formationConfig = formationConfigs[getFormationSize(teamPlayers.length)];
+    const formationConfig = getFormationConfig(teamPlayers.length);
     const formationName = getFormationName(teamPlayers.length);
     const { rows } = formationConfig;
     
@@ -111,7 +111,7 @@ const TeamSelection = ({
                 const playerStats = seasonStats.find(s => s.playerId === player.id);
                 return (
                   <PlayerFormationCard 
-                    key={player.id} 
+                    key={`${player.id}-${rowIndex}-${posIndex}`} 
                     player={player}
                     seasonStats={playerStats}
                     onClick={() => togglePlayer(teamLetter, player.id)}

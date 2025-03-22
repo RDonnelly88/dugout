@@ -82,7 +82,7 @@
   }
   
   .team-a-pitch {
-    background: linear-gradient(to bottom, #034694, #0a2351);
+    background: linear-gradient(to bottom, #800000, #4a0000);
   }
   
   .team-b-pitch {
@@ -158,7 +158,7 @@
   }
   
   .formation-row {
-    @apply flex justify-center items-center gap-16;
+    @apply flex justify-center items-center gap-8 md:gap-16;
   }
   
   /* Row-specific positioning for different formations */
