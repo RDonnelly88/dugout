@@ -34,13 +34,45 @@ const SeasonLeaderboard = ({
   // Filter out players with zero matches played
   const activeStats = stats.filter(player => player.played > 0);
   
-  // Sort stats by points (descending), then wins (descending)
+  // Sort stats by points (descending), then games played (ascending if points are equal), then wins (descending)
   const sortedStats = [...activeStats].sort((a, b) => {
     if (b.points !== a.points) {
       return b.points - a.points;
     }
+    // Prioritize fewer games played when points are equal
+    if (a.played !== b.played) {
+      return a.played - b.played;
+    }
     return b.wins - a.wins;
   });
+  
+  // Calculate ranks using golf-style ranking
+  const playerRanks: Record<string, number> = {};
+  let currentRank = 1;
+  
+  // First player always gets rank 1
+  if (sortedStats.length > 0) {
+    playerRanks[sortedStats[0].playerId] = currentRank;
+  }
+  
+  // Calculate ranks for the rest of the players
+  for (let i = 1; i < sortedStats.length; i++) {
+    const prevPlayer = sortedStats[i - 1];
+    const currentPlayer = sortedStats[i];
+    
+    // If current player has same stats as previous, they get the same rank
+    if (
+      prevPlayer.points === currentPlayer.points && 
+      prevPlayer.played === currentPlayer.played && 
+      prevPlayer.wins === currentPlayer.wins
+    ) {
+      playerRanks[currentPlayer.playerId] = playerRanks[prevPlayer.playerId];
+    } else {
+      // Otherwise, current rank is i+1 (position in the sorted array)
+      currentRank = i + 1;
+      playerRanks[currentPlayer.playerId] = currentRank;
+    }
+  }
   
   // Limit the number of players shown if requested
   const displayStats = limit ? sortedStats.slice(0, limit) : sortedStats;
@@ -109,8 +141,8 @@ const SeasonLeaderboard = ({
     };
   }, [seasonId, JSON.stringify(playerIds)]);
   
-  const getRankBadge = (index: number) => {
-    if (index === 0) {
+  const getRankBadge = (rank: number) => {
+    if (rank === 1) {
       return (
         <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
           <Trophy className="h-3 w-3 mr-1 text-amber-500" />
@@ -118,7 +150,7 @@ const SeasonLeaderboard = ({
         </Badge>
       );
     }
-    if (index === 1) {
+    if (rank === 2) {
       return (
         <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200">
           <Medal className="h-3 w-3 mr-1 text-slate-400" />
@@ -126,7 +158,7 @@ const SeasonLeaderboard = ({
         </Badge>
       );
     }
-    if (index === 2) {
+    if (rank === 3) {
       return (
         <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
           <Medal className="h-3 w-3 mr-1 text-amber-700" />
@@ -179,7 +211,7 @@ const SeasonLeaderboard = ({
           <TableBody>
             {displayStats.map((stat, index) => (
               <TableRow key={stat.playerId}>
-                <TableCell className="font-medium">{index + 1}</TableCell>
+                <TableCell className="font-medium">{playerRanks[stat.playerId]}</TableCell>
                 <TableCell>
                   <Link to={`/players/${stat.playerId}`} className="flex items-center space-x-2 hover:underline">
                     <Avatar className="h-8 w-8 bg-gray-800">
@@ -190,7 +222,7 @@ const SeasonLeaderboard = ({
                     </Avatar>
                     <div>
                       <div className="font-medium">{stat.playerName}</div>
-                      {index < 3 && <div className="md:hidden mt-1">{getRankBadge(index)}</div>}
+                      {playerRanks[stat.playerId] <= 3 && <div className="md:hidden mt-1">{getRankBadge(playerRanks[stat.playerId])}</div>}
                     </div>
                   </Link>
                 </TableCell>

@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -157,15 +156,49 @@ export const usePlayerPositionHistory = (seasonId: string | null) => {
           const sortedPlayers = Array.from(playerStats.entries())
             .filter(([_, stats]) => stats.played > 0) // Only include players who have played
             .sort(([id1, statsA], [id2, statsB]) => {
-              // Sort by points (descending), then wins if points are equal
+              // Sort by points (descending), then games played (ascending if points are equal), then wins (descending)
               if (statsB.points !== statsA.points) {
                 return statsB.points - statsA.points;
+              }
+              // Prioritize fewer games played when points are equal
+              if (statsA.played !== statsB.played) {
+                return statsA.played - statsB.played;
               }
               return statsB.wins - statsA.wins;
             });
           
+          // Calculate golf-style ranks
+          const playerRanks: Record<string, number> = {};
+          let currentRank = 1;
+          
+          // First player always gets rank 1
+          if (sortedPlayers.length > 0) {
+            playerRanks[sortedPlayers[0][0]] = currentRank; // sortedPlayers[0][0] is the playerId
+          }
+          
+          // Calculate ranks for the rest of the players
+          for (let i = 1; i < sortedPlayers.length; i++) {
+            const prevPlayer = sortedPlayers[i - 1];
+            const currentPlayer = sortedPlayers[i];
+            const [prevPlayerId, prevStats] = prevPlayer;
+            const [currentPlayerId, currentStats] = currentPlayer;
+            
+            // If current player has same stats as previous, they get the same rank
+            if (
+              prevStats.points === currentStats.points && 
+              prevStats.played === currentStats.played && 
+              prevStats.wins === currentStats.wins
+            ) {
+              playerRanks[currentPlayerId] = playerRanks[prevPlayerId];
+            } else {
+              // Otherwise, current rank is i+1 (position in the sorted array)
+              currentRank = i + 1;
+              playerRanks[currentPlayerId] = currentRank;
+            }
+          }
+          
           // Record positions for each player
-          sortedPlayers.forEach(([playerId, stats], index) => {
+          sortedPlayers.forEach(([playerId, stats]) => {
             if (!positionHistory[playerId]) {
               positionHistory[playerId] = [];
             }
@@ -173,7 +206,7 @@ export const usePlayerPositionHistory = (seasonId: string | null) => {
             positionHistory[playerId].push({
               matchId: match.id,
               matchDate,
-              position: index + 1,
+              position: playerRanks[playerId], // Use the calculated rank
               playerId,
               playerName: stats.name,
               playerImage: stats.image
