@@ -1,13 +1,14 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Edit, CalendarDays, Clock, Users, MapPin } from "lucide-react";
+import { ArrowLeft, Edit, CalendarDays, Clock, Users, MapPin, Trophy, TrendingUp, TrendingDown, MinusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { usePlayerDetail } from "@/hooks/usePlayerDetail";
+import { usePlayerForm } from "@/hooks/usePlayerForm";
 import PlayerSeasonStats from "@/components/players/PlayerSeasonStats";
 import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import PlayerRelationships from "@/components/players/PlayerRelationships";
@@ -26,6 +27,12 @@ const PlayerDetail = () => {
     isLoading,
     navigate
   } = usePlayerDetail();
+
+  // Get player form for the currently selected season
+  const { form: currentSeasonForm } = usePlayerForm(
+    selectedSeasonId, 
+    player?.id || null
+  );
 
   if (isLoading) {
     return (
@@ -70,6 +77,18 @@ const PlayerDetail = () => {
   
   const recentResults = playerRecentMatches.map(match => getPlayerMatchResult(match).result);
 
+  // Calculate player's rank in current season
+  const currentSeasonStat = seasonStats.find(stat => 
+    !selectedSeasonId ? stat.seasonId === seasons.find(s => s.isCurrent)?.id : stat.seasonId === selectedSeasonId
+  );
+  
+  const playerRank = currentSeasonStat ? 
+    seasonStats
+      .filter(stat => stat.seasonId === currentSeasonStat.seasonId)
+      .sort((a, b) => b.points - a.points)
+      .findIndex(stat => stat.playerId === player.id) + 1 
+    : null;
+
   return (
     <div className="page-container animate-slide-up">
       <div className="flex items-center justify-between mb-6">
@@ -105,22 +124,78 @@ const PlayerDetail = () => {
                   <CalendarDays className="h-3 w-3 mr-1" />
                   {seasons.length} Seasons
                 </Badge>
+                {playerRank && (
+                  <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200">
+                    <Trophy className="h-3 w-3 mr-1" />
+                    Rank: #{playerRank}
+                  </Badge>
+                )}
               </div>
               
               <div className="flex flex-col md:flex-row items-center gap-4">
                 <div className="text-sm text-muted-foreground">
                   Recent Form:
                 </div>
-                <PlayerFormDisplay results={recentResults} />
+                <PlayerFormDisplay results={currentSeasonForm.length > 0 ? currentSeasonForm : recentResults} />
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Season stats summary card */}
+      {currentSeasonStat && (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center">
+              <Trophy className="h-5 w-5 mr-2 text-amber-400" />
+              Current Season Stats
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-blue-900/20 rounded-lg p-4 text-center">
+                <div className="flex justify-center mb-2">
+                  <Users className="h-5 w-5 text-blue-400" />
+                </div>
+                <div className="text-2xl font-bold">{currentSeasonStat.played}</div>
+                <div className="text-sm text-blue-400">Played</div>
+              </div>
+              <div className="bg-green-900/20 rounded-lg p-4 text-center">
+                <div className="flex justify-center mb-2">
+                  <TrendingUp className="h-5 w-5 text-green-400" />
+                </div>
+                <div className="text-2xl font-bold">{currentSeasonStat.wins}</div>
+                <div className="text-sm text-green-400">Wins</div>
+              </div>
+              <div className="bg-amber-900/20 rounded-lg p-4 text-center">
+                <div className="flex justify-center mb-2">
+                  <MinusCircle className="h-5 w-5 text-amber-400" />
+                </div>
+                <div className="text-2xl font-bold">{currentSeasonStat.draws}</div>
+                <div className="text-sm text-amber-400">Draws</div>
+              </div>
+              <div className="bg-red-900/20 rounded-lg p-4 text-center">
+                <div className="flex justify-center mb-2">
+                  <TrendingDown className="h-5 w-5 text-red-400" />
+                </div>
+                <div className="text-2xl font-bold">{currentSeasonStat.losses}</div>
+                <div className="text-sm text-red-400">Losses</div>
+              </div>
+            </div>
+            <div className="mt-4 text-muted-foreground text-sm">
+              <p>
+                In the current season, {player.name} has {currentSeasonStat.points} points
+                with a win rate of {Math.round((currentSeasonStat.wins / Math.max(1, currentSeasonStat.played)) * 100)}%.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Tabs defaultValue="stats" className="mb-8">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="stats">Stats</TabsTrigger>
+          <TabsTrigger value="stats">All Stats</TabsTrigger>
           <TabsTrigger value="relationships">Relationships</TabsTrigger>
         </TabsList>
         
