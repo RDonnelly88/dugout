@@ -34,6 +34,7 @@ const formSchema = z.object({
   }),
   endDate: z.date().optional(),
   isCurrent: z.boolean().default(false),
+  isFinished: z.boolean().default(false),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -54,12 +55,14 @@ const SeasonForm = ({ onSubmit, initialData, isSubmitting }: SeasonFormProps) =>
           startDate: new Date(initialData.startDate),
           endDate: initialData.endDate ? new Date(initialData.endDate) : undefined,
           isCurrent: initialData.isCurrent,
+          isFinished: initialData.isFinished || false,
         }
       : {
           name: "",
           startDate: new Date(),
           endDate: undefined,
           isCurrent: false,
+          isFinished: false,
         },
   });
 
@@ -174,6 +177,27 @@ const SeasonForm = ({ onSubmit, initialData, isSubmitting }: SeasonFormProps) =>
                 <FormLabel className="text-base">Current Season</FormLabel>
                 <p className="text-sm text-muted-foreground">
                   Mark this as the current active season.
+                </p>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="isFinished"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">Finished Season</FormLabel>
+                <p className="text-sm text-muted-foreground">
+                  Mark this season as finished. No more matches can be added to finished seasons.
                 </p>
               </div>
               <FormControl>

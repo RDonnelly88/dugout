@@ -71,7 +71,7 @@ const SeasonLeaderboard = ({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>{showTitle ? (seasonName ? `${seasonName} Leaderboard` : "Season Leaderboard") : "No Data Available"}</CardTitle>
+          <CardTitle>{showTitle ? (seasonName ? `${seasonName} League Table` : "League Table") : "No Data Available"}</CardTitle>
           {showTitle && (
             <CardDescription>
               No player stats available for this season yet.
@@ -86,7 +86,7 @@ const SeasonLeaderboard = ({
     <Card>
       {showTitle && (
         <CardHeader>
-          <CardTitle>{seasonName ? `${seasonName} Leaderboard` : "Season Leaderboard"}</CardTitle>
+          <CardTitle>{seasonName ? `${seasonName} League Table` : "League Table"}</CardTitle>
           <CardDescription>
             Player rankings and statistics
           </CardDescription>

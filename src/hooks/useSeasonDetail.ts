@@ -131,7 +131,8 @@ export const useSeasonDetail = () => {
         name: values.name,
         startDate: values.startDate.toISOString(),
         endDate: values.endDate ? values.endDate.toISOString() : null,
-        isCurrent: values.isCurrent
+        isCurrent: values.isCurrent,
+        isFinished: values.isFinished
       }
     });
   };

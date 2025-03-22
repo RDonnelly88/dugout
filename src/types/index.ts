@@ -1,4 +1,3 @@
-
 export interface Player {
   id: string;
   name: string;
@@ -41,6 +40,7 @@ export interface Season {
   startDate: string;
   endDate?: string;
   isCurrent: boolean;
+  isFinished: boolean;
   createdAt: string;
   updatedAt: string;
 }

@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ChevronRight, Edit, Trash, Calendar, Trophy } from "lucide-react";
+import { ArrowLeft, ChevronRight, Edit, Trash, Calendar, Trophy, Lock, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -148,11 +148,20 @@ const SeasonDetail = () => {
                 <div>
                   <h1 className="text-2xl font-bold flex items-center">
                     {season.name}
-                    {season.isCurrent && (
-                      <Badge variant="default" className="ml-2 bg-green-500 hover:bg-green-600">
-                        Current Season
-                      </Badge>
-                    )}
+                    <div className="flex gap-2 ml-2">
+                      {season.isCurrent && (
+                        <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                          <Check className="h-3 w-3 mr-1" />
+                          Current Season
+                        </Badge>
+                      )}
+                      {season.isFinished && (
+                        <Badge variant="outline" className="bg-slate-100 text-slate-700">
+                          <Lock className="h-3 w-3 mr-1" />
+                          Finished
+                        </Badge>
+                      )}
+                    </div>
                   </h1>
                   <div className="flex items-center text-muted-foreground mt-1">
                     <Calendar className="h-4 w-4 mr-1" />
@@ -177,7 +186,7 @@ const SeasonDetail = () => {
 
           <Tabs defaultValue="leaderboard" className="space-y-4">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+              <TabsTrigger value="leaderboard">League Table</TabsTrigger>
               <TabsTrigger value="matches">Matches</TabsTrigger>
             </TabsList>
             
@@ -208,9 +217,13 @@ const SeasonDetail = () => {
                   {seasonMatches.length === 0 && (
                     <div className="text-center py-6">
                       <p className="text-muted-foreground mb-4">No matches in this season yet</p>
-                      <Button asChild>
-                        <Link to="/matches/create">Create a Match</Link>
-                      </Button>
+                      {!season.isFinished ? (
+                        <Button asChild>
+                          <Link to="/matches/create">Create a Match</Link>
+                        </Button>
+                      ) : (
+                        <p className="text-amber-600">This season is finished. No more matches can be added.</p>
+                      )}
                     </div>
                   )}
                 </CardContent>

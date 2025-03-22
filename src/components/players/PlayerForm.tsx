@@ -1,6 +1,5 @@
 
 import React from "react";
-import { TrendingUp, TrendingDown, CircleDot } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PlayerFormResult } from "@/types";
 
@@ -18,26 +17,42 @@ const PlayerForm = ({ form = [], size = 'md', showLabel = false }: PlayerFormPro
   // Limit to last 5 results
   const recentForm = form.slice(0, 5);
   
-  const getFormIcon = (result: PlayerFormResult) => {
+  const getFormSquare = (result: PlayerFormResult, index: number) => {
+    let bgColor = "bg-gray-100";
+    let textColor = "text-gray-700";
+    let letter = "-";
+    
     switch (result) {
       case 'win':
-        return <TrendingUp className={cn(
-          "text-green-500",
-          size === 'sm' ? 'h-3 w-3' : size === 'md' ? 'h-4 w-4' : 'h-5 w-5'
-        )} />;
+        bgColor = "bg-green-500";
+        textColor = "text-white";
+        letter = "W";
+        break;
       case 'loss':
-        return <TrendingDown className={cn(
-          "text-red-500",
-          size === 'sm' ? 'h-3 w-3' : size === 'md' ? 'h-4 w-4' : 'h-5 w-5'
-        )} />;
+        bgColor = "bg-red-500";
+        textColor = "text-white";
+        letter = "L";
+        break;
       case 'draw':
-        return <CircleDot className={cn(
-          "text-amber-500",
-          size === 'sm' ? 'h-3 w-3' : size === 'md' ? 'h-4 w-4' : 'h-5 w-5'
-        )} />;
-      default:
-        return null;
+        bgColor = "bg-amber-400";
+        textColor = "text-white";
+        letter = "D";
+        break;
     }
+    
+    return (
+      <div 
+        key={index}
+        className={cn(
+          "flex items-center justify-center rounded font-semibold",
+          bgColor,
+          textColor,
+          size === 'sm' ? 'w-5 h-5 text-xs' : size === 'md' ? 'w-6 h-6 text-sm' : 'w-8 h-8'
+        )}
+      >
+        {letter}
+      </div>
+    );
   };
 
   return (
@@ -48,17 +63,7 @@ const PlayerForm = ({ form = [], size = 'md', showLabel = false }: PlayerFormPro
         </div>
       )}
       <div className="flex space-x-1 items-center">
-        {recentForm.map((result, index) => (
-          <div 
-            key={index}
-            className={cn(
-              "flex items-center justify-center rounded",
-              size === 'sm' ? 'w-4 h-4' : size === 'md' ? 'w-5 h-5' : 'w-6 h-6'
-            )}
-          >
-            {getFormIcon(result)}
-          </div>
-        ))}
+        {recentForm.map((result, index) => getFormSquare(result, index))}
       </div>
     </div>
   );
