@@ -8,7 +8,6 @@ import TeamRandomizer from "@/components/matches/TeamRandomizer";
 import DatePicker from "@/components/matches/DatePicker";
 import SeasonSelect from "@/components/matches/SeasonSelect";
 import { useCreateMatch } from "@/hooks/useCreateMatch";
-import { useState, useEffect } from "react";
 
 const CreateMatch = () => {
   const { 
@@ -23,23 +22,15 @@ const CreateMatch = () => {
     createMatchMutation, 
     handleSubmit 
   } = useCreateMatch();
-  
-  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
     queryFn: getPlayers
   });
-  
-  // Initialize selected players with all players
-  useEffect(() => {
-    setSelectedPlayers(players.map(player => player.id));
-  }, [players]);
 
-  // Handle player selection from the TeamRandomizer
-  const handlePlayerSelectionChange = (playerIds: string[]) => {
-    setSelectedPlayers(playerIds);
-  };
+  const availablePlayers = players.filter(player =>
+    !teamA.includes(player.id) && !teamB.includes(player.id)
+  );
 
   return (
     <div className="page-container animate-slide-up">
@@ -57,7 +48,6 @@ const CreateMatch = () => {
               <TeamRandomizer 
                 players={players} 
                 onRandomize={randomizeTeams}
-                onSelectionChange={handlePlayerSelectionChange}
                 disabled={createMatchMutation.isPending}
               />
             </div>
@@ -67,8 +57,8 @@ const CreateMatch = () => {
                 teamA={teamA}
                 teamB={teamB}
                 players={players}
-                selectedPlayers={selectedPlayers}
                 togglePlayer={togglePlayer}
+                availablePlayers={availablePlayers}
               />
             </div>
             

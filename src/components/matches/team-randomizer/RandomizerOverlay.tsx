@@ -188,15 +188,7 @@ const RandomizerOverlay = ({
         {revealStage === "shuffling" && renderShufflingPlayers()}
         {revealStage === "spotlight" && renderSpotlightReveal()}
         {revealStage === "assigning" && renderAssigningPlayers()}
-        {formationView && revealComplete && (
-          <Formation 
-            teamA={teamAPlayers} 
-            teamB={teamBPlayers} 
-            positions={assignedPositions} 
-            teamSize={teamSize}
-          />
-        )}
-        {!formationView && revealComplete && renderSimpleTeams()}
+        {formationView && renderSimpleTeams()}
       </div>
     </div>
   );

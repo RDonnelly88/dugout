@@ -1,50 +1,28 @@
-
 import { Player } from "@/types";
 import { Label } from "@/components/ui/label";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { FormationConfig } from "./team-randomizer/types";
 import { formationConfigs } from "./team-randomizer/constants";
-import { Shield, Trophy, Users, Percent } from "lucide-react";
+import { Shield, Trophy, Users } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
 
 interface TeamSelectionProps {
   teamA: string[];
   teamB: string[];
   players: Player[];
-  selectedPlayers: string[];
   togglePlayer: (team: 'A' | 'B', playerId: string) => void;
+  availablePlayers: Player[];
 }
 
 const TeamSelection = ({ 
   teamA, 
   teamB, 
   players, 
-  selectedPlayers,
-  togglePlayer 
+  togglePlayer, 
+  availablePlayers 
 }: TeamSelectionProps) => {
-  const { data: currentSeason } = useQuery({
-    queryKey: ['currentSeason'],
-    queryFn: getCurrentSeason
-  });
-  
-  const { data: seasonStats = [] } = useQuery({
-    queryKey: ['seasonStats', currentSeason?.id],
-    queryFn: () => currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
-    enabled: !!currentSeason
-  });
-  
-  const availablePlayers = useMemo(() => {
-    return players.filter(player => 
-      selectedPlayers.includes(player.id) && 
-      !teamA.includes(player.id) && 
-      !teamB.includes(player.id)
-    );
-  }, [players, selectedPlayers, teamA, teamB]);
-  
   const getFormationSize = (teamSize: number): string => {
     if (teamSize <= 5) return "5";
     if (teamSize >= 11) return "11";
@@ -92,12 +70,10 @@ const TeamSelection = ({
               {Array(playersInRow).fill(0).map((_, posIndex) => {
                 if (playerIndex >= teamPlayers.length) return null;
                 const player = teamPlayers[playerIndex++];
-                const playerStats = seasonStats.find(s => s.playerId === player.id);
                 return (
                   <PlayerFormationCard 
                     key={player.id} 
                     player={player}
-                    seasonStats={playerStats}
                     onClick={() => togglePlayer(teamLetter, player.id)}
                     teamColor={teamLetter === 'A' ? 'red' : 'green'}
                   />
@@ -119,25 +95,21 @@ const TeamSelection = ({
       return (
         <div className="text-center p-8 text-muted-foreground">
           <Users className="h-12 w-12 mx-auto mb-2 opacity-30" />
-          <p className="text-lg font-medium">No available players</p>
-          <p className="text-sm mt-1">Select players above or add all players to teams</p>
+          <p className="text-lg font-medium">All players have been assigned</p>
+          <p className="text-sm mt-1">You've added all available players to teams</p>
         </div>
       );
     }
     
     return (
       <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
-        {availablePlayers.map(player => {
-          const playerStats = seasonStats.find(s => s.playerId === player.id);
-          return (
-            <PlayerCard
-              key={player.id}
-              player={player}
-              seasonStats={playerStats}
-              onClick={() => togglePlayer(teamA.length <= teamB.length ? 'A' : 'B', player.id)}
-            />
-          );
-        })}
+        {availablePlayers.map(player => (
+          <PlayerCard
+            key={player.id}
+            player={player}
+            onClick={() => togglePlayer(teamA.length <= teamB.length ? 'A' : 'B', player.id)}
+          />
+        ))}
       </div>
     );
   };
@@ -181,18 +153,10 @@ const TeamSelection = ({
 
 interface PlayerCardProps {
   player: Player;
-  seasonStats?: { playerId: string; wins: number; losses: number; draws: number; played: number; points: number; };
   onClick: () => void;
 }
 
-const PlayerCard = ({ player, seasonStats, onClick }: PlayerCardProps) => {
-  const winPercentage = player.stats.played > 0 
-    ? Math.round((player.stats.won / player.stats.played) * 100) 
-    : 0;
-  
-  const seasonWinPercentage = seasonStats?.played ? 
-    Math.round((seasonStats.wins / seasonStats.played) * 100) : 0;
-  
+const PlayerCard = ({ player, onClick }: PlayerCardProps) => {
   return (
     <div 
       onClick={onClick}
@@ -213,64 +177,34 @@ const PlayerCard = ({ player, seasonStats, onClick }: PlayerCardProps) => {
             <span className="text-sm font-medium truncate text-blue-50">{player.name}</span>
           </div>
         </HoverCardTrigger>
-        <HoverCardContent className="w-64 player-compact-card">
-          <div className="flex justify-between space-x-3">
-            <Avatar className="h-12 w-12 border border-blue-500/50">
+        <HoverCardContent className="w-72 player-hover-card">
+          <div className="flex justify-between items-start">
+            <Avatar className="h-16 w-16 border-2 border-blue-500/50 shadow-md">
               {player.image ? (
                 <AvatarImage src={player.image} alt={player.name} />
               ) : (
-                <AvatarFallback className="bg-blue-700 text-white">
+                <AvatarFallback className="bg-blue-700 text-white text-xl">
                   {player.name.charAt(0)}
                 </AvatarFallback>
               )}
             </Avatar>
-            <div className="flex-1">
-              <h4 className="text-md font-semibold">{player.name}</h4>
-              <div className="flex items-center mt-0.5 text-xs text-muted-foreground">
-                <Percent className="h-3 w-3 mr-1" /> 
-                Win rate: {winPercentage}%
-              </div>
+            <div className="space-y-1">
+              <h4 className="text-lg font-semibold">{player.name}</h4>
             </div>
           </div>
-          
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <div className="stat-section">
-              <h5 className="text-xs font-medium text-muted-foreground mb-1.5">Overall Stats</h5>
-              <div className="grid grid-cols-3 gap-1">
-                <div className="stat-box">
-                  <span className="stat-value">{player.stats.played}</span>
-                  <span className="stat-label">Played</span>
-                </div>
-                <div className="stat-box win-stat">
-                  <span className="stat-value">{player.stats.won}</span>
-                  <span className="stat-label">Wins</span>
-                </div>
-                <div className="stat-box loss-stat">
-                  <span className="stat-value">{player.stats.lost}</span>
-                  <span className="stat-label">Losses</span>
-                </div>
-              </div>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="bg-blue-900/30 rounded-lg p-3 text-center border border-blue-500/20">
+              <div className="font-semibold text-lg">{player.stats?.played || 0}</div>
+              <div className="text-xs text-blue-300 mt-1">Matches Played</div>
             </div>
-            
-            {seasonStats && seasonStats.played > 0 && (
-              <div className="stat-section">
-                <h5 className="text-xs font-medium text-muted-foreground mb-1.5">Season Stats</h5>
-                <div className="grid grid-cols-3 gap-1">
-                  <div className="stat-box">
-                    <span className="stat-value">{seasonStats.played}</span>
-                    <span className="stat-label">Played</span>
-                  </div>
-                  <div className="stat-box win-stat">
-                    <span className="stat-value">{seasonStats.wins}</span>
-                    <span className="stat-label">Wins</span>
-                  </div>
-                  <div className="stat-box">
-                    <span className="stat-value">{seasonWinPercentage}%</span>
-                    <span className="stat-label">Win Rate</span>
-                  </div>
-                </div>
-              </div>
-            )}
+            <div className="bg-green-900/30 rounded-lg p-3 text-center border border-green-500/20">
+              <div className="font-semibold text-lg text-green-300">{player.stats?.won || 0}</div>
+              <div className="text-xs text-green-300 mt-1">Wins</div>
+            </div>
+            <div className="bg-red-900/30 rounded-lg p-3 text-center border border-red-500/20">
+              <div className="font-semibold text-lg text-red-300">{player.stats?.lost || 0}</div>
+              <div className="text-xs text-red-300 mt-1">Losses</div>
+            </div>
           </div>
         </HoverCardContent>
       </HoverCard>
@@ -280,20 +214,12 @@ const PlayerCard = ({ player, seasonStats, onClick }: PlayerCardProps) => {
 
 interface PlayerFormationCardProps {
   player: Player;
-  seasonStats?: { playerId: string; wins: number; losses: number; draws: number; played: number; points: number; };
   onClick: () => void;
   teamColor: 'red' | 'green';
 }
 
-const PlayerFormationCard = ({ player, seasonStats, onClick, teamColor }: PlayerFormationCardProps) => {
+const PlayerFormationCard = ({ player, onClick, teamColor }: PlayerFormationCardProps) => {
   const jerseyColor = teamColor === 'red' ? 'bg-red-600' : 'bg-green-600';
-  
-  const winPercentage = player.stats.played > 0 
-    ? Math.round((player.stats.won / player.stats.played) * 100) 
-    : 0;
-  
-  const seasonWinPercentage = seasonStats?.played ? 
-    Math.round((seasonStats.wins / seasonStats.played) * 100) : 0;
   
   return (
     <div className="player-position-card" onClick={onClick}>
@@ -324,11 +250,11 @@ const PlayerFormationCard = ({ player, seasonStats, onClick, teamColor }: Player
             <div className="player-name-label cursor-pointer">{player.name}</div>
           </HoverCardTrigger>
           <HoverCardContent 
-            className="w-64 player-compact-card" 
+            className="w-72 player-hover-card player-stats-card" 
             align="center"
           >
-            <div className="flex justify-between space-x-3">
-              <Avatar className="h-12 w-12 border border-blue-500/50">
+            <div className="flex justify-between items-start">
+              <Avatar className="h-12 w-12 border border-white/20">
                 {player.image ? (
                   <AvatarImage src={player.image} alt={player.name} />
                 ) : (
@@ -337,53 +263,23 @@ const PlayerFormationCard = ({ player, seasonStats, onClick, teamColor }: Player
                   </AvatarFallback>
                 )}
               </Avatar>
-              <div className="flex-1">
+              <div>
                 <h4 className="text-md font-semibold">{player.name}</h4>
-                <div className="flex items-center mt-0.5 text-xs text-muted-foreground">
-                  <Percent className="h-3 w-3 mr-1" /> 
-                  Win rate: {winPercentage}%
-                </div>
               </div>
             </div>
-            
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <div className="stat-section">
-                <h5 className="text-xs font-medium text-muted-foreground mb-1.5">Overall Stats</h5>
-                <div className="grid grid-cols-3 gap-1">
-                  <div className="stat-box">
-                    <span className="stat-value">{player.stats.played}</span>
-                    <span className="stat-label">Played</span>
-                  </div>
-                  <div className="stat-box win-stat">
-                    <span className="stat-value">{player.stats.won}</span>
-                    <span className="stat-label">Wins</span>
-                  </div>
-                  <div className="stat-box loss-stat">
-                    <span className="stat-value">{player.stats.lost}</span>
-                    <span className="stat-label">Losses</span>
-                  </div>
-                </div>
+            <div className="mt-3 grid grid-cols-3 gap-1">
+              <div className="stat-box">
+                <div className="font-bold">{player.stats?.played || 0}</div>
+                <div className="stat-label">Played</div>
               </div>
-              
-              {seasonStats && seasonStats.played > 0 && (
-                <div className="stat-section">
-                  <h5 className="text-xs font-medium text-muted-foreground mb-1.5">Season Stats</h5>
-                  <div className="grid grid-cols-3 gap-1">
-                    <div className="stat-box">
-                      <span className="stat-value">{seasonStats.played}</span>
-                      <span className="stat-label">Played</span>
-                    </div>
-                    <div className="stat-box win-stat">
-                      <span className="stat-value">{seasonStats.wins}</span>
-                      <span className="stat-label">Wins</span>
-                    </div>
-                    <div className="stat-box">
-                      <span className="stat-value">{seasonWinPercentage}%</span>
-                      <span className="stat-label">Win Rate</span>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <div className="stat-box win-stat">
+                <div className="font-bold">{player.stats?.won || 0}</div>
+                <div className="stat-label">Wins</div>
+              </div>
+              <div className="stat-box loss-stat">
+                <div className="font-bold">{player.stats?.lost || 0}</div>
+                <div className="stat-label">Losses</div>
+              </div>
             </div>
           </HoverCardContent>
         </HoverCard>
