@@ -223,7 +223,15 @@ const PlayerListItem = ({ player, index, teamColor }: PlayerListItemProps) => {
       <div className="player-number w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
         {index + 1}
       </div>
-      <User className="h-4 w-4 text-white/70" />
+      <Avatar className="h-8 w-8 border border-white/30">
+        {player.image ? (
+          <AvatarImage src={player.image} alt={player.name} />
+        ) : (
+          <AvatarFallback className="bg-blue-800 text-white">
+            {player.name.charAt(0)}
+          </AvatarFallback>
+        )}
+      </Avatar>
       <span className="text-white font-medium">{player.name}</span>
     </div>
   );

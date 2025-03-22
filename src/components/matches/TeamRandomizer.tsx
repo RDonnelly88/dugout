@@ -61,9 +61,9 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
     setShowRandomizerModal(false);
     setIsRandomizing(false);
     
-    // Call onRandomize with all players and team size
-    const allPlayers = [...teamAPlayers, ...teamBPlayers];
-    onRandomize(allPlayers, parseInt(teamSize));
+    // Call onRandomize with all selected players
+    const allSelectedPlayers = [...teamAPlayers, ...teamBPlayers];
+    onRandomize(allSelectedPlayers, parseInt(teamSize));
   };
   
   const handleRandomizerCancel = () => {

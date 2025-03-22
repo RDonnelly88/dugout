@@ -57,13 +57,17 @@ export const useCreateMatch = () => {
       return [];
     }
     
-    // Extract the player IDs
-    const playerIds = players.map(player => player.id);
+    // Extract the player IDs and shuffle them randomly
+    const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
     
-    // Split the player IDs into teams
-    const halfIndex = Math.floor(playerIds.length / 2);
-    const teamAIds = playerIds.slice(0, halfIndex);
-    const teamBIds = playerIds.slice(halfIndex);
+    // Split the players into teams
+    const halfIndex = Math.ceil(shuffledPlayers.length / 2);
+    const teamAPlayers = shuffledPlayers.slice(0, halfIndex);
+    const teamBPlayers = shuffledPlayers.slice(halfIndex);
+    
+    // Get the player IDs for each team
+    const teamAIds = teamAPlayers.map(player => player.id);
+    const teamBIds = teamBPlayers.map(player => player.id);
     
     // Update the state with the new teams
     setTeamA(teamAIds);
@@ -71,7 +75,7 @@ export const useCreateMatch = () => {
     
     toast({
       title: "Teams created",
-      description: `Players have been assigned to teams.`
+      description: `Team A: ${teamAPlayers.length} players, Team B: ${teamBPlayers.length} players`
     });
     
     return players;
