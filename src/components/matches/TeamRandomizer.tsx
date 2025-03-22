@@ -49,6 +49,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
     animationCompleted,
     performRandomization,
     resetRandomizer,
+    togglePlayerSelection,
     setInitialSelectedPlayers
   } = useRandomizer(onRandomize);
   
