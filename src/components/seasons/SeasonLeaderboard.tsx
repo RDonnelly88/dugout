@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Trophy, Medal, Ghost } from "lucide-react";
@@ -10,7 +9,6 @@ import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import { SeasonPlayerStats, PlayerFormResult } from "@/types";
 import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
 import { useQueryClient } from "@tanstack/react-query";
-import { clearFormCaches } from "@/lib/player-form-service";
 
 interface SeasonLeaderboardProps {
   stats: SeasonPlayerStats[];
@@ -50,14 +48,11 @@ const SeasonLeaderboard = ({
   // Get player IDs for batch loading
   const playerIds = displayStats.map(player => player.playerId);
   
-  // Clear all caches and force a refetch when component mounts
+  // Force a refetch when component mounts
   useEffect(() => {
-    const clearAndRefetch = async () => {
+    const forceRefetch = async () => {
       if (seasonId) {
         console.log("SeasonLeaderboard mounted, clearing caches and refetching data");
-        
-        // Clear the form data cache
-        clearFormCaches();
         
         // Force invalidation of all form queries
         await queryClient.invalidateQueries({ 
@@ -80,10 +75,10 @@ const SeasonLeaderboard = ({
       }
     };
     
-    clearAndRefetch();
+    forceRefetch();
     
-    // Set up an interval to clear caches and refetch data periodically
-    const intervalId = setInterval(clearAndRefetch, 30000); // Every 30 seconds
+    // Set up an interval to refetch data periodically
+    const intervalId = setInterval(forceRefetch, 5000); // Every 5 seconds
     
     return () => {
       clearInterval(intervalId);

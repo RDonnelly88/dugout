@@ -1,3 +1,4 @@
+
 import { PlayerFormResult } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { mapSupabaseMatchToMatch } from "./supabase-utils";
@@ -19,11 +20,6 @@ interface ParsedTeam {
   score?: number;
   name: string;
 }
-
-// Cache for player form data to improve performance
-const formDataCache: Record<string, { data: PlayerFormResult[], timestamp: number }> = {};
-const batchFormDataCache: Record<string, { data: Record<string, PlayerFormResult[]>, timestamp: number }> = {};
-const CACHE_TTL = 5 * 1000; // 5 seconds cache TTL - extremely short to ensure fresh data
 
 // Function to safely parse team data from JSON
 function parseTeamData(teamData: any, defaultName: string): ParsedTeam {
@@ -61,31 +57,11 @@ function parseTeamData(teamData: any, defaultName: string): ParsedTeam {
   return defaultTeam;
 }
 
-// Function to clear all caches - enhanced to be more thorough
-export const clearFormCaches = () => {
-  // Clear individual form cache
-  Object.keys(formDataCache).forEach(key => delete formDataCache[key]);
-  
-  // Clear batch form cache
-  Object.keys(batchFormDataCache).forEach(key => delete batchFormDataCache[key]);
-  
-  console.log("Form caches cleared at", new Date().toISOString());
-};
-
 // Get a player's form in a specific season
 export const getPlayerFormInSeason = async (
   seasonId: string,
   playerId: string
 ): Promise<PlayerFormResult[]> => {
-  const cacheKey = `form_${seasonId}_${playerId}`;
-  
-  // Check cache first but with a much shorter TTL
-  const cached = formDataCache[cacheKey];
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    console.log(`Using cached form data for player ${playerId} in season ${seasonId}`);
-    return cached.data;
-  }
-  
   console.log(`Fetching fresh form data for player ${playerId} in season ${seasonId}`);
   
   try {
@@ -136,12 +112,6 @@ export const getPlayerFormInSeason = async (
       }
     });
     
-    // Store in cache
-    formDataCache[cacheKey] = {
-      data: results,
-      timestamp: Date.now()
-    };
-    
     return results;
   } catch (error) {
     console.error("Error in getPlayerFormInSeason:", error);
@@ -155,16 +125,6 @@ export const getPlayerFormBatch = async (
   playerIds: string[]
 ): Promise<Record<string, PlayerFormResult[]>> => {
   if (!playerIds.length) return {};
-  
-  // Generate batch cache key
-  const batchCacheKey = `batch_${seasonId}_${playerIds.sort().join('_')}`;
-  
-  // Check batch cache first but with much shorter TTL
-  const batchCached = batchFormDataCache[batchCacheKey];
-  if (batchCached && Date.now() - batchCached.timestamp < CACHE_TTL) {
-    console.log(`Using cached batch form data for season ${seasonId} with ${playerIds.length} players`);
-    return batchCached.data;
-  }
   
   console.log(`Fetching fresh batch form data for season ${seasonId} with ${playerIds.length} players at ${new Date().toISOString()}`);
   
@@ -220,19 +180,8 @@ export const getPlayerFormBatch = async (
         }
       });
       
-      // Store in individual cache and in result
-      formDataCache[`form_${seasonId}_${playerId}`] = {
-        data: playerResults,
-        timestamp: Date.now()
-      };
       batchResult[playerId] = playerResults;
     }
-    
-    // Store batch result in cache with current timestamp
-    batchFormDataCache[batchCacheKey] = {
-      data: batchResult,
-      timestamp: Date.now()
-    };
     
     return batchResult;
   } catch (error) {
