@@ -9,7 +9,7 @@ interface RawMatchData {
   date: string;
   location?: string;
   status: string;
-  seasonId?: string;
+  season_id?: string;  // Using snake_case to match Supabase column names
   team_a: any;
   team_b: any;
 }
@@ -21,6 +21,42 @@ interface ParsedTeam {
   name: string;
 }
 
+// Function to safely parse team data from JSON
+function parseTeamData(teamData: any, defaultName: string): ParsedTeam {
+  // Default team structure if parsing fails
+  const defaultTeam: ParsedTeam = { 
+    players: [], 
+    name: defaultName 
+  };
+  
+  if (!teamData) return defaultTeam;
+  
+  try {
+    // If the data is already an object, use it directly
+    if (typeof teamData === 'object') {
+      return {
+        players: Array.isArray(teamData.players) ? teamData.players : [],
+        score: typeof teamData.score === 'number' ? teamData.score : undefined,
+        name: typeof teamData.name === 'string' ? teamData.name : defaultName
+      };
+    }
+    
+    // Try to parse it if it's a string
+    if (typeof teamData === 'string') {
+      const parsed = JSON.parse(teamData);
+      return {
+        players: Array.isArray(parsed.players) ? parsed.players : [],
+        score: typeof parsed.score === 'number' ? parsed.score : undefined,
+        name: typeof parsed.name === 'string' ? parsed.name : defaultName
+      };
+    }
+  } catch (e) {
+    console.error("Error parsing team data:", e);
+  }
+  
+  return defaultTeam;
+}
+
 // Get a player's form in a specific season
 export const getPlayerFormInSeason = async (
   seasonId: string,
@@ -30,7 +66,7 @@ export const getPlayerFormInSeason = async (
     const { data: matchesData, error } = await supabase
       .from("matches")
       .select("*")
-      .eq("seasonId", seasonId)
+      .eq("season_id", seasonId)
       .eq("status", "completed")
       .order("date", { ascending: false });
 
@@ -41,23 +77,14 @@ export const getPlayerFormInSeason = async (
 
     // Map the raw data to our expected format with proper typing
     const matches = (matchesData || []).map(match => {
-      // Parse the team data from JSON, ensuring we have the correct structure
-      const teamA: ParsedTeam = typeof match.team_a === 'object' 
-        ? (match.team_a as ParsedTeam) 
-        : { players: [], name: "Team A" };
-        
-      const teamB: ParsedTeam = typeof match.team_b === 'object' 
-        ? (match.team_b as ParsedTeam) 
-        : { players: [], name: "Team B" };
+      // Parse the team data safely
+      const teamA = parseTeamData(match.team_a, "Team A");
+      const teamB = parseTeamData(match.team_b, "Team B");
       
       return {
-        ...match,
+        id: match.id,
         teamA,
         teamB
-      } as {
-        id: string;
-        teamA: ParsedTeam;
-        teamB: ParsedTeam;
       };
     });
 
@@ -100,7 +127,7 @@ export const getPlayerFormBatch = async (
     const { data: matchesData, error } = await supabase
       .from("matches")
       .select("*")
-      .eq("seasonId", seasonId)
+      .eq("season_id", seasonId)
       .eq("status", "completed")
       .order("date", { ascending: false });
 
@@ -111,23 +138,14 @@ export const getPlayerFormBatch = async (
 
     // Map the raw data to our expected format with proper typing
     const matches = (matchesData || []).map(match => {
-      // Parse the team data from JSON, ensuring we have the correct structure
-      const teamA: ParsedTeam = typeof match.team_a === 'object' 
-        ? (match.team_a as ParsedTeam) 
-        : { players: [], name: "Team A" };
-        
-      const teamB: ParsedTeam = typeof match.team_b === 'object' 
-        ? (match.team_b as ParsedTeam) 
-        : { players: [], name: "Team B" };
+      // Parse the team data safely
+      const teamA = parseTeamData(match.team_a, "Team A");
+      const teamB = parseTeamData(match.team_b, "Team B");
       
       return {
-        ...match,
+        id: match.id,
         teamA,
         teamB
-      } as {
-        id: string;
-        teamA: ParsedTeam;
-        teamB: ParsedTeam;
       };
     });
 
