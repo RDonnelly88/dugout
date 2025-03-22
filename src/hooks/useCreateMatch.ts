@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addMatch } from "@/lib/db";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Player } from "@/types";
 
 export const useCreateMatch = () => {
@@ -37,14 +36,14 @@ export const useCreateMatch = () => {
     setTeamA([]);
     setTeamB([]);
     
-    // If no players were randomized, don't proceed
+    // If no players were selected, don't proceed
     if (players.length === 0) {
       toast({
         title: "No players selected",
         description: "Please select players to randomize teams.",
         variant: "destructive"
       });
-      return;
+      return [];
     }
     
     // Create a copy of player IDs and shuffle them
@@ -57,17 +56,19 @@ export const useCreateMatch = () => {
     // Split into teams based on selected team size
     // If there are not enough players for even teams, distribute them as evenly as possible
     const totalPlayers = playerIds.length;
-    const playersPerTeam = Math.min(teamSize, Math.floor(totalPlayers / 2));
     
-    // Ensure we have at least one player per team
-    if (playersPerTeam < 1) {
+    // Ensure we have enough players for at least one per team
+    if (totalPlayers < 2) {
       toast({
         title: "Not enough players",
         description: "You need at least 2 players to create teams.",
         variant: "destructive"
       });
-      return;
+      return [];
     }
+    
+    // Calculate how many players should be on each team
+    const playersPerTeam = Math.min(teamSize, Math.floor(totalPlayers / 2));
     
     setTeamA(playerIds.slice(0, playersPerTeam));
     setTeamB(playerIds.slice(playersPerTeam, playersPerTeam * 2));
@@ -76,6 +77,9 @@ export const useCreateMatch = () => {
       title: "Teams randomized",
       description: `Players have been randomly assigned to ${playersPerTeam}-a-side teams.`
     });
+    
+    // Return the randomized players so we can tell if the operation succeeded
+    return players.filter(p => playerIds.slice(0, playersPerTeam * 2).includes(p.id));
   };
 
   const createMatchMutation = useMutation({

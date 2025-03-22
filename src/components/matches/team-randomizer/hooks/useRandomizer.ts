@@ -1,6 +1,7 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { Player } from "@/types";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 type RevealStage = 'idle' | 'player-selection' | 'flashing' | 'spotlight' | 'revealing' | 'celebration';
 
@@ -53,13 +54,15 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     return shuffled;
   };
 
-  // Prepare the randomization but don't run the animation
+  // Prepare the randomization but don't run the animation yet
   const prepareRandomization = (players: Player[]) => {
-    if (players.length === 0) {
-      console.log("No players selected, can't randomize");
+    console.log("Preparing randomization with", players.length, "players");
+    
+    if (players.length < 2) {
+      console.log("Not enough players selected");
       toast({
-        title: "No players available",
-        description: "Please select players for randomization",
+        title: "Not enough players",
+        description: "Please select at least 2 players for randomization",
         variant: "destructive"
       });
       return;
@@ -70,7 +73,6 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
       return;
     }
     
-    console.log("Preparing randomization process with", players.length, "players");
     setIsRandomizing(true);
     setHasStartedRandomization(true);
     setAnimationCompleted(false);
@@ -99,7 +101,7 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
       setTeamAPlayers(finalTeamA);
       setTeamBPlayers(finalTeamB);
       
-      // Set the stage to player selection
+      // Move to player selection stage first
       setRevealStage("player-selection");
       
     } catch (error) {

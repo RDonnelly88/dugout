@@ -1,4 +1,3 @@
-
 import { Shuffle, Users, Sparkles, ChevronRight, ArrowRight, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Player } from "@/types";
@@ -61,6 +60,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
     setInitialSelectedPlayers
   } = useRandomizer(onRandomize);
   
+  // Initialize the selected players when the component mounts
   useEffect(() => {
     setInitialSelectedPlayers(players);
     
@@ -88,15 +88,21 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
     }
   };
   
-  // This function is now critical - it will actually start the randomization when the user clicks
+  // This function will actually start the randomization when the user clicks
   // the action button in the idle stage
   const handleStartRandomization = () => {
-    if (availablePlayers.length === 0) {
+    console.log("Starting randomization with", availablePlayers.length, "players");
+    
+    if (availablePlayers.length < 2) {
+      console.log("Not enough players selected");
       return;
     }
     
     // Start the randomization process with the selected players
     prepareRandomization(availablePlayers);
+    
+    // Immediately proceed to flashing stage instead of waiting at idle
+    startFlashingStage();
   };
   
   const getActionButton = () => {
@@ -106,6 +112,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
         <Button 
           className="transition-all mt-4 w-full"
           onClick={handleStartRandomization}
+          disabled={availablePlayers.length < 2}
         >
           Start Team Selection <ArrowRight className="ml-2" />
         </Button>
@@ -120,6 +127,15 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
             onClick={startSpotlightStage}
           >
             Identify Star Players <ArrowRight className="ml-2" />
+          </Button>
+        );
+      case 'player-selection':
+        return (
+          <Button 
+            className="transition-all mt-4 w-full" 
+            onClick={startFlashingStage}
+          >
+            Begin Randomization <ArrowRight className="ml-2" />
           </Button>
         );
       case 'spotlight':
@@ -159,17 +175,43 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
   const renderPlayerCards = () => {
     console.log("Rendering player cards for stage:", revealStage);
     
-    // If we're in idle stage, show a message indicating we need to start
+    // If we're in idle stage, show the available players
     if (revealStage === 'idle') {
       return (
-        <div className="flex flex-col items-center justify-center h-[300px]">
-          <div className="animate-pulse flex flex-col items-center">
+        <div className="flex flex-col items-center justify-center">
+          <div className="animate-pulse flex flex-col items-center mb-4">
             <div className="h-20 w-20 rounded-full bg-blue-500/20 mb-4 flex items-center justify-center">
               <Shuffle className="h-10 w-10 text-blue-400" />
             </div>
             <p className="text-blue-400 text-xl">Preparing teams...</p>
             <p className="text-blue-300/60 text-sm mt-2">Click the button below to begin</p>
           </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 px-4 mt-4">
+            {availablePlayers.map((player, index) => (
+              <PlayerCard 
+                key={player.id} 
+                player={player} 
+                index={index} 
+                revealed={true}
+              />
+            ))}
+          </div>
+        </div>
+      );
+    }
+    
+    if (revealStage === 'player-selection') {
+      return (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 px-4">
+          {availablePlayers.map((player, index) => (
+            <PlayerCard 
+              key={player.id} 
+              player={player} 
+              index={index} 
+              revealed={true}
+            />
+          ))}
         </div>
       );
     }
@@ -307,6 +349,8 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
     }
     
     switch (revealStage) {
+      case 'player-selection':
+        return "Selected Players";
       case 'flashing':
         return "Preparing Team Selection...";
       case 'spotlight':
@@ -399,7 +443,8 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
               </div>
               
               <div className="randomizer-modal-footer border-t border-blue-500/20 p-4 text-center text-sm text-blue-300/70">
-                {revealStage === 'idle' && <p>Click the button above to begin team randomization</p>}
+                {revealStage === 'idle' && <p>Select at least 2 players and click to begin team randomization</p>}
+                {revealStage === 'player-selection' && <p>Click to begin the randomization process</p>}
                 {revealStage === 'flashing' && <p>Click to continue when ready</p>}
                 {revealStage === 'spotlight' && <p>Click to view star players</p>}
                 {revealStage === 'revealing' && <p>Click to reveal players one by one</p>}
