@@ -10,6 +10,7 @@ import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import { SeasonPlayerStats, PlayerFormResult } from "@/types";
 import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
 import { useQueryClient } from "@tanstack/react-query";
+import { clearFormCaches } from "@/lib/player-form-service";
 
 interface SeasonLeaderboardProps {
   stats: SeasonPlayerStats[];
@@ -58,14 +59,27 @@ const SeasonLeaderboard = ({
   // Combine provided forms with batch loaded forms
   const combinedForms = { ...playerForms, ...formData };
   
-  // Force a refetch of form data when stats change
+  // Clear all caches and force a refetch when component mounts
   useEffect(() => {
-    if (seasonId && playerIds.length > 0) {
+    if (seasonId) {
+      // Clear the form data cache
+      clearFormCaches();
+      
+      // Force invalidation of queries
       queryClient.invalidateQueries({ 
-        queryKey: ['batchPlayerForms', seasonId]
+        queryKey: ['batchPlayerForms'] 
       });
+      
+      // Also invalidate any individual player form queries
+      if (playerIds.length > 0) {
+        playerIds.forEach(playerId => {
+          queryClient.invalidateQueries({
+            queryKey: ['playerForm', seasonId, playerId]
+          });
+        });
+      }
     }
-  }, [seasonId, playerIds.length, queryClient]);
+  }, [seasonId, queryClient]); // Only run when seasonId changes or on mount
   
   // Prefetch individual player forms for when users navigate to player details
   useEffect(() => {

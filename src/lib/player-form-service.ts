@@ -1,3 +1,4 @@
+
 import { PlayerFormResult } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { mapSupabaseMatchToMatch } from "./supabase-utils";
@@ -23,7 +24,7 @@ interface ParsedTeam {
 // Cache for player form data to improve performance
 const formDataCache: Record<string, { data: PlayerFormResult[], timestamp: number }> = {};
 const batchFormDataCache: Record<string, { data: Record<string, PlayerFormResult[]>, timestamp: number }> = {};
-const CACHE_TTL = 2 * 60 * 1000; // 2 minutes cache TTL
+const CACHE_TTL = 30 * 1000; // 30 seconds cache TTL - reduced to ensure fresher data
 
 // Function to safely parse team data from JSON
 function parseTeamData(teamData: any, defaultName: string): ParsedTeam {
@@ -60,6 +61,13 @@ function parseTeamData(teamData: any, defaultName: string): ParsedTeam {
   
   return defaultTeam;
 }
+
+// Function to clear all caches - new function to allow manual cache clearing
+export const clearFormCaches = () => {
+  Object.keys(formDataCache).forEach(key => delete formDataCache[key]);
+  Object.keys(batchFormDataCache).forEach(key => delete batchFormDataCache[key]);
+  console.log("Form caches cleared");
+};
 
 // Get a player's form in a specific season
 export const getPlayerFormInSeason = async (
@@ -153,25 +161,7 @@ export const getPlayerFormBatch = async (
     return batchCached.data;
   }
   
-  // Check individual player caches
-  const result: Record<string, PlayerFormResult[]> = {};
-  let allCached = true;
-  
-  for (const playerId of playerIds) {
-    const cacheKey = `form_${seasonId}_${playerId}`;
-    const cached = formDataCache[cacheKey];
-    
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      result[playerId] = cached.data;
-    } else {
-      allCached = false;
-      break;
-    }
-  }
-  
-  if (allCached && Object.keys(result).length === playerIds.length) {
-    return result;
-  }
+  console.log(`Fetching fresh batch form data for season ${seasonId} with ${playerIds.length} players`);
   
   try {
     // Fetch all completed matches for this season in a single query
