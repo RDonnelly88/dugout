@@ -11,6 +11,7 @@ import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
 import { usePlayerForm } from "@/hooks/usePlayerForm";
 import PlayerFormDisplay from '@/components/players/PlayerFormDisplay';
 import { TrendingUp, TrendingDown, Trophy, Flag, MinusCircle } from "lucide-react";
+import { calculatePlayerRanks } from "@/lib/ranking-utils";
 
 interface PlayerSelectionProps {
   players: Player[];
@@ -37,6 +38,12 @@ const PlayerSelection = ({
     queryFn: () => currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
     enabled: !!currentSeason
   });
+  
+  // Calculate player ranks using our shared utility
+  const playerRanks = React.useMemo(() => {
+    if (!seasonPlayerStats.length) return {};
+    return calculatePlayerRanks(seasonPlayerStats);
+  }, [seasonPlayerStats]);
   
   return (
     <div className="border rounded-md p-4 bg-card">
@@ -85,6 +92,7 @@ const PlayerSelection = ({
                     player={player} 
                     currentSeasonId={currentSeason?.id || null}
                     seasonPlayerStats={seasonPlayerStats}
+                    playerRanks={playerRanks}
                   />
                 </HoverCardContent>
               </HoverCard>
@@ -101,9 +109,15 @@ interface PlayerHoverContentProps {
   player: Player;
   currentSeasonId: string | null;
   seasonPlayerStats: Array<any>;
+  playerRanks?: Record<string, number>;
 }
 
-export const PlayerHoverContent = ({ player, currentSeasonId, seasonPlayerStats }: PlayerHoverContentProps) => {
+export const PlayerHoverContent = ({ 
+  player, 
+  currentSeasonId, 
+  seasonPlayerStats,
+  playerRanks = {}
+}: PlayerHoverContentProps) => {
   // Get player form data
   const { form, isLoading } = usePlayerForm(
     currentSeasonId,
@@ -112,11 +126,9 @@ export const PlayerHoverContent = ({ player, currentSeasonId, seasonPlayerStats 
   
   const playerSeasonStats = seasonPlayerStats.find(stat => stat.playerId === player.id);
   
-  // Calculate player's rank in current season
+  // Use the rank from the pre-calculated ranks
   const playerRank = playerSeasonStats && playerSeasonStats.played > 0
-    ? seasonPlayerStats
-        .sort((a, b) => b.points - a.points)
-        .findIndex(stat => stat.playerId === player.id) + 1
+    ? playerRanks[player.id] || null
     : null;
   
   // Display last 5 matches in form

@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
 import Formation from './team-randomizer/Formation';
 import { PlayerHoverContent } from './team-randomizer/PlayerSelection';
+import { calculatePlayerRanks } from "@/lib/ranking-utils";
 
 interface TeamSelectionProps {
   teamA: string[];
@@ -39,6 +40,12 @@ const TeamSelection = ({
     queryFn: () => currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
     enabled: !!currentSeason
   });
+  
+  // Calculate player ranks using our shared utility function
+  const playerRanks = useMemo(() => {
+    if (seasonStats.length === 0) return {};
+    return calculatePlayerRanks(seasonStats);
+  }, [seasonStats]);
   
   const availablePlayers = useMemo(() => {
     return players.filter(player => 
@@ -117,15 +124,14 @@ interface PlayerCardProps {
   currentSeason: any;
   seasonStats: any[];
   onClick: () => void;
+  playerRanks?: Record<string, number>;
 }
 
-const PlayerCard = ({ player, currentSeason, seasonStats, onClick }: PlayerCardProps) => {
-  // Get player rank
+const PlayerCard = ({ player, currentSeason, seasonStats, onClick, playerRanks = {} }: PlayerCardProps) => {
+  // Get player rank from the pre-calculated ranks
   const playerSeasonStat = seasonStats.find(stat => stat.playerId === player.id);
-  const playerRank = playerSeasonStat && playerSeasonStat.played > 0
-    ? seasonStats
-        .sort((a, b) => b.points - a.points)
-        .findIndex(stat => stat.playerId === player.id) + 1
+  const playerRank = playerSeasonStat && playerSeasonStat.played > 0 
+    ? playerRanks[player.id] || null 
     : null;
 
   return (
@@ -167,6 +173,7 @@ const PlayerCard = ({ player, currentSeason, seasonStats, onClick }: PlayerCardP
             player={player} 
             currentSeasonId={currentSeason?.id || null}
             seasonPlayerStats={seasonStats}
+            playerRanks={playerRanks}
           />
         </HoverCardContent>
       </HoverCard>
