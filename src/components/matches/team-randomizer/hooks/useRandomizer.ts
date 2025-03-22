@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Player } from "@/types";
 import { PositionType, FormationConfig } from '../types';
@@ -87,43 +86,26 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
       cappedPlayerCount : 
       cappedPlayerCount - 1;
     
-    // Split players into two teams
+    // Split players into two teams - but immediately assign both teams
     const teamASize = Math.floor(adjustedPlayerCount / 2);
     setTeamAPlayers(shuffledPlayers.slice(0, teamASize));
     setTeamBPlayers(shuffledPlayers.slice(teamASize, teamASize * 2));
     
-    // For the animation, just show a subset of players initially
-    const visualizationPlayers = shuffledPlayers.slice(0, Math.min(6, teamASize));
-    const positions = assignPositions(visualizationPlayers);
+    // Create positions mapping for all players
+    const allRandomizedPlayers = shuffledPlayers.slice(0, adjustedPlayerCount);
+    const positions = assignPositions(allRandomizedPlayers);
     setAssignedPositions(positions);
     
-    // Set the randomizing players for the initial animation
-    setRandomizingPlayers(visualizationPlayers);
+    // Set a few players for the initial animation
+    setRandomizingPlayers(allRandomizedPlayers.slice(0, Math.min(4, teamASize)));
     
     // Dramatic pause before starting
-    await new Promise(resolve => setTimeout(resolve, 2500));
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Loop through each player and spotlight them
-    for (let i = 0; i < visualizationPlayers.length; i++) {
-      // Set current player in spotlight
-      setSpotlightPlayer(visualizationPlayers[i]);
-      
-      // Wait for dramatic effect (longer for first players)
-      const spotlightDuration = i === 0 ? 3500 : 3000;
-      await new Promise(resolve => setTimeout(resolve, spotlightDuration));
-      
-      // Add to revealed players
-      setRevealIndex(i);
-      setSpotlightPlayer(null);
-      
-      // Pause between reveals
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-    
-    // After revealing individual players, show the formation view with both teams
+    // Skip the individual player reveals and go straight to team view
     setFormationView(true);
     
-    // Longer pause to view the final formation
+    // Longer pause to view the teams
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     // Mark complete
@@ -154,7 +136,7 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     setFormationView(false);
     
     // Call the actual randomize function with players for both teams
-    const finalPlayers = shuffledPlayers.slice(0, totalPlayersNeeded);
+    const finalPlayers = shuffledPlayers.slice(0, adjustedPlayerCount);
     onRandomize(finalPlayers, singleTeamSize);
   };
 
