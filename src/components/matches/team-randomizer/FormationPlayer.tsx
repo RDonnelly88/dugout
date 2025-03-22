@@ -12,9 +12,10 @@ interface FormationPlayerProps {
   player: Player;
   index: number;
   teamColor: 'red' | 'green';
+  onClick?: () => void;
 }
 
-const FormationPlayer = ({ player, index, teamColor }: FormationPlayerProps) => {
+const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerProps) => {
   console.log(`Rendering FormationPlayer for ${player.name} at index ${index} and team ${teamColor}`);
   
   const bgColor = teamColor === 'red' ? 'bg-red-600' : 'bg-green-600';
@@ -39,12 +40,15 @@ const FormationPlayer = ({ player, index, teamColor }: FormationPlayerProps) => 
     <div className="player-formation-card">
       <HoverCard>
         <HoverCardTrigger asChild>
-          <div className="flex flex-col items-center">
+          <div 
+            className="flex flex-col items-center cursor-pointer" 
+            onClick={onClick}
+          >
             <div className="relative">
               <Badge variant="outline" className={`absolute -top-3 -right-3 ${bgColor} ${textColor} w-6 h-6 flex items-center justify-center p-0 rounded-full text-xs font-bold shadow-md`}>
                 {index + 1}
               </Badge>
-              <Avatar className="h-12 w-12 border-2 border-white/50 shadow-lg">
+              <Avatar className="h-12 w-12 border-2 border-white/50 shadow-lg hover:border-white transition-all duration-200">
                 {player.image ? (
                   <AvatarImage src={player.image} alt={player.name} className="object-cover" />
                 ) : (

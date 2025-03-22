@@ -59,6 +59,11 @@ const TeamSelection = ({
   console.log("Team A Players:", teamAPlayers.map(p => p.name));
   console.log("Team B Players:", teamBPlayers.map(p => p.name));
 
+  // Handle removing a player from a team
+  const handleRemovePlayer = (team: 'A' | 'B', playerId: string) => {
+    togglePlayer(team, playerId);
+  };
+
   return (
     <div className="space-y-8">
       <div className="teams-container">
@@ -71,6 +76,7 @@ const TeamSelection = ({
           teamA={teamAPlayers} 
           teamB={teamBPlayers} 
           teamSize={Math.max(teamAPlayers.length, teamBPlayers.length).toString()}
+          onRemovePlayer={handleRemovePlayer}
         />
       </div>
 

@@ -8,15 +8,22 @@ interface FormationProps {
   teamA: Player[];
   teamB: Player[];
   teamSize: string;
+  onRemovePlayer?: (teamId: 'A' | 'B', playerId: string) => void;
 }
 
-const Formation = ({ teamA, teamB, teamSize }: FormationProps) => {
+const Formation = ({ teamA, teamB, teamSize, onRemovePlayer }: FormationProps) => {
   console.log("Formation rendering with teamSize:", teamSize);
   console.log("Team A players:", teamA.map(p => p.name));
   console.log("Team B players:", teamB.map(p => p.name));
   
   const formationConfig = formationConfigs[teamSize] || formationConfigs["5"];
   console.log("Using formation config:", formationConfig);
+
+  const handleRemovePlayer = (team: 'A' | 'B', playerId: string) => {
+    if (onRemovePlayer) {
+      onRemovePlayer(team, playerId);
+    }
+  };
 
   const renderTeam = (players: Player[], teamName: string, teamColor: 'red' | 'green') => {
     if (!players.length) {
@@ -37,19 +44,16 @@ const Formation = ({ teamA, teamB, teamSize }: FormationProps) => {
       <div className="relative h-full flex flex-col justify-between py-6">
         {/* Pitch markings */}
         <div className="field-markings">
-          <div className="center-circle"></div>
-          <div className="halfway-line"></div>
-          <div className="penalty-area-top"></div>
-          <div className="penalty-area-bottom"></div>
-          <div className="goal-area-top"></div>
-          <div className="goal-area-bottom"></div>
+          <div className="center-circle absolute rounded-full border-2 border-white/30 w-20 h-20 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+          <div className="halfway-line absolute border-t-2 border-white/30 w-full top-1/2 left-0"></div>
+          <div className="penalty-area-top absolute border-b-2 border-r-2 border-l-2 border-white/30 w-36 h-16 top-0 left-1/2 transform -translate-x-1/2"></div>
+          <div className="penalty-area-bottom absolute border-t-2 border-r-2 border-l-2 border-white/30 w-36 h-16 bottom-0 left-1/2 transform -translate-x-1/2"></div>
+          <div className="goal-area-top absolute border-b-2 border-r-2 border-l-2 border-white/30 w-16 h-6 top-0 left-1/2 transform -translate-x-1/2"></div>
+          <div className="goal-area-bottom absolute border-t-2 border-r-2 border-l-2 border-white/30 w-16 h-6 bottom-0 left-1/2 transform -translate-x-1/2"></div>
         </div>
         
         {rows.map((playersInRow, rowIndex) => {
           console.log(`Rendering row ${rowIndex} with ${playersInRow} players for ${teamName}`);
-          const positions = rowIndex === 0 ? 'Goalkeeper' : 
-                          rowIndex === 1 ? 'Defender' : 
-                          rowIndex === 2 ? 'Midfielder' : 'Forward';
           
           return (
             <div 
@@ -63,6 +67,7 @@ const Formation = ({ teamA, teamB, teamSize }: FormationProps) => {
                 }
                 
                 const player = players[playerIndex++];
+                const team = teamName === "Team A" ? "A" : "B";
                 console.log(`Adding ${player.name} to ${teamName} at row ${rowIndex}, position ${posIndex}`);
                 
                 return (
@@ -71,6 +76,7 @@ const Formation = ({ teamA, teamB, teamSize }: FormationProps) => {
                     player={player}
                     index={playerIndex - 1}
                     teamColor={teamColor}
+                    onClick={() => handleRemovePlayer(team, player.id)}
                   />
                 );
               })}
@@ -83,13 +89,13 @@ const Formation = ({ teamA, teamB, teamSize }: FormationProps) => {
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-      <div className="team-pitch bg-blue-900/80 rounded-lg overflow-hidden h-[300px] relative">
+      <div className="team-pitch bg-blue-900/60 rounded-lg overflow-hidden h-[320px] relative">
         {renderTeam(teamA, "Team A", "red")}
         <div className="team-name-overlay absolute bottom-0 left-0 right-0 bg-red-700/80 text-white py-2 text-center font-semibold">
           Team A
         </div>
       </div>
-      <div className="team-pitch bg-blue-900/80 rounded-lg overflow-hidden h-[300px] relative">
+      <div className="team-pitch bg-blue-900/60 rounded-lg overflow-hidden h-[320px] relative">
         {renderTeam(teamB, "Team B", "green")}
         <div className="team-name-overlay absolute bottom-0 left-0 right-0 bg-green-700/80 text-white py-2 text-center font-semibold">
           Team B

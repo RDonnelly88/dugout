@@ -119,7 +119,7 @@ const RandomizerOverlay = ({
     );
   };
 
-  // When teams are complete, always show formation view
+  // When teams are complete, show formation view
   const renderCompletedTeams = () => {
     console.log("Rendering completed teams in formation view");
     return (
