@@ -42,7 +42,7 @@ export const useBatchFormLoader = (
     },
     enabled: !!seasonId && playerIds.length > 0,
     staleTime: 0, // Never consider data fresh
-    cacheTime: 0, // Don't cache at all
+    gcTime: 0, // Don't cache at all (formerly cacheTime)
     refetchOnWindowFocus: true,
     refetchOnMount: "always", // Always refetch on mount
     refetchInterval: 1000, // Refetch every second while the page is open
