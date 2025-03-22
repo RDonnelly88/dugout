@@ -41,6 +41,8 @@ const CreateMatch = () => {
     setSelectedPlayers(playerIds);
   };
 
+  console.log("Rendering TeamSelection with:", { teamA, teamB, selectedPlayers });
+
   return (
     <div className="page-container animate-slide-up">
       <div className="page-header">
