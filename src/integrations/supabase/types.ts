@@ -100,6 +100,7 @@ export type Database = {
           end_date: string | null
           id: string
           is_current: boolean | null
+          is_finished: boolean | null
           name: string
           start_date: string
           updated_at: string
@@ -109,6 +110,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           is_current?: boolean | null
+          is_finished?: boolean | null
           name: string
           start_date: string
           updated_at?: string
@@ -118,6 +120,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           is_current?: boolean | null
+          is_finished?: boolean | null
           name?: string
           start_date?: string
           updated_at?: string

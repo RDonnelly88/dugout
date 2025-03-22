@@ -57,7 +57,7 @@ const SeasonCard = ({
               <span>{startDate} - {endDate}</span>
             </div>
             
-            <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="grid grid-cols-2 gap-2 mb-4">
               <div className="p-2 bg-muted/20 rounded text-center">
                 <div className="text-xs text-muted-foreground">Matches</div>
                 <div className="font-semibold">{totalMatches}</div>
@@ -65,10 +65,6 @@ const SeasonCard = ({
               <div className="p-2 bg-muted/20 rounded text-center">
                 <div className="text-xs text-muted-foreground">Players</div>
                 <div className="font-semibold">{totalPlayers}</div>
-              </div>
-              <div className="p-2 bg-muted/20 rounded text-center">
-                <div className="text-xs text-muted-foreground">Current Rank</div>
-                <div className="font-semibold">{topPlayer ? "#1" : "-"}</div>
               </div>
             </div>
             
