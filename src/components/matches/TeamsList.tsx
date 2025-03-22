@@ -12,6 +12,15 @@ interface TeamsListProps {
 }
 
 const TeamsList = ({ match, players, getPlayerName }: TeamsListProps) => {
+  // Early return with null if match teams aren't defined
+  if (!match || !match.teamA || !match.teamB) {
+    return null;
+  }
+
+  // Ensure players arrays exist
+  const teamAPlayers = match.teamA.players || [];
+  const teamBPlayers = match.teamB.players || [];
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
       {/* Team A */}
@@ -19,15 +28,15 @@ const TeamsList = ({ match, players, getPlayerName }: TeamsListProps) => {
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            {match.teamA.name}
+            {match.teamA.name || "Team A"}
           </CardTitle>
           <CardDescription>
-            {match.teamA.players.length} players
+            {teamAPlayers.length} players
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {match.teamA.players.map(playerId => {
+            {teamAPlayers.map(playerId => {
               const playerName = getPlayerName(playerId);
               const playerObj = players.find(p => p.id === playerId);
               
@@ -63,15 +72,15 @@ const TeamsList = ({ match, players, getPlayerName }: TeamsListProps) => {
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            {match.teamB.name}
+            {match.teamB.name || "Team B"}
           </CardTitle>
           <CardDescription>
-            {match.teamB.players.length} players
+            {teamBPlayers.length} players
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {match.teamB.players.map(playerId => {
+            {teamBPlayers.map(playerId => {
               const playerName = getPlayerName(playerId);
               const playerObj = players.find(p => p.id === playerId);
               

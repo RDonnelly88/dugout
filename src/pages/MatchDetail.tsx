@@ -48,6 +48,27 @@ const MatchDetail = () => {
     return <MatchNotFound onBack={() => navigate(-1)} />;
   }
 
+  // Make sure necessary team data exists
+  if (!match.teamA || !match.teamB) {
+    return (
+      <div className="page-container">
+        <div className="flex items-center gap-2 mb-6">
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Back
+          </Button>
+        </div>
+        <div className="p-6 text-center">
+          <h2 className="text-xl font-medium">Invalid match data</h2>
+          <p className="text-muted-foreground mt-2">This match has incomplete team information.</p>
+          <Button className="mt-4" onClick={() => navigate(-1)}>
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const isCompleted = match.status === "completed";
 
   return (

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getMatch, getPlayers, updateMatch } from "@/lib/db";
@@ -101,12 +101,16 @@ export const useMatchDetail = () => {
   };
 
   // Initialize form values when match data is loaded
-  if (match && teamAScore === undefined && match.teamA.score !== undefined) {
-    setTeamAScore(match.teamA.score);
-  }
-  if (match && teamBScore === undefined && match.teamB.score !== undefined) {
-    setTeamBScore(match.teamB.score);
-  }
+  useEffect(() => {
+    if (match) {
+      if (match.teamA && match.teamA.score !== undefined) {
+        setTeamAScore(match.teamA.score);
+      }
+      if (match.teamB && match.teamB.score !== undefined) {
+        setTeamBScore(match.teamB.score);
+      }
+    }
+  }, [match]);
 
   return {
     id,
