@@ -5,7 +5,7 @@ import { PlayerFormResult } from "@/types";
 
 interface PlayerFormProps {
   form: PlayerFormResult[];
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
   showLabel?: boolean;
 }
 
@@ -47,7 +47,9 @@ const PlayerForm = ({ form = [], size = 'md', showLabel = false }: PlayerFormPro
           "flex items-center justify-center rounded font-semibold",
           bgColor,
           textColor,
-          size === 'sm' ? 'w-5 h-5 text-xs' : size === 'md' ? 'w-6 h-6 text-sm' : 'w-8 h-8'
+          size === 'xs' ? 'w-4 h-4 text-[10px]' : 
+          size === 'sm' ? 'w-5 h-5 text-xs' : 
+          size === 'md' ? 'w-6 h-6 text-sm' : 'w-8 h-8'
         )}
       >
         {letter}
@@ -70,3 +72,4 @@ const PlayerForm = ({ form = [], size = 'md', showLabel = false }: PlayerFormPro
 };
 
 export default PlayerForm;
+
