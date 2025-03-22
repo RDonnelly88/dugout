@@ -1,17 +1,15 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { 
   getCurrentSeason,
   getSeasonPlayerStats,
-  getMatchesCount,
-  getPlayersCount
+  getMatches,
+  getPlayers
 } from "@/lib/db";
 import { ArrowRight, Trophy, Calendar, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { getMatches, getPlayers } from "@/lib/db";
 import SeasonLeaderboard from "@/components/seasons/SeasonLeaderboard";
 
 const Home = () => {

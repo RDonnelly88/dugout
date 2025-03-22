@@ -6,7 +6,7 @@ import { getPlayer } from "@/lib/db";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import PlayerForm from "@/components/players/PlayerForm";
+import PlayerEditForm from "@/components/players/PlayerEditForm";
 import DeletePlayerDialog from "@/components/players/DeletePlayerDialog";
 import { usePlayerMutation } from "@/hooks/usePlayerMutation";
 
@@ -109,7 +109,7 @@ const AddEditPlayer = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <PlayerForm
+          <PlayerEditForm
             name={name}
             setName={setName}
             imageUrl={imageUrl}
