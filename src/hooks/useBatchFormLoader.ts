@@ -1,7 +1,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PlayerFormResult } from "@/types";
-import { getPlayerFormBatch } from "@/lib/player-form-service";
+import { getPlayerFormBatch, clearFormCaches } from "@/lib/player-form-service";
 import { useEffect } from "react";
 
 // Function to batch fetch player forms for multiple players in a single season
@@ -14,12 +14,21 @@ export const useBatchFormLoader = (
   // Force a refetch when the component mounts or when dependencies change
   useEffect(() => {
     if (seasonId && playerIds.length > 0) {
+      // Clear form caches first to ensure fresh data
+      clearFormCaches();
+      
       // Invalidate the query to ensure fresh data on every visit
       queryClient.invalidateQueries({ 
         queryKey: ['batchPlayerForms', seasonId, playerIds] 
       });
+      
+      // Force an immediate refetch
+      queryClient.refetchQueries({
+        queryKey: ['batchPlayerForms', seasonId, playerIds],
+        exact: true
+      });
     }
-  }, [seasonId, playerIds.length, queryClient]);
+  }, [seasonId, playerIds.join(','), queryClient]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['batchPlayerForms', seasonId, playerIds],
@@ -27,6 +36,8 @@ export const useBatchFormLoader = (
       if (!seasonId || playerIds.length === 0) return {};
       
       try {
+        // Always clear caches before fetching to ensure fresh data
+        clearFormCaches();
         return await getPlayerFormBatch(seasonId, playerIds);
       } catch (err) {
         console.error("Error loading batch player forms:", err);
@@ -34,10 +45,10 @@ export const useBatchFormLoader = (
       }
     },
     enabled: !!seasonId && playerIds.length > 0,
-    staleTime: 30000, // Reduced to 30 seconds
+    staleTime: 0, // Never consider data fresh
     refetchOnWindowFocus: true,
     refetchOnMount: "always", // Always refetch on mount
-    refetchInterval: 60000, // Refetch every minute while the page is open
+    refetchInterval: 30000, // Refetch every 30 seconds while the page is open
   });
 
   return {

@@ -50,6 +50,46 @@ const SeasonLeaderboard = ({
   // Get player IDs for batch loading
   const playerIds = displayStats.map(player => player.playerId);
   
+  // Clear all caches and force a refetch when component mounts
+  useEffect(() => {
+    const clearAndRefetch = async () => {
+      if (seasonId) {
+        console.log("SeasonLeaderboard mounted, clearing caches and refetching data");
+        
+        // Clear the form data cache
+        clearFormCaches();
+        
+        // Force invalidation of all form queries
+        await queryClient.invalidateQueries({ 
+          queryKey: ['batchPlayerForms'] 
+        });
+        
+        // Force invalidation of individual player form queries
+        if (playerIds.length > 0) {
+          playerIds.forEach(playerId => {
+            queryClient.invalidateQueries({
+              queryKey: ['playerForm', seasonId, playerId]
+            });
+          });
+        }
+        
+        // Force immediate refetching of all queries
+        await queryClient.refetchQueries({
+          queryKey: ['batchPlayerForms']
+        });
+      }
+    };
+    
+    clearAndRefetch();
+    
+    // Set up an interval to clear caches and refetch data periodically
+    const intervalId = setInterval(clearAndRefetch, 30000); // Every 30 seconds
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [seasonId, queryClient, playerIds.join(',')]); // Recreate effect if player IDs change
+  
   // Use the batch loading hook if seasonId is provided
   const { formData, isLoading: isLoadingForms } = useBatchFormLoader(
     seasonId || null, 
@@ -58,28 +98,6 @@ const SeasonLeaderboard = ({
   
   // Combine provided forms with batch loaded forms
   const combinedForms = { ...playerForms, ...formData };
-  
-  // Clear all caches and force a refetch when component mounts
-  useEffect(() => {
-    if (seasonId) {
-      // Clear the form data cache
-      clearFormCaches();
-      
-      // Force invalidation of queries
-      queryClient.invalidateQueries({ 
-        queryKey: ['batchPlayerForms'] 
-      });
-      
-      // Also invalidate any individual player form queries
-      if (playerIds.length > 0) {
-        playerIds.forEach(playerId => {
-          queryClient.invalidateQueries({
-            queryKey: ['playerForm', seasonId, playerId]
-          });
-        });
-      }
-    }
-  }, [seasonId, queryClient]); // Only run when seasonId changes or on mount
   
   // Prefetch individual player forms for when users navigate to player details
   useEffect(() => {
