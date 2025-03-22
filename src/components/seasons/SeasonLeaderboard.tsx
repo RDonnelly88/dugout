@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Trophy, Medal, Ghost } from "lucide-react";
@@ -48,42 +49,27 @@ const SeasonLeaderboard = ({
   // Get player IDs for batch loading
   const playerIds = displayStats.map(player => player.playerId);
   
-  // Force a refetch when component mounts
+  // Ensure we have fresh data when the component renders or when we navigate back to this page
   useEffect(() => {
-    const forceRefetch = async () => {
-      if (seasonId) {
-        console.log("SeasonLeaderboard mounted, clearing caches and refetching data");
-        
-        // Force invalidation of all form queries
-        await queryClient.invalidateQueries({ 
-          queryKey: ['batchPlayerForms'] 
+    if (seasonId && playerIds.length > 0) {
+      console.log(`SeasonLeaderboard mounted/updated at ${new Date().toISOString()}, forcing fresh data`);
+      
+      // Force immediate invalidation and refetch of form data
+      queryClient.removeQueries({ queryKey: ['batchPlayerForms', seasonId, playerIds] });
+      
+      // Manually trigger a refetch with a slight delay to ensure navigation completes
+      const refetchTimer = setTimeout(() => {
+        queryClient.refetchQueries({ 
+          queryKey: ['batchPlayerForms', seasonId, playerIds],
+          type: 'all'
         });
-        
-        // Force invalidation of individual player form queries
-        if (playerIds.length > 0) {
-          playerIds.forEach(playerId => {
-            queryClient.invalidateQueries({
-              queryKey: ['playerForm', seasonId, playerId]
-            });
-          });
-        }
-        
-        // Force immediate refetching of all queries
-        await queryClient.refetchQueries({
-          queryKey: ['batchPlayerForms']
-        });
-      }
-    };
-    
-    forceRefetch();
-    
-    // Set up an interval to refetch data periodically
-    const intervalId = setInterval(forceRefetch, 5000); // Every 5 seconds
-    
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [seasonId, queryClient, playerIds.join(',')]); // Recreate effect if player IDs change
+      }, 100);
+      
+      return () => {
+        clearTimeout(refetchTimer);
+      };
+    }
+  }, [seasonId, queryClient, playerIds.join(',')]);
   
   // Use the batch loading hook if seasonId is provided
   const { formData, isLoading: isLoadingForms } = useBatchFormLoader(
@@ -91,20 +77,36 @@ const SeasonLeaderboard = ({
     seasonId ? playerIds : []
   );
   
-  // Combine provided forms with batch loaded forms
+  // Combine provided forms with batch loaded forms - prioritize fresh data from the hook
   const combinedForms = { ...playerForms, ...formData };
   
-  // Prefetch individual player forms for when users navigate to player details
+  // Fetch explicitly on route change or when we navigate back to this page
   useEffect(() => {
-    if (seasonId && displayStats.length > 0) {
-      displayStats.forEach(player => {
-        queryClient.prefetchQuery({
-          queryKey: ['playerForm', seasonId, player.playerId],
-          queryFn: () => import('@/lib/player-form-service').then(m => m.getPlayerFormInSeason(seasonId, player.playerId))
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && seasonId && playerIds.length > 0) {
+        console.log('Page became visible, refetching player forms');
+        queryClient.refetchQueries({ 
+          queryKey: ['batchPlayerForms', seasonId, playerIds],
+          type: 'all'
         });
+      }
+    };
+
+    // Listen for visibility changes (tab switching, app background/foreground)
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Also refetch on mount
+    if (seasonId && playerIds.length > 0) {
+      queryClient.refetchQueries({ 
+        queryKey: ['batchPlayerForms', seasonId, playerIds],
+        type: 'all'
       });
     }
-  }, [seasonId, displayStats, queryClient]);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [seasonId, playerIds, queryClient]);
   
   const getRankBadge = (index: number) => {
     if (index === 0) {

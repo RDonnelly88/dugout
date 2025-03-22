@@ -2,7 +2,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PlayerFormResult } from "@/types";
 import { getPlayerFormBatch } from "@/lib/player-form-service";
-import { useEffect } from "react";
 
 // Function to batch fetch player forms for multiple players in a single season
 export const useBatchFormLoader = (
@@ -11,41 +10,29 @@ export const useBatchFormLoader = (
 ) => {
   const queryClient = useQueryClient();
   
-  // Force a refetch when the component mounts or when dependencies change
-  useEffect(() => {
-    if (seasonId && playerIds.length > 0) {
-      // Invalidate the query to ensure fresh data on every visit
-      queryClient.invalidateQueries({ 
-        queryKey: ['batchPlayerForms', seasonId, playerIds] 
-      });
-      
-      // Force an immediate refetch
-      queryClient.refetchQueries({
-        queryKey: ['batchPlayerForms', seasonId, playerIds],
-        exact: true
-      });
-    }
-  }, [seasonId, playerIds.join(','), queryClient]);
-
   const { data, isLoading, error } = useQuery({
     queryKey: ['batchPlayerForms', seasonId, playerIds],
     queryFn: async () => {
       if (!seasonId || playerIds.length === 0) return {};
       
+      console.log(`Fetching batch player forms for season ${seasonId} with ${playerIds.length} players at ${new Date().toISOString()}`);
+      
       try {
         // Always fetch fresh data
-        return await getPlayerFormBatch(seasonId, playerIds);
+        const result = await getPlayerFormBatch(seasonId, playerIds);
+        return result;
       } catch (err) {
         console.error("Error loading batch player forms:", err);
         return {};
       }
     },
     enabled: !!seasonId && playerIds.length > 0,
-    staleTime: 0, // Never consider data fresh
-    gcTime: 0, // Don't cache at all (formerly cacheTime)
+    // Don't cache at all - always fetch fresh data
+    staleTime: 0,
+    gcTime: 0,
     refetchOnWindowFocus: true,
-    refetchOnMount: "always", // Always refetch on mount
-    refetchInterval: 1000, // Refetch every second while the page is open
+    refetchOnMount: true,
+    refetchInterval: 0, // Don't automatically refetch - we'll control this from the component
   });
 
   return {

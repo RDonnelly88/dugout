@@ -1,7 +1,6 @@
 
 import { PlayerFormResult } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
-import { mapSupabaseMatchToMatch } from "./supabase-utils";
 
 // Type for the raw match data from Supabase
 interface RawMatchData {
