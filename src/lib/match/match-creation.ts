@@ -9,8 +9,23 @@ import { getMatches } from "./match-retrieval";
 export const addMatch = async (match: Omit<Match, "id" | "createdAt" | "updatedAt">): Promise<Match> => {
   const now = new Date().toISOString();
   
+  // Ensure teamA and teamB have all required properties
+  const matchWithFormattedTeams = {
+    ...match,
+    teamA: {
+      name: match.teamA?.name || "Team A",
+      players: match.teamA?.players || [],
+      score: match.teamA?.score ?? 0
+    },
+    teamB: {
+      name: match.teamB?.name || "Team B",
+      players: match.teamB?.players || [],
+      score: match.teamB?.score ?? 0
+    }
+  };
+  
   const supabaseMatch = {
-    ...mapMatchToSupabase(match),
+    ...mapMatchToSupabase(matchWithFormattedTeams),
     created_at: now,
     updated_at: now
   };
@@ -28,7 +43,7 @@ export const addMatch = async (match: Omit<Match, "id" | "createdAt" | "updatedA
       const matches = await getMatches();
       const matchWithId = {
         id: uuidv4(),
-        ...match,
+        ...matchWithFormattedTeams,
         createdAt: now,
         updatedAt: now
       };
@@ -45,7 +60,7 @@ export const addMatch = async (match: Omit<Match, "id" | "createdAt" | "updatedA
     const matches = await getMatches();
     const matchWithId = {
       id: uuidv4(),
-      ...match,
+      ...matchWithFormattedTeams,
       createdAt: now,
       updatedAt: now
     };

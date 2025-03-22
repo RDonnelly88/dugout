@@ -87,18 +87,26 @@ export const useCreateMatch = () => {
       return;
     }
 
-    if (teamA.length !== 5 || teamB.length !== 5) {
+    if (teamA.length === 0 || teamB.length === 0) {
       toast({
         title: "Error",
-        description: "Each team must have exactly 5 players.",
+        description: "Each team must have at least one player.",
         variant: "destructive",
       });
       return;
     }
 
     const matchData = {
-      teamA,
-      teamB,
+      teamA: {
+        name: "Team A",
+        players: teamA,
+        score: 0
+      },
+      teamB: {
+        name: "Team B",
+        players: teamB,
+        score: 0
+      },
       date: date.toISOString(),
       status: "scheduled"
     };

@@ -11,7 +11,8 @@ interface TeamRandomizerProps {
 
 const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomizerProps) => {
   const canRandomize = players.length > 0;
-
+  const playerCount = players.length;
+  
   return (
     <div className="flex justify-end mb-4">
       <Button
@@ -21,7 +22,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
         className="gap-2"
       >
         <Shuffle className="h-4 w-4" />
-        Randomize Teams
+        Randomize Teams {playerCount > 0 && `(${playerCount} players)`}
       </Button>
     </div>
   );
