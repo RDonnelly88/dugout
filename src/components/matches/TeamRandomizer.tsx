@@ -9,10 +9,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import PlayerSelection from "./team-randomizer/PlayerSelection";
 import PlayerCard from "./team-randomizer/PlayerCard";
 import { useRandomizer } from "./team-randomizer/hooks/useRandomizer";
+import { 
+  Dialog,
+  DialogContent,
+  DialogPortal,
+  DialogOverlay,
+} from "@/components/ui/dialog";
 
 interface TeamRandomizerProps {
   players: Player[];
@@ -21,6 +27,8 @@ interface TeamRandomizerProps {
 }
 
 const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomizerProps) => {
+  const [showRandomizerModal, setShowRandomizerModal] = useState(false);
+  
   const {
     teamSize,
     setTeamSize,
@@ -53,16 +61,28 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
   const canRandomize = availablePlayers.length > 0;
   const playerCount = availablePlayers.length;
   
-  const renderPlayerCards = () => {
-    // Only show player cards when we're actively randomizing
-    if (!isRandomizing) {
-      return null; // Don't show anything when not randomizing
+  const handleRandomizeClick = () => {
+    setShowRandomizerModal(true);
+    performRandomization(availablePlayers);
+  };
+  
+  // Close the modal when randomization completes
+  useEffect(() => {
+    if (!isRandomizing && showRandomizerModal) {
+      // Add a small delay before closing the modal to show the final teams
+      const timer = setTimeout(() => {
+        setShowRandomizerModal(false);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
     }
-    
+  }, [isRandomizing, showRandomizerModal]);
+  
+  const renderPlayerCards = () => {
     // If in flashing stage, show the available players
     if (revealStage === 'flashing') {
       return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 px-4">
           {availablePlayers.map((player, index) => (
             <PlayerCard 
               key={player.id} 
@@ -80,7 +100,7 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
     // During the team reveal stage, show the teams
     if (revealStage === 'revealing') {
       return (
-        <div className="flex justify-between gap-8 flex-wrap">
+        <div className="flex justify-between gap-8 flex-wrap px-4">
           <div className="w-full md:w-5/12">
             <h3 className="text-xl font-bold text-center mb-4 text-red-400">Team A</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -145,13 +165,13 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
         
         <div>
           <Button
-            onClick={() => performRandomization(availablePlayers)}
+            onClick={handleRandomizeClick}
             variant="outline"
             disabled={disabled || !canRandomize || isRandomizing}
             className="gap-2 mr-2"
           >
-            <Shuffle className={`h-4 w-4 ${isRandomizing ? 'animate-spin' : ''}`} />
-            {isRandomizing ? "Randomizing..." : "Randomize Teams"}
+            <Shuffle className="h-4 w-4" />
+            Randomize Teams
             {playerCount > 0 && !isRandomizing && (
               <span className="ml-1 text-xs text-muted-foreground">
                 ({playerCount} available)
@@ -170,10 +190,33 @@ const TeamRandomizer = ({ players, onRandomize, disabled = false }: TeamRandomiz
         </div>
       </div>
       
-      {/* Main randomization area - only shown during randomization */}
-      <div className="team-randomization-area mt-4">
-        {renderPlayerCards()}
-      </div>
+      {/* Randomizer Modal Dialog */}
+      <Dialog open={showRandomizerModal} onOpenChange={setShowRandomizerModal}>
+        <DialogPortal>
+          <DialogOverlay className="bg-black/90 backdrop-blur-sm" />
+          <DialogContent className="sm:max-w-[90%] md:max-w-[85%] lg:max-w-[80%] border-blue-500/30 neo-glassmorphism bg-black/80 p-0 overflow-hidden">
+            <div className="randomizer-modal-container">
+              <div className="randomizer-modal-header p-4 border-b border-blue-500/20">
+                <h2 className="text-2xl font-bold text-center bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                  {revealStage === 'flashing' ? "Randomizing Teams..." : "Team Reveal"}
+                </h2>
+              </div>
+              
+              <div className="randomizer-modal-content p-6 max-h-[70vh] overflow-y-auto">
+                {renderPlayerCards()}
+              </div>
+              
+              <div className="randomizer-modal-footer border-t border-blue-500/20 p-4 text-center text-sm text-blue-300/70">
+                {isRandomizing ? (
+                  <p>Creating balanced teams...</p>
+                ) : (
+                  <p>Teams have been created! The dialog will close automatically...</p>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </DialogPortal>
+      </Dialog>
       
       {showPlayerSelection && (
         <PlayerSelection

@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Player } from "@/types";
 
@@ -24,7 +23,14 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
   // Always reset state when isRandomizing changes to false
   useEffect(() => {
     if (!isRandomizing) {
-      resetRandomizer();
+      // Don't reset the teams immediately as we want to show them briefly in the modal
+      // Other state like flashing and sound should be reset
+      setFlashingPlayers([]);
+      
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
     }
   }, [isRandomizing]);
 
@@ -66,6 +72,7 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
       setFlashingPlayers(randomPlayerIds);
     }, 200);
     
+    // Flashing animation for dramatic effect
     await new Promise(resolve => setTimeout(resolve, 3000));
     clearInterval(flashInterval);
     
@@ -88,12 +95,14 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
     setTeamAPlayers(finalTeamA);
     setTeamBPlayers(finalTeamB);
     
+    // Reveal players one by one for dramatic effect
     const maxRevealCount = Math.max(finalTeamA.length, finalTeamB.length);
     for (let i = 0; i < maxRevealCount; i++) {
       setRevealIndex(i);
       await new Promise(resolve => setTimeout(resolve, 300));
     }
     
+    // Fade out the audio
     if (audioRef.current) {
       const fadeOut = () => {
         if (audioRef.current && audioRef.current.volume > 0.05) {
@@ -107,13 +116,11 @@ export const useRandomizer = (onRandomize: (players: Player[], teamSize: number)
       fadeOut();
     }
     
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Keep the final result visible for a moment
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Reset UI state but save the randomization results
+    // Set randomizing to false but keep teams visible
     setIsRandomizing(false);
-    setFlashingPlayers([]);
-    setRevealIndex(-1);
-    setRevealStage("idle");
     
     // Call the callback with the randomized players
     const allRandomizedPlayers = [...finalTeamA, ...finalTeamB];
