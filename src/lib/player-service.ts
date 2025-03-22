@@ -248,3 +248,46 @@ export const updatePlayerStats = async (match: Match): Promise<void> => {
   
   await Promise.all(updatePromises);
 };
+
+// Revert player stats when a match is deleted or edited
+export const revertPlayerStats = async (match: Match): Promise<void> => {
+  if (match.status !== "completed" || match.teamA.score === undefined || match.teamB.score === undefined) {
+    return;
+  }
+  
+  const teamAWon = match.teamA.score > match.teamB.score;
+  const teamBWon = match.teamB.score > match.teamA.score;
+  const draw = match.teamA.score === match.teamB.score;
+  
+  // Update each player's stats
+  const updatePromises = [
+    ...match.teamA.players.map(async (playerId) => {
+      const player = await getPlayer(playerId);
+      if (player) {
+        const stats = {
+          ...player.stats,
+          played: Math.max(0, player.stats.played - 1),
+          won: Math.max(0, player.stats.won - (teamAWon ? 1 : 0)),
+          lost: Math.max(0, player.stats.lost - (teamBWon ? 1 : 0)),
+          drawn: Math.max(0, player.stats.drawn - (draw ? 1 : 0))
+        };
+        await updatePlayer(playerId, { stats });
+      }
+    }),
+    ...match.teamB.players.map(async (playerId) => {
+      const player = await getPlayer(playerId);
+      if (player) {
+        const stats = {
+          ...player.stats,
+          played: Math.max(0, player.stats.played - 1),
+          won: Math.max(0, player.stats.won - (teamBWon ? 1 : 0)),
+          lost: Math.max(0, player.stats.lost - (teamAWon ? 1 : 0)),
+          drawn: Math.max(0, player.stats.drawn - (draw ? 1 : 0))
+        };
+        await updatePlayer(playerId, { stats });
+      }
+    })
+  ];
+  
+  await Promise.all(updatePromises);
+};
