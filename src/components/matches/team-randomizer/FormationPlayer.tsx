@@ -35,6 +35,7 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
   
   // Display last 5 matches in form
   const recentForm = form.slice(0, 5);
+  console.log(`Player ${player.name} recent form:`, recentForm);
   
   return (
     <div className="player-formation-card">
@@ -93,7 +94,7 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
             </div>
           </div>
           
-          {/* Actual player form display */}
+          {/* Player form display */}
           <div className="mt-2 p-2 rounded-md bg-blue-900/30 border border-blue-500/20">
             <h5 className="text-xs font-medium text-blue-300 mb-1">Recent Form</h5>
             <div className="flex space-x-1">
