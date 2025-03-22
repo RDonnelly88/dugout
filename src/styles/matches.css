@@ -324,7 +324,7 @@
   
   /* Team pitch styling */
   .team-pitch {
-    @apply relative rounded-xl overflow-hidden flex flex-col items-center justify-center py-8;
+    @apply relative overflow-hidden flex flex-col items-center justify-center py-8;
     background: linear-gradient(to bottom, #0c326e, #0a2351);
     position: relative;
   }
@@ -341,6 +341,11 @@
     pointer-events: none;
   }
   
+  /* Team pitch container */
+  .team-pitch-container {
+    @apply overflow-hidden shadow-lg;
+  }
+  
   /* Formation row positioning */
   .formation-row {
     @apply w-full z-10 relative;
@@ -354,5 +359,10 @@
     border-radius: 8px;
     height: 100%;
     width: 100%;
+  }
+  
+  /* Team name banner */
+  .team-name-banner {
+    @apply shadow-md border-t border-blue-500/20;
   }
 }

@@ -89,15 +89,19 @@ const Formation = ({ teamA, teamB, teamSize, onRemovePlayer }: FormationProps) =
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-      <div className="team-pitch bg-blue-900/60 rounded-lg overflow-hidden h-[320px] relative">
-        {renderTeam(teamA, "Team A", "red")}
-        <div className="team-name-overlay absolute bottom-0 left-0 right-0 bg-red-700/80 text-white py-2 text-center font-semibold">
+      <div className="team-pitch-container">
+        <div className="team-pitch bg-blue-900/60 rounded-t-lg overflow-hidden h-[320px] relative">
+          {renderTeam(teamA, "Team A", "red")}
+        </div>
+        <div className="team-name-banner bg-red-700/80 text-white py-2 text-center font-semibold rounded-b-lg">
           Team A
         </div>
       </div>
-      <div className="team-pitch bg-blue-900/60 rounded-lg overflow-hidden h-[320px] relative">
-        {renderTeam(teamB, "Team B", "green")}
-        <div className="team-name-overlay absolute bottom-0 left-0 right-0 bg-green-700/80 text-white py-2 text-center font-semibold">
+      <div className="team-pitch-container">
+        <div className="team-pitch bg-blue-900/60 rounded-t-lg overflow-hidden h-[320px] relative">
+          {renderTeam(teamB, "Team B", "green")}
+        </div>
+        <div className="team-name-banner bg-green-700/80 text-white py-2 text-center font-semibold rounded-b-lg">
           Team B
         </div>
       </div>
