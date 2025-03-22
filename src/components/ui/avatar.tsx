@@ -1,5 +1,6 @@
 import * as React from "react"
 import * as AvatarPrimitive from "@radix-ui/react-avatar"
+import * as LucideIcons from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -20,14 +21,32 @@ Avatar.displayName = AvatarPrimitive.Root.displayName
 
 const AvatarImage = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Image>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
->(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Image
-    ref={ref}
-    className={cn("aspect-square h-full w-full", className)}
-    {...props}
-  />
-))
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image> & {
+    iconName?: string;
+  }
+>(({ className, iconName, ...props }, ref) => {
+  if (iconName) {
+    const IconComponent = (LucideIcons as any)[iconName];
+    
+    if (IconComponent) {
+      return (
+        <AvatarPrimitive.Fallback 
+          className={cn("flex h-full w-full items-center justify-center rounded-full", className)}
+        >
+          <IconComponent className="h-5/6 w-5/6" />
+        </AvatarPrimitive.Fallback>
+      );
+    }
+  }
+  
+  return (
+    <AvatarPrimitive.Image
+      ref={ref}
+      className={cn("aspect-square h-full w-full", className)}
+      {...props}
+    />
+  );
+})
 AvatarImage.displayName = AvatarPrimitive.Image.displayName
 
 const AvatarFallback = React.forwardRef<
