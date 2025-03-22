@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -30,6 +29,22 @@ const CHART_COLORS = [
   "#1B9AAA", "#6A0572", "#AB83A1", "#F15BB5", 
   "#7209B7", "#3A0CA3", "#4361EE", "#4CC9F0"
 ];
+
+// Helper function to format the date - moved to the top level before any usage
+const formatDate = (dateString: string) => {
+  try {
+    // Check if the date is in ISO format or other format
+    if (dateString.includes('T')) {
+      return format(parseISO(dateString), 'MMM d');
+    } else {
+      // Try to parse the date string
+      return format(new Date(dateString), 'MMM d');
+    }
+  } catch (e) {
+    console.error("Error formatting date:", e);
+    return dateString;
+  }
+};
 
 interface SeasonPositionChartProps {
   seasonId: string;
@@ -81,36 +96,6 @@ const SeasonPositionChart: React.FC<SeasonPositionChartProps> = ({
       return dataPoint;
     });
   }, [positionHistories]);
-  
-  // Helper function to format the date
-  const formatDate = (dateString: string) => {
-    try {
-      // Check if the date is in ISO format or other format
-      if (dateString.includes('T')) {
-        return format(parseISO(dateString), 'MMM d');
-      } else {
-        // Try to parse the date string
-        return format(new Date(dateString), 'MMM d');
-      }
-    } catch (e) {
-      console.error("Error formatting date:", e);
-      return dateString;
-    }
-  };
-  
-  // Limit the number of players shown if there are many
-  const playersToShow = useMemo(() => {
-    if (showAllPlayers) return positionHistories;
-    
-    // Only show top players by default (players with lowest final position)
-    return positionHistories
-      .sort((a, b) => {
-        const aLastPos = a.history[a.history.length - 1]?.position || 999;
-        const bLastPos = b.history[b.history.length - 1]?.position || 999;
-        return aLastPos - bLastPos;
-      })
-      .slice(0, 5);
-  }, [positionHistories, showAllPlayers]);
   
   if (isLoading) {
     return (
