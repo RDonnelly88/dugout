@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Player } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -54,13 +55,11 @@ const PlayerCard = ({
           
           <Avatar className="h-16 w-16 mb-2 mt-4">
             {player.image ? (
-              player.image.startsWith('icon:') ? (
-                <AvatarImage iconName={player.image.replace('icon:', '')} />
-              ) : (
-                <AvatarImage src={player.image} alt={player.name} className="object-cover" />
-              )
+              <AvatarImage src={player.image} alt={player.name} className="object-cover" />
             ) : (
-              <AvatarImage iconName="Ghost" />
+              <AvatarFallback className="text-lg bg-gradient-blue text-white">
+                {player.name.charAt(0)}
+              </AvatarFallback>
             )}
           </Avatar>
           

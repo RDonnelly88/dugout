@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Trophy, Medal } from "lucide-react";
@@ -143,15 +144,8 @@ const SeasonLeaderboard = ({
                 <TableCell>
                   <Link to={`/players/${stat.playerId}`} className="flex items-center space-x-2 hover:underline">
                     <Avatar className="h-8 w-8 bg-gray-800">
-                      {stat.playerImage ? (
-                        stat.playerImage.startsWith('icon:') ? (
-                          <AvatarImage iconName={stat.playerImage.replace('icon:', '')} />
-                        ) : (
-                          <AvatarImage src={stat.playerImage} alt={stat.playerName} />
-                        )
-                      ) : (
-                        <AvatarImage iconName="Ghost" />
-                      )}
+                      <AvatarImage src={stat.playerImage} alt={stat.playerName} />
+                      <AvatarFallback>{stat.playerName.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
                       <div className="font-medium">{stat.playerName}</div>

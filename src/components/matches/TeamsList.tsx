@@ -1,10 +1,9 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { Users } from "lucide-react";
-import * as LucideIcons from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Match, Player } from "@/types";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface TeamsListProps {
   match: Match;
@@ -49,21 +48,15 @@ const TeamsList = ({ match, players, getPlayerName }: TeamsListProps) => {
                 >
                   <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden mr-3">
                     {playerObj?.image ? (
-                      playerObj.image.startsWith('icon:') ? (
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage iconName={playerObj.image.replace('icon:', '')} />
-                        </Avatar>
-                      ) : (
-                        <img
-                          src={playerObj.image}
-                          alt={playerName}
-                          className="h-full w-full object-cover"
-                        />
-                      )
+                      <img
+                        src={playerObj.image}
+                        alt={playerName}
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage iconName="Ghost" />
-                      </Avatar>
+                      <span className="text-sm font-medium text-blue-600">
+                        {playerName.charAt(0)}
+                      </span>
                     )}
                   </div>
                   <span className="font-medium">{playerName}</span>
@@ -99,21 +92,15 @@ const TeamsList = ({ match, players, getPlayerName }: TeamsListProps) => {
                 >
                   <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center overflow-hidden mr-3">
                     {playerObj?.image ? (
-                      playerObj.image.startsWith('icon:') ? (
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage iconName={playerObj.image.replace('icon:', '')} />
-                        </Avatar>
-                      ) : (
-                        <img
-                          src={playerObj.image}
-                          alt={playerName}
-                          className="h-full w-full object-cover"
-                        />
-                      )
+                      <img
+                        src={playerObj.image}
+                        alt={playerName}
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage iconName="Ghost" />
-                      </Avatar>
+                      <span className="text-sm font-medium text-red-600">
+                        {playerName.charAt(0)}
+                      </span>
                     )}
                   </div>
                   <span className="font-medium">{playerName}</span>

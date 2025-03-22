@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -17,6 +18,7 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
   const [selectedSeasonId, setSelectedSeasonId] = useState<string | "overall">("overall");
   const { stats, isLoading } = usePlayerRelationships(playerId);
   
+  // Get seasons for dropdown
   const { data: seasons = [] } = useQuery({
     queryKey: ['seasons'],
     queryFn: getSeasons
@@ -64,15 +66,8 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
         <CardContent>
           <Link to={`/players/${relationship.playerId}`} className="flex items-center hover:bg-gray-800 p-2 rounded-md transition-colors">
             <Avatar className="h-12 w-12 mr-4">
-              {relationship.playerImage ? (
-                relationship.playerImage.startsWith('icon:') ? (
-                  <AvatarImage iconName={relationship.playerImage.replace('icon:', '')} />
-                ) : (
-                  <AvatarImage src={relationship.playerImage} alt={relationship.playerName} />
-                )
-              ) : (
-                <AvatarImage iconName="Ghost" />
-              )}
+              <AvatarImage src={relationship.playerImage} alt={relationship.playerName} />
+              <AvatarFallback>{relationship.playerName.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <div className="font-medium text-base">{relationship.playerName}</div>

@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { Calendar, Trophy, Users, LayoutGrid, Medal } from "lucide-react";
@@ -46,7 +47,9 @@ const SeasonCard = ({
       
       return (
         <Avatar className="h-5 w-5 mr-2">
-          <AvatarImage iconName={iconName} />
+          <AvatarFallback className="bg-secondary text-secondary-foreground">
+            {IconComponent ? <IconComponent className="h-3 w-3" /> : playerName.charAt(0)}
+          </AvatarFallback>
         </Avatar>
       );
     }
@@ -54,11 +57,8 @@ const SeasonCard = ({
     // Regular image avatar
     return (
       <Avatar className="h-5 w-5 mr-2">
-        {playerImage ? (
-          <AvatarImage src={playerImage} alt={playerName} />
-        ) : (
-          <AvatarImage iconName="Ghost" />
-        )}
+        <AvatarImage src={playerImage || undefined} alt={playerName} />
+        <AvatarFallback>{playerName.charAt(0)}</AvatarFallback>
       </Avatar>
     );
   };

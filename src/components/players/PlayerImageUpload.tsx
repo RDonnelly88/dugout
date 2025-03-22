@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -9,10 +10,11 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 
-// Fun avatar icons from Lucide React
+// Avatar icons from Lucide React
 const avatarIcons = [
   "User", "UserRound", "UserCircle", "Ghost", "Smile", "Robot", 
-  "PersonStanding", "UserCheck", "Cat", "Dog", "Bird", "VenetianMask"
+  "PersonStanding", "UserCheck", "UserCog", "UserPlus", "Medal", 
+  "Trophy", "Crown", "Star", "Heart", "CircleUser"
 ];
 
 interface PlayerImageUploadProps {

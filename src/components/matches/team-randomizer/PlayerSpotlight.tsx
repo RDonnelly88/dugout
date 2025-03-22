@@ -1,8 +1,8 @@
+
 import React from 'react';
 import { Player } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Award, Star } from "lucide-react";
-import * as LucideIcons from "lucide-react";
 
 interface PlayerSpotlightProps {
   player: Player;
@@ -19,13 +19,11 @@ const PlayerSpotlight = ({ player }: PlayerSpotlightProps) => {
             <div className="spotlight-avatar">
               <Avatar className="h-32 w-32 border-4 border-blue-500/50 shadow-lg shadow-blue-500/20">
                 {player.image ? (
-                  player.image.startsWith('icon:') ? (
-                    <AvatarImage iconName={player.image.replace('icon:', '')} />
-                  ) : (
-                    <AvatarImage src={player.image} alt={player.name} className="object-cover" />
-                  )
+                  <AvatarImage src={player.image} alt={player.name} className="object-cover" />
                 ) : (
-                  <AvatarImage iconName="Ghost" />
+                  <AvatarFallback className="text-5xl font-bold bg-gradient-to-br from-blue-500 to-indigo-700 text-white">
+                    {player.name.charAt(0)}
+                  </AvatarFallback>
                 )}
               </Avatar>
               <div className="absolute -top-3 -right-3">

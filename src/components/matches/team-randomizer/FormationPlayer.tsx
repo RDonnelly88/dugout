@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Player } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -68,13 +69,11 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
               </Badge>
               <Avatar className="h-12 w-12 border-2 border-white/50 shadow-lg hover:border-white transition-all duration-200">
                 {player.image ? (
-                  player.image.startsWith('icon:') ? (
-                    <AvatarImage iconName={player.image.replace('icon:', '')} />
-                  ) : (
-                    <AvatarImage src={player.image} alt={player.name} className="object-cover" />
-                  )
+                  <AvatarImage src={player.image} alt={player.name} className="object-cover" />
                 ) : (
-                  <AvatarImage iconName="Ghost" />
+                  <AvatarFallback className={`text-lg ${bgColor} ${textColor}`}>
+                    {player.name.charAt(0)}
+                  </AvatarFallback>
                 )}
               </Avatar>
             </div>
@@ -87,13 +86,11 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
           <div className="flex space-x-3">
             <Avatar className="h-12 w-12">
               {player.image ? (
-                player.image.startsWith('icon:') ? (
-                  <AvatarImage iconName={player.image.replace('icon:', '')} />
-                ) : (
-                  <AvatarImage src={player.image} alt={player.name} />
-                )
+                <AvatarImage src={player.image} alt={player.name} />
               ) : (
-                <AvatarImage iconName="Ghost" />
+                <AvatarFallback className={bgColor}>
+                  {player.name.charAt(0)}
+                </AvatarFallback>
               )}
             </Avatar>
             <div>
