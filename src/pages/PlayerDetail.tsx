@@ -35,8 +35,8 @@ const PlayerDetail = () => {
     ? seasonStats.find(stat => stat.seasonId === currentSeason.id)
     : null;
     
-  // Get player form for the currently selected season
-  const { form: currentSeasonForm } = usePlayerForm(
+  // Get player form for the currently selected season with improved loading state handling
+  const { form: currentSeasonForm, isLoading: isLoadingForm } = usePlayerForm(
     currentSeason?.id || null, 
     player?.id || null
   );
@@ -139,7 +139,10 @@ const PlayerDetail = () => {
                 <div className="text-sm text-muted-foreground">
                   Recent Form:
                 </div>
-                <PlayerFormDisplay results={currentSeasonForm.length > 0 ? currentSeasonForm : recentResults} />
+                <PlayerFormDisplay 
+                  results={currentSeasonForm.length > 0 ? currentSeasonForm : recentResults} 
+                  isLoading={isLoadingForm && currentSeasonForm.length === 0}
+                />
               </div>
             </div>
           </div>

@@ -1,16 +1,19 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Trophy, Medal } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import PlayerForm from "@/components/players/PlayerForm";
+import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import { SeasonPlayerStats, PlayerFormResult } from "@/types";
+import { useQueryClient } from "@tanstack/react-query";
+import { useBatchPlayerForms } from "@/hooks/usePlayerForm";
 
 interface SeasonLeaderboardProps {
   stats: SeasonPlayerStats[];
+  seasonId?: string;
   playerForms?: Record<string, PlayerFormResult[]>;
   limit?: number;
   showTitle?: boolean;
@@ -20,12 +23,15 @@ interface SeasonLeaderboardProps {
 
 const SeasonLeaderboard = ({ 
   stats, 
+  seasonId,
   playerForms = {}, 
   limit, 
   showTitle = true,
   seasonName,
   isFinished = false
 }: SeasonLeaderboardProps) => {
+  const queryClient = useQueryClient();
+  
   // Filter out players with zero matches played
   const activeStats = stats.filter(player => player.played > 0);
   
@@ -40,10 +46,29 @@ const SeasonLeaderboard = ({
   // Limit the number of players shown if requested
   const displayStats = limit ? sortedStats.slice(0, limit) : sortedStats;
   
-  console.log("SeasonLeaderboard - stats:", stats);
-  console.log("SeasonLeaderboard - activeStats:", activeStats);
-  console.log("SeasonLeaderboard - sortedStats:", sortedStats);
-  console.log("SeasonLeaderboard - displayStats:", displayStats);
+  // Get player IDs for batch loading
+  const playerIds = displayStats.map(player => player.playerId);
+  
+  // Use the batch loading hook if seasonId is provided
+  const { forms: batchForms, isLoading: isLoadingForms } = useBatchPlayerForms(
+    seasonId || null, 
+    seasonId ? playerIds : []
+  );
+  
+  // Combine provided forms with batch loaded forms
+  const combinedForms = { ...playerForms, ...batchForms };
+  
+  // Prefetch individual player forms for when users navigate to player details
+  useEffect(() => {
+    if (seasonId && displayStats.length > 0) {
+      displayStats.forEach(player => {
+        queryClient.prefetchQuery({
+          queryKey: ['playerForm', seasonId, player.playerId],
+          queryFn: () => import('@/lib/db').then(m => m.getPlayerFormInSeason(seasonId, player.playerId))
+        });
+      });
+    }
+  }, [seasonId, displayStats, queryClient]);
   
   const getRankBadge = (index: number) => {
     if (index === 0) {
@@ -129,7 +154,11 @@ const SeasonLeaderboard = ({
                   </Link>
                 </TableCell>
                 <TableCell className="text-right">
-                  <PlayerForm form={playerForms[stat.playerId] || []} size="sm" />
+                  <PlayerFormDisplay 
+                    results={combinedForms[stat.playerId] || []} 
+                    size="sm" 
+                    isLoading={isLoadingForms && !combinedForms[stat.playerId]}
+                  />
                 </TableCell>
                 <TableCell className="text-right">{stat.played}</TableCell>
                 <TableCell className="text-right">{stat.wins}</TableCell>
