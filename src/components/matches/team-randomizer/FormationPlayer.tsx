@@ -3,22 +3,37 @@ import React from 'react';
 import { Player } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { PositionType } from './types';
+import { usePlayerForm } from "@/hooks/usePlayerForm";
+import { useQuery } from "@tanstack/react-query";
+import { getCurrentSeason } from "@/lib/db";
 
 interface FormationPlayerProps {
   player: Player;
-  position: string;
   index: number;
   teamColor: 'red' | 'green';
 }
 
-const FormationPlayer = ({ player, position, index, teamColor }: FormationPlayerProps) => {
-  console.log(`Rendering FormationPlayer for ${player.name} at position ${position} with index ${index} and team ${teamColor}`);
+const FormationPlayer = ({ player, index, teamColor }: FormationPlayerProps) => {
+  console.log(`Rendering FormationPlayer for ${player.name} at index ${index} and team ${teamColor}`);
   
   const bgColor = teamColor === 'red' ? 'bg-red-600' : 'bg-green-600';
   const textColor = 'text-white';
+  
+  // Get current season
+  const { data: currentSeason } = useQuery({
+    queryKey: ['currentSeason'],
+    queryFn: getCurrentSeason
+  });
+
+  // Get player form data
+  const { form, isLoading } = usePlayerForm(
+    currentSeason?.id || null,
+    player.id
+  );
+  
+  // Display last 5 matches in form
+  const recentForm = form.slice(0, 5);
   
   return (
     <div className="player-formation-card">
@@ -57,7 +72,6 @@ const FormationPlayer = ({ player, position, index, teamColor }: FormationPlayer
             </Avatar>
             <div>
               <h4 className="font-bold">{player.name}</h4>
-              <p className="text-sm text-blue-200">Position: {position}</p>
             </div>
           </div>
           <div className="mt-3 grid grid-cols-3 gap-2">
@@ -75,24 +89,26 @@ const FormationPlayer = ({ player, position, index, teamColor }: FormationPlayer
             </div>
           </div>
           
-          {/* Form display */}
+          {/* Actual player form display */}
           <div className="mt-2 p-2 rounded-md bg-blue-900/30 border border-blue-500/20">
             <h5 className="text-xs font-medium text-blue-300 mb-1">Recent Form</h5>
             <div className="flex space-x-1">
-              {[...Array(5)].map((_, i) => {
-                // This is just placeholder form - in a real implementation you'd use actual form data
-                const formResult = Math.random() > 0.5 ? 'W' : (Math.random() > 0.5 ? 'L' : 'D');
-                return (
+              {isLoading ? (
+                <div className="w-full text-center text-xs opacity-70">Loading form data...</div>
+              ) : recentForm.length > 0 ? (
+                recentForm.map((result, i) => (
                   <div 
                     key={i} 
                     className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
-                      ${formResult === 'W' ? 'bg-green-700' : 
-                        formResult === 'L' ? 'bg-red-700' : 'bg-gray-700'}`}
+                      ${result === 'win' ? 'bg-green-700' : 
+                        result === 'loss' ? 'bg-red-700' : 'bg-gray-700'}`}
                   >
-                    {formResult}
+                    {result === 'win' ? 'W' : result === 'loss' ? 'L' : 'D'}
                   </div>
-                );
-              })}
+                ))
+              ) : (
+                <div className="w-full text-center text-xs opacity-70">No recent matches</div>
+              )}
             </div>
           </div>
         </HoverCardContent>

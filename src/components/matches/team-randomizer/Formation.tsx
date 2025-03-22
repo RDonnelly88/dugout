@@ -2,7 +2,6 @@
 import React from 'react';
 import { Player } from "@/types";
 import FormationPlayer from './FormationPlayer';
-import { Badge } from "@/components/ui/badge";
 import { formationConfigs } from './constants';
 
 interface FormationProps {
@@ -36,12 +35,6 @@ const Formation = ({ teamA, teamB, teamSize }: FormationProps) => {
     
     return (
       <div className="relative h-full flex flex-col justify-between py-6">
-        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10">
-          <Badge variant="outline" className="bg-blue-950/80 text-white border-blue-500/30 px-3">
-            {formationConfig.name}
-          </Badge>
-        </div>
-        
         {/* Pitch markings */}
         <div className="field-markings">
           <div className="center-circle"></div>
@@ -76,7 +69,6 @@ const Formation = ({ teamA, teamB, teamSize }: FormationProps) => {
                   <FormationPlayer 
                     key={`${player.id}-${rowIndex}-${posIndex}`} 
                     player={player}
-                    position={positions}
                     index={playerIndex - 1}
                     teamColor={teamColor}
                   />
@@ -93,13 +85,13 @@ const Formation = ({ teamA, teamB, teamSize }: FormationProps) => {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
       <div className="team-pitch bg-blue-900/80 rounded-lg overflow-hidden h-[300px] relative">
         {renderTeam(teamA, "Team A", "red")}
-        <div className="team-name-overlay bg-red-700/80 text-white px-4 py-1 rounded-full font-semibold text-sm">
+        <div className="team-name-overlay absolute bottom-0 left-0 right-0 bg-red-700/80 text-white py-2 text-center font-semibold">
           Team A
         </div>
       </div>
       <div className="team-pitch bg-blue-900/80 rounded-lg overflow-hidden h-[300px] relative">
         {renderTeam(teamB, "Team B", "green")}
-        <div className="team-name-overlay bg-green-700/80 text-white px-4 py-1 rounded-full font-semibold text-sm">
+        <div className="team-name-overlay absolute bottom-0 left-0 right-0 bg-green-700/80 text-white py-2 text-center font-semibold">
           Team B
         </div>
       </div>

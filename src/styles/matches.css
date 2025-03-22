@@ -1,4 +1,3 @@
-
 @layer components {
   /* Team randomizer styling */
   .team-randomizer-container {
@@ -48,7 +47,7 @@
   /* Player hover card styling */
   .player-hover-card {
     @apply border border-blue-500/30 shadow-xl;
-    background-color: #0F1420; /* Very dark blue/almost black background - completely solid */
+    background-color: #0F1420;
     position: fixed;
     top: 50%;
     left: 50%;
@@ -95,7 +94,7 @@
   }
   
   .center-circle {
-    @apply absolute rounded-full border border-white/20;
+    @apply absolute rounded-full border-2 border-white/30;
     width: 80px;
     height: 80px;
     top: 50%;
@@ -104,14 +103,14 @@
   }
   
   .halfway-line {
-    @apply absolute border-t border-white/20;
+    @apply absolute border-t-2 border-white/30;
     width: 100%;
     top: 50%;
     left: 0;
   }
   
   .penalty-area-bottom {
-    @apply absolute border-t border-r border-l border-white/20;
+    @apply absolute border-t-2 border-r-2 border-l-2 border-white/30;
     width: 150px;
     height: 70px;
     bottom: 0;
@@ -120,7 +119,7 @@
   }
   
   .penalty-area-top {
-    @apply absolute border-b border-r border-l border-white/20;
+    @apply absolute border-b-2 border-r-2 border-l-2 border-white/30;
     width: 150px;
     height: 70px;
     top: 0;
@@ -129,7 +128,7 @@
   }
   
   .goal-area-bottom {
-    @apply absolute border-t border-r border-l border-white/20;
+    @apply absolute border-t-2 border-r-2 border-l-2 border-white/30;
     width: 60px;
     height: 30px;
     bottom: 0;
@@ -138,7 +137,7 @@
   }
   
   .goal-area-top {
-    @apply absolute border-b border-r border-l border-white/20;
+    @apply absolute border-b-2 border-r-2 border-l-2 border-white/30;
     width: 60px;
     height: 30px;
     top: 0;
@@ -326,7 +325,7 @@
   /* Team pitch styling */
   .team-pitch {
     @apply relative rounded-xl overflow-hidden flex flex-col items-center justify-center py-8;
-    background: linear-gradient(to bottom, #034694, #0a2351);
+    background: linear-gradient(to bottom, #0c326e, #0a2351);
     position: relative;
   }
   
