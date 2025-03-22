@@ -7,25 +7,25 @@ const PLAYERS_KEY = "football-tracker-players";
 const MATCHES_KEY = "football-tracker-matches";
 
 // Get players from local storage
-export const getPlayers = (): Player[] => {
+export const getPlayers = async (): Promise<Player[]> => {
   const players = localStorage.getItem(PLAYERS_KEY);
   return players ? JSON.parse(players) : [];
 };
 
 // Get a single player by ID
-export const getPlayer = (id: string): Player | undefined => {
-  const players = getPlayers();
+export const getPlayer = async (id: string): Promise<Player | undefined> => {
+  const players = await getPlayers();
   return players.find(player => player.id === id);
 };
 
 // Save players to local storage
-export const savePlayers = (players: Player[]) => {
+export const savePlayers = async (players: Player[]): Promise<void> => {
   localStorage.setItem(PLAYERS_KEY, JSON.stringify(players));
 };
 
 // Add a new player
-export const addPlayer = (player: Omit<Player, "id" | "stats" | "createdAt" | "updatedAt">): Player => {
-  const players = getPlayers();
+export const addPlayer = async (player: Omit<Player, "id" | "stats" | "createdAt" | "updatedAt">): Promise<Player> => {
+  const players = await getPlayers();
   const now = new Date().toISOString();
   
   const newPlayer: Player = {
@@ -42,13 +42,13 @@ export const addPlayer = (player: Omit<Player, "id" | "stats" | "createdAt" | "u
   };
   
   players.push(newPlayer);
-  savePlayers(players);
+  await savePlayers(players);
   return newPlayer;
 };
 
 // Update an existing player
-export const updatePlayer = (id: string, updates: Partial<Omit<Player, "id" | "createdAt" | "updatedAt">>): Player | undefined => {
-  const players = getPlayers();
+export const updatePlayer = async (id: string, updates: Partial<Omit<Player, "id" | "createdAt" | "updatedAt">>): Promise<Player | undefined> => {
+  const players = await getPlayers();
   const index = players.findIndex(player => player.id === id);
   
   if (index !== -1) {
@@ -58,7 +58,7 @@ export const updatePlayer = (id: string, updates: Partial<Omit<Player, "id" | "c
       ...updates,
       updatedAt: now
     };
-    savePlayers(players);
+    await savePlayers(players);
     return players[index];
   }
   
@@ -66,12 +66,12 @@ export const updatePlayer = (id: string, updates: Partial<Omit<Player, "id" | "c
 };
 
 // Delete a player
-export const deletePlayer = (id: string): boolean => {
-  const players = getPlayers();
+export const deletePlayer = async (id: string): Promise<boolean> => {
+  const players = await getPlayers();
   const filteredPlayers = players.filter(player => player.id !== id);
   
   if (filteredPlayers.length !== players.length) {
-    savePlayers(filteredPlayers);
+    await savePlayers(filteredPlayers);
     return true;
   }
   
@@ -79,25 +79,25 @@ export const deletePlayer = (id: string): boolean => {
 };
 
 // Get matches from local storage
-export const getMatches = (): Match[] => {
+export const getMatches = async (): Promise<Match[]> => {
   const matches = localStorage.getItem(MATCHES_KEY);
   return matches ? JSON.parse(matches) : [];
 };
 
 // Get a single match by ID
-export const getMatch = (id: string): Match | undefined => {
-  const matches = getMatches();
+export const getMatch = async (id: string): Promise<Match | undefined> => {
+  const matches = await getMatches();
   return matches.find(match => match.id === id);
 };
 
 // Save matches to local storage
-export const saveMatches = (matches: Match[]) => {
+export const saveMatches = async (matches: Match[]): Promise<void> => {
   localStorage.setItem(MATCHES_KEY, JSON.stringify(matches));
 };
 
 // Add a new match
-export const addMatch = (match: Omit<Match, "id" | "createdAt" | "updatedAt">): Match => {
-  const matches = getMatches();
+export const addMatch = async (match: Omit<Match, "id" | "createdAt" | "updatedAt">): Promise<Match> => {
+  const matches = await getMatches();
   const now = new Date().toISOString();
   
   const newMatch: Match = {
@@ -108,13 +108,13 @@ export const addMatch = (match: Omit<Match, "id" | "createdAt" | "updatedAt">): 
   };
   
   matches.push(newMatch);
-  saveMatches(matches);
+  await saveMatches(matches);
   return newMatch;
 };
 
 // Update an existing match
-export const updateMatch = (id: string, updates: Partial<Omit<Match, "id" | "createdAt" | "updatedAt">>): Match | undefined => {
-  const matches = getMatches();
+export const updateMatch = async (id: string, updates: Partial<Omit<Match, "id" | "createdAt" | "updatedAt">>): Promise<Match | undefined> => {
+  const matches = await getMatches();
   const index = matches.findIndex(match => match.id === id);
   
   if (index !== -1) {
@@ -124,11 +124,11 @@ export const updateMatch = (id: string, updates: Partial<Omit<Match, "id" | "cre
       ...updates,
       updatedAt: now
     };
-    saveMatches(matches);
+    await saveMatches(matches);
     
     // If the match was completed and scores were updated, update player stats
     if (updates.status === "completed" && (updates.teamA?.score !== undefined || updates.teamB?.score !== undefined)) {
-      updatePlayerStats(matches[index]);
+      await updatePlayerStats(matches[index]);
     }
     
     return matches[index];
@@ -138,12 +138,12 @@ export const updateMatch = (id: string, updates: Partial<Omit<Match, "id" | "cre
 };
 
 // Delete a match
-export const deleteMatch = (id: string): boolean => {
-  const matches = getMatches();
+export const deleteMatch = async (id: string): Promise<boolean> => {
+  const matches = await getMatches();
   const filteredMatches = matches.filter(match => match.id !== id);
   
   if (filteredMatches.length !== matches.length) {
-    saveMatches(filteredMatches);
+    await saveMatches(filteredMatches);
     return true;
   }
   
@@ -151,12 +151,12 @@ export const deleteMatch = (id: string): boolean => {
 };
 
 // Update player stats based on match results
-export const updatePlayerStats = (match: Match) => {
+export const updatePlayerStats = async (match: Match): Promise<void> => {
   if (match.status !== "completed" || match.teamA.score === undefined || match.teamB.score === undefined) {
     return;
   }
   
-  const players = getPlayers();
+  const players = await getPlayers();
   const updatedPlayers = [...players];
   const teamAWon = match.teamA.score > match.teamB.score;
   const teamBWon = match.teamB.score > match.teamA.score;
@@ -206,5 +206,5 @@ export const updatePlayerStats = (match: Match) => {
     }
   });
   
-  savePlayers(updatedPlayers);
+  await savePlayers(updatedPlayers);
 };

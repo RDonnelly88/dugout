@@ -48,7 +48,9 @@ const CreateMatch = () => {
         title: "Match created",
         description: "The match has been created successfully.",
       });
-      navigate(`/matches/${data.id}`);
+      // Type cast data to Match to access the id property
+      const match = data as Match;
+      navigate(`/matches/${match.id}`);
     },
     onError: () => {
       toast({

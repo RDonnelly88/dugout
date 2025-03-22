@@ -73,25 +73,27 @@ const Confetti = () => {
           }}
         />
       ))}
-      <style jsx>{`
-        @keyframes confetti-fall {
-          0% {
-            transform: translateY(0) rotate(${Math.random() * 360}deg);
+      <style>
+        {`
+          @keyframes confetti-fall {
+            0% {
+              transform: translateY(0) rotate(${Math.random() * 360}deg);
+            }
+            100% {
+              transform: translateY(100vh) rotate(${Math.random() * 360 + 360}deg);
+            }
           }
-          100% {
-            transform: translateY(100vh) rotate(${Math.random() * 360 + 360}deg);
+          
+          @keyframes confetti-sway {
+            0% {
+              transform: translateX(-5px);
+            }
+            100% {
+              transform: translateX(5px);
+            }
           }
-        }
-        
-        @keyframes confetti-sway {
-          0% {
-            transform: translateX(-5px);
-          }
-          100% {
-            transform: translateX(5px);
-          }
-        }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 };
