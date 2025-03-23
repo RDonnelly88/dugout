@@ -19,7 +19,6 @@ const TeamManagement = () => {
   const [inviteRole, setInviteRole] = useState<"admin" | "viewer">("viewer");
   const [isInviting, setIsInviting] = useState(false);
 
-  // Fetch team members
   const { data: teamMembers = [], isLoading, refetch } = useQuery({
     queryKey: ["teamMembers", currentTeam?.id],
     queryFn: async () => {
@@ -40,18 +39,13 @@ const TeamManagement = () => {
       
       if (error) throw error;
       
-      // Create a default profile for when no profile exists
       const defaultProfile = { username: 'Unknown User', avatar_url: null as string | null };
       
-      // Ensure profile data is properly shaped
       return (data || []).map(member => {
-        // Handle possible error with profile relation
         let profile = defaultProfile;
         
         if (member.profile && typeof member.profile === 'object' && member.profile !== null) {
-          // If profile has an error property, use the default profile
           if (!('error' in member.profile)) {
-            // Otherwise use the profile data (with type assertion for safety)
             profile = member.profile as { username: string, avatar_url: string | null };
           }
         }
