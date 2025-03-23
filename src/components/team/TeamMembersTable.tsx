@@ -117,7 +117,7 @@ const TeamMembersTable = ({
         {teamMembers.map((member) => (
           <TableRow key={member.id} className={member.user_id === user?.id ? "bg-gray-800/30" : ""}>
             <TableCell className="font-medium">
-              {member.profile?.username || 'Unknown User'}
+              {member.profile?.username || member.username || 'Unknown User'}
               {member.user_id === user?.id && <span className="ml-2 text-xs text-gray-400">(You)</span>}
             </TableCell>
             <TableCell>

@@ -15,6 +15,9 @@ export interface TeamMember {
   user_id: string;
   role: TeamRole;
   created_at: string;
+  // Add these new fields to accommodate both data structures
+  username?: string;
+  avatar_url?: string;
   profile?: {
     username: string;
     avatar_url: string | null;

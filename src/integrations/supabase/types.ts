@@ -313,6 +313,20 @@ export type Database = {
         }
         Returns: Json
       }
+      get_team_members: {
+        Args: {
+          team_id_param: string
+        }
+        Returns: {
+          id: string
+          user_id: string
+          team_id: string
+          role: string
+          created_at: string
+          username: string
+          avatar_url: string
+        }[]
+      }
       is_team_admin: {
         Args: {
           team_uuid: string

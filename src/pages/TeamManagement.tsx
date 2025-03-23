@@ -1,3 +1,4 @@
+
 import { useTeam } from "@/contexts/TeamContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,6 +31,7 @@ const TeamManagement = () => {
       try {
         console.log("Fetching team members for team:", currentTeam.id);
         
+        // Use a simple JOIN query instead of nested select
         const { data, error } = await supabase
           .from("team_members")
           .select(`
@@ -38,33 +40,54 @@ const TeamManagement = () => {
             team_id,
             role,
             created_at,
-            profiles(username, avatar_url)
+            profiles!inner(username, avatar_url)
           `)
           .eq("team_id", currentTeam.id)
           .order("created_at", { ascending: true });
         
-        if (error) throw error;
+        if (error) {
+          console.error("Error in normal query:", error);
+          
+          // Try the RPC function as a fallback
+          const { data: rpcData, error: rpcError } = await supabase
+            .rpc('get_team_members', { team_id_param: currentTeam.id });
+            
+          if (rpcError) {
+            console.error("Error in RPC function:", rpcError);
+            throw rpcError;
+          }
+          
+          console.log("Team members via RPC:", rpcData);
+          
+          return (rpcData || []).map((member: any) => ({
+            id: member.id,
+            user_id: member.user_id,
+            team_id: member.team_id,
+            role: member.role,
+            created_at: member.created_at,
+            username: member.username,
+            avatar_url: member.avatar_url,
+            profile: null
+          } as TeamMember));
+        }
         
         console.log("Raw team members data:", data);
         
-        // Define a default profile object to use when profile data is missing
-        const defaultProfile = { username: 'Unknown User', avatar_url: null };
-        
+        // Properly map the team members with profile data
         return (data || []).map(member => {
-          // Safely access profile data
-          const profile = member.profiles || defaultProfile;
-          
-          // Construct the TeamMember object with all required fields
+          // Process profile data if available
           return {
             id: member.id,
             user_id: member.user_id,
             team_id: member.team_id,
             role: member.role,
             created_at: member.created_at,
-            profile: {
-              username: typeof profile === 'object' ? (profile.username || defaultProfile.username) : defaultProfile.username,
-              avatar_url: typeof profile === 'object' ? profile.avatar_url : null
-            }
+            username: member.profiles?.username,
+            avatar_url: member.profiles?.avatar_url,
+            profile: member.profiles ? {
+              username: member.profiles.username,
+              avatar_url: member.profiles.avatar_url
+            } : null
           } as TeamMember;
         });
       } catch (error) {

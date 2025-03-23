@@ -48,6 +48,7 @@ const TeamSelector = () => {
           variant: "destructive",
         });
       } else {
+        console.log("Team creation successful in TeamSelector");
         setNewTeamName("");
         setIsCreateDialogOpen(false);
         setIsPopoverOpen(false);
