@@ -113,13 +113,15 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const createTeam = async (name: string) => {
     if (!user) {
-      console.error("Cannot create team: No authenticated user");
+      toast({
+        title: "Authentication required",
+        description: "You must be signed in to create a team",
+        variant: "destructive",
+      });
       return { error: "Not authenticated" };
     }
 
     try {
-      console.log("Creating team with user:", user);
-      
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("id")
@@ -127,44 +129,48 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
       
       if (profileError) {
-        console.error("Profile check error:", profileError);
+        console.log("Profile check error:", profileError);
         
         if (profileError.code === "PGRST116") {
-          console.log("Profile not found, creating new profile");
-          const { data: newProfile, error: createProfileError } = await supabase
+          const { error: createProfileError } = await supabase
             .from("profiles")
             .insert([{ 
               id: user.id,
               username: user.email,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
-            }])
-            .select();
+            }]);
             
           if (createProfileError) {
             console.error("Error creating profile:", createProfileError);
+            toast({
+              title: "Error creating profile",
+              description: createProfileError.message || "Failed to create user profile",
+              variant: "destructive",
+            });
             return { error: createProfileError };
           }
-          
-          console.log("Profile created successfully:", newProfile);
         } else {
           console.error("Error checking profile:", profileError);
+          toast({
+            title: "Error checking profile",
+            description: profileError.message || "Failed to check user profile",
+            variant: "destructive",
+          });
           return { error: profileError };
         }
-      } else {
-        console.log("Existing profile found:", profileData);
       }
       
       console.log("Creating team with name:", name);
       
-      const { data: teamData, error: teamError } = await supabase
+      const { data: newTeam, error: teamError } = await supabase
         .from("teams")
-        .insert([{ 
-          name, 
+        .insert({
+          name,
           created_by: user.id,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        }])
+        })
         .select();
 
       if (teamError) {
@@ -177,49 +183,56 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error: teamError };
       }
 
-      if (!teamData || teamData.length === 0) {
+      if (!newTeam || newTeam.length === 0) {
+        const noDataError = new Error("No team data returned");
         console.error("Team created but no data returned");
-        return { error: "No team data returned" };
+        toast({
+          title: "Team creation failed",
+          description: "Team was created but no data was returned",
+          variant: "destructive",
+        });
+        return { error: noDataError };
       }
 
-      console.log("Team created successfully:", teamData);
-      const createdTeam = teamData[0];
+      const createdTeam = newTeam[0];
+      console.log("Team created successfully:", createdTeam);
 
-      console.log("Adding user as team member");
-      const { data: memberData, error: memberError } = await supabase
+      const { error: memberError } = await supabase
         .from("team_members")
-        .insert([{
+        .insert({
           team_id: createdTeam.id,
           user_id: user.id,
           role: "admin",
           created_at: new Date().toISOString()
-        }])
-        .select();
+        });
 
       if (memberError) {
         console.error("Team member creation error:", memberError);
+        
+        await supabase
+          .from("teams")
+          .delete()
+          .eq("id", createdTeam.id);
+        
         toast({
           title: "Team member creation failed",
           description: memberError.message || "There was an error adding you to the team",
           variant: "destructive",
         });
         
-        await supabase.from("teams").delete().eq("id", createdTeam.id);
         return { error: memberError };
       }
 
-      console.log("Team member record created successfully:", memberData);
-
-      const newTeam = {
+      const team = {
         id: createdTeam.id,
         name: createdTeam.name,
         created_at: createdTeam.created_at
       };
 
-      setUserTeams(prevTeams => [...prevTeams, newTeam]);
-      setCurrentTeam(newTeam);
+      setUserTeams(prevTeams => [...prevTeams, team]);
+      setCurrentTeam(team);
       setUserRole("admin");
-      localStorage.setItem("currentTeamId", newTeam.id);
+      localStorage.setItem("currentTeamId", team.id);
 
       toast({
         title: "Team created",
@@ -227,11 +240,11 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       return { error: null };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Team creation exception:", error);
       toast({
         title: "Team creation failed",
-        description: "An unexpected error occurred. Please try again.",
+        description: error.message || "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
       return { error };
