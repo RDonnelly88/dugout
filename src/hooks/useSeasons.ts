@@ -2,23 +2,28 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getSeasons, getMatches, getSeasonChampions } from "@/lib/db";
+import { useTeam } from "@/contexts/TeamContext";
 
 export const useSeasons = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const { currentTeam } = useTeam();
 
   const { data: seasons = [], isLoading: isLoadingSeasons } = useQuery({
-    queryKey: ['seasons'],
-    queryFn: getSeasons
+    queryKey: ['seasons', currentTeam?.id],
+    queryFn: getSeasons,
+    enabled: !!currentTeam
   });
 
   const { data: matches = [], isLoading: isLoadingMatches } = useQuery({
-    queryKey: ['matches'],
-    queryFn: getMatches
+    queryKey: ['matches', currentTeam?.id],
+    queryFn: getMatches,
+    enabled: !!currentTeam
   });
 
   const { data: champions = [], isLoading: isLoadingChampions } = useQuery({
-    queryKey: ['seasonChampions'],
-    queryFn: () => getSeasonChampions()
+    queryKey: ['seasonChampions', currentTeam?.id],
+    queryFn: () => getSeasonChampions(),
+    enabled: !!currentTeam
   });
 
   // Get stats for each season

@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Season } from "@/types";
+import { useTeam } from "@/contexts/TeamContext";
 
 interface SeasonSelectProps {
   value: string | undefined;
@@ -17,9 +18,12 @@ interface SeasonSelectProps {
 }
 
 const SeasonSelect = ({ value, onChange }: SeasonSelectProps) => {
+  const { currentTeam } = useTeam();
+  
   const { data: seasons = [], isLoading } = useQuery({
-    queryKey: ['seasons'],
-    queryFn: getSeasons
+    queryKey: ['seasons', currentTeam?.id],
+    queryFn: getSeasons,
+    enabled: !!currentTeam
   });
 
   // Find current season if not already selected

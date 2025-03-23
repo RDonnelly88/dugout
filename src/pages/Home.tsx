@@ -1,22 +1,12 @@
-
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { getPlayers, getMatches, getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import PlayerCard from "@/components/players/PlayerCard";
-import MatchListItem from "@/components/matches/MatchListItem";
-import CurrentSeasonCard from "@/components/players/CurrentSeasonCard";
-import SeasonLeaderboard from "@/components/seasons/SeasonLeaderboard";
-import { useAuth } from "@/contexts/AuthContext";
 import { useTeam } from "@/contexts/TeamContext";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import TeamSwitcher from "@/components/team/TeamSwitcher";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { getCurrentSeason, getSeasonPlayerStats, getMatches } from "@/lib/db";
+import SeasonLeaderboard from "@/components/seasons/SeasonLeaderboard";
 import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
-import { Player, Match, Season, SeasonPlayerStats } from "@/types";
+import CurrentSeasonCard from "@/components/players/CurrentSeasonCard";
+import MatchListItem from "@/components/matches/MatchListItem";
 
 // Component to create a team when user has no teams
 const CreateFirstTeam = () => {
@@ -122,50 +112,8 @@ const SelectTeam = () => {
 
 // Main home component showing dashboard
 const Home = () => {
-  const { user } = useAuth();
-  const { currentTeam, userTeams } = useTeam();
+  const { userTeams, currentTeam } = useTeam();
   
-  const { data: players = [] } = useQuery<Player[]>({
-    queryKey: ["players", currentTeam?.id],
-    queryFn: () => getPlayers(),
-    enabled: !!currentTeam
-  });
-
-  const { data: matches = [] } = useQuery<Match[]>({
-    queryKey: ["matches", currentTeam?.id],
-    queryFn: () => getMatches(),
-    enabled: !!currentTeam
-  });
-
-  const { data: currentSeason } = useQuery<Season | undefined>({
-    queryKey: ["currentSeason", currentTeam?.id],
-    queryFn: () => getCurrentSeason(),
-    enabled: !!currentTeam
-  });
-
-  const { data: seasonPlayerStats = [] } = useQuery<SeasonPlayerStats[]>({
-    queryKey: ["seasonPlayerStats", currentSeason?.id, currentTeam?.id],
-    queryFn: () => currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
-    enabled: !!currentSeason && !!currentTeam
-  });
-  
-  // Get player form data for the top players
-  const topPlayerIds = seasonPlayerStats
-    .sort((a, b) => b.points - a.points)
-    .slice(0, 5)
-    .map(player => player.playerId);
-    
-  const { formData: topPlayerForms, isLoading: isLoadingForms } = useBatchFormLoader(
-    currentSeason?.id || null,
-    topPlayerIds
-  );
-
-  // Dummy handler for delete actions (required by components)
-  const handleDeleteItem = () => {
-    // No actual deletion in the dashboard view
-    console.log("Delete action not implemented in dashboard view");
-  };
-
   // If user has no teams, show create team UI
   if (userTeams.length === 0) {
     return <CreateFirstTeam />;
@@ -175,12 +123,52 @@ const Home = () => {
   if (!currentTeam) {
     return <SelectTeam />;
   }
+  
+  return <Dashboard />;
+};
 
-  // Filter recent matches to show only 5 most recent
+// Dashboard component for the home page
+const Dashboard = () => {
+  const { currentTeam } = useTeam();
+  
+  // Get current season data
+  const { data: currentSeason } = useQuery({
+    queryKey: ["currentSeason", currentTeam?.id],
+    queryFn: getCurrentSeason,
+    enabled: !!currentTeam
+  });
+
+  // Get player stats for current season
+  const { data: seasonPlayerStats = [] } = useQuery({
+    queryKey: ["seasonPlayerStats", currentSeason?.id, currentTeam?.id],
+    queryFn: () => currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
+    enabled: !!currentSeason && !!currentTeam
+  });
+  
+  // Get matches
+  const { data: matches = [] } = useQuery({
+    queryKey: ["matches", currentTeam?.id],
+    queryFn: getMatches,
+    enabled: !!currentTeam
+  });
+  
+  // Get top 5 players for current season
+  const topPlayerIds = seasonPlayerStats
+    .sort((a, b) => b.points - a.points)
+    .slice(0, 5)
+    .map(player => player.playerId);
+    
+  // Get form data for top players
+  const { formData: topPlayerForms, isLoading: isLoadingForms } = useBatchFormLoader(
+    currentSeason?.id || null,
+    topPlayerIds
+  );
+
+  // Filter recent matches
   const recentMatches = [...matches]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
-
+  
   return (
     <div className="page-container">
       <div className="team-header mb-4">
@@ -225,7 +213,7 @@ const Home = () => {
                     <MatchListItem 
                       key={match.id} 
                       match={match} 
-                      onDeleteClick={handleDeleteItem} 
+                      onDeleteClick={() => {}} 
                     />
                   ))}
                 </div>
@@ -234,38 +222,15 @@ const Home = () => {
           </Card>
         </div>
         
-        {/* Players */}
+        {/* Team Info */}
         <div className="space-y-6">
           <Card className="bg-gray-900 border-gray-800">
             <CardHeader>
-              <CardTitle>Top Players</CardTitle>
-              <CardDescription>Players with the best stats</CardDescription>
+              <CardTitle>Team Management</CardTitle>
+              <CardDescription>Manage your current team</CardDescription>
             </CardHeader>
             <CardContent>
-              {players.length === 0 ? (
-                <p className="text-center py-8 text-gray-400">No players found</p>
-              ) : (
-                <div className="grid grid-cols-1 gap-4">
-                  {players
-                    .sort((a, b) => 
-                      (b.stats.won - b.stats.lost) - (a.stats.won - a.stats.lost)
-                    )
-                    .slice(0, 3)
-                    .map(player => (
-                      <div key={player.id} className="transition-all hover:translate-y-[-2px]">
-                        <PlayerCard 
-                          player={player} 
-                          seasonId={currentSeason?.id || null}
-                          seasonStats={seasonPlayerStats.find(s => s.playerId === player.id)}
-                          formResults={topPlayerForms[player.id] || []}
-                          isLoadingForms={isLoadingForms}
-                          onDeleteClick={handleDeleteItem}
-                        />
-                      </div>
-                    ))
-                  }
-                </div>
-              )}
+              <TeamSwitcher variant="card" />
             </CardContent>
           </Card>
         </div>
