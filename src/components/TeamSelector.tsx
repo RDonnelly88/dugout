@@ -12,27 +12,45 @@ import { useToast } from "@/hooks/use-toast";
 
 const TeamSelector = () => {
   const { currentTeam, userTeams, userRole, switchTeam, createTeam } = useTeam();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newTeamName, setNewTeamName] = useState("");
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [isCreatingTeam, setIsCreatingTeam] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   const handleCreateTeam = async () => {
     if (!newTeamName.trim()) return;
     
     setIsCreatingTeam(true);
+    setDebugInfo(null);
+    
     try {
-      await createTeam(newTeamName);
-      setNewTeamName("");
-      setIsCreateDialogOpen(false);
-      toast({
-        title: "Team created",
-        description: `Team "${newTeamName}" has been created successfully`,
-      });
-    } catch (error) {
+      // Log the current user ID for debugging
+      console.log("Creating team with user ID:", user?.id);
+      
+      const { error } = await createTeam(newTeamName);
+      
+      if (error) {
+        console.error("Team creation detailed error:", error);
+        setDebugInfo(`Error: ${JSON.stringify(error)}`);
+        toast({
+          title: "Team creation failed",
+          description: error.message || "There was an error creating your team. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        setNewTeamName("");
+        setIsCreateDialogOpen(false);
+        toast({
+          title: "Team created",
+          description: `Team "${newTeamName}" has been created successfully`,
+        });
+      }
+    } catch (error: any) {
       console.error("Team creation error:", error);
+      setDebugInfo(`Exception: ${error.message}`);
       toast({
         title: "Team creation failed",
         description: "There was an error creating your team. Please try again.",
@@ -103,6 +121,13 @@ const TeamSelector = () => {
                     onChange={(e) => setNewTeamName(e.target.value)}
                   />
                 </div>
+                
+                {debugInfo && (
+                  <div className="p-2 bg-red-950 border border-red-800 rounded text-xs overflow-auto">
+                    <p className="font-bold mb-1">Debug Information:</p>
+                    <p className="font-mono whitespace-pre-wrap">{debugInfo}</p>
+                  </div>
+                )}
               </div>
               <DialogFooter>
                 <Button
