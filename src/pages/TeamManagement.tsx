@@ -43,10 +43,13 @@ const TeamManagement = () => {
       
       // Ensure profile data is properly shaped
       return (data || []).map(member => {
-        // Handle possible error with profile relation
-        const profile = member.profile && typeof member.profile === 'object' && !('error' in member.profile)
-          ? member.profile
-          : { username: 'Unknown User', avatar_url: null };
+        // Handle possible error with profile relation - making sure to check if profile exists and is an object
+        const profile = member.profile && 
+          typeof member.profile === 'object' && 
+          member.profile !== null && 
+          !('error' in member.profile)
+            ? member.profile
+            : { username: 'Unknown User', avatar_url: null };
           
         return {
           ...member,
