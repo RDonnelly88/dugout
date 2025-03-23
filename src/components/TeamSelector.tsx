@@ -70,6 +70,28 @@ const TeamSelector = () => {
     }
   };
 
+  const handleTeamSwitch = (teamId: string, e: React.MouseEvent) => {
+    // Prevent event from bubbling up to parent elements
+    e.preventDefault();
+    e.stopPropagation();
+    
+    switchTeam(teamId);
+    setIsPopoverOpen(false);
+  };
+
+  const handleCreateTeamClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsCreateDialogOpen(true);
+    setIsPopoverOpen(false);
+  };
+
+  const handleSignOut = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    signOut();
+  };
+
   return (
     <div className="flex items-center">
       <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
@@ -91,10 +113,7 @@ const TeamSelector = () => {
               <button
                 key={team.id}
                 className="flex items-center justify-between w-full px-2.5 py-2 text-sm hover:bg-gray-700 cursor-pointer"
-                onClick={() => {
-                  switchTeam(team.id);
-                  setIsPopoverOpen(false);
-                }}
+                onClick={(e) => handleTeamSwitch(team.id, e)}
               >
                 <span className="truncate">{team.name}</span>
                 {currentTeam?.id === team.id && (
@@ -114,10 +133,7 @@ const TeamSelector = () => {
               <DialogTrigger asChild>
                 <button
                   className="flex items-center w-full px-2.5 py-2 text-sm text-primary hover:bg-gray-700 cursor-pointer"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation(); // Critical: Prevent click from bubbling up
-                  }}
+                  onClick={handleCreateTeamClick}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Create New Team
@@ -170,7 +186,7 @@ const TeamSelector = () => {
           <div className="border-t border-gray-700 px-2 py-1.5">
             <button
               className="flex items-center w-full px-2.5 py-2 text-sm hover:bg-gray-700 cursor-pointer"
-              onClick={signOut}
+              onClick={handleSignOut}
             >
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out

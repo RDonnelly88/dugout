@@ -1,4 +1,3 @@
-
 import { useTeam } from "@/contexts/TeamContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { TeamMember } from "@/types/team";
 import TeamMembersTable from "@/components/team/TeamMembersTable";
 import InviteMemberForm from "@/components/team/InviteMemberForm";
+import TeamSwitcher from "@/components/team/TeamSwitcher";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -308,7 +308,9 @@ const TeamManagement = () => {
           </Card>
         </div>
         
-        <div className="col-span-1">
+        <div className="col-span-1 space-y-8">
+          <TeamSwitcher />
+          
           {userRole === "admin" ? (
             <Card className="bg-gray-900 border-gray-800">
               <CardHeader>
@@ -383,3 +385,4 @@ const TeamManagement = () => {
 };
 
 export default TeamManagement;
+
