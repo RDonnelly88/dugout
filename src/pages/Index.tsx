@@ -1,83 +1,38 @@
 
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Users, Trophy, ArrowRight, Plus, Calendar, Shield } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Users, Trophy, ArrowRight, Plus, Shield } from 'lucide-react';
 
 const Index = () => {
-  const [loaded, setLoaded] = useState(false);
-  
-  useEffect(() => {
-    // Ensure animations are triggered after component mount
-    setTimeout(() => setLoaded(true), 100);
-  }, []);
-
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#0f172a]">
-      {/* Dynamic Background Elements */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        {/* Base overlay */}
-        <div className="absolute inset-0 bg-[url('/lovable-uploads/5272ffa1-ea39-4215-af61-28746198cab8.png')] bg-cover bg-center opacity-10"></div>
-        
-        {/* Large glowing orbs - much larger and more visible */}
-        <div className="absolute top-[10%] left-[20%] w-[500px] h-[500px] rounded-full bg-primary/20 blur-[100px] animate-pulse"></div>
-        <div className="absolute bottom-[30%] right-[10%] w-[600px] h-[600px] rounded-full bg-accent/20 blur-[100px] animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-[40%] right-[30%] w-[400px] h-[400px] rounded-full bg-[#06b6d4]/20 blur-[100px] animate-pulse" style={{ animationDelay: '2s' }}></div>
-        
-        {/* Tech grid overlay */}
-        <div className="absolute inset-0" style={{ 
-          backgroundImage: 'linear-gradient(rgba(45, 212, 191, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(45, 212, 191, 0.2) 1px, transparent 1px)', 
-          backgroundSize: '50px 50px'
-        }}></div>
-        
-        {/* Highly visible light streaks */}
-        <div className={`absolute h-[5px] w-[500px] bg-gradient-to-r from-transparent via-primary to-transparent top-[20%] -left-[250px] ${loaded ? 'animate-[slide-in-right_15s_linear_infinite]' : ''}`}></div>
-        <div className={`absolute h-[5px] w-[400px] bg-gradient-to-r from-transparent via-primary to-transparent top-[40%] -left-[200px] ${loaded ? 'animate-[slide-in-right_10s_linear_infinite]' : ''}`} style={{ animationDelay: '2s' }}></div>
-        <div className={`absolute h-[5px] w-[600px] bg-gradient-to-r from-transparent via-accent to-transparent top-[60%] -left-[300px] ${loaded ? 'animate-[slide-in-right_12s_linear_infinite]' : ''}`} style={{ animationDelay: '1s' }}></div>
-        <div className={`absolute h-[5px] w-[450px] bg-gradient-to-r from-transparent via-primary to-transparent top-[80%] -left-[225px] ${loaded ? 'animate-[slide-in-right_8s_linear_infinite]' : ''}`} style={{ animationDelay: '3s' }}></div>
-        
-        {/* Scanner animation */}
-        <div className={`absolute inset-0 overflow-hidden ${loaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-1000`}>
-          <div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-r from-transparent via-primary to-transparent animate-scanner"></div>
-        </div>
-        
-        {/* Floating particles - larger and more visible */}
-        {loaded && Array.from({ length: 20 }).map((_, i) => (
-          <div 
-            key={i}
-            className="absolute rounded-full animate-float"
-            style={{
-              backgroundColor: i % 2 === 0 ? 'rgba(45, 212, 191, 0.8)' : 'rgba(20, 184, 166, 0.8)',
-              width: `${Math.random() * 10 + 5}px`,
-              height: `${Math.random() * 10 + 5}px`,
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              animationDuration: `${Math.random() * 5 + 3}s`,
-              animationDelay: `${Math.random() * 2}s`
-            }}
-          />
-        ))}
+    <div className="min-h-screen relative overflow-hidden bg-[#0f172a]">
+      {/* Dynamic Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-900/40 via-indigo-900/30 to-purple-900/40"></div>
+        <div className="absolute inset-0 bg-[url('/lovable-uploads/c3cc0d40-1885-4c96-8a3b-8bdbe268a70a.png')] bg-cover bg-center opacity-20 mix-blend-overlay"></div>
+        <div className="absolute top-[10%] right-[20%] w-64 h-64 rounded-full bg-blue-500/10 blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-[20%] left-[10%] w-96 h-96 rounded-full bg-purple-500/10 blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
       </div>
       
       {/* Hero Section */}
       <div className="relative z-10 container mx-auto px-4 pt-20 pb-12 md:pt-32 md:pb-20">
-        <div className={`text-center mb-12 md:mb-16 transition-all duration-1000 transform ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/90 to-accent animation-glow">
+        <div className="text-center mb-12 md:mb-16 animate-fade-in">
+          <h1 className="text-5xl md:text-7xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">
             5-A-Side Tracker
           </h1>
-          <div className="h-1 w-40 mx-auto bg-gradient-to-r from-primary to-accent rounded-full mb-8"></div>
-          <p className="text-xl md:text-2xl text-primary/80 max-w-2xl mx-auto mb-10">
+          <div className="h-1 w-40 mx-auto bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mb-6"></div>
+          <p className="text-xl md:text-2xl text-blue-100/80 max-w-2xl mx-auto mb-8">
             Track your five-a-side football matches, create balanced teams, and keep detailed player statistics.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-5 justify-center max-w-md mx-auto">
-            <Button asChild size="lg" className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 border-none text-primary-foreground shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all">
+            <Button asChild size="lg" className="bg-gradient-to-r from-blue-600 to-indigo-600 border-none shadow-lg shadow-blue-900/30 hover:shadow-blue-900/50 hover:from-blue-500 hover:to-indigo-500 transition-all">
               <Link to="/players">
                 <Users className="h-5 w-5 mr-2" />
                 Manage Players
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/20 shadow-lg shadow-primary/10">
+            <Button asChild size="lg" variant="outline" className="border-blue-400/30 bg-blue-900/20 backdrop-blur-sm hover:bg-blue-800/30 text-blue-100 shadow-lg shadow-blue-900/20">
               <Link to="/matches/create">
                 <Plus className="h-5 w-5 mr-2" />
                 Create Match
@@ -88,84 +43,90 @@ const Index = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="relative z-10 container mx-auto px-4 pb-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+      <div className="relative z-10 container mx-auto px-4 pb-20">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
           {/* Players Card */}
-          <div className={`bg-black/40 backdrop-blur-xl border border-primary/30 rounded-2xl overflow-hidden shadow-lg transform transition-all duration-700 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`} style={{ transitionDelay: '200ms' }}>
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent"></div>
-            <div className="p-8 relative">
-              <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                <Users className="h-8 w-8 text-primary" />
+          <div className="glass-effect rounded-2xl p-8 text-center transform hover:scale-105 transition-all duration-300 shadow-lg shadow-blue-900/10 hover:shadow-blue-900/20 relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-blue-900/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative z-10">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-900/20">
+                <Users className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-4xl font-bold text-white text-center mb-2">17</h3>
-              <p className="text-primary/80 text-center">Players Registered</p>
+              <h3 className="text-4xl font-bold text-white mb-1">10</h3>
+              <p className="text-blue-200/80">Players Registered</p>
             </div>
           </div>
 
-          {/* Matches Card */}
-          <div className={`bg-black/40 backdrop-blur-xl border border-accent/30 rounded-2xl overflow-hidden shadow-lg transform transition-all duration-700 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`} style={{ transitionDelay: '400ms' }}>
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent to-transparent"></div>
-            <div className="p-8 relative">
-              <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                <Trophy className="h-8 w-8 text-accent" />
+          {/* Total Matches Card */}
+          <div className="glass-effect rounded-2xl p-8 text-center transform hover:scale-105 transition-all duration-300 shadow-lg shadow-green-900/10 hover:shadow-green-900/20 relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/10 to-emerald-900/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative z-10">
+              <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-900/20">
+                <Trophy className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-4xl font-bold text-white text-center mb-2">2</h3>
-              <p className="text-accent/80 text-center">Total Matches</p>
+              <h3 className="text-4xl font-bold text-white mb-1">1</h3>
+              <p className="text-emerald-200/80">Total Matches</p>
+            </div>
+          </div>
+
+          {/* Completed Matches Card */}
+          <div className="glass-effect rounded-2xl p-8 text-center transform hover:scale-105 transition-all duration-300 shadow-lg shadow-amber-900/10 hover:shadow-amber-900/20 relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-600/10 to-amber-900/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative z-10">
+              <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-amber-900/20">
+                <Trophy className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-4xl font-bold text-white mb-1">1</h3>
+              <p className="text-amber-200/80">Completed Matches</p>
             </div>
           </div>
 
           {/* Upcoming Matches Card */}
-          <div className={`bg-black/40 backdrop-blur-xl border border-primary/30 rounded-2xl overflow-hidden shadow-lg transform transition-all duration-700 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`} style={{ transitionDelay: '600ms' }}>
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent"></div>
-            <div className="p-8 relative">
-              <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                <Calendar className="h-8 w-8 text-primary" />
+          <div className="glass-effect rounded-2xl p-8 text-center transform hover:scale-105 transition-all duration-300 shadow-lg shadow-purple-900/10 hover:shadow-purple-900/20 relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-purple-900/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative z-10">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-900/20">
+                <Shield className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-4xl font-bold text-white text-center mb-2">0</h3>
-              <p className="text-primary/80 text-center">Upcoming Matches</p>
+              <h3 className="text-4xl font-bold text-white mb-1">0</h3>
+              <p className="text-purple-200/80">Upcoming Matches</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Features Section */}
-      <div className="relative z-10 container mx-auto px-4 pb-24">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Player Management */}
-            <div className={`p-8 rounded-2xl bg-black/40 backdrop-blur-xl border border-primary/30 shadow-lg transition-all duration-700 transform ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`} style={{ transitionDelay: '800ms' }}>
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center mr-4">
-                  <Users className="h-6 w-6 text-primary" />
+      {/* Feature Section */}
+      <div className="relative z-10 pb-24">
+        <div className="container mx-auto px-4">
+          <div className="glass-card rounded-3xl p-8 max-w-5xl mx-auto backdrop-blur-xl bg-blue-950/30 border border-blue-500/20 shadow-xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-900/40 to-blue-950/40 border border-blue-500/10 shadow-inner">
+                <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4">
+                  <Users className="h-6 w-6 text-blue-400" />
                 </div>
-                <h3 className="text-xl font-bold text-white">Player Management</h3>
+                <h3 className="text-xl font-semibold text-white mb-3">Player Management</h3>
+                <p className="text-blue-200/70 mb-4">Create and manage player profiles with detailed statistics and performance tracking.</p>
+                <Button asChild variant="link" className="p-0 text-blue-400 hover:text-blue-300">
+                  <Link to="/players" className="flex items-center">
+                    Manage Players
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Link>
+                </Button>
               </div>
-              <p className="text-gray-300 mb-4">Create and manage player profiles with detailed statistics and performance tracking for your five-a-side team.</p>
-              <Button asChild variant="link" className="p-0 text-primary hover:text-primary/80">
-                <Link to="/players" className="flex items-center">
-                  Manage Players
-                  <ArrowRight className="h-4 w-4 ml-2 animate-pulse" />
-                </Link>
-              </Button>
-            </div>
-            
-            {/* Match Tracking */}
-            <div className={`p-8 rounded-2xl bg-black/40 backdrop-blur-xl border border-accent/30 shadow-lg transition-all duration-700 transform ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`} style={{ transitionDelay: '1000ms' }}>
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent/50 to-transparent"></div>
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-accent/20 rounded-xl flex items-center justify-center mr-4">
-                  <Trophy className="h-6 w-6 text-accent" />
+              
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-indigo-900/40 to-indigo-950/40 border border-indigo-500/10 shadow-inner">
+                <div className="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center mb-4">
+                  <Trophy className="h-6 w-6 text-indigo-400" />
                 </div>
-                <h3 className="text-xl font-bold text-white">Match Tracking</h3>
+                <h3 className="text-xl font-semibold text-white mb-3">Match Tracking</h3>
+                <p className="text-indigo-200/70 mb-4">Organize matches, record scores, and automatically update player statistics.</p>
+                <Button asChild variant="link" className="p-0 text-indigo-400 hover:text-indigo-300">
+                  <Link to="/matches" className="flex items-center">
+                    View Matches
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Link>
+                </Button>
               </div>
-              <p className="text-gray-300 mb-4">Record match results, track team performance, and maintain a complete history of all your five-a-side games.</p>
-              <Button asChild variant="link" className="p-0 text-accent hover:text-accent/80">
-                <Link to="/matches" className="flex items-center">
-                  View Matches
-                  <ArrowRight className="h-4 w-4 ml-2 animate-pulse" />
-                </Link>
-              </Button>
             </div>
           </div>
         </div>

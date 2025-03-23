@@ -99,27 +99,25 @@ export default {
 					'50%': { transform: 'translateY(-10px) rotate(2deg)' },
 					'100%': { transform: 'translateY(0) rotate(0deg)' }
 				},
-				scanner: {
-					'0%': { transform: 'translateY(-100vh)', opacity: '0.7' },
-					'50%': { opacity: '0.3' },
-					'100%': { transform: 'translateY(100vh)', opacity: '0.7' }
+				'slide-up': {
+					'0%': { transform: 'translateY(20px)', opacity: '0' },
+					'100%': { transform: 'translateY(0)', opacity: '1' }
+				},
+				'slide-down': {
+					'0%': { transform: 'translateY(-20px)', opacity: '0' },
+					'100%': { transform: 'translateY(0)', opacity: '1' }
 				},
 				'slide-in-right': {
-					'0%': { transform: 'translateX(-150vw)' },
-					'100%': { transform: 'translateX(150vw)' }
+					'0%': { transform: 'translateX(100%)', opacity: '0' },
+					'100%': { transform: 'translateX(0)', opacity: '1' }
 				},
-				float: {
-					'0%': { transform: 'translateY(0)' },
-					'50%': { transform: 'translateY(-15px)' },
-					'100%': { transform: 'translateY(0)' }
+				'slide-in-left': {
+					'0%': { transform: 'translateX(-100%)', opacity: '0' },
+					'100%': { transform: 'translateX(0)', opacity: '1' }
 				},
-				glow: {
-					'0%, 100%': { 
-						textShadow: '0 0 5px rgba(45, 212, 191, 0.5), 0 0 15px rgba(45, 212, 191, 0.3)' 
-					},
-					'50%': { 
-						textShadow: '0 0 10px rgba(45, 212, 191, 0.8), 0 0 30px rgba(45, 212, 191, 0.5)' 
-					}
+				spin: {
+					'0%': { transform: 'rotate(0deg)' },
+					'100%': { transform: 'rotate(360deg)' }
 				},
 				'confetti-slow': {
 					'0%': { transform: 'translate3d(0,0,0) rotateX(0) rotateY(0)' },
@@ -142,10 +140,11 @@ export default {
 				pulse: 'pulse 1.5s ease-in-out infinite',
 				bounce: 'bounce 1s ease-in-out infinite',
 				'card-float': 'card-float 3s ease-in-out infinite',
-				scanner: 'scanner 8s linear infinite',
-				'slide-in-right': 'slide-in-right 15s linear infinite',
-				float: 'float 3s ease-in-out infinite',
-				glow: 'glow 4s ease-in-out infinite',
+				'slide-up': 'slide-up 0.3s ease-out',
+				'slide-down': 'slide-down 0.3s ease-out',
+				'slide-in-right': 'slide-in-right 0.3s ease-out',
+				'slide-in-left': 'slide-in-left 0.3s ease-out',
+				spin: 'spin 1s linear infinite',
 				'confetti-slow': 'confetti-slow 2.5s linear infinite',
 				'confetti-medium': 'confetti-medium 2s linear infinite',
 				'confetti-fast': 'confetti-fast 1.5s linear infinite'
