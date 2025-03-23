@@ -75,7 +75,7 @@ export const mapSupabaseToSeason = (data: any): Season => {
 };
 
 // Helper function to map our Season type to Supabase format
-export const mapSeasonToSupabase = (season: any) => {
+export const mapSeasonToSupabase = (season: Omit<Season, "id" | "createdAt" | "updatedAt">): any => {
   return {
     name: season.name,
     start_date: season.startDate,
