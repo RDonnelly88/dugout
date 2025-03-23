@@ -10,18 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-
-type TeamMember = {
-  id: string;
-  user_id: string;
-  team_id: string;
-  role: "admin" | "viewer";
-  created_at: string;
-  profile: {
-    username: string;
-    avatar_url: string | null;
-  };
-};
+import { TeamMember } from "@/types/team";
 
 const TeamManagement = () => {
   const { currentTeam, userRole, inviteToTeam } = useTeam();
@@ -51,7 +40,19 @@ const TeamManagement = () => {
         .order("created_at", { ascending: true });
       
       if (error) throw error;
-      return data as TeamMember[];
+      
+      // Ensure profile data is properly shaped
+      return (data || []).map(member => {
+        // Handle possible error with profile relation
+        const profile = member.profile && typeof member.profile === 'object' && !('error' in member.profile)
+          ? member.profile
+          : { username: 'Unknown User', avatar_url: null };
+          
+        return {
+          ...member,
+          profile
+        } as TeamMember;
+      });
     },
     enabled: !!currentTeam,
   });
@@ -180,7 +181,7 @@ const TeamManagement = () => {
                   <TableBody>
                     {teamMembers.map((member) => (
                       <TableRow key={member.id}>
-                        <TableCell className="font-medium">{member.profile.username}</TableCell>
+                        <TableCell className="font-medium">{member.profile?.username || 'Unknown User'}</TableCell>
                         <TableCell>
                           {userRole === "admin" && member.user_id !== user?.id ? (
                             <Select

@@ -100,7 +100,7 @@ export const getPlayerFormInSeason = async (
     const recentMatches = matches.slice(0, 5);
     
     // Calculate results for recent matches
-    const results = recentMatches.map(match => {
+    const results: PlayerFormResult[] = recentMatches.map(match => {
       // Check if player participated in this match
       const playerInTeamA = match.teamA.players && match.teamA.players.includes(playerId);
       const playerInTeamB = match.teamB.players && match.teamB.players.includes(playerId);
@@ -181,7 +181,7 @@ export const getPlayerFormBatch = async (
     
     for (const playerId of playerIds) {
       // Calculate results for the player's recent matches
-      const playerResults = recentMatches.map(match => {
+      const playerResults: PlayerFormResult[] = recentMatches.map(match => {
         // Check if player participated in this match
         const playerInTeamA = match.teamA.players && match.teamA.players.includes(playerId);
         const playerInTeamB = match.teamB.players && match.teamB.players.includes(playerId);

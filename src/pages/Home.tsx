@@ -146,6 +146,12 @@ const Home = () => {
     enabled: !!currentSeason && !!currentTeam
   });
 
+  // Dummy handler for delete actions (required by components)
+  const handleDeleteItem = () => {
+    // No actual deletion in the dashboard view
+    console.log("Delete action not implemented in dashboard view");
+  };
+
   // If user has no teams, show create team UI
   if (userTeams.length === 0) {
     return <CreateFirstTeam />;
@@ -189,7 +195,11 @@ const Home = () => {
               ) : (
                 <div className="space-y-4">
                   {recentMatches.map(match => (
-                    <MatchListItem key={match.id} match={match} />
+                    <MatchListItem 
+                      key={match.id} 
+                      match={match} 
+                      onDeleteClick={handleDeleteItem} 
+                    />
                   ))}
                 </div>
               )}
@@ -216,7 +226,14 @@ const Home = () => {
                     .slice(0, 3)
                     .map(player => (
                       <div key={player.id} className="transition-all hover:translate-y-[-2px]">
-                        <PlayerCard player={player} />
+                        <PlayerCard 
+                          player={player} 
+                          seasonId={currentSeason?.id || null}
+                          seasonStats={seasonPlayerStats.find(s => s.playerId === player.id)}
+                          formResults={[]}
+                          isLoadingForms={false}
+                          onDeleteClick={handleDeleteItem}
+                        />
                       </div>
                     ))
                   }
