@@ -86,8 +86,21 @@ const TeamMembersTable = ({
     );
   }
 
+  // Show message when there are no team members (which shouldn't happen as creator should be a member)
   if (teamMembers.length === 0) {
-    return <p className="text-center py-8 text-gray-400">No members found</p>;
+    return (
+      <div className="text-center py-8 text-gray-400">
+        <p>No members found. This is unusual - try refreshing the page.</p>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="mt-2"
+          onClick={refetch}
+        >
+          Refresh Members
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -102,8 +115,11 @@ const TeamMembersTable = ({
       </TableHeader>
       <TableBody>
         {teamMembers.map((member) => (
-          <TableRow key={member.id}>
-            <TableCell className="font-medium">{member.profile?.username || 'Unknown User'}</TableCell>
+          <TableRow key={member.id} className={member.user_id === user?.id ? "bg-gray-800/30" : ""}>
+            <TableCell className="font-medium">
+              {member.profile?.username || 'Unknown User'}
+              {member.user_id === user?.id && <span className="ml-2 text-xs text-gray-400">(You)</span>}
+            </TableCell>
             <TableCell>
               {userRole === "admin" && member.user_id !== user?.id ? (
                 <Select

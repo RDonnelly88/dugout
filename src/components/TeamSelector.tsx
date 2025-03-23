@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTeam } from "@/contexts/TeamContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,13 @@ const TeamSelector = () => {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [isCreatingTeam, setIsCreatingTeam] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
+
+  // Close create dialog when team creation is successful
+  useEffect(() => {
+    if (currentTeam && isCreateDialogOpen) {
+      setIsCreateDialogOpen(false);
+    }
+  }, [currentTeam, isCreateDialogOpen]);
 
   const handleCreateTeam = async () => {
     if (!newTeamName.trim()) return;
@@ -43,6 +50,7 @@ const TeamSelector = () => {
       } else {
         setNewTeamName("");
         setIsCreateDialogOpen(false);
+        setIsPopoverOpen(false);
         toast({
           title: "Team created",
           description: `Team "${newTeamName}" has been created successfully`,
@@ -95,14 +103,19 @@ const TeamSelector = () => {
             ))}
           </div>
           <div className="w-full">
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
+              setIsCreateDialogOpen(open);
+              // Only close popover when dialog is opened, not when closed
+              if (open) {
+                setIsPopoverOpen(false);
+              }
+            }}>
               <DialogTrigger asChild>
                 <button
                   className="flex items-center w-full px-2.5 py-2 text-sm text-primary hover:bg-gray-700 cursor-pointer"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation(); // Critical: Prevent click from bubbling up
-                    setIsPopoverOpen(false);
                   }}
                 >
                   <Plus className="h-4 w-4 mr-2" />

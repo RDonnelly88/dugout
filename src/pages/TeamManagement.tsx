@@ -1,4 +1,3 @@
-
 import { useTeam } from "@/contexts/TeamContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PlusCircle } from "lucide-react";
 
 const TeamManagement = () => {
@@ -29,6 +28,8 @@ const TeamManagement = () => {
       if (!currentTeam) return [];
       
       try {
+        console.log("Fetching team members for team:", currentTeam.id);
+        
         const { data, error } = await supabase
           .from("team_members")
           .select(`
@@ -79,6 +80,13 @@ const TeamManagement = () => {
     enabled: !!currentTeam,
   });
 
+  useEffect(() => {
+    if (currentTeam) {
+      console.log("Current team changed, refetching members:", currentTeam.id);
+      refetch();
+    }
+  }, [currentTeam?.id, refetch]);
+
   const handleCreateTeam = async () => {
     if (!newTeamName.trim()) return;
     
@@ -101,6 +109,8 @@ const TeamManagement = () => {
           title: "Team created",
           description: `Team "${newTeamName}" has been created successfully`,
         });
+        
+        setTimeout(() => refetch(), 500);
       }
     } catch (error: any) {
       console.error("Team creation error:", error);
