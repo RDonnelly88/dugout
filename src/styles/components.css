@@ -39,4 +39,20 @@
   .page-title {
     @apply text-3xl font-bold tracking-tight;
   }
+  
+  .auth-form {
+    @apply space-y-4 w-full max-w-md mx-auto;
+  }
+  
+  .form-group {
+    @apply space-y-2;
+  }
+  
+  .team-header {
+    @apply flex items-center justify-between mb-6 bg-gray-900/50 p-4 rounded-lg border border-gray-800;
+  }
+  
+  .team-selector {
+    @apply bg-gray-800 hover:bg-gray-700 text-white border-gray-700 transition-colors;
+  }
 }

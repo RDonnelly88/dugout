@@ -1,168 +1,231 @@
 
-import React from "react";
-import { Link } from "react-router-dom";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { 
-  getCurrentSeason,
-  getSeasonPlayerStats,
-  getMatches,
-  getPlayers
-} from "@/lib/db";
-import { ArrowRight, Trophy, Calendar, Users } from "lucide-react";
+import { getPlayers, getMatches, getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
+import { Player, Match, Season, SeasonPlayerStats } from "@/types";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import SeasonLeaderboard from "@/components/seasons/SeasonLeaderboard";
-import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import PlayerCard from "@/components/players/PlayerCard";
+import MatchListItem from "@/components/matches/MatchListItem";
+import CurrentSeasonCard from "@/components/players/CurrentSeasonCard";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTeam } from "@/contexts/TeamContext";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
-const Home = () => {
-  // Get the current season
-  const { data: currentSeason } = useQuery({
-    queryKey: ['currentSeason'],
-    queryFn: getCurrentSeason
-  });
+// Component to create a team when user has no teams
+const CreateFirstTeam = () => {
+  const { createTeam } = useTeam();
+  const [teamName, setTeamName] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+  const { toast } = useToast();
 
-  // Get all matches
-  const { data: matches = [] } = useQuery({
-    queryKey: ['matches'],
-    queryFn: getMatches
-  });
-
-  // Get all players
-  const { data: players = [] } = useQuery({
-    queryKey: ['players'],
-    queryFn: getPlayers
-  });
-
-  // Get season player stats if a current season exists
-  const { data: seasonPlayerStats = [] } = useQuery({
-    queryKey: ['seasonPlayerStats', currentSeason?.id],
-    queryFn: () => getSeasonPlayerStats(currentSeason!.id),
-    enabled: !!currentSeason
-  });
-  
-  // Get player IDs for batch form loading
-  const playerIds = seasonPlayerStats
-    .filter(player => player.played > 0)
-    .slice(0, 5)
-    .map(player => player.playerId);
-  
-  // Preload form data for top players
-  const { formData } = useBatchFormLoader(
-    currentSeason?.id || null,
-    currentSeason ? playerIds : []
-  );
-
-  // Filter current season matches
-  const currentSeasonMatches = currentSeason 
-    ? matches.filter(match => match.seasonId === currentSeason.id)
-    : [];
-
-  // Calculate overall stats
-  const completedMatches = matches.filter(match => match.status === "completed").length;
-  const scheduledMatches = matches.filter(match => match.status === "scheduled").length;
+  const handleCreateTeam = async () => {
+    if (!teamName.trim()) return;
+    
+    setIsCreating(true);
+    
+    try {
+      const { error } = await createTeam(teamName);
+      
+      if (error) {
+        toast({
+          title: "Error creating team",
+          description: error.message || "Failed to create team",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error creating team",
+        description: error.message || "An error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   return (
-    <div className="page-container animate-slide-up">
-      <div className="page-header">
-        <h1 className="page-title text-gradient">Football Tracker</h1>
-        <p className="mt-2 text-muted-foreground">
-          Track your football matches and player statistics
-        </p>
-      </div>
+    <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
+      <Card className="w-full max-w-md bg-gray-900 border-gray-800">
+        <CardHeader>
+          <CardTitle>Create Your First Team</CardTitle>
+          <CardDescription>
+            Create a team to start managing players and matches
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleCreateTeam();
+            }}
+          >
+            <div className="space-y-2">
+              <Label htmlFor="team-name">Team Name</Label>
+              <Input
+                id="team-name"
+                placeholder="Enter team name"
+                value={teamName}
+                onChange={(e) => setTeamName(e.target.value)}
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={isCreating || !teamName.trim()}>
+              {isCreating ? "Creating..." : "Create Team"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
 
-      <div className="grid gap-4 md:grid-cols-3 mb-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Players</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{players.length}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Played Matches</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{completedMatches}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Upcoming Matches</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{scheduledMatches}</div>
-          </CardContent>
-        </Card>
-      </div>
+// Component to show a select team message when user has teams but none selected
+const SelectTeam = () => {
+  const { userTeams, switchTeam } = useTeam();
+  
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
+      <Card className="w-full max-w-md bg-gray-900 border-gray-800">
+        <CardHeader>
+          <CardTitle>Select a Team</CardTitle>
+          <CardDescription>
+            Choose a team to continue
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {userTeams.map(team => (
+              <Button
+                key={team.id}
+                variant="outline"
+                className="w-full justify-start text-left"
+                onClick={() => switchTeam(team.id)}
+              >
+                {team.name}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
 
-      {currentSeason ? (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Current Season</CardTitle>
-                  <CardDescription>{currentSeason.name}</CardDescription>
-                </div>
-                <Link to={`/seasons/${currentSeason.id}`}>
-                  <Button variant="outline" size="sm">
-                    View Season
-                    <ArrowRight className="ml-1 h-4 w-4" />
-                  </Button>
-                </Link>
-              </div>
+// Main home component showing dashboard
+const Home = () => {
+  const { user } = useAuth();
+  const { currentTeam, userTeams } = useTeam();
+  
+  const { data: players = [] } = useQuery<Player[]>({
+    queryKey: ["players", currentTeam?.id],
+    queryFn: () => getPlayers(),
+    enabled: !!currentTeam
+  });
+
+  const { data: matches = [] } = useQuery<Match[]>({
+    queryKey: ["matches", currentTeam?.id],
+    queryFn: () => getMatches(),
+    enabled: !!currentTeam
+  });
+
+  const { data: currentSeason } = useQuery<Season | undefined>({
+    queryKey: ["currentSeason", currentTeam?.id],
+    queryFn: () => getCurrentSeason(),
+    enabled: !!currentTeam
+  });
+
+  const { data: seasonPlayerStats = [] } = useQuery<SeasonPlayerStats[]>({
+    queryKey: ["seasonPlayerStats", currentSeason?.id, currentTeam?.id],
+    queryFn: () => currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
+    enabled: !!currentSeason && !!currentTeam
+  });
+
+  // If user has no teams, show create team UI
+  if (userTeams.length === 0) {
+    return <CreateFirstTeam />;
+  }
+
+  // If user has teams but none selected, show select team UI
+  if (!currentTeam) {
+    return <SelectTeam />;
+  }
+
+  // Filter recent matches to show only 5 most recent
+  const recentMatches = [...matches]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5);
+
+  return (
+    <div className="page-container">
+      <div className="team-header">
+        <h1 className="text-2xl font-bold">Dashboard: {currentTeam.name}</h1>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Season Info */}
+        <div className="lg:col-span-3">
+          <CurrentSeasonCard 
+            currentSeason={currentSeason} 
+            seasonPlayerStats={seasonPlayerStats} 
+          />
+        </div>
+        
+        {/* Top Players */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="bg-gray-900 border-gray-800">
+            <CardHeader>
+              <CardTitle>Recent Matches</CardTitle>
+              <CardDescription>Latest 5 football matches</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-4">
-                <div className="flex items-center p-2 bg-blue-50 text-blue-700 rounded-lg">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  <span>{new Date(currentSeason.startDate).toLocaleDateString()} - {currentSeason.endDate ? new Date(currentSeason.endDate).toLocaleDateString() : "Ongoing"}</span>
+              {recentMatches.length === 0 ? (
+                <p className="text-center py-8 text-gray-400">No matches found</p>
+              ) : (
+                <div className="space-y-4">
+                  {recentMatches.map(match => (
+                    <MatchListItem key={match.id} match={match} />
+                  ))}
                 </div>
-                <div className="flex items-center p-2 bg-green-50 text-green-700 rounded-lg">
-                  <Trophy className="h-4 w-4 mr-2" />
-                  <span>{currentSeasonMatches.length} Matches</span>
-                </div>
-                <div className="flex items-center p-2 bg-purple-50 text-purple-700 rounded-lg">
-                  <Users className="h-4 w-4 mr-2" />
-                  <span>{seasonPlayerStats.length} Players</span>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
-
-          <SeasonLeaderboard 
-            stats={seasonPlayerStats}
-            limit={5}
-            seasonName={currentSeason.name}
-            isFinished={currentSeason.isFinished}
-            seasonId={currentSeason.id}
-            playerForms={formData}
-          />
-          
-          <div className="flex justify-end">
-            <Link to={`/seasons/${currentSeason.id}`}>
-              <Button variant="outline">
-                View Full League Table
-                <ArrowRight className="ml-1 h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
         </div>
-      ) : (
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <h2 className="text-xl font-medium mb-2">No Current Season</h2>
-            <p className="text-muted-foreground mb-4">Create a season to organize your matches and track player statistics.</p>
-            <Button asChild>
-              <Link to="/seasons/create">Create Season</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+        
+        {/* Players */}
+        <div className="space-y-6">
+          <Card className="bg-gray-900 border-gray-800">
+            <CardHeader>
+              <CardTitle>Top Players</CardTitle>
+              <CardDescription>Players with the best stats</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {players.length === 0 ? (
+                <p className="text-center py-8 text-gray-400">No players found</p>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {players
+                    .sort((a, b) => 
+                      (b.stats.won - b.stats.lost) - (a.stats.won - a.stats.lost)
+                    )
+                    .slice(0, 3)
+                    .map(player => (
+                      <div key={player.id} className="transition-all hover:translate-y-[-2px]">
+                        <PlayerCard player={player} />
+                      </div>
+                    ))
+                  }
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };

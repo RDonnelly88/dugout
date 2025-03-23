@@ -19,6 +19,7 @@ export type Database = {
           status: string
           team_a: Json
           team_b: Json
+          team_id: string | null
           updated_at: string
         }
         Insert: {
@@ -30,6 +31,7 @@ export type Database = {
           status: string
           team_a: Json
           team_b: Json
+          team_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -41,6 +43,7 @@ export type Database = {
           status?: string
           team_a?: Json
           team_b?: Json
+          team_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -65,6 +68,13 @@ export type Database = {
             referencedRelation: "seasons"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "matches_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
         ]
       }
       players: {
@@ -74,6 +84,7 @@ export type Database = {
           image: string | null
           name: string
           stats: Json
+          team_id: string | null
           updated_at: string
         }
         Insert: {
@@ -82,6 +93,7 @@ export type Database = {
           image?: string | null
           name: string
           stats?: Json
+          team_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -90,7 +102,40 @@ export type Database = {
           image?: string | null
           name?: string
           stats?: Json
+          team_id?: string | null
           updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id: string
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -103,6 +148,7 @@ export type Database = {
           is_finished: boolean | null
           name: string
           start_date: string
+          team_id: string | null
           updated_at: string
         }
         Insert: {
@@ -113,6 +159,7 @@ export type Database = {
           is_finished?: boolean | null
           name: string
           start_date: string
+          team_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -123,6 +170,71 @@ export type Database = {
           is_finished?: boolean | null
           name?: string
           start_date?: string
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seasons_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["team_role"]
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["team_role"]
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["team_role"]
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
           updated_at?: string
         }
         Relationships: []
@@ -194,10 +306,21 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      is_team_admin: {
+        Args: {
+          team_uuid: string
+        }
+        Returns: boolean
+      }
+      is_team_member: {
+        Args: {
+          team_uuid: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      team_role: "admin" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never

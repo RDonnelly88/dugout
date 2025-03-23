@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { 
   Home, 
@@ -10,31 +10,40 @@ import {
   Plus, 
   ChevronLeft, 
   ChevronRight,
-  PanelLeftClose 
+  PanelLeftClose,
+  UserCog
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { getCurrentSeason } from "@/lib/db";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTeam } from "@/contexts/TeamContext";
+import TeamSelector from "@/components/TeamSelector";
 
 const menuItems = [
   { path: "/", label: "Home", icon: <Home className="h-5 w-5" /> },
   { path: "/players", label: "Players", icon: <Users className="h-5 w-5" /> },
   { path: "/matches", label: "Matches", icon: <CalendarDays className="h-5 w-5" /> },
-  { path: "/seasons", label: "Seasons", icon: <Trophy className="h-5 w-5" /> }
+  { path: "/seasons", label: "Seasons", icon: <Trophy className="h-5 w-5" /> },
+  { path: "/team", label: "Team", icon: <UserCog className="h-5 w-5" /> }
 ];
 
 const Layout = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const location = useLocation();
+  const { user } = useAuth();
+  const { currentTeam, isTeamAdmin } = useTeam();
+  const navigate = useNavigate();
   
   // Fetch current season for the header
   const { data: currentSeason } = useQuery({
     queryKey: ['currentSeason'],
     queryFn: getCurrentSeason
   });
+  
+  const isAdmin = isTeamAdmin();
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] min-h-screen bg-gray-950 text-white">
@@ -48,8 +57,8 @@ const Layout = () => {
         <SheetContent side="left" className="p-0 bg-gray-900 border-gray-800">
           <ScrollArea className="h-screen">
             <div className="py-4">
-              <div className="flex items-center h-12 px-4 mb-4">
-                <h2 className="text-lg font-semibold">Football Tracker</h2>
+              <div className="px-4 mb-6">
+                <TeamSelector />
               </div>
               
               {/* Main navigation */}
@@ -69,29 +78,33 @@ const Layout = () => {
                 </NavLink>
               ))}
               
-              <div className="border-t border-gray-800 my-4"></div>
-              
-              {/* Actions menu */}
-              <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
-                <NavLink to="/players/add" onClick={() => setIsMenuOpen(false)} className="flex items-center space-x-2 px-4 py-2">
-                  <Plus className="h-4 w-4" />
-                  <span>Add Player</span>
-                </NavLink>
-              </Button>
-              
-              <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
-                <NavLink to="/matches/create" onClick={() => setIsMenuOpen(false)} className="flex items-center space-x-2 px-4 py-2">
-                  <Plus className="h-4 w-4" />
-                  <span>Create Match</span>
-                </NavLink>
-              </Button>
-              
-              <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
-                <NavLink to="/seasons/create" onClick={() => setIsMenuOpen(false)} className="flex items-center space-x-2 px-4 py-2">
-                  <Plus className="h-4 w-4" />
-                  <span>Create Season</span>
-                </NavLink>
-              </Button>
+              {currentTeam && isAdmin && (
+                <>
+                  <div className="border-t border-gray-800 my-4"></div>
+                  
+                  {/* Actions menu */}
+                  <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
+                    <NavLink to="/players/add" onClick={() => setIsMenuOpen(false)} className="flex items-center space-x-2 px-4 py-2">
+                      <Plus className="h-4 w-4" />
+                      <span>Add Player</span>
+                    </NavLink>
+                  </Button>
+                  
+                  <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
+                    <NavLink to="/matches/create" onClick={() => setIsMenuOpen(false)} className="flex items-center space-x-2 px-4 py-2">
+                      <Plus className="h-4 w-4" />
+                      <span>Create Match</span>
+                    </NavLink>
+                  </Button>
+                  
+                  <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
+                    <NavLink to="/seasons/create" onClick={() => setIsMenuOpen(false)} className="flex items-center space-x-2 px-4 py-2">
+                      <Plus className="h-4 w-4" />
+                      <span>Create Season</span>
+                    </NavLink>
+                  </Button>
+                </>
+              )}
             </div>
           </ScrollArea>
         </SheetContent>
@@ -105,7 +118,7 @@ const Layout = () => {
         )}
       >
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-800">
-          {!isSidebarCollapsed && <h2 className="text-lg font-semibold">Football Tracker</h2>}
+          {!isSidebarCollapsed && <TeamSelector />}
           <Button
             variant="ghost"
             size="icon"
@@ -136,31 +149,35 @@ const Layout = () => {
               </NavLink>
             ))}
             
-            {!isSidebarCollapsed && <div className="border-t border-gray-800 my-4"></div>}
-            
-            {/* Actions menu - only show when expanded */}
-            {!isSidebarCollapsed && (
+            {currentTeam && isAdmin && (
               <>
-                <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
-                  <NavLink to="/players/add" className="flex items-center space-x-2 px-4 py-2">
-                    <Plus className="h-4 w-4" />
-                    <span>Add Player</span>
-                  </NavLink>
-                </Button>
+                {!isSidebarCollapsed && <div className="border-t border-gray-800 my-4"></div>}
                 
-                <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
-                  <NavLink to="/matches/create" className="flex items-center space-x-2 px-4 py-2">
-                    <Plus className="h-4 w-4" />
-                    <span>Create Match</span>
-                  </NavLink>
-                </Button>
-                
-                <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
-                  <NavLink to="/seasons/create" className="flex items-center space-x-2 px-4 py-2">
-                    <Plus className="h-4 w-4" />
-                    <span>Create Season</span>
-                  </NavLink>
-                </Button>
+                {/* Actions menu - only show when expanded and user is admin */}
+                {!isSidebarCollapsed && (
+                  <>
+                    <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
+                      <NavLink to="/players/add" className="flex items-center space-x-2 px-4 py-2">
+                        <Plus className="h-4 w-4" />
+                        <span>Add Player</span>
+                      </NavLink>
+                    </Button>
+                    
+                    <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
+                      <NavLink to="/matches/create" className="flex items-center space-x-2 px-4 py-2">
+                        <Plus className="h-4 w-4" />
+                        <span>Create Match</span>
+                      </NavLink>
+                    </Button>
+                    
+                    <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
+                      <NavLink to="/seasons/create" className="flex items-center space-x-2 px-4 py-2">
+                        <Plus className="h-4 w-4" />
+                        <span>Create Season</span>
+                      </NavLink>
+                    </Button>
+                  </>
+                )}
               </>
             )}
           </div>

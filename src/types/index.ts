@@ -1,19 +1,33 @@
 
-export interface Player {
-  id: string;
-  name: string;
-  image?: string;
-  stats: PlayerStats;
-  createdAt: string;
-  updatedAt: string;
-}
+// Re-export all types from separate files
+export * from "./team";
 
+// Player types
 export interface PlayerStats {
   played: number;
   won: number;
   lost: number;
   drawn: number;
 }
+
+export interface Player {
+  id: string;
+  name: string;
+  image: string | null;
+  stats: PlayerStats;
+  createdAt: string;
+  updatedAt: string;
+  team_id?: string;
+}
+
+// Match types
+export interface TeamInfo {
+  name: string;
+  players: string[];
+  score?: number;
+}
+
+export type MatchStatus = "pending" | "in_progress" | "completed";
 
 export interface Match {
   id: string;
@@ -25,16 +39,10 @@ export interface Match {
   createdAt: string;
   updatedAt: string;
   seasonId?: string;
+  team_id?: string;
 }
 
-export interface TeamInfo {
-  name: string;
-  score?: number;
-  players: string[];
-}
-
-export type MatchStatus = "scheduled" | "completed";
-
+// Season types
 export interface Season {
   id: string;
   name: string;
@@ -44,6 +52,7 @@ export interface Season {
   isFinished: boolean;
   createdAt: string;
   updatedAt: string;
+  team_id?: string;
 }
 
 export interface SeasonPlayerStats {
@@ -51,7 +60,7 @@ export interface SeasonPlayerStats {
   seasonName: string;
   playerId: string;
   playerName: string;
-  playerImage?: string;
+  playerImage: string | null;
   wins: number;
   losses: number;
   draws: number;
@@ -59,24 +68,14 @@ export interface SeasonPlayerStats {
   points: number;
 }
 
-export interface SeasonChampion {
-  seasonId: string;
-  seasonName: string;
-  playerId: string;
-  playerName: string;
-  playerImage?: string;
-  points: number;
-  wins: number;
-  draws: number;
-  losses: number;
-  played: number;
+export interface SeasonChampion extends SeasonPlayerStats {
   rank: number;
 }
 
-export type PlayerFormResult = 'win' | 'loss' | 'draw' | 'dnp';
+export type PlayerFormResult = "win" | "loss" | "draw";
 
 export interface PlayerForm {
-  seasonId: string;
   playerId: string;
-  recentForm: PlayerFormResult[];
+  playerName: string;
+  form: PlayerFormResult[];
 }
