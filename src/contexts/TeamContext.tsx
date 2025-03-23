@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
@@ -172,81 +171,64 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error: profileError };
       }
       
-      console.log("Creating team with name:", name);
+      console.log("Creating team with name:", name, "for user:", user.id);
       
-      // Create the team
-      const { data: newTeam, error: teamError } = await supabase
-        .from("teams")
-        .insert({
-          name,
-          created_by: user.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select();
+      // Using a more direct approach with a single transaction
+      const { data, error } = await supabase.rpc('create_team_with_admin', {
+        team_name: name,
+        user_id: user.id
+      });
 
-      if (teamError) {
-        console.error("Team creation error:", teamError);
+      if (error) {
+        console.error("Team creation error:", error);
         toast({
           title: "Team creation failed",
-          description: teamError.message || "There was an error creating your team",
+          description: error.message || "There was an error creating your team",
           variant: "destructive",
         });
-        return { error: teamError };
+        return { error };
       }
 
-      if (!newTeam || newTeam.length === 0) {
-        const noDataError = new Error("No team data returned");
-        console.error("Team created but no data returned");
+      if (!data || typeof data !== 'object') {
+        const noDataError = new Error("No data returned from create_team_with_admin");
+        console.error("Team creation error:", noDataError);
         toast({
           title: "Team creation failed",
-          description: "Team was created but no data was returned",
+          description: "Team creation procedure did not return expected data",
           variant: "destructive",
         });
         return { error: noDataError };
       }
 
-      const createdTeam = newTeam[0];
-      console.log("Team created successfully:", createdTeam);
+      console.log("Team created successfully:", data);
 
-      // Add the creator as an admin member
-      const { error: memberError } = await supabase
-        .from("team_members")
-        .insert({
-          team_id: createdTeam.id,
-          user_id: user.id,
-          role: "admin",
-          created_at: new Date().toISOString()
-        });
-
-      if (memberError) {
-        console.error("Team member creation error:", memberError);
+      // Fetch the created team to ensure we have full details
+      const { data: teamData, error: teamFetchError } = await supabase
+        .from("teams")
+        .select("*")
+        .eq("id", data.team_id)
+        .single();
         
-        // Clean up - delete the team if member creation fails
-        await supabase
-          .from("teams")
-          .delete()
-          .eq("id", createdTeam.id);
-        
+      if (teamFetchError) {
+        console.error("Failed to fetch new team details:", teamFetchError);
         toast({
-          title: "Team member creation failed",
-          description: memberError.message || "There was an error adding you to the team",
-          variant: "destructive",
+          title: "Team created but details not loaded",
+          description: "Try refreshing the page to see your new team",
         });
-        
-        return { error: memberError };
+        return { error: null }; // Team was created but details not loaded
       }
 
-      const team = {
-        id: createdTeam.id,
-        name: createdTeam.name,
-        created_at: createdTeam.created_at
+      const newTeam: Team = {
+        id: teamData.id,
+        name: teamData.name,
+        created_at: teamData.created_at
       };
 
-      setUserTeams(prevTeams => [...prevTeams, team]);
-      setCurrentTeam(team);
+      // Update local state
+      setUserTeams(prevTeams => [...prevTeams, newTeam]);
+      setCurrentTeam(newTeam);
       setUserRole("admin");
-      localStorage.setItem("currentTeamId", team.id);
+      localStorage.setItem("currentTeamId", newTeam.id);
 
       toast({
         title: "Team created",
