@@ -32,27 +32,31 @@ const TeamManagement = () => {
       
       if (error) throw error;
       
-      const defaultProfile = { username: 'Unknown User', avatar_url: null as string | null };
+      // Define a default profile object to use when profile data is missing
+      const defaultProfile = { username: 'Unknown User', avatar_url: null };
       
       return (data || []).map(member => {
-        // Create a safe profile object
-        let profile = defaultProfile;
-        
-        // Properly check if profile exists and has the right shape
-        if (member.profile && 
-            typeof member.profile === 'object' && 
-            member.profile !== null && 
-            !('error' in member.profile)) {
-          profile = member.profile as { username: string, avatar_url: string | null };
-        }
+        // Create a safe profile object with a guaranteed structure
+        const profile = member.profile && 
+                      typeof member.profile === 'object' && 
+                      !Array.isArray(member.profile) && 
+                      member.profile !== null && 
+                      !('error' in member.profile)
+                        ? member.profile
+                        : defaultProfile;
           
+        // Construct the TeamMember object with all required fields
         return {
           id: member.id,
           user_id: member.user_id,
           team_id: member.team_id,
           role: member.role,
           created_at: member.created_at,
-          profile: profile  // This profile is now guaranteed to be valid
+          // Ensure profile is never null
+          profile: {
+            username: profile.username || defaultProfile.username,
+            avatar_url: profile.avatar_url
+          }
         } as TeamMember;
       });
     },
