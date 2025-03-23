@@ -8,20 +8,39 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Check, ChevronDown, Plus, LogOut, Settings } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const TeamSelector = () => {
   const { currentTeam, userTeams, userRole, switchTeam, createTeam } = useTeam();
   const { signOut } = useAuth();
+  const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newTeamName, setNewTeamName] = useState("");
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [isCreatingTeam, setIsCreatingTeam] = useState(false);
 
   const handleCreateTeam = async () => {
     if (!newTeamName.trim()) return;
     
-    await createTeam(newTeamName);
-    setNewTeamName("");
-    setIsCreateDialogOpen(false);
+    setIsCreatingTeam(true);
+    try {
+      await createTeam(newTeamName);
+      setNewTeamName("");
+      setIsCreateDialogOpen(false);
+      toast({
+        title: "Team created",
+        description: `Team "${newTeamName}" has been created successfully`,
+      });
+    } catch (error) {
+      console.error("Team creation error:", error);
+      toast({
+        title: "Team creation failed",
+        description: "There was an error creating your team. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingTeam(false);
+    }
   };
 
   return (
@@ -96,9 +115,9 @@ const TeamSelector = () => {
                 <Button 
                   type="button" 
                   onClick={handleCreateTeam}
-                  disabled={!newTeamName.trim()}
+                  disabled={!newTeamName.trim() || isCreatingTeam}
                 >
-                  Create Team
+                  {isCreatingTeam ? "Creating..." : "Create Team"}
                 </Button>
               </DialogFooter>
             </DialogContent>

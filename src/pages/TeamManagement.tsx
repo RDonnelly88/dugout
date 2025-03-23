@@ -7,61 +7,77 @@ import { useQuery } from "@tanstack/react-query";
 import { TeamMember } from "@/types/team";
 import TeamMembersTable from "@/components/team/TeamMembersTable";
 import InviteMemberForm from "@/components/team/InviteMemberForm";
+import { useToast } from "@/hooks/use-toast";
 
 const TeamManagement = () => {
   const { currentTeam, userRole, inviteToTeam } = useTeam();
   const { user } = useAuth();
+  const { toast } = useToast();
 
-  const { data: teamMembers = [], isLoading, refetch } = useQuery({
+  const { data: teamMembers = [], isLoading, error, refetch } = useQuery({
     queryKey: ["teamMembers", currentTeam?.id],
     queryFn: async () => {
       if (!currentTeam) return [];
       
-      const { data, error } = await supabase
-        .from("team_members")
-        .select(`
-          id,
-          user_id,
-          team_id,
-          role,
-          created_at,
-          profile:profiles(username, avatar_url)
-        `)
-        .eq("team_id", currentTeam.id)
-        .order("created_at", { ascending: true });
-      
-      if (error) throw error;
-      
-      // Define a default profile object to use when profile data is missing
-      const defaultProfile = { username: 'Unknown User', avatar_url: null };
-      
-      return (data || []).map(member => {
-        // Create a safe profile object with a guaranteed structure
-        const profile = member.profile && 
-                      typeof member.profile === 'object' && 
-                      !Array.isArray(member.profile) && 
-                      member.profile !== null && 
-                      !('error' in member.profile)
-                        ? member.profile
-                        : defaultProfile;
-          
-        // Construct the TeamMember object with all required fields
-        return {
-          id: member.id,
-          user_id: member.user_id,
-          team_id: member.team_id,
-          role: member.role,
-          created_at: member.created_at,
-          // Ensure profile is never null
-          profile: {
-            username: profile.username || defaultProfile.username,
-            avatar_url: profile.avatar_url
-          }
-        } as TeamMember;
-      });
+      try {
+        const { data, error } = await supabase
+          .from("team_members")
+          .select(`
+            id,
+            user_id,
+            team_id,
+            role,
+            created_at,
+            profile:profiles(username, avatar_url)
+          `)
+          .eq("team_id", currentTeam.id)
+          .order("created_at", { ascending: true });
+        
+        if (error) throw error;
+        
+        // Define a default profile object to use when profile data is missing
+        const defaultProfile = { username: 'Unknown User', avatar_url: null };
+        
+        return (data || []).map(member => {
+          // Create a safe profile object with a guaranteed structure
+          const profile = member.profile && 
+                        typeof member.profile === 'object' && 
+                        !Array.isArray(member.profile) && 
+                        member.profile !== null && 
+                        !('error' in member.profile)
+                          ? member.profile
+                          : defaultProfile;
+            
+          // Construct the TeamMember object with all required fields
+          return {
+            id: member.id,
+            user_id: member.user_id,
+            team_id: member.team_id,
+            role: member.role,
+            created_at: member.created_at,
+            // Ensure profile is never null
+            profile: {
+              username: profile.username || defaultProfile.username,
+              avatar_url: profile.avatar_url
+            }
+          } as TeamMember;
+        });
+      } catch (error) {
+        console.error("Error fetching team members:", error);
+        toast({
+          title: "Error fetching team members",
+          description: "Please try again later",
+          variant: "destructive",
+        });
+        return [];
+      }
     },
     enabled: !!currentTeam,
   });
+
+  if (error) {
+    console.error("Team members query error:", error);
+  }
 
   if (!currentTeam) {
     return (
