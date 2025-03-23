@@ -8,16 +8,25 @@ import DeletePlayerDialog from "@/components/players/DeletePlayerDialog";
 import CurrentSeasonCard from "@/components/players/CurrentSeasonCard";
 import PlayerSearchBar from "@/components/players/PlayerSearchBar";
 import PlayersGrid from "@/components/players/PlayersGrid";
+import { useTeam } from "@/contexts/TeamContext";
 
 const Players = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { currentTeam } = useTeam();
 
   const { data: players = [], isLoading: isLoadingPlayers } = useQuery({
-    queryKey: ['players'],
-    queryFn: getPlayers
+    queryKey: ['players', currentTeam?.id],
+    queryFn: getPlayers,
+    select: (data) => {
+      if (currentTeam) {
+        console.log("Filtering players for team:", currentTeam.id);
+        return data.filter(player => player.team_id === currentTeam.id);
+      }
+      return data;
+    }
   });
 
   const { data: currentSeason, isLoading: isLoadingSeason } = useQuery({
@@ -32,16 +41,13 @@ const Players = () => {
     staleTime: 60000
   });
 
-  // Get all player IDs for the current season
   const playerIds = currentSeason ? players.map(player => player.id) : [];
-  
-  // Use batch form loader for current season
+
   const { formData: batchFormData, isLoading: isLoadingForms } = useBatchFormLoader(
     currentSeason?.id || null, 
     playerIds
   );
 
-  // Force a refetch of batch form data when navigating to the page
   useEffect(() => {
     if (currentSeason?.id) {
       queryClient.invalidateQueries({ 

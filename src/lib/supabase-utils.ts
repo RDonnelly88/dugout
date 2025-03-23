@@ -1,4 +1,3 @@
-
 import { Json } from "@/integrations/supabase/types";
 import { Player, Match, PlayerStats, TeamInfo, MatchStatus, Season } from "@/types";
 
@@ -12,7 +11,7 @@ export const mapSupabasePlayerToPlayer = (data: any): Player => {
     image: data.image,
     position: data.position,
     number: data.number,
-    dateOfBirth: data.date_of_birth,
+    dateOfBirth: data.dateOfBirth, // Changed from date_of_birth
     nationality: data.nationality,
     height: data.height,
     weight: data.weight,
@@ -33,7 +32,7 @@ export const mapPlayerToSupabase = (player: Omit<Player, "id" | "createdAt" | "u
     image: player.image || player.imageUrl,
     position: player.position,
     number: player.number,
-    date_of_birth: player.dateOfBirth,
+    // Remove date_of_birth field as it's not in the database
     nationality: player.nationality,
     height: player.height,
     weight: player.weight,

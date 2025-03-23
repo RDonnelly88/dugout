@@ -17,6 +17,8 @@ export function usePlayerMutation() {
       if (!currentTeam) {
         throw new Error("No team selected");
       }
+      
+      console.log("Adding player with team_id:", currentTeam.id);
       return addPlayer({ 
         ...player, 
         team_id: currentTeam.id,
@@ -25,6 +27,7 @@ export function usePlayerMutation() {
       });
     },
     onSuccess: (player) => {
+      console.log("Player added successfully:", player);
       queryClient.invalidateQueries({ queryKey: ['players'] });
       toast({
         title: "Player added",
@@ -33,6 +36,7 @@ export function usePlayerMutation() {
       navigate(`/players/${player.id}`);
     },
     onError: (error: any) => {
+      console.error("Failed to add player:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to add the player. Please try again.",

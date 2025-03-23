@@ -63,6 +63,7 @@ export const addPlayer = async (player: Omit<Player, "id" | "createdAt" | "updat
   const supabasePlayer = mapPlayerToSupabase(player);
   
   try {
+    console.log("Adding player with data:", supabasePlayer);
     const { data, error } = await supabase
       .from("players")
       .insert({
@@ -88,6 +89,7 @@ export const addPlayer = async (player: Omit<Player, "id" | "createdAt" | "updat
       return playerWithId;
     }
     
+    console.log("Player added successfully:", data);
     // Map data to ensure it matches the Player type
     return mapSupabasePlayerToPlayer(data);
   } catch (error) {
