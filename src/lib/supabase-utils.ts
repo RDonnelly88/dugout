@@ -1,3 +1,4 @@
+
 import { Json } from "@/integrations/supabase/types";
 import { Player, Match, PlayerStats, TeamInfo, MatchStatus, Season } from "@/types";
 
@@ -81,6 +82,6 @@ export const mapSeasonToSupabase = (season: any) => {
     end_date: season.endDate,
     is_current: season.isCurrent,
     is_finished: season.isFinished || false,
-    team_id: season.teamId
+    team_id: season.teamId // Changed from teamId to team_id to match database schema
   };
 };
