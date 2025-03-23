@@ -28,6 +28,12 @@ export const getSeasons = async (): Promise<Season[]> => {
       return [];
     }
     
+    if (!data || data.length === 0) {
+      console.log("No seasons found for team:", currentTeamId);
+    } else {
+      console.log(`Found ${data.length} seasons for team ${currentTeamId}`);
+    }
+    
     // Map data to ensure it matches the Season type
     return (data || []).map(mapSupabaseToSeason);
   } catch (error) {
@@ -60,7 +66,10 @@ export const getSeason = async (id: string): Promise<Season | undefined> => {
       return undefined;
     }
     
-    if (!data) return undefined;
+    if (!data) {
+      console.log(`Season ${id} not found for team ${currentTeamId}`);
+      return undefined;
+    }
     
     // Map data to ensure it matches the Season type
     return mapSupabaseToSeason(data);
@@ -94,7 +103,10 @@ export const getCurrentSeason = async (): Promise<Season | undefined> => {
       return undefined;
     }
     
-    if (!data) return undefined;
+    if (!data) {
+      console.log("No current season found for team:", currentTeamId);
+      return undefined;
+    }
     
     // Map data to ensure it matches the Season type
     return mapSupabaseToSeason(data);

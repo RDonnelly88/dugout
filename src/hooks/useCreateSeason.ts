@@ -15,23 +15,30 @@ export const useCreateSeason = () => {
   const createSeasonMutation = useMutation({
     mutationFn: (seasonData: any) => addSeason(seasonData),
     onSuccess: (data) => {
-      // Invalidate all team-specific queries to ensure data is refreshed
-      queryClient.invalidateQueries({ queryKey: ['seasons', currentTeam?.id] });
-      queryClient.invalidateQueries({ queryKey: ['currentSeason', currentTeam?.id] });
+      console.log("Season created successfully:", data);
+      
+      // Force invalidate all team-specific queries to ensure data is refreshed
+      if (currentTeam) {
+        queryClient.invalidateQueries({ queryKey: ['seasons'] });
+        queryClient.invalidateQueries({ queryKey: ['currentSeason'] });
+        console.log("Invalidated queries after season creation for team:", currentTeam.id);
+      }
       
       toast({
         title: "Season created",
         description: "The season has been created successfully."
       });
+      
+      // Navigate to the newly created season
       navigate(`/seasons/${data.id}`);
     },
     onError: (error: any) => {
+      console.error("Error creating season:", error);
       toast({
         title: "Error",
         description: "Failed to create the season. Please try again.",
         variant: "destructive"
       });
-      console.error("Error creating season:", error);
     }
   });
 
@@ -45,7 +52,7 @@ export const useCreateSeason = () => {
       return;
     }
     
-    console.log(`Creating season for team: ${currentTeam.id}`);
+    console.log(`Creating season for team: ${currentTeam.id} with values:`, values);
     
     createSeasonMutation.mutate({
       name: values.name,

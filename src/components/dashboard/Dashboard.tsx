@@ -16,21 +16,26 @@ const Dashboard = () => {
   const { data: currentSeason } = useQuery({
     queryKey: ["currentSeason", currentTeam?.id],
     queryFn: getCurrentSeason,
-    enabled: !!currentTeam
+    enabled: !!currentTeam,
+    staleTime: 0, // Always fetch fresh data
+    refetchOnMount: "always"
   });
 
   // Get player stats for current season
   const { data: seasonPlayerStats = [] } = useQuery({
     queryKey: ["seasonPlayerStats", currentSeason?.id, currentTeam?.id],
     queryFn: () => currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
-    enabled: !!currentSeason && !!currentTeam
+    enabled: !!currentSeason && !!currentTeam,
+    staleTime: 0
   });
   
   // Get matches
   const { data: matches = [], isLoading: isLoadingMatches } = useQuery({
     queryKey: ["matches", currentTeam?.id],
     queryFn: getMatches,
-    enabled: !!currentTeam
+    enabled: !!currentTeam,
+    staleTime: 0,
+    refetchOnMount: "always"
   });
   
   console.log(`Dashboard: Team ID: ${currentTeam?.id}, Season: ${currentSeason?.name || 'None'}, Matches: ${matches.length}`);

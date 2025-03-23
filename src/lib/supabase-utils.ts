@@ -67,18 +67,20 @@ export const mapSupabaseToSeason = (data: any): Season => {
     endDate: data.end_date,
     isCurrent: data.is_current,
     isFinished: data.is_finished || false,
+    teamId: data.team_id,
     createdAt: data.created_at,
     updatedAt: data.updated_at
   };
 };
 
 // Helper function to map our Season type to Supabase format
-export const mapSeasonToSupabase = (season: Omit<Season, "id" | "createdAt" | "updatedAt">): any => {
+export const mapSeasonToSupabase = (season: any) => {
   return {
     name: season.name,
     start_date: season.startDate,
     end_date: season.endDate,
     is_current: season.isCurrent,
-    is_finished: season.isFinished
+    is_finished: season.isFinished || false,
+    team_id: season.teamId
   };
 };

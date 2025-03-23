@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Search } from "lucide-react";
@@ -10,29 +9,47 @@ import { getSeasons, getSeasonChampions } from "@/lib/db";
 import SeasonCard from "@/components/seasons/SeasonCard";
 import SeasonsSummaryTable from "@/components/seasons/SeasonsSummaryTable";
 import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
+import { useTeam } from "@/contexts/TeamContext";
 
 const Seasons = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const queryClient = useQueryClient();
+  const { currentTeam } = useTeam();
   
   // Get all seasons
   const { data: seasons = [], isLoading: isLoadingSeasons } = useQuery({
-    queryKey: ['seasons'],
+    queryKey: ['seasons', currentTeam?.id],
     queryFn: getSeasons,
     staleTime: 0, // Always fetch fresh data
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
+    enabled: !!currentTeam
   });
+
+  console.log("Fetched seasons:", seasons);
 
   // Get champions for all seasons
   const { data: champions = [], isLoading: isLoadingChampions } = useQuery({
-    queryKey: ['seasonChampions'],
+    queryKey: ['seasonChampions', currentTeam?.id],
     queryFn: () => getSeasonChampions(),
     staleTime: 0, // Always fetch fresh data
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
+    enabled: !!currentTeam
   });
+
+  // Force refresh of data when component mounts, team changes, or after creation
+  useEffect(() => {
+    if (currentTeam) {
+      console.log("Seasons page: Refreshing data for team:", currentTeam.id);
+      
+      // Force refetch of all relevant queries
+      queryClient.invalidateQueries({ queryKey: ['seasons', currentTeam.id] });
+      queryClient.invalidateQueries({ queryKey: ['seasonChampions', currentTeam.id] });
+      queryClient.invalidateQueries({ queryKey: ['seasonStats', currentTeam.id] });
+    }
+  }, [currentTeam?.id, queryClient]);
 
   // Prepare data for player forms for the current season
   const currentSeason = seasons.find(s => s.isCurrent);
@@ -123,7 +140,7 @@ const Seasons = () => {
 
   // Count matches and players for each season
   const { data: seasonStats = {} } = useQuery({
-    queryKey: ['seasonStats'],
+    queryKey: ['seasonStats', currentTeam?.id],
     queryFn: async () => {
       // This is a placeholder - in a real app you would fetch this data from your API
       const stats: Record<string, { matchCount: number; playerCount: number }> = {};
@@ -143,28 +160,6 @@ const Seasons = () => {
     staleTime: 0,
     refetchOnMount: "always"
   });
-
-  // Force refresh of data when component mounts or seasons change
-  useEffect(() => {
-    if (seasons.length > 0) {
-      console.log("Seasons page mounted or seasons changed - refreshing data");
-      
-      // Force refetch of all relevant queries
-      queryClient.invalidateQueries({ queryKey: ['seasons'] });
-      queryClient.invalidateQueries({ queryKey: ['seasonChampions'] });
-      queryClient.invalidateQueries({ queryKey: ['seasonStats'] });
-      
-      // Invalidate form data for all seasons
-      seasons.forEach(season => {
-        const playerIds = allChampionPlayerIds[season.id] || [];
-        if (playerIds.length > 0) {
-          queryClient.invalidateQueries({ 
-            queryKey: ['batchPlayerForms', season.id, playerIds] 
-          });
-        }
-      });
-    }
-  }, []);
 
   const isLoading = isLoadingSeasons || isLoadingChampions;
 
