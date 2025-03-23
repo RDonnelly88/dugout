@@ -14,6 +14,24 @@ import { getPlayer } from "@/lib/db";
 import { usePlayerMutation } from "@/hooks/usePlayerMutation";
 import { Player } from "@/types";
 
+// Define the PlayerFormProps interface to match what PlayerForm expects
+interface PlayerFormProps {
+  initialValues: {
+    name: string;
+    position?: string;
+    number?: number;
+    dateOfBirth?: Date | null;
+    nationality?: string;
+    height?: number;
+    weight?: number;
+    preferredFoot?: string;
+    description?: string;
+    imageUrl?: string | null;
+  };
+  onSubmit: (values: any) => Promise<void>;
+  isSubmitting: boolean;
+}
+
 const AddEditPlayer = () => {
   const { canManage } = usePermission();
   const navigate = useNavigate();
@@ -95,9 +113,20 @@ const AddEditPlayer = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {initialValues && (
+          {(initialValues || isAddMode) && (
             <PlayerForm
-              initialValues={initialValues}
+              initialValues={initialValues || {
+                name: '',
+                position: '',
+                number: undefined,
+                dateOfBirth: null,
+                nationality: '',
+                height: undefined,
+                weight: undefined,
+                preferredFoot: '',
+                description: '',
+                imageUrl: null
+              }}
               onSubmit={onSubmit}
               isSubmitting={addPlayerMutation.isPending || updatePlayerMutation.isPending}
             />

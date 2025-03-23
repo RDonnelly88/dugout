@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
@@ -42,7 +41,6 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  // Fetch user's teams when user changes
   useEffect(() => {
     const fetchUserTeams = async () => {
       if (!user) {
@@ -54,7 +52,6 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       try {
-        // Get all teams where the user is a member
         const { data: memberships, error: membershipError } = await supabase
           .from("team_members")
           .select("*, team:teams(*)")
@@ -71,7 +68,6 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setUserTeams(teams.map(t => ({ id: t.id, name: t.name, created_at: t.created_at })));
 
-        // If we have teams but no current team, set the first one as current
         if (teams.length > 0 && !currentTeam) {
           const savedTeamId = localStorage.getItem("currentTeamId");
           const teamToSet = savedTeamId 
@@ -106,7 +102,6 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchUserTeams();
   }, [user, toast]);
 
-  // When switching teams, update the user role
   useEffect(() => {
     const updateUserRole = async () => {
       if (!user || !currentTeam) return;
@@ -133,27 +128,30 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return { error: "Not authenticated" };
 
     try {
-      // Create the team
       const { data: teamData, error: teamError } = await supabase
         .from("teams")
-        .insert([{ name, created_by: user.id }])
+        .insert([{ 
+          name, 
+          created_by: user.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
         .select()
         .single();
 
       if (teamError) throw teamError;
 
-      // Add the creator as an admin
       const { error: memberError } = await supabase
         .from("team_members")
         .insert([{
           team_id: teamData.id,
           user_id: user.id,
-          role: "admin"
+          role: "admin",
+          created_at: new Date().toISOString()
         }]);
 
       if (memberError) throw memberError;
 
-      // Add the new team to the list and set as current
       const newTeam = {
         id: teamData.id,
         name: teamData.name,
@@ -175,7 +173,7 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error("Error creating team:", error);
       toast({
         title: "Error creating team",
-        description: "Could not create the team. Please try again.",
+        description: error.message || "Could not create the team. Please try again.",
         variant: "destructive",
       });
       return { error };
@@ -188,7 +186,6 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentTeam(team);
       localStorage.setItem("currentTeamId", team.id);
       
-      // Find the user's role in this team
       const findRole = async () => {
         if (!user) return;
         
@@ -220,7 +217,6 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return { error: "Not authenticated" };
 
     try {
-      // Check if user has admin rights
       const { data: roleCheck, error: roleError } = await supabase
         .from("team_members")
         .select("role")
@@ -233,7 +229,6 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error: "Only admins can invite members" };
       }
 
-      // Find the user by email
       const { data: userData, error: userError } = await supabase
         .from("profiles")
         .select("id")
@@ -244,7 +239,6 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error: "User not found" };
       }
 
-      // Check if user is already a member
       const { data: existingMember, error: memberCheckError } = await supabase
         .from("team_members")
         .select("id")
@@ -256,7 +250,6 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error: "User is already a team member" };
       }
 
-      // Add the user to the team
       const { error: inviteError } = await supabase
         .from("team_members")
         .insert([{
@@ -283,7 +276,6 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return { error: "Not authenticated" };
 
     try {
-      // Remove the user from the team
       const { error } = await supabase
         .from("team_members")
         .delete()
@@ -292,10 +284,8 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) throw error;
 
-      // Update the team list
       setUserTeams(userTeams.filter(t => t.id !== teamId));
 
-      // If leaving the current team, switch to another team or set to null
       if (currentTeam && currentTeam.id === teamId) {
         if (userTeams.length > 1) {
           const nextTeam = userTeams.find(t => t.id !== teamId);
@@ -336,7 +326,6 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) throw error;
 
-      // Update local state
       const updatedTeams = userTeams.map(team =>
         team.id === teamId ? { ...team, ...updates } : team
       );
@@ -372,11 +361,9 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) throw error;
 
-      // Update local state
       const updatedTeams = userTeams.filter(team => team.id !== teamId);
       setUserTeams(updatedTeams);
 
-      // If we deleted the current team, switch to another or set to null
       if (currentTeam && currentTeam.id === teamId) {
         if (updatedTeams.length > 0) {
           setCurrentTeam(updatedTeams[0]);
