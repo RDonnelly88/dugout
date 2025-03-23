@@ -13,6 +13,15 @@ export interface PlayerStats {
 export interface Player {
   id: string;
   name: string;
+  position?: string;
+  number?: number;
+  dateOfBirth?: string;
+  nationality?: string;
+  height?: number;
+  weight?: number;
+  preferredFoot?: string;
+  description?: string;
+  imageUrl?: string;
   image: string | null;
   stats: PlayerStats;
   createdAt: string;

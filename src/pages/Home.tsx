@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getPlayers, getMatches, getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
@@ -12,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTeam } from "@/contexts/TeamContext";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { Player, Match, Season, SeasonPlayerStats } from "@/types";
 
 // Component to create a team when user has no teams
 const CreateFirstTeam = () => {

@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePermission } from "@/lib/permission-utils";
@@ -11,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import PlayerForm from "@/components/players/PlayerForm";
 import { getPlayer } from "@/lib/db";
 import { usePlayerMutation } from "@/hooks/usePlayerMutation";
+import { Player } from "@/types";
 
 const AddEditPlayer = () => {
   const { canManage } = usePermission();
@@ -38,7 +40,7 @@ const AddEditPlayer = () => {
     enabled: !isAddMode && !!id
   });
 
-  const [initialValues, setInitialValues] = useState(null);
+  const [initialValues, setInitialValues] = useState<any>(null);
 
   useEffect(() => {
     if (player) {
@@ -52,7 +54,7 @@ const AddEditPlayer = () => {
         weight: player.weight,
         preferredFoot: player.preferredFoot,
         description: player.description,
-        imageUrl: player.imageUrl
+        imageUrl: player.imageUrl || player.image
       });
     }
   }, [player]);
@@ -97,7 +99,7 @@ const AddEditPlayer = () => {
             <PlayerForm
               initialValues={initialValues}
               onSubmit={onSubmit}
-              isSubmitting={addPlayerMutation.isLoading || updatePlayerMutation.isLoading}
+              isSubmitting={addPlayerMutation.isPending || updatePlayerMutation.isPending}
             />
           )}
         </CardContent>

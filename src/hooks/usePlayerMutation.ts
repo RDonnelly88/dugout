@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addPlayer, updatePlayer, deletePlayer } from "@/lib/db";
 import { Player } from "@/types";
@@ -12,11 +13,16 @@ export function usePlayerMutation() {
   const { currentTeam } = useTeam();
 
   const addPlayerMutation = useMutation({
-    mutationFn: (player: Omit<Player, "id" | "createdAt" | "updatedAt">) => {
+    mutationFn: (player: Omit<Player, "id" | "createdAt" | "updatedAt" | "stats" | "image">) => {
       if (!currentTeam) {
         throw new Error("No team selected");
       }
-      return addPlayer({ ...player, team_id: currentTeam.id });
+      return addPlayer({ 
+        ...player, 
+        team_id: currentTeam.id,
+        stats: { played: 0, won: 0, lost: 0, drawn: 0 },
+        image: player.imageUrl || null
+      });
     },
     onSuccess: (player) => {
       queryClient.invalidateQueries({ queryKey: ['players'] });
@@ -36,8 +42,15 @@ export function usePlayerMutation() {
   });
 
   const updatePlayerMutation = useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<Omit<Player, "id" | "createdAt" | "updatedAt">> }) => 
-      updatePlayer(id, updates),
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<Omit<Player, "id" | "createdAt" | "updatedAt">> }) => {
+      // Convert imageUrl to image for database storage
+      const modifiedUpdates = { 
+        ...updates,
+        image: updates.imageUrl || updates.image
+      };
+      
+      return updatePlayer(id, modifiedUpdates);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['players'] });
       toast({

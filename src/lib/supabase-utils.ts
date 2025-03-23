@@ -10,9 +10,19 @@ export const mapSupabasePlayerToPlayer = (data: any): Player => {
     id: data.id,
     name: data.name,
     image: data.image,
+    position: data.position,
+    number: data.number,
+    dateOfBirth: data.date_of_birth,
+    nationality: data.nationality,
+    height: data.height,
+    weight: data.weight,
+    preferredFoot: data.preferred_foot,
+    description: data.description,
+    imageUrl: data.image,
     stats: data.stats as PlayerStats,
     createdAt: data.created_at,
-    updatedAt: data.updated_at
+    updatedAt: data.updated_at,
+    team_id: data.team_id
   };
 };
 
@@ -20,8 +30,17 @@ export const mapSupabasePlayerToPlayer = (data: any): Player => {
 export const mapPlayerToSupabase = (player: Omit<Player, "id" | "createdAt" | "updatedAt">): any => {
   return {
     name: player.name,
-    image: player.image,
-    stats: player.stats as unknown as Json
+    image: player.image || player.imageUrl,
+    position: player.position,
+    number: player.number,
+    date_of_birth: player.dateOfBirth,
+    nationality: player.nationality,
+    height: player.height,
+    weight: player.weight,
+    preferred_foot: player.preferredFoot,
+    description: player.description,
+    stats: player.stats as unknown as Json,
+    team_id: player.team_id
   };
 };
 
