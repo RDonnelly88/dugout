@@ -1,30 +1,18 @@
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
 import { useToast } from "@/hooks/use-toast";
-
-type Team = {
-  id: string;
-  name: string;
-  created_at: string;
-};
-
-type TeamMember = {
-  id: string;
-  team_id: string;
-  user_id: string;
-  role: "admin" | "viewer";
-  created_at: string;
-};
+import { Team, TeamMember, TeamRole } from "@/types/team";
 
 type TeamContextType = {
   currentTeam: Team | null;
   userTeams: Team[];
-  userRole: "admin" | "viewer" | null;
+  userRole: TeamRole | null;
   loading: boolean;
   createTeam: (name: string) => Promise<{ error: any | null }>;
   switchTeam: (teamId: string) => void;
-  inviteToTeam: (teamId: string, email: string, role: "admin" | "viewer") => Promise<{ error: any | null }>;
+  inviteToTeam: (teamId: string, email: string, role: TeamRole) => Promise<{ error: any | null }>;
   leaveTeam: (teamId: string) => Promise<{ error: any | null }>;
   updateTeam: (teamId: string, updates: { name: string }) => Promise<{ error: any | null }>;
   deleteTeam: (teamId: string) => Promise<{ error: any | null }>;
@@ -37,7 +25,7 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { user } = useAuth();
   const [currentTeam, setCurrentTeam] = useState<Team | null>(null);
   const [userTeams, setUserTeams] = useState<Team[]>([]);
-  const [userRole, setUserRole] = useState<"admin" | "viewer" | null>(null);
+  const [userRole, setUserRole] = useState<TeamRole | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -128,8 +116,39 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return { error: "Not authenticated" };
 
     try {
+      // First, check if the user has an entry in the profiles table
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .single();
+      
+      if (profileError) {
+        console.error("Profile check error:", profileError);
+        
+        // If profile doesn't exist, create one
+        if (profileError.code === "PGRST116") {
+          const { error: createProfileError } = await supabase
+            .from("profiles")
+            .insert([{ 
+              id: user.id,
+              username: user.email,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }]);
+            
+          if (createProfileError) {
+            console.error("Error creating profile:", createProfileError);
+            return { error: createProfileError };
+          }
+        } else {
+          return { error: profileError };
+        }
+      }
+      
       console.log("Creating team for user:", user.id);
       
+      // Create the team
       const { data: teamData, error: teamError } = await supabase
         .from("teams")
         .insert([{ 
@@ -148,6 +167,7 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       console.log("Team created successfully:", teamData);
 
+      // Add the user as a team member with admin role
       const { error: memberError } = await supabase
         .from("team_members")
         .insert([{
