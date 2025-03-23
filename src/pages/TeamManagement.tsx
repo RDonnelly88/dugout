@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useTeam } from "@/contexts/TeamContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -41,18 +40,21 @@ const TeamManagement = () => {
       
       if (error) throw error;
       
+      // Create a default profile for when no profile exists
+      const defaultProfile = { username: 'Unknown User', avatar_url: null as string | null };
+      
       // Ensure profile data is properly shaped
       return (data || []).map(member => {
-        // Handle possible error with profile relation - making sure to check if profile exists and is an object
-        const profile = member.profile && 
-          typeof member.profile === 'object' && 
-          member.profile !== null ? 
-            // Check if profile has error property - need to use type assertion to safely check
-            ('error' in member.profile) ? 
-              { username: 'Unknown User', avatar_url: null } : 
-              member.profile as { username: string, avatar_url: string | null }
-            : 
-            { username: 'Unknown User', avatar_url: null };
+        // Handle possible error with profile relation
+        let profile = defaultProfile;
+        
+        if (member.profile && typeof member.profile === 'object' && member.profile !== null) {
+          // If profile has an error property, use the default profile
+          if (!('error' in member.profile)) {
+            // Otherwise use the profile data (with type assertion for safety)
+            profile = member.profile as { username: string, avatar_url: string | null };
+          }
+        }
           
         return {
           ...member,
