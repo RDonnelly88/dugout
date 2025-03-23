@@ -46,10 +46,13 @@ const TeamManagement = () => {
         // Handle possible error with profile relation - making sure to check if profile exists and is an object
         const profile = member.profile && 
           typeof member.profile === 'object' && 
-          member.profile !== null && 
-          !('error' in member.profile)
-            ? member.profile
-            : { username: 'Unknown User', avatar_url: null };
+          member.profile !== null ? 
+            // Check if profile has error property
+            ('error' in member.profile) ? 
+              { username: 'Unknown User', avatar_url: null } : 
+              member.profile
+            : 
+            { username: 'Unknown User', avatar_url: null };
           
         return {
           ...member,
