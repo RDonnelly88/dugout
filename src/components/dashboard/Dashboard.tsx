@@ -27,11 +27,13 @@ const Dashboard = () => {
   });
   
   // Get matches
-  const { data: matches = [] } = useQuery({
+  const { data: matches = [], isLoading: isLoadingMatches } = useQuery({
     queryKey: ["matches", currentTeam?.id],
     queryFn: getMatches,
     enabled: !!currentTeam
   });
+  
+  console.log(`Dashboard: Team ID: ${currentTeam?.id}, Season: ${currentSeason?.name || 'None'}, Matches: ${matches.length}`);
   
   // Get top 5 players for current season
   const topPlayerIds = seasonPlayerStats
@@ -40,7 +42,7 @@ const Dashboard = () => {
     .map(player => player.playerId);
     
   // Get form data for top players
-  const { formData: topPlayerForms, isLoading: isLoadingForms } = useBatchFormLoader(
+  const { formData: topPlayerForms } = useBatchFormLoader(
     currentSeason?.id || null,
     topPlayerIds
   );

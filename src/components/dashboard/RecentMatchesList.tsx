@@ -2,12 +2,41 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import MatchListItem from "@/components/matches/MatchListItem";
 import { Match } from "@/types";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { deleteMatch } from "@/lib/db";
+import { useToast } from "@/components/ui/use-toast";
 
 interface RecentMatchesListProps {
   matches: Match[];
 }
 
 const RecentMatchesList = ({ matches }: RecentMatchesListProps) => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  // Setup delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteMatch(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['matches'] });
+      toast({
+        title: "Match deleted",
+        description: "The match has been successfully deleted.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete the match. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleDeleteClick = (matchId: string) => {
+    deleteMutation.mutate(matchId);
+  };
+
   return (
     <Card className="bg-gray-900 border-gray-800">
       <CardHeader>
@@ -23,7 +52,7 @@ const RecentMatchesList = ({ matches }: RecentMatchesListProps) => {
               <MatchListItem 
                 key={match.id} 
                 match={match} 
-                onDeleteClick={() => {}} 
+                onDeleteClick={() => handleDeleteClick(match.id)} 
               />
             ))}
           </div>

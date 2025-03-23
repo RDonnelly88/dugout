@@ -28,6 +28,8 @@ export const getMatches = async (): Promise<Match[]> => {
       return [];
     }
     
+    console.log(`Found ${data?.length || 0} matches for team ${currentTeamId}`);
+    
     // Map data to ensure it matches the Match type
     return (data || []).map(mapSupabaseMatchToMatch);
   } catch (error) {
@@ -40,7 +42,7 @@ export const getMatches = async (): Promise<Match[]> => {
       if (!currentTeamId) return [];
       
       // Filter matches by team ID
-      return parsedMatches.filter((match: any) => match.teamId === currentTeamId);
+      return parsedMatches.filter((match: any) => match.team_id === currentTeamId);
     } catch (err) {
       return [];
     }
@@ -85,8 +87,8 @@ export const getMatch = async (id: string): Promise<Match | undefined> => {
       if (!currentTeamId) return undefined;
       
       // Find match by ID and verify it belongs to current team
-      const match = parsedMatches.find((m: Match) => m.id === id);
-      return match && match.teamId === currentTeamId ? match : undefined;
+      const match = parsedMatches.find((m: any) => m.id === id);
+      return match && match.team_id === currentTeamId ? match : undefined;
     } catch (err) {
       return undefined;
     }
