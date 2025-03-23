@@ -105,7 +105,7 @@ export default {
 					'100%': { transform: 'translateY(100vh)', opacity: '0.7' }
 				},
 				'slide-in-right': {
-					'0%': { transform: 'translateX(0)' },
+					'0%': { transform: 'translateX(-150vw)' },
 					'100%': { transform: 'translateX(150vw)' }
 				},
 				float: {

@@ -30,8 +30,10 @@ const CurrentSeasonCard: React.FC<CurrentSeasonCardProps> = ({
         <CardDescription>
           {new Date(currentSeason.startDate).toLocaleDateString()} - 
           {currentSeason.endDate ? new Date(currentSeason.endDate).toLocaleDateString() : " Ongoing"}
-          {currentSeason.isFinished && <Badge className="ml-2 bg-red-500">Finished</Badge>}
-          {currentSeason.isCurrent && !currentSeason.isFinished && <Badge className="ml-2 bg-green-500">Active</Badge>}
+          <span className="ml-2">
+            {currentSeason.isFinished && <Badge className="bg-red-500">Finished</Badge>}
+            {currentSeason.isCurrent && !currentSeason.isFinished && <Badge className="bg-green-500">Active</Badge>}
+          </span>
         </CardDescription>
       </CardHeader>
       <CardContent>

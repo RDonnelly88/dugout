@@ -1,3 +1,4 @@
+
 @layer base {
   :root {
     --background: 222 47% 11%;
@@ -110,5 +111,96 @@
   /* Enhanced glow on headings */
   h1, h2, h3, h4, h5, h6 {
     text-shadow: 0 0 10px rgba(45, 212, 191, 0.4);
+  }
+  
+  /* Add glowing animation for text gradient */
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+    animation: glow 4s ease-in-out infinite;
+  }
+  
+  /* Cyberpunk-inspired elements */
+  .cyber-glow {
+    box-shadow: 0 0 15px rgba(45, 212, 191, 0.5);
+  }
+  
+  .tech-panel {
+    @apply rounded-lg border border-primary/30 bg-black/40 backdrop-blur-md p-4 relative overflow-hidden;
+  }
+  
+  .tech-panel::before {
+    content: '';
+    @apply absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent;
+  }
+  
+  .tech-panel-header {
+    @apply mb-4;
+  }
+  
+  .tech-panel-content {
+    @apply relative z-10;
+  }
+  
+  .tech-badge {
+    @apply inline-flex items-center rounded-md px-2 py-1 text-xs bg-primary/10 text-primary border border-primary/20;
+  }
+  
+  /* Add pulse animation to elements with cyber-button class */
+  .cyber-button {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .cyber-button::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      to bottom right,
+      rgba(45, 212, 191, 0) 0%,
+      rgba(45, 212, 191, 0.1) 50%,
+      rgba(45, 212, 191, 0) 100%
+    );
+    transform: rotate(45deg);
+    animation: cyber-button-shine 3s linear infinite;
+  }
+  
+  @keyframes cyber-button-shine {
+    0% {
+      transform: translateX(-100%) rotate(45deg);
+    }
+    100% {
+      transform: translateX(100%) rotate(45deg);
+    }
+  }
+  
+  /* Animations for page transitions */
+  .animate-slide-up {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: slide-up 0.5s ease forwards;
+  }
+  
+  .animate-pop-in {
+    opacity: 0;
+    transform: scale(0.95);
+    animation: pop-in 0.5s ease forwards;
+  }
+  
+  @keyframes slide-up {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes pop-in {
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 }
