@@ -9,28 +9,10 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import PlayerForm from "@/components/players/PlayerForm";
+import PlayerEditForm from "@/components/players/PlayerEditForm";
 import { getPlayer } from "@/lib/db";
 import { usePlayerMutation } from "@/hooks/usePlayerMutation";
 import { Player } from "@/types";
-
-// Define the PlayerFormProps interface to match what PlayerForm expects
-interface PlayerFormProps {
-  initialValues: {
-    name: string;
-    position?: string;
-    number?: number;
-    dateOfBirth?: Date | null;
-    nationality?: string;
-    height?: number;
-    weight?: number;
-    preferredFoot?: string;
-    description?: string;
-    imageUrl?: string | null;
-  };
-  onSubmit: (values: any) => Promise<void>;
-  isSubmitting: boolean;
-}
 
 const AddEditPlayer = () => {
   const { canManage } = usePermission();
@@ -114,7 +96,7 @@ const AddEditPlayer = () => {
         </CardHeader>
         <CardContent>
           {(initialValues || isAddMode) && (
-            <PlayerForm
+            <PlayerEditForm
               initialValues={initialValues || {
                 name: '',
                 position: '',
