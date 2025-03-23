@@ -312,9 +312,23 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_team_admin_no_recursion: {
+        Args: {
+          team_uuid: string
+          user_uuid: string
+        }
+        Returns: boolean
+      }
       is_team_member: {
         Args: {
           team_uuid: string
+        }
+        Returns: boolean
+      }
+      is_team_member_no_recursion: {
+        Args: {
+          team_uuid: string
+          user_uuid: string
         }
         Returns: boolean
       }
