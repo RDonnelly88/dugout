@@ -12,8 +12,6 @@ export interface PlayerStats {
 export interface Player {
   id: string;
   name: string;
-  position?: string;
-  number?: number;
   image: string | null;
   imageUrl?: string;
   stats: PlayerStats;

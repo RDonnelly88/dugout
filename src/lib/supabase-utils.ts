@@ -9,7 +9,6 @@ export const mapSupabasePlayerToPlayer = (data: any): Player => {
     id: data.id,
     name: data.name,
     image: data.image,
-    position: data.position,
     stats: data.stats as PlayerStats,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
@@ -23,7 +22,6 @@ export const mapPlayerToSupabase = (player: Omit<Player, "id" | "createdAt" | "u
   return {
     name: player.name,
     image: player.image || player.imageUrl,
-    position: player.position,
     stats: player.stats as unknown as Json,
     team_id: player.team_id
   };

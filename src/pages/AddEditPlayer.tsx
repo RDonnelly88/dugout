@@ -45,7 +45,6 @@ const AddEditPlayer = () => {
     if (player) {
       setInitialValues({
         name: player.name,
-        position: player.position,
         imageUrl: player.imageUrl || player.image
       });
     }
@@ -86,7 +85,6 @@ const AddEditPlayer = () => {
             <PlayerEditForm
               initialValues={initialValues || {
                 name: '',
-                position: '',
                 imageUrl: null
               }}
               onSubmit={onSubmit}
