@@ -65,7 +65,7 @@ export const useMatchDetail = () => {
 
   // If match doesn't belong to current team, redirect to matches page
   useEffect(() => {
-    if (match && currentTeam && match.teamId !== currentTeam.id) {
+    if (match && currentTeam && match.team_id !== currentTeam.id) {
       toast({
         title: "Access denied",
         description: "You don't have access to this match.",
