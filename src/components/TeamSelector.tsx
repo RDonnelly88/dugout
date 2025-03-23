@@ -73,7 +73,7 @@ const TeamSelector = () => {
             <ChevronDown className="h-4 w-4 ml-2 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-56 p-0 bg-gray-800 border-gray-700">
+        <PopoverContent className="w-56 p-0 bg-gray-800 border-gray-700 z-50">
           <div className="px-2 py-1.5 text-xs font-medium text-gray-400">
             Your teams
           </div>
@@ -94,62 +94,65 @@ const TeamSelector = () => {
               </button>
             ))}
           </div>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <button
-                className="flex items-center w-full px-2.5 py-2 text-sm text-primary hover:bg-gray-700 cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation(); // Prevent click from bubbling up
-                  setIsPopoverOpen(false);
-                }}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create New Team
-              </button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md bg-gray-900 border-gray-800">
-              <DialogHeader>
-                <DialogTitle>Create New Team</DialogTitle>
-                <DialogDescription>
-                  Create a new team to organize your players and matches
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="team-name">Team Name</Label>
-                  <Input
-                    id="team-name"
-                    placeholder="Enter team name"
-                    value={newTeamName}
-                    onChange={(e) => setNewTeamName(e.target.value)}
-                  />
-                </div>
-                
-                {debugInfo && (
-                  <div className="p-2 bg-red-950 border border-red-800 rounded text-xs overflow-auto">
-                    <p className="font-bold mb-1">Debug Information:</p>
-                    <p className="font-mono whitespace-pre-wrap">{debugInfo}</p>
+          <div className="w-full">
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <button
+                  className="flex items-center w-full px-2.5 py-2 text-sm text-primary hover:bg-gray-700 cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation(); // Critical: Prevent click from bubbling up
+                    setIsPopoverOpen(false);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New Team
+                </button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md bg-gray-900 border-gray-800 z-50">
+                <DialogHeader>
+                  <DialogTitle>Create New Team</DialogTitle>
+                  <DialogDescription>
+                    Create a new team to organize your players and matches
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="team-name">Team Name</Label>
+                    <Input
+                      id="team-name"
+                      placeholder="Enter team name"
+                      value={newTeamName}
+                      onChange={(e) => setNewTeamName(e.target.value)}
+                    />
                   </div>
-                )}
-              </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsCreateDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="button" 
-                  onClick={handleCreateTeam}
-                  disabled={!newTeamName.trim() || isCreatingTeam}
-                >
-                  {isCreatingTeam ? "Creating..." : "Create Team"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                  
+                  {debugInfo && (
+                    <div className="p-2 bg-red-950 border border-red-800 rounded text-xs overflow-auto">
+                      <p className="font-bold mb-1">Debug Information:</p>
+                      <p className="font-mono whitespace-pre-wrap">{debugInfo}</p>
+                    </div>
+                  )}
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsCreateDialogOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="button" 
+                    onClick={handleCreateTeam}
+                    disabled={!newTeamName.trim() || isCreatingTeam}
+                  >
+                    {isCreatingTeam ? "Creating..." : "Create Team"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
           <div className="border-t border-gray-700 px-2 py-1.5">
             <button
               className="flex items-center w-full px-2.5 py-2 text-sm hover:bg-gray-700 cursor-pointer"

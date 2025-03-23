@@ -2,7 +2,7 @@
 import { useTeam } from "@/contexts/TeamContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { TeamMember } from "@/types/team";
 import TeamMembersTable from "@/components/team/TeamMembersTable";
@@ -180,7 +180,53 @@ const TeamManagement = () => {
 
   return (
     <div className="container mx-auto py-8 max-w-7xl">
-      <h1 className="text-3xl font-bold mb-8">Team Management</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Team Management</h1>
+        
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2">
+              <PlusCircle className="h-4 w-4" />
+              Create New Team
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md bg-gray-900 border-gray-800">
+            <DialogHeader>
+              <DialogTitle>Create New Team</DialogTitle>
+              <DialogDescription>
+                Create a new team to organize your players and matches
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="team-name">Team Name</Label>
+                <Input
+                  id="team-name"
+                  placeholder="Enter team name"
+                  value={newTeamName}
+                  onChange={(e) => setNewTeamName(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsCreateDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="button" 
+                onClick={handleCreateTeam}
+                disabled={!newTeamName.trim() || isCreatingTeam}
+              >
+                {isCreatingTeam ? "Creating..." : "Create Team"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="col-span-2">
