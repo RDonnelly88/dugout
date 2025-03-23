@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -79,7 +80,9 @@ export const useCreateMatch = () => {
   const createMatchMutation = useMutation({
     mutationFn: (matchData: any) => addMatch(matchData),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['matches'] });
+      // Invalidate all team-specific queries to ensure data is refreshed
+      queryClient.invalidateQueries({ queryKey: ['matches', currentTeam?.id] });
+      
       const typedData = data as any;
       navigate(`/matches/${typedData.id}`);
       toast({
@@ -126,6 +129,8 @@ export const useCreateMatch = () => {
       return;
     }
 
+    console.log(`Creating match for team: ${currentTeam.id}`);
+    
     const matchData = {
       teamA: {
         name: "Team A",

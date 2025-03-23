@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check, ChevronDown, Plus, LogOut, Settings } from "lucide-react";
+import { Check, ChevronDown, Plus, LogOut, Settings, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const TeamSelector = () => {
@@ -100,7 +100,10 @@ const TeamSelector = () => {
             variant="outline" 
             className="flex items-center justify-between w-56 text-left font-normal border-gray-700 bg-gray-800 hover:bg-gray-700"
           >
-            <span className="truncate">{currentTeam?.name || "Select a team"}</span>
+            <div className="flex items-center">
+              <Users className="h-4 w-4 mr-2 text-gray-400" />
+              <span className="truncate">{currentTeam?.name || "Select a team"}</span>
+            </div>
             <ChevronDown className="h-4 w-4 ml-2 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>

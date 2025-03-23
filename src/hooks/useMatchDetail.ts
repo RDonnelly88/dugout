@@ -5,12 +5,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getMatch, getPlayers, updateMatch } from "@/lib/db";
 import { useToast } from "@/components/ui/use-toast";
 import { Match } from "@/types";
+import { useTeam } from "@/contexts/TeamContext";
 
 export const useMatchDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { currentTeam } = useTeam();
 
   const [isEditing, setIsEditing] = useState(false);
   const [teamAScore, setTeamAScore] = useState<number | undefined>(undefined);
@@ -18,14 +20,15 @@ export const useMatchDetail = () => {
   const [showConfetti, setShowConfetti] = useState(false);
 
   const { data: match, isLoading: isLoadingMatch } = useQuery({
-    queryKey: ['match', id],
+    queryKey: ['match', id, currentTeam?.id],
     queryFn: () => getMatch(id!),
-    enabled: !!id
+    enabled: !!id && !!currentTeam
   });
 
   const { data: players = [] } = useQuery({
-    queryKey: ['players'],
-    queryFn: getPlayers
+    queryKey: ['players', currentTeam?.id],
+    queryFn: getPlayers,
+    enabled: !!currentTeam
   });
 
   // Update match mutation
@@ -33,9 +36,10 @@ export const useMatchDetail = () => {
     mutationFn: (data: { id: string; updates: Partial<Match> }) => 
       updateMatch(data.id, data.updates),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['matches'] });
-      queryClient.invalidateQueries({ queryKey: ['match', id] });
-      queryClient.invalidateQueries({ queryKey: ['players'] });
+      // Invalidate all team-specific queries to ensure data is refreshed
+      queryClient.invalidateQueries({ queryKey: ['matches', currentTeam?.id] });
+      queryClient.invalidateQueries({ queryKey: ['match', id, currentTeam?.id] });
+      queryClient.invalidateQueries({ queryKey: ['players', currentTeam?.id] });
       
       toast({
         title: "Match updated",
@@ -59,6 +63,18 @@ export const useMatchDetail = () => {
     }
   });
 
+  // If match doesn't belong to current team, redirect to matches page
+  useEffect(() => {
+    if (match && currentTeam && match.teamId !== currentTeam.id) {
+      toast({
+        title: "Access denied",
+        description: "You don't have access to this match.",
+        variant: "destructive",
+      });
+      navigate("/matches");
+    }
+  }, [match, currentTeam, navigate, toast]);
+
   const handleSaveResult = () => {
     if (teamAScore === undefined || teamBScore === undefined) {
       toast({
@@ -79,6 +95,14 @@ export const useMatchDetail = () => {
     }
 
     if (!match || !match.teamA || !match.teamB) return;
+    if (!currentTeam) {
+      toast({
+        title: "No team selected",
+        description: "You must select a team to update a match.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const updates = {
       teamA: {

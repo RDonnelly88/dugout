@@ -9,10 +9,13 @@ import { Label } from "@/components/ui/label";
 import PlayerCard from "@/components/players/PlayerCard";
 import MatchListItem from "@/components/matches/MatchListItem";
 import CurrentSeasonCard from "@/components/players/CurrentSeasonCard";
+import SeasonLeaderboard from "@/components/seasons/SeasonLeaderboard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTeam } from "@/contexts/TeamContext";
+import TeamSwitcher from "@/components/team/TeamSwitcher";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
 import { Player, Match, Season, SeasonPlayerStats } from "@/types";
 
 // Component to create a team when user has no teams
@@ -145,6 +148,17 @@ const Home = () => {
     queryFn: () => currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
     enabled: !!currentSeason && !!currentTeam
   });
+  
+  // Get player form data for the top players
+  const topPlayerIds = seasonPlayerStats
+    .sort((a, b) => b.points - a.points)
+    .slice(0, 5)
+    .map(player => player.playerId);
+    
+  const { formData: topPlayerForms, isLoading: isLoadingForms } = useBatchFormLoader(
+    currentSeason?.id || null,
+    topPlayerIds
+  );
 
   // Dummy handler for delete actions (required by components)
   const handleDeleteItem = () => {
@@ -169,20 +183,33 @@ const Home = () => {
 
   return (
     <div className="page-container">
-      <div className="team-header">
-        <h1 className="text-2xl font-bold">Dashboard: {currentTeam.name}</h1>
+      <div className="team-header mb-4">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
+          <h1 className="text-2xl font-bold mb-2 md:mb-0">Dashboard</h1>
+          <TeamSwitcher variant="minimal" />
+        </div>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Season Info */}
+        {/* Season Summary and Top 5 Players */}
         <div className="lg:col-span-3">
-          <CurrentSeasonCard 
-            currentSeason={currentSeason} 
-            seasonPlayerStats={seasonPlayerStats} 
-          />
+          {currentSeason && seasonPlayerStats.length > 0 ? (
+            <SeasonLeaderboard 
+              stats={seasonPlayerStats} 
+              seasonId={currentSeason.id}
+              playerForms={topPlayerForms}
+              limit={5}
+              seasonName={currentSeason.name}
+            />
+          ) : (
+            <CurrentSeasonCard 
+              currentSeason={currentSeason} 
+              seasonPlayerStats={seasonPlayerStats} 
+            />
+          )}
         </div>
         
-        {/* Top Players */}
+        {/* Recent Matches */}
         <div className="lg:col-span-2 space-y-6">
           <Card className="bg-gray-900 border-gray-800">
             <CardHeader>
@@ -230,8 +257,8 @@ const Home = () => {
                           player={player} 
                           seasonId={currentSeason?.id || null}
                           seasonStats={seasonPlayerStats.find(s => s.playerId === player.id)}
-                          formResults={[]}
-                          isLoadingForms={false}
+                          formResults={topPlayerForms[player.id] || []}
+                          isLoadingForms={isLoadingForms}
                           onDeleteClick={handleDeleteItem}
                         />
                       </div>

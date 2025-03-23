@@ -11,7 +11,8 @@ import {
   ChevronLeft, 
   ChevronRight,
   PanelLeftClose,
-  UserCog
+  UserCog,
+  Globe
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -22,6 +23,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTeam } from "@/contexts/TeamContext";
 import { usePermission } from "@/lib/permission-utils";
 import TeamSelector from "@/components/TeamSelector";
+import TeamSwitcher from "@/components/team/TeamSwitcher";
 
 const menuItems = [
   { path: "/", label: "Home", icon: <Home className="h-5 w-5" /> },
@@ -41,8 +43,9 @@ const Layout = () => {
   
   // Fetch current season for the header
   const { data: currentSeason } = useQuery({
-    queryKey: ['currentSeason'],
-    queryFn: getCurrentSeason
+    queryKey: ['currentSeason', currentTeam?.id],
+    queryFn: getCurrentSeason,
+    enabled: !!currentTeam
   });
   
   const showActions = canManage();
@@ -120,7 +123,11 @@ const Layout = () => {
         )}
       >
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-800">
-          {!isSidebarCollapsed && <TeamSelector />}
+          {!isSidebarCollapsed ? (
+            <TeamSelector />
+          ) : (
+            <TeamSwitcher variant="minimal" />
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -188,6 +195,11 @@ const Layout = () => {
 
       {/* Main Content */}
       <main className="flex flex-col h-full bg-gray-950 text-white">
+        {/* Header with team info - visible on all pages */}
+        <div className="bg-gray-900 p-4 border-b border-gray-800 md:hidden">
+          <TeamSwitcher variant="minimal" />
+        </div>
+        
         <Outlet />
       </main>
     </div>
