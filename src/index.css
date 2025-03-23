@@ -148,4 +148,31 @@
     border: 1px solid rgba(45, 212, 191, 0.5);
     box-shadow: 0 0 5px rgba(45, 212, 191, 0.3);
   }
+  
+  /* Enhanced F1-inspired animations */
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 10px rgba(45, 212, 191, 0.5);
+    }
+    50% {
+      box-shadow: 0 0 20px rgba(45, 212, 191, 0.8), 0 0 30px rgba(45, 212, 191, 0.4);
+    }
+  }
+  
+  .pulse-glow {
+    animation: pulse-glow 2s infinite;
+  }
+  
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+  
+  .floating {
+    animation: float 3s ease-in-out infinite;
+  }
 }
