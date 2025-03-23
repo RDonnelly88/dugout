@@ -306,6 +306,13 @@ export type Database = {
       }
     }
     Functions: {
+      create_team_with_admin: {
+        Args: {
+          team_name: string
+          user_id: string
+        }
+        Returns: Json
+      }
       is_team_admin: {
         Args: {
           team_uuid: string

@@ -122,7 +122,6 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
       
       if (error && error.code === "PGRST116") {
-        // Profile doesn't exist, create it
         console.log("Creating new profile for user", user.id);
         const { error: createError } = await supabase
           .from("profiles")
@@ -160,7 +159,6 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      // First ensure the user has a profile
       const { error: profileError } = await ensureProfileExists();
       if (profileError) {
         toast({
@@ -173,7 +171,6 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log("Creating team with name:", name, "for user:", user.id);
       
-      // Using a more direct approach with a single transaction
       const { data, error } = await supabase.rpc('create_team_with_admin', {
         team_name: name,
         user_id: user.id
@@ -189,7 +186,7 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error };
       }
 
-      if (!data || typeof data !== 'object') {
+      if (!data) {
         const noDataError = new Error("No data returned from create_team_with_admin");
         console.error("Team creation error:", noDataError);
         toast({
@@ -202,7 +199,6 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       console.log("Team created successfully:", data);
 
-      // Fetch the created team to ensure we have full details
       const { data: teamData, error: teamFetchError } = await supabase
         .from("teams")
         .select("*")
@@ -224,7 +220,6 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
         created_at: teamData.created_at
       };
 
-      // Update local state
       setUserTeams(prevTeams => [...prevTeams, newTeam]);
       setCurrentTeam(newTeam);
       setUserRole("admin");
