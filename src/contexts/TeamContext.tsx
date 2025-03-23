@@ -296,6 +296,7 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return { error: "Not authenticated" };
 
     try {
+      // First check if the current user has admin rights
       const { data: roleCheck, error: roleError } = await supabase
         .from("team_members")
         .select("role")
@@ -303,41 +304,61 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq("user_id", user.id)
         .single();
 
-      if (roleError) throw roleError;
+      if (roleError) {
+        console.error("Error checking user role:", roleError);
+        return { error: roleError };
+      }
+      
       if (roleCheck.role !== "admin") {
         return { error: "Only admins can invite members" };
       }
 
+      // Find the user by email (username) in profiles
       const { data: userData, error: userError } = await supabase
         .from("profiles")
         .select("id")
-        .eq("username", email)
-        .single();
+        .eq("username", email);
 
       if (userError) {
-        return { error: "User not found" };
+        console.error("Error finding user by email:", userError);
+        return { error: userError };
       }
 
+      if (!userData || userData.length === 0) {
+        return { error: "User not found with this email" };
+      }
+
+      const targetUserId = userData[0].id;
+
+      // Check if user is already a member
       const { data: existingMember, error: memberCheckError } = await supabase
         .from("team_members")
         .select("id")
         .eq("team_id", teamId)
-        .eq("user_id", userData.id);
+        .eq("user_id", targetUserId);
 
-      if (memberCheckError) throw memberCheckError;
+      if (memberCheckError) {
+        console.error("Error checking existing membership:", memberCheckError);
+        return { error: memberCheckError };
+      }
+      
       if (existingMember && existingMember.length > 0) {
         return { error: "User is already a team member" };
       }
 
+      // Add user to team
       const { error: inviteError } = await supabase
         .from("team_members")
         .insert([{
           team_id: teamId,
-          user_id: userData.id,
+          user_id: targetUserId,
           role
         }]);
 
-      if (inviteError) throw inviteError;
+      if (inviteError) {
+        console.error("Error adding team member:", inviteError);
+        return { error: inviteError };
+      }
 
       toast({
         title: "Member invited",

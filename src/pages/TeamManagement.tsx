@@ -28,26 +28,22 @@ const TeamManagement = () => {
             team_id,
             role,
             created_at,
-            profile:profiles(username, avatar_url)
+            profiles(username, avatar_url)
           `)
           .eq("team_id", currentTeam.id)
           .order("created_at", { ascending: true });
         
         if (error) throw error;
         
+        console.log("Raw team members data:", data);
+        
         // Define a default profile object to use when profile data is missing
         const defaultProfile = { username: 'Unknown User', avatar_url: null };
         
         return (data || []).map(member => {
-          // Create a safe profile object with a guaranteed structure
-          const profile = member.profile && 
-                        typeof member.profile === 'object' && 
-                        !Array.isArray(member.profile) && 
-                        member.profile !== null && 
-                        !('error' in member.profile)
-                          ? member.profile
-                          : defaultProfile;
-            
+          // Safely access profile data
+          const profile = member.profiles || defaultProfile;
+          
           // Construct the TeamMember object with all required fields
           return {
             id: member.id,
@@ -55,10 +51,9 @@ const TeamManagement = () => {
             team_id: member.team_id,
             role: member.role,
             created_at: member.created_at,
-            // Ensure profile is never null
             profile: {
-              username: profile.username || defaultProfile.username,
-              avatar_url: profile.avatar_url
+              username: typeof profile === 'object' ? (profile.username || defaultProfile.username) : defaultProfile.username,
+              avatar_url: typeof profile === 'object' ? profile.avatar_url : null
             }
           } as TeamMember;
         });
