@@ -12,7 +12,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import PlayerEditForm from "@/components/players/PlayerEditForm";
 import { getPlayer } from "@/lib/db";
 import { usePlayerMutation } from "@/hooks/usePlayerMutation";
-import { Player } from "@/types";
 
 const AddEditPlayer = () => {
   const { canManage } = usePermission();
@@ -47,28 +46,16 @@ const AddEditPlayer = () => {
       setInitialValues({
         name: player.name,
         position: player.position,
-        number: player.number,
-        dateOfBirth: player.dateOfBirth ? new Date(player.dateOfBirth) : null,
-        nationality: player.nationality,
-        height: player.height,
-        weight: player.weight,
-        preferredFoot: player.preferredFoot,
-        description: player.description,
         imageUrl: player.imageUrl || player.image
       });
     }
   }, [player]);
 
   const onSubmit = async (values: any) => {
-    const payload = {
-      ...values,
-      dateOfBirth: values.dateOfBirth ? values.dateOfBirth.toISOString() : null
-    };
-
     if (isAddMode) {
-      addPlayerMutation.mutate(payload);
+      addPlayerMutation.mutate(values);
     } else {
-      updatePlayerMutation.mutate({ id, updates: payload });
+      updatePlayerMutation.mutate({ id, updates: values });
     }
   };
 
@@ -100,13 +87,6 @@ const AddEditPlayer = () => {
               initialValues={initialValues || {
                 name: '',
                 position: '',
-                number: undefined,
-                dateOfBirth: null,
-                nationality: '',
-                height: undefined,
-                weight: undefined,
-                preferredFoot: '',
-                description: '',
                 imageUrl: null
               }}
               onSubmit={onSubmit}

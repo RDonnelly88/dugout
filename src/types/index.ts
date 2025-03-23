@@ -1,4 +1,3 @@
-
 // Re-export all types from separate files
 export * from "./team";
 
@@ -15,14 +14,8 @@ export interface Player {
   name: string;
   position?: string;
   number?: number;
-  dateOfBirth?: string;
-  nationality?: string;
-  height?: number;
-  weight?: number;
-  preferredFoot?: string;
-  description?: string;
-  imageUrl?: string;
   image: string | null;
+  imageUrl?: string;
   stats: PlayerStats;
   createdAt: string;
   updatedAt: string;
