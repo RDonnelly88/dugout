@@ -31,24 +31,8 @@ const TeamManagement = () => {
       try {
         console.log("Fetching team members for team:", currentTeam.id);
         
-        // Use a simple JOIN query instead of nested select
-        const { data, error } = await supabase
-          .from("team_members")
-          .select(`
-            id,
-            user_id,
-            team_id,
-            role,
-            created_at,
-            profiles!inner(username, avatar_url)
-          `)
-          .eq("team_id", currentTeam.id)
-          .order("created_at", { ascending: true });
-        
-        if (error) {
-          console.error("Error in normal query:", error);
-          
-          // Try the RPC function as a fallback
+        // First try using the RPC function which has been tested to work
+        try {
           const { data: rpcData, error: rpcError } = await supabase
             .rpc('get_team_members', { team_id_param: currentTeam.id });
             
@@ -67,27 +51,70 @@ const TeamManagement = () => {
             created_at: member.created_at,
             username: member.username,
             avatar_url: member.avatar_url,
-            profile: null
+            profile: {
+              username: member.username,
+              avatar_url: member.avatar_url
+            }
           } as TeamMember));
+        } catch (rpcError) {
+          console.error("Failed to use RPC function, falling back to direct query:", rpcError);
         }
         
-        console.log("Raw team members data:", data);
+        // Fallback to direct query if the RPC function fails
+        const { data, error } = await supabase
+          .from("team_members")
+          .select(`
+            id,
+            user_id,
+            team_id,
+            role,
+            created_at
+          `)
+          .eq("team_id", currentTeam.id)
+          .order("created_at", { ascending: true });
         
-        // Properly map the team members with profile data
+        if (error) {
+          console.error("Error in direct query:", error);
+          throw error;
+        }
+        
+        // For direct query, separately fetch the profile data if needed
+        const userIds = data?.map(member => member.user_id) || [];
+        
+        const { data: profilesData, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, username, avatar_url")
+          .in("id", userIds);
+          
+        if (profilesError) {
+          console.error("Error fetching profiles:", profilesError);
+        }
+        
+        // Create a map of user_id to profile for easy lookup
+        const profilesMap = (profilesData || []).reduce((acc, profile) => {
+          acc[profile.id] = profile;
+          return acc;
+        }, {} as Record<string, any>);
+        
+        console.log("Raw team members data:", data);
+        console.log("Profiles data:", profilesData);
+        
+        // Map team members with their profiles
         return (data || []).map(member => {
-          // Process profile data if available
+          const profile = profilesMap[member.user_id];
+          
           return {
             id: member.id,
             user_id: member.user_id,
             team_id: member.team_id,
             role: member.role,
             created_at: member.created_at,
-            username: member.profiles?.username,
-            avatar_url: member.profiles?.avatar_url,
-            profile: member.profiles ? {
-              username: member.profiles.username,
-              avatar_url: member.profiles.avatar_url
-            } : null
+            username: profile?.username,
+            avatar_url: profile?.avatar_url,
+            profile: profile ? {
+              username: profile.username,
+              avatar_url: profile.avatar_url
+            } : undefined
           } as TeamMember;
         });
       } catch (error) {
