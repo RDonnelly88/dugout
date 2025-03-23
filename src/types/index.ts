@@ -1,3 +1,4 @@
+
 // Re-export all types from separate files
 export * from "./team";
 
@@ -17,7 +18,7 @@ export interface Player {
   stats: PlayerStats;
   createdAt: string;
   updatedAt: string;
-  team_id?: string;
+  teamId?: string;
 }
 
 // Match types
@@ -39,7 +40,7 @@ export interface Match {
   createdAt: string;
   updatedAt: string;
   seasonId?: string;
-  team_id?: string;
+  teamId?: string;
 }
 
 // Season types

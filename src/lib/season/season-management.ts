@@ -52,6 +52,7 @@ export const updateSeason = async (id: string, updates: Partial<Omit<Season, "id
   if (updates.endDate !== undefined) formattedUpdates.end_date = updates.endDate;
   if (updates.isCurrent !== undefined) formattedUpdates.is_current = updates.isCurrent;
   if (updates.isFinished !== undefined) formattedUpdates.is_finished = updates.isFinished;
+  if (updates.teamId !== undefined) formattedUpdates.team_id = updates.teamId;
   
   try {
     const { data, error } = await supabase

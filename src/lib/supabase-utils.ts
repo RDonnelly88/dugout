@@ -13,7 +13,7 @@ export const mapSupabasePlayerToPlayer = (data: any): Player => {
     stats: data.stats as PlayerStats,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
-    team_id: data.team_id,
+    teamId: data.team_id,
     imageUrl: data.image
   };
 };
@@ -24,7 +24,7 @@ export const mapPlayerToSupabase = (player: Omit<Player, "id" | "createdAt" | "u
     name: player.name,
     image: player.image || player.imageUrl,
     stats: player.stats as unknown as Json,
-    team_id: player.team_id
+    team_id: player.teamId
   };
 };
 
@@ -41,7 +41,8 @@ export const mapSupabaseMatchToMatch = (data: any): Match => {
     status: data.status as MatchStatus,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
-    seasonId: data.season_id
+    seasonId: data.season_id,
+    teamId: data.team_id
   };
 };
 
@@ -53,7 +54,8 @@ export const mapMatchToSupabase = (match: Omit<Match, "id" | "createdAt" | "upda
     team_a: match.teamA as unknown as Json,
     team_b: match.teamB as unknown as Json,
     status: match.status,
-    season_id: match.seasonId
+    season_id: match.seasonId,
+    team_id: match.teamId
   };
 };
 
