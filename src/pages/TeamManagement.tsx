@@ -47,10 +47,10 @@ const TeamManagement = () => {
         const profile = member.profile && 
           typeof member.profile === 'object' && 
           member.profile !== null ? 
-            // Check if profile has error property
+            // Check if profile has error property - need to use type assertion to safely check
             ('error' in member.profile) ? 
               { username: 'Unknown User', avatar_url: null } : 
-              member.profile
+              member.profile as { username: string, avatar_url: string | null }
             : 
             { username: 'Unknown User', avatar_url: null };
           
