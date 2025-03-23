@@ -10,8 +10,7 @@ import {
   Plus, 
   ChevronLeft, 
   ChevronRight,
-  PanelLeftClose,
-  Menu
+  PanelLeftClose 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -38,19 +37,19 @@ const Layout = () => {
   });
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] min-h-screen bg-background text-foreground">
+    <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] min-h-screen bg-gray-950 text-white">
       {/* Mobile Menu */}
       <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
         <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="md:hidden fixed top-4 left-4 z-10 bg-black/50 backdrop-blur-md border border-gray-800">
-            <Menu className="h-5 w-5 text-primary" />
+          <Button variant="ghost" size="icon" className="md:hidden absolute top-4 left-4 z-10">
+            <PanelLeftClose className="h-5 w-5" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="p-0 bg-sidebar border-sidebar-border w-[280px]">
+        <SheetContent side="left" className="p-0 bg-gray-900 border-gray-800">
           <ScrollArea className="h-screen">
             <div className="py-4">
-              <div className="flex items-center h-12 px-4 mb-4 border-b border-sidebar-border">
-                <h2 className="text-lg font-semibold text-gradient">Football Tracker</h2>
+              <div className="flex items-center h-12 px-4 mb-4">
+                <h2 className="text-lg font-semibold">Football Tracker</h2>
               </div>
               
               {/* Main navigation */}
@@ -60,53 +59,36 @@ const Layout = () => {
                   to={item.path}
                   onClick={() => setIsMenuOpen(false)}
                   className={({ isActive }) =>
-                    cn(
-                      "flex items-center gap-3 px-4 py-2.5 font-medium transition-all hover:bg-sidebar-accent focus:outline-none",
-                      isActive 
-                        ? "bg-sidebar-accent text-primary border-l-2 border-primary cyber-glow" 
-                        : "text-sidebar-foreground border-l-2 border-transparent"
-                    )
+                    `flex items-center space-x-2 px-4 py-2 font-medium transition-colors hover:bg-gray-800 focus:outline-none ${
+                      isActive ? "bg-gray-800 text-white" : "text-gray-300"
+                    }`
                   }
                 >
-                  <span className={cn(
-                    "p-1.5 rounded",
-                    location.pathname === item.path ? "bg-primary/20" : "bg-transparent"
-                  )}>
-                    {item.icon}
-                  </span>
+                  {item.icon}
                   <span>{item.label}</span>
                 </NavLink>
               ))}
               
-              <div className="border-t border-sidebar-border my-4"></div>
+              <div className="border-t border-gray-800 my-4"></div>
               
               {/* Actions menu */}
-              <div className="px-4 mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Quick Actions
-              </div>
-              <Button asChild variant="ghost" className="w-full justify-start font-normal text-sidebar-foreground hover:bg-sidebar-accent hover:text-primary group transition-all">
-                <NavLink to="/players/add" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5">
-                  <span className="p-1.5 rounded group-hover:bg-primary/20">
-                    <Plus className="h-4 w-4" />
-                  </span>
+              <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
+                <NavLink to="/players/add" onClick={() => setIsMenuOpen(false)} className="flex items-center space-x-2 px-4 py-2">
+                  <Plus className="h-4 w-4" />
                   <span>Add Player</span>
                 </NavLink>
               </Button>
               
-              <Button asChild variant="ghost" className="w-full justify-start font-normal text-sidebar-foreground hover:bg-sidebar-accent hover:text-primary group transition-all">
-                <NavLink to="/matches/create" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5">
-                  <span className="p-1.5 rounded group-hover:bg-primary/20">
-                    <Plus className="h-4 w-4" />
-                  </span>
+              <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
+                <NavLink to="/matches/create" onClick={() => setIsMenuOpen(false)} className="flex items-center space-x-2 px-4 py-2">
+                  <Plus className="h-4 w-4" />
                   <span>Create Match</span>
                 </NavLink>
               </Button>
               
-              <Button asChild variant="ghost" className="w-full justify-start font-normal text-sidebar-foreground hover:bg-sidebar-accent hover:text-primary group transition-all">
-                <NavLink to="/seasons/create" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5">
-                  <span className="p-1.5 rounded group-hover:bg-primary/20">
-                    <Plus className="h-4 w-4" />
-                  </span>
+              <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
+                <NavLink to="/seasons/create" onClick={() => setIsMenuOpen(false)} className="flex items-center space-x-2 px-4 py-2">
+                  <Plus className="h-4 w-4" />
                   <span>Create Season</span>
                 </NavLink>
               </Button>
@@ -118,16 +100,16 @@ const Layout = () => {
       {/* Desktop Sidebar */}
       <aside 
         className={cn(
-          "hidden md:flex flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300 overflow-hidden",
+          "hidden md:flex flex-col border-r border-gray-800 bg-gray-900 transition-all duration-300 overflow-hidden",
           isSidebarCollapsed ? "w-16" : "w-64"
         )}
       >
-        <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border">
-          {!isSidebarCollapsed && <h2 className="text-lg font-semibold text-gradient">Football Tracker</h2>}
+        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-800">
+          {!isSidebarCollapsed && <h2 className="text-lg font-semibold">Football Tracker</h2>}
           <Button
             variant="ghost"
             size="icon"
-            className="text-muted-foreground hover:text-primary hover:bg-sidebar-accent"
+            className="text-gray-400 hover:text-white hover:bg-gray-800"
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           >
             {isSidebarCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
@@ -143,58 +125,39 @@ const Layout = () => {
                 to={item.path}
                 className={({ isActive }) =>
                   cn(
-                    "flex items-center py-2.5 font-medium transition-all hover:bg-sidebar-accent focus:outline-none",
-                    isActive 
-                      ? "bg-sidebar-accent text-primary border-l-2 border-primary" 
-                      : "text-sidebar-foreground border-l-2 border-transparent",
-                    isSidebarCollapsed 
-                      ? "justify-center px-0" 
-                      : "gap-3 px-4"
+                    "flex items-center space-x-2 py-2 font-medium transition-colors hover:bg-gray-800 focus:outline-none",
+                    isActive ? "bg-gray-800 text-white" : "text-gray-300",
+                    isSidebarCollapsed ? "justify-center px-0" : "px-4"
                   )
                 }
               >
-                <span className={cn(
-                  "p-1.5 rounded",
-                  location.pathname === item.path ? "bg-primary/20" : "bg-transparent"
-                )}>
-                  {item.icon}
-                </span>
+                {item.icon}
                 {!isSidebarCollapsed && <span>{item.label}</span>}
               </NavLink>
             ))}
             
+            {!isSidebarCollapsed && <div className="border-t border-gray-800 my-4"></div>}
+            
+            {/* Actions menu - only show when expanded */}
             {!isSidebarCollapsed && (
               <>
-                <div className="border-t border-sidebar-border my-4"></div>
-                
-                <div className="px-4 mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Quick Actions
-                </div>
-                
-                {/* Actions menu - only show when expanded */}
-                <Button asChild variant="ghost" className="w-full justify-start font-normal text-sidebar-foreground hover:bg-sidebar-accent hover:text-primary group transition-all">
-                  <NavLink to="/players/add" className="flex items-center gap-3 px-4 py-2">
-                    <span className="p-1.5 rounded group-hover:bg-primary/20">
-                      <Plus className="h-4 w-4" />
-                    </span>
+                <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
+                  <NavLink to="/players/add" className="flex items-center space-x-2 px-4 py-2">
+                    <Plus className="h-4 w-4" />
                     <span>Add Player</span>
                   </NavLink>
                 </Button>
                 
-                <Button asChild variant="ghost" className="w-full justify-start font-normal text-sidebar-foreground hover:bg-sidebar-accent hover:text-primary group transition-all">
-                  <NavLink to="/matches/create" className="flex items-center gap-3 px-4 py-2">
-                    <span className="p-1.5 rounded group-hover:bg-primary/20">
-                      <Plus className="h-4 w-4" />
-                    </span>
+                <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
+                  <NavLink to="/matches/create" className="flex items-center space-x-2 px-4 py-2">
+                    <Plus className="h-4 w-4" />
                     <span>Create Match</span>
                   </NavLink>
                 </Button>
                 
-                <Button asChild variant="ghost" className="w-full justify-start font-normal text-sidebar-foreground hover:bg-sidebar-accent hover:text-primary group transition-all">
-                  <NavLink to="/seasons/create" className="flex items-center gap-3 px-4 py-2">
-                    <span className="p-1.5 rounded group-hover:bg-primary/20">
-                      <Plus className="h-4 w-4" />
-                    </span>
+                <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
+                  <NavLink to="/seasons/create" className="flex items-center space-x-2 px-4 py-2">
+                    <Plus className="h-4 w-4" />
                     <span>Create Season</span>
                   </NavLink>
                 </Button>
@@ -205,7 +168,7 @@ const Layout = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex flex-col h-full bg-background text-foreground">
+      <main className="flex flex-col h-full bg-gray-950 text-white">
         <Outlet />
       </main>
     </div>

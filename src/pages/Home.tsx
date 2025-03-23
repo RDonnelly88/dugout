@@ -11,7 +11,6 @@ import {
 import { ArrowRight, Trophy, Calendar, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import SeasonLeaderboard from "@/components/seasons/SeasonLeaderboard";
 import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
 
@@ -65,97 +64,88 @@ const Home = () => {
   return (
     <div className="page-container animate-slide-up">
       <div className="page-header">
-        <h1 className="page-title text-4xl font-bold text-gradient mb-2">Football Tracker</h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
+        <h1 className="page-title text-gradient">Football Tracker</h1>
+        <p className="mt-2 text-muted-foreground">
           Track your football matches and player statistics
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3 my-8">
-        <div className="tech-panel animate-pop-in" style={{animationDelay: "0.1s"}}>
-          <div className="tech-panel-header">
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Players</h3>
-          </div>
-          <div className="tech-panel-content flex items-center gap-4">
-            <div className="p-3 rounded-full bg-primary/10 cyber-glow">
-              <Users className="h-6 w-6 text-primary" />
-            </div>
-            <div className="text-3xl font-bold">{players.length}</div>
-          </div>
-        </div>
+      <div className="grid gap-4 md:grid-cols-3 mb-8">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Players</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{players.length}</div>
+          </CardContent>
+        </Card>
         
-        <div className="tech-panel animate-pop-in" style={{animationDelay: "0.2s"}}>
-          <div className="tech-panel-header">
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Played Matches</h3>
-          </div>
-          <div className="tech-panel-content flex items-center gap-4">
-            <div className="p-3 rounded-full bg-primary/10 cyber-glow">
-              <Trophy className="h-6 w-6 text-primary" />
-            </div>
-            <div className="text-3xl font-bold">{completedMatches}</div>
-          </div>
-        </div>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Played Matches</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{completedMatches}</div>
+          </CardContent>
+        </Card>
         
-        <div className="tech-panel animate-pop-in" style={{animationDelay: "0.3s"}}>
-          <div className="tech-panel-header">
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Upcoming Matches</h3>
-          </div>
-          <div className="tech-panel-content flex items-center gap-4">
-            <div className="p-3 rounded-full bg-primary/10 cyber-glow">
-              <Calendar className="h-6 w-6 text-primary" />
-            </div>
-            <div className="text-3xl font-bold">{scheduledMatches}</div>
-          </div>
-        </div>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Upcoming Matches</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{scheduledMatches}</div>
+          </CardContent>
+        </Card>
       </div>
 
       {currentSeason ? (
-        <div className="space-y-8">
-          <div className="tech-panel animate-slide-up" style={{animationDelay: "0.4s"}}>
-            <div className="tech-panel-header flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-bold">Current Season</h2>
-                <p className="text-sm text-muted-foreground">{currentSeason.name}</p>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Current Season</CardTitle>
+                  <CardDescription>{currentSeason.name}</CardDescription>
+                </div>
+                <Link to={`/seasons/${currentSeason.id}`}>
+                  <Button variant="outline" size="sm">
+                    View Season
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </Link>
               </div>
-              <Link to={`/seasons/${currentSeason.id}`}>
-                <Button variant="outline" size="sm" className="cyber-button">
-                  View Season
-                  <ArrowRight className="ml-1 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-            <div className="tech-panel-content">
+            </CardHeader>
+            <CardContent>
               <div className="flex flex-wrap gap-4">
-                <div className="tech-badge flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
+                <div className="flex items-center p-2 bg-blue-50 text-blue-700 rounded-lg">
+                  <Calendar className="h-4 w-4 mr-2" />
                   <span>{new Date(currentSeason.startDate).toLocaleDateString()} - {currentSeason.endDate ? new Date(currentSeason.endDate).toLocaleDateString() : "Ongoing"}</span>
                 </div>
-                <div className="tech-badge flex items-center gap-2">
-                  <Trophy className="h-4 w-4" />
+                <div className="flex items-center p-2 bg-green-50 text-green-700 rounded-lg">
+                  <Trophy className="h-4 w-4 mr-2" />
                   <span>{currentSeasonMatches.length} Matches</span>
                 </div>
-                <div className="tech-badge flex items-center gap-2">
-                  <Users className="h-4 w-4" />
+                <div className="flex items-center p-2 bg-purple-50 text-purple-700 rounded-lg">
+                  <Users className="h-4 w-4 mr-2" />
                   <span>{seasonPlayerStats.length} Players</span>
                 </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          <div className="animate-slide-up" style={{animationDelay: "0.5s"}}>
-            <SeasonLeaderboard 
-              stats={seasonPlayerStats}
-              limit={5}
-              seasonName={currentSeason.name}
-              isFinished={currentSeason.isFinished}
-              seasonId={currentSeason.id}
-              playerForms={formData}
-            />
-          </div>
+          <SeasonLeaderboard 
+            stats={seasonPlayerStats}
+            limit={5}
+            seasonName={currentSeason.name}
+            isFinished={currentSeason.isFinished}
+            seasonId={currentSeason.id}
+            playerForms={formData}
+          />
           
-          <div className="flex justify-end animate-slide-up" style={{animationDelay: "0.6s"}}>
+          <div className="flex justify-end">
             <Link to={`/seasons/${currentSeason.id}`}>
-              <Button variant="outline" className="cyber-button">
+              <Button variant="outline">
                 View Full League Table
                 <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
@@ -163,13 +153,15 @@ const Home = () => {
           </div>
         </div>
       ) : (
-        <div className="tech-panel animate-slide-up p-8 text-center" style={{animationDelay: "0.4s"}}>
-          <h2 className="text-xl font-bold mb-2">No Current Season</h2>
-          <p className="text-muted-foreground mb-6">Create a season to organize your matches and track player statistics.</p>
-          <Button asChild className="cyber-button">
-            <Link to="/seasons/create">Create Season</Link>
-          </Button>
-        </div>
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <h2 className="text-xl font-medium mb-2">No Current Season</h2>
+            <p className="text-muted-foreground mb-4">Create a season to organize your matches and track player statistics.</p>
+            <Button asChild>
+              <Link to="/seasons/create">Create Season</Link>
+            </Button>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

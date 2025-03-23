@@ -75,9 +75,9 @@ const TeamSelection = ({
   return (
     <div className="space-y-8">
       <div className="teams-container">
-        <Label className="team-label mb-4 block flex items-center">
-          <Shield className="h-5 w-5 mr-2 text-primary inline" />
-          <span className="text-xl font-bold text-gradient">Team Formations</span>
+        <Label className="team-label mb-4 block">
+          <Shield className="h-5 w-5 mr-2 text-blue-400 inline" />
+          <span className="text-xl font-bold">Team Formations</span>
         </Label>
         
         <Formation 
@@ -88,14 +88,12 @@ const TeamSelection = ({
         />
       </div>
 
-      <div className="available-players-container tech-panel mt-12">
-        <div className="tech-panel-header">
-          <Label className="team-label flex items-center">
-            <Users className="h-5 w-5 mr-2 text-primary inline" />
-            <span className="text-xl font-bold text-gradient">Available Players</span>
-          </Label>
-        </div>
-        <div className="tech-panel-content">
+      <div className="available-players-container">
+        <Label className="team-label mb-4 block">
+          <Users className="h-5 w-5 mr-2 text-gray-400 inline" />
+          <span className="text-xl font-bold">Available Players</span>
+        </Label>
+        <div className="available-players-card bg-blue-950/20 rounded-xl p-4 border border-blue-500/20">
           {availablePlayers.length === 0 ? (
             <div className="text-center p-8 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-2 opacity-30" />
@@ -147,28 +145,28 @@ const PlayerCard = ({ player, currentSeason, seasonStats, onClick, playerRanks =
     >
       <HoverCard>
         <HoverCardTrigger asChild>
-          <div className="player-card-mini tech-panel cyber-border p-3 flex items-center space-x-2 shadow-md hover:shadow-primary/20 hover:shadow-lg transition-all duration-200">
-            <Avatar className="h-10 w-10 border-2 border-primary/30">
+          <div className="player-card-mini bg-blue-900/60 rounded-lg p-3 flex items-center space-x-2 shadow-md border border-blue-500/20 hover:border-blue-400/50 hover:shadow-blue-500/20 hover:shadow-lg transition-all duration-200">
+            <Avatar className="h-10 w-10 border-2 border-blue-500/30">
               {player.image ? (
                 <AvatarImage src={player.image} alt={player.name} />
               ) : (
-                <AvatarFallback className="bg-gray-900 text-primary">
+                <AvatarFallback className="bg-blue-700 text-white">
                   {player.name.charAt(0)}
                 </AvatarFallback>
               )}
             </Avatar>
             <div>
-              <span className="text-sm font-medium truncate text-white">{player.name}</span>
+              <span className="text-sm font-medium truncate text-blue-50">{player.name}</span>
               {playerRank && (
                 <div className="flex items-center text-xs">
-                  <Flag className="h-3 w-3 text-primary mr-1" />
-                  <span className="text-primary">#{playerRank}</span>
+                  <Flag className="h-3 w-3 text-yellow-500 mr-1" />
+                  <span className="text-yellow-300">#{playerRank}</span>
                 </div>
               )}
               {!playerRank && hasPlayedGames && (
                 <div className="flex items-center text-xs">
-                  <Flag className="h-3 w-3 text-gray-500 mr-1" />
-                  <span className="text-gray-400">Not ranked</span>
+                  <Flag className="h-3 w-3 text-yellow-500 mr-1" />
+                  <span className="text-yellow-300">Not ranked</span>
                 </div>
               )}
               {!hasPlayedGames && (
@@ -180,7 +178,7 @@ const PlayerCard = ({ player, currentSeason, seasonStats, onClick, playerRanks =
             </div>
           </div>
         </HoverCardTrigger>
-        <HoverCardContent className="w-72 p-3 neo-glassmorphism border border-primary/30 text-white">
+        <HoverCardContent className="w-72 p-3 bg-blue-950 border border-blue-500/30 text-white">
           <PlayerHoverContent 
             player={player} 
             currentSeasonId={currentSeason?.id || null}
