@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useTeam } from "@/contexts/TeamContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -51,8 +52,12 @@ const TeamManagement = () => {
         }
           
         return {
-          ...member,
-          profile
+          id: member.id,
+          user_id: member.user_id,
+          team_id: member.team_id,
+          role: member.role,
+          created_at: member.created_at,
+          profile: profile
         } as TeamMember;
       });
     },
