@@ -98,7 +98,10 @@ const TeamSelector = () => {
             <DialogTrigger asChild>
               <button
                 className="flex items-center w-full px-2.5 py-2 text-sm text-primary hover:bg-gray-700 cursor-pointer"
-                onClick={() => setIsPopoverOpen(false)}
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent click from bubbling up
+                  setIsPopoverOpen(false);
+                }}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Create New Team
