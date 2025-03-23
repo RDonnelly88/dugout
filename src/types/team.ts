@@ -15,9 +15,10 @@ export interface TeamMember {
   user_id: string;
   role: TeamRole;
   created_at: string;
-  // Add these new fields to accommodate both data structures
+  // Make username and avatar_url optional to match our handling in the code
   username?: string;
-  avatar_url?: string;
+  avatar_url?: string | null;
+  // Make profile optional to properly type our data structure
   profile?: {
     username: string;
     avatar_url: string | null;

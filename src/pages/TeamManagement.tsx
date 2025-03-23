@@ -109,8 +109,9 @@ const TeamManagement = () => {
             team_id: member.team_id,
             role: member.role,
             created_at: member.created_at,
-            username: profile?.username,
-            avatar_url: profile?.avatar_url,
+            // Fix the TypeScript errors by ensuring we check if profile exists before accessing properties
+            username: profile ? profile.username : undefined,
+            avatar_url: profile ? profile.avatar_url : undefined,
             profile: profile ? {
               username: profile.username,
               avatar_url: profile.avatar_url
