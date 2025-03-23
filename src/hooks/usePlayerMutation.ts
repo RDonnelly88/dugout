@@ -18,10 +18,10 @@ export function usePlayerMutation() {
         throw new Error("No team selected");
       }
       
-      console.log("Adding player with team_id:", currentTeam.id);
+      console.log("Adding player with teamId:", currentTeam.id);
       return addPlayer({ 
         ...player, 
-        team_id: currentTeam.id,
+        teamId: currentTeam.id,
         stats: { played: 0, won: 0, lost: 0, drawn: 0 },
         image: player.imageUrl || null
       });

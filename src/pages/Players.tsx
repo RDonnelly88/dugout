@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPlayers, deletePlayer, getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
@@ -23,7 +24,7 @@ const Players = () => {
     select: (data) => {
       if (currentTeam) {
         console.log("Filtering players for team:", currentTeam.id);
-        return data.filter(player => player.team_id === currentTeam.id);
+        return data.filter(player => player.teamId === currentTeam.id);
       }
       return data;
     }
