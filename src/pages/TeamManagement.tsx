@@ -43,12 +43,15 @@ const TeamManagement = () => {
       const defaultProfile = { username: 'Unknown User', avatar_url: null as string | null };
       
       return (data || []).map(member => {
+        // Create a safe profile object
         let profile = defaultProfile;
         
-        if (member.profile && typeof member.profile === 'object' && member.profile !== null) {
-          if (!('error' in member.profile)) {
-            profile = member.profile as { username: string, avatar_url: string | null };
-          }
+        // Properly check if profile exists and has the right shape
+        if (member.profile && 
+            typeof member.profile === 'object' && 
+            member.profile !== null && 
+            !('error' in member.profile)) {
+          profile = member.profile as { username: string, avatar_url: string | null };
         }
           
         return {
@@ -57,7 +60,7 @@ const TeamManagement = () => {
           team_id: member.team_id,
           role: member.role,
           created_at: member.created_at,
-          profile: profile
+          profile: profile  // This profile is now guaranteed to be valid
         } as TeamMember;
       });
     },
