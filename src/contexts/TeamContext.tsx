@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
@@ -111,6 +112,44 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateUserRole();
   }, [currentTeam, user]);
 
+  const ensureProfileExists = async () => {
+    if (!user) return { error: "Not authenticated" };
+    
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .single();
+      
+      if (error && error.code === "PGRST116") {
+        // Profile doesn't exist, create it
+        console.log("Creating new profile for user", user.id);
+        const { error: createError } = await supabase
+          .from("profiles")
+          .insert([{ 
+            id: user.id,
+            username: user.email,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }]);
+          
+        if (createError) {
+          console.error("Error creating profile:", createError);
+          return { error: createError };
+        }
+      } else if (error) {
+        console.error("Error checking profile:", error);
+        return { error };
+      }
+      
+      return { error: null };
+    } catch (error) {
+      console.error("Exception in ensureProfileExists:", error);
+      return { error };
+    }
+  };
+
   const createTeam = async (name: string) => {
     if (!user) {
       toast({
@@ -122,47 +161,20 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("id", user.id)
-        .single();
-      
+      // First ensure the user has a profile
+      const { error: profileError } = await ensureProfileExists();
       if (profileError) {
-        console.log("Profile check error:", profileError);
-        
-        if (profileError.code === "PGRST116") {
-          const { error: createProfileError } = await supabase
-            .from("profiles")
-            .insert([{ 
-              id: user.id,
-              username: user.email,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }]);
-            
-          if (createProfileError) {
-            console.error("Error creating profile:", createProfileError);
-            toast({
-              title: "Error creating profile",
-              description: createProfileError.message || "Failed to create user profile",
-              variant: "destructive",
-            });
-            return { error: createProfileError };
-          }
-        } else {
-          console.error("Error checking profile:", profileError);
-          toast({
-            title: "Error checking profile",
-            description: profileError.message || "Failed to check user profile",
-            variant: "destructive",
-          });
-          return { error: profileError };
-        }
+        toast({
+          title: "Error with user profile",
+          description: "Could not verify or create your user profile",
+          variant: "destructive",
+        });
+        return { error: profileError };
       }
       
       console.log("Creating team with name:", name);
       
+      // Create the team
       const { data: newTeam, error: teamError } = await supabase
         .from("teams")
         .insert({
@@ -197,6 +209,7 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const createdTeam = newTeam[0];
       console.log("Team created successfully:", createdTeam);
 
+      // Add the creator as an admin member
       const { error: memberError } = await supabase
         .from("team_members")
         .insert({
@@ -209,6 +222,7 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (memberError) {
         console.error("Team member creation error:", memberError);
         
+        // Clean up - delete the team if member creation fails
         await supabase
           .from("teams")
           .delete()
