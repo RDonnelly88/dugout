@@ -128,6 +128,8 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return { error: "Not authenticated" };
 
     try {
+      console.log("Creating team for user:", user.id);
+      
       const { data: teamData, error: teamError } = await supabase
         .from("teams")
         .insert([{ 
@@ -139,7 +141,12 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .select()
         .single();
 
-      if (teamError) throw teamError;
+      if (teamError) {
+        console.error("Team creation SQL error:", teamError);
+        return { error: teamError };
+      }
+
+      console.log("Team created successfully:", teamData);
 
       const { error: memberError } = await supabase
         .from("team_members")
@@ -150,7 +157,12 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
           created_at: new Date().toISOString()
         }]);
 
-      if (memberError) throw memberError;
+      if (memberError) {
+        console.error("Team member creation error:", memberError);
+        return { error: memberError };
+      }
+
+      console.log("Team member record created successfully");
 
       const newTeam = {
         id: teamData.id,
@@ -170,12 +182,7 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       return { error: null };
     } catch (error) {
-      console.error("Error creating team:", error);
-      toast({
-        title: "Error creating team",
-        description: error.message || "Could not create the team. Please try again.",
-        variant: "destructive",
-      });
+      console.error("Team creation exception:", error);
       return { error };
     }
   };
