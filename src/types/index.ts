@@ -52,7 +52,7 @@ export interface Season {
   isFinished: boolean;
   createdAt: string;
   updatedAt: string;
-  team_id?: string;
+  teamId?: string;
 }
 
 export interface SeasonPlayerStats {
