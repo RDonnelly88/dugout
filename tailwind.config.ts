@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -103,6 +104,23 @@ export default {
 					'50%': { opacity: '0.3' },
 					'100%': { transform: 'translateY(100vh)', opacity: '0.7' }
 				},
+				'slide-in-right': {
+					'0%': { transform: 'translateX(0)' },
+					'100%': { transform: 'translateX(150vw)' }
+				},
+				float: {
+					'0%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-15px)' },
+					'100%': { transform: 'translateY(0)' }
+				},
+				glow: {
+					'0%, 100%': { 
+						textShadow: '0 0 5px rgba(45, 212, 191, 0.5), 0 0 15px rgba(45, 212, 191, 0.3)' 
+					},
+					'50%': { 
+						textShadow: '0 0 10px rgba(45, 212, 191, 0.8), 0 0 30px rgba(45, 212, 191, 0.5)' 
+					}
+				},
 				'confetti-slow': {
 					'0%': { transform: 'translate3d(0,0,0) rotateX(0) rotateY(0)' },
 					'100%': { transform: 'translate3d(25px,105vh,0) rotateX(360deg) rotateY(180deg)' }
@@ -125,6 +143,9 @@ export default {
 				bounce: 'bounce 1s ease-in-out infinite',
 				'card-float': 'card-float 3s ease-in-out infinite',
 				scanner: 'scanner 8s linear infinite',
+				'slide-in-right': 'slide-in-right 15s linear infinite',
+				float: 'float 3s ease-in-out infinite',
+				glow: 'glow 4s ease-in-out infinite',
 				'confetti-slow': 'confetti-slow 2.5s linear infinite',
 				'confetti-medium': 'confetti-medium 2s linear infinite',
 				'confetti-fast': 'confetti-fast 1.5s linear infinite'
