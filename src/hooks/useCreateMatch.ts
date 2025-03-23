@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addMatch } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { Player } from "@/types";
+import { useTeam } from "@/contexts/TeamContext";
 
 export const useCreateMatch = () => {
   const [teamA, setTeamA] = useState<string[]>([]);
@@ -14,6 +14,7 @@ export const useCreateMatch = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { currentTeam } = useTeam();
 
   const togglePlayer = (team: 'A' | 'B', playerId: string) => {
     if (team === 'A') {
@@ -34,11 +35,9 @@ export const useCreateMatch = () => {
   };
 
   const randomizeTeams = (players: Player[], teamSize: number = 5) => {
-    // Reset current teams
     setTeamA([]);
     setTeamB([]);
     
-    // If no players were selected, don't proceed
     if (players.length === 0) {
       toast({
         title: "No players selected",
@@ -48,7 +47,6 @@ export const useCreateMatch = () => {
       return [];
     }
     
-    // Need at least 2 players to form teams
     if (players.length < 2) {
       toast({
         title: "Not enough players",
@@ -58,19 +56,15 @@ export const useCreateMatch = () => {
       return [];
     }
     
-    // Extract the player IDs and shuffle them randomly
     const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
     
-    // Split the players into teams
     const halfIndex = Math.ceil(shuffledPlayers.length / 2);
     const teamAPlayers = shuffledPlayers.slice(0, halfIndex);
     const teamBPlayers = shuffledPlayers.slice(halfIndex);
     
-    // Get the player IDs for each team
     const teamAIds = teamAPlayers.map(player => player.id);
     const teamBIds = teamBPlayers.map(player => player.id);
     
-    // Update the state with the new teams
     setTeamA(teamAIds);
     setTeamB(teamBIds);
     
@@ -105,6 +99,15 @@ export const useCreateMatch = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!currentTeam) {
+      toast({
+        title: "No team selected",
+        description: "You must select a team before creating a match.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!date) {
       toast({
         title: "Error",
@@ -136,7 +139,8 @@ export const useCreateMatch = () => {
       },
       date: date.toISOString(),
       status: "scheduled",
-      seasonId: seasonId === "none" ? undefined : seasonId
+      seasonId: seasonId === "none" ? undefined : seasonId,
+      teamId: currentTeam.id
     };
 
     createMatchMutation.mutate(matchData);

@@ -1,14 +1,30 @@
 
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import SeasonForm from "@/components/seasons/SeasonForm";
 import { useCreateSeason } from "@/hooks/useCreateSeason";
+import { usePermission } from "@/lib/permission-utils";
+import { useToast } from "@/hooks/use-toast";
 
 const CreateSeason = () => {
+  const { canManage } = usePermission();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const { createSeasonMutation, handleSubmit } = useCreateSeason();
+
+  useEffect(() => {
+    if (!canManage()) {
+      toast({
+        title: "Team required",
+        description: "You need to create or select a team before creating seasons",
+        variant: "destructive",
+      });
+      navigate("/");
+    }
+  }, [canManage, navigate, toast]);
 
   return (
     <div className="page-container animate-slide-up">

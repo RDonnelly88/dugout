@@ -1,17 +1,23 @@
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addPlayer, updatePlayer, deletePlayer } from "@/lib/db";
 import { Player } from "@/types";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useTeam } from "@/contexts/TeamContext";
 
 export function usePlayerMutation() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { currentTeam } = useTeam();
 
   const addPlayerMutation = useMutation({
-    mutationFn: (player: Omit<Player, "id" | "createdAt" | "updatedAt">) => addPlayer(player),
+    mutationFn: (player: Omit<Player, "id" | "createdAt" | "updatedAt">) => {
+      if (!currentTeam) {
+        throw new Error("No team selected");
+      }
+      return addPlayer({ ...player, team_id: currentTeam.id });
+    },
     onSuccess: (player) => {
       queryClient.invalidateQueries({ queryKey: ['players'] });
       toast({
@@ -20,10 +26,10 @@ export function usePlayerMutation() {
       });
       navigate(`/players/${player.id}`);
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to add the player. Please try again.",
+        description: error.message || "Failed to add the player. Please try again.",
         variant: "destructive",
       });
     }

@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { getCurrentSeason } from "@/lib/db";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTeam } from "@/contexts/TeamContext";
+import { usePermission } from "@/lib/permission-utils";
 import TeamSelector from "@/components/TeamSelector";
 
 const menuItems = [
@@ -34,7 +35,8 @@ const Layout = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const { user } = useAuth();
-  const { currentTeam, isTeamAdmin } = useTeam();
+  const { currentTeam } = useTeam();
+  const { canManage, hasTeam } = usePermission();
   const navigate = useNavigate();
   
   // Fetch current season for the header
@@ -43,7 +45,7 @@ const Layout = () => {
     queryFn: getCurrentSeason
   });
   
-  const isAdmin = isTeamAdmin();
+  const showActions = canManage();
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] min-h-screen bg-gray-950 text-white">
@@ -78,7 +80,7 @@ const Layout = () => {
                 </NavLink>
               ))}
               
-              {currentTeam && isAdmin && (
+              {currentTeam && showActions && (
                 <>
                   <div className="border-t border-gray-800 my-4"></div>
                   
@@ -149,7 +151,7 @@ const Layout = () => {
               </NavLink>
             ))}
             
-            {currentTeam && isAdmin && (
+            {hasTeam() && showActions && (
               <>
                 {!isSidebarCollapsed && <div className="border-t border-gray-800 my-4"></div>}
                 

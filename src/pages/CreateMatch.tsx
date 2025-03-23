@@ -1,4 +1,6 @@
 
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getPlayers } from "@/lib/db";
 import { Button } from "@/components/ui/button";
@@ -8,9 +10,15 @@ import TeamRandomizer from "@/components/matches/TeamRandomizer";
 import DatePicker from "@/components/matches/DatePicker";
 import SeasonSelect from "@/components/matches/SeasonSelect";
 import { useCreateMatch } from "@/hooks/useCreateMatch";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { usePermission } from "@/lib/permission-utils";
+import { useToast } from "@/hooks/use-toast";
 
 const CreateMatch = () => {
+  const { canManage } = usePermission();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
   const { 
     teamA, 
     teamB, 
@@ -26,9 +34,21 @@ const CreateMatch = () => {
   
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
 
+  useEffect(() => {
+    if (!canManage()) {
+      toast({
+        title: "Team required",
+        description: "You need to create or select a team before creating matches",
+        variant: "destructive",
+      });
+      navigate("/");
+    }
+  }, [canManage, navigate, toast]);
+
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
-    queryFn: getPlayers
+    queryFn: getPlayers,
+    enabled: canManage()
   });
   
   // Initialize selected players with all players
