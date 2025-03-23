@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
@@ -199,10 +200,26 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       console.log("Team created successfully:", data);
 
+      // Properly type and access the data as an object with team_id property
+      const teamId = typeof data === 'object' && data !== null && 'team_id' in data 
+        ? (data as { team_id: string }).team_id 
+        : null;
+        
+      if (!teamId) {
+        const noTeamIdError = new Error("No team_id in response data");
+        console.error("Team creation error:", noTeamIdError);
+        toast({
+          title: "Team creation failed",
+          description: "Team creation response did not include team ID",
+          variant: "destructive",
+        });
+        return { error: noTeamIdError };
+      }
+
       const { data: teamData, error: teamFetchError } = await supabase
         .from("teams")
         .select("*")
-        .eq("id", data.team_id)
+        .eq("id", teamId)
         .single();
         
       if (teamFetchError) {
