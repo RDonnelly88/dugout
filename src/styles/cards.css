@@ -28,16 +28,17 @@
     @apply absolute w-[10px] h-[10px] opacity-80;
   }
   
-  /* Randomizer card styles */
+  /* F1-inspired card styles */
   .player-card-randomizer {
-    @apply relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-900/70 via-indigo-900/70 to-blue-950/70 backdrop-blur-sm border-2 border-white/20 shadow-xl;
+    @apply relative overflow-hidden rounded-xl bg-gradient-to-br from-gray-900/80 via-gray-900/90 to-black/90 backdrop-blur-sm border-2 shadow-xl;
+    border-image: linear-gradient(to bottom, rgba(45, 212, 191, 0.8), rgba(15, 118, 110, 0.4)) 1;
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
                 box-shadow 0.3s ease;
   }
   
   .player-card-randomizer:hover {
-    @apply transform scale-105 border-primary/50 shadow-2xl;
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+    @apply transform scale-105 shadow-2xl;
+    box-shadow: 0 0 20px rgba(45, 212, 191, 0.4);
   }
   
   .player-card-stat {
@@ -47,6 +48,7 @@
   
   .player-card-stat:hover {
     @apply transform scale-110;
+    box-shadow: 0 0 10px rgba(45, 212, 191, 0.3);
   }
   
   .player-card-mini {
@@ -57,5 +59,17 @@
   
   .player-card-mini:hover {
     @apply transform scale-105 shadow-lg;
+    box-shadow: 0 0 15px rgba(45, 212, 191, 0.4);
+  }
+  
+  /* Team cards with F1 styling */
+  .team-card-a {
+    @apply bg-gradient-to-br from-gray-900 to-black border-l-4 border-rose-500;
+    box-shadow: -4px 0 10px rgba(244, 63, 94, 0.3);
+  }
+  
+  .team-card-b {
+    @apply bg-gradient-to-br from-gray-900 to-black border-l-4 border-cyan-500;
+    box-shadow: -4px 0 10px rgba(45, 212, 191, 0.3);
   }
 }

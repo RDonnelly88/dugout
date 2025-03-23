@@ -20,13 +20,13 @@
     --border: 216 34% 17%;
     --input: 216 34% 17%;
 
-    --primary: 210 40% 98%;
+    --primary: 174 86% 57%;
     --primary-foreground: 222 47% 1%;
 
     --secondary: 222 47% 11%;
     --secondary-foreground: 210 40% 98%;
 
-    --accent: 216 34% 17%;
+    --accent: 174 86% 40%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 63% 31%;
@@ -39,7 +39,7 @@
     --sidebar-accent-foreground: 213 31% 91%;
     --sidebar-ring: 224 53% 16%;
 
-    --ring: 216 34% 17%;
+    --ring: 174 86% 57%;
 
     --radius: 0.5rem;
   }
@@ -116,5 +116,63 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  /* F1-inspired animations and effects */
+  .animate-pop-in {
+    animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  
+  @keyframes pop-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    70% {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  .cyber-glow {
+    box-shadow: 0 0 10px rgba(45, 212, 191, 0.5), 0 0 20px rgba(45, 212, 191, 0.3);
+  }
+  
+  .cyber-border {
+    border: 1px solid rgba(45, 212, 191, 0.5);
+    box-shadow: 0 0 5px rgba(45, 212, 191, 0.3);
+  }
+  
+  /* Enhanced F1-inspired animations */
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 10px rgba(45, 212, 191, 0.5);
+    }
+    50% {
+      box-shadow: 0 0 20px rgba(45, 212, 191, 0.8), 0 0 30px rgba(45, 212, 191, 0.4);
+    }
+  }
+  
+  .pulse-glow {
+    animation: pulse-glow 2s infinite;
+  }
+  
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+  
+  .floating {
+    animation: float 3s ease-in-out infinite;
   }
 }
