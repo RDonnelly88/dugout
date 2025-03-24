@@ -18,6 +18,10 @@
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', sans-serif;
     min-height: 100vh;
+    background-image: 
+      radial-gradient(circle at 20% 30%, rgba(45, 212, 191, 0.15) 0%, transparent 30%),
+      radial-gradient(circle at 70% 70%, rgba(45, 212, 191, 0.1) 0%, transparent 20%),
+      linear-gradient(to bottom, hsl(var(--background)), hsl(225 85% 2%));
   }
   
   #root {

@@ -1,3 +1,4 @@
+
 @layer components {
   /* Shimmer loading effect */
   .shimmer {
@@ -335,4 +336,3 @@
     animation: card-reveal 0.8s ease-out forwards;
   }
 }
-
