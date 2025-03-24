@@ -20,14 +20,14 @@
     --border: 216 34% 17%;
     --input: 216 34% 17%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222 47% 1%;
+    --primary: 175 70% 41%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 222 47% 11%;
     --secondary-foreground: 210 40% 98%;
 
-    --accent: 216 34% 17%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 175 70% 41%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
@@ -39,7 +39,7 @@
     --sidebar-accent-foreground: 213 31% 91%;
     --sidebar-ring: 224 53% 16%;
 
-    --ring: 216 34% 17%;
+    --ring: 175 70% 41%;
 
     --radius: 0.5rem;
   }
@@ -116,5 +116,30 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  /* New Glass-effect classes */
+  .glass-effect {
+    @apply bg-gray-900/50 backdrop-blur-md border border-gray-700/50;
+  }
+  
+  .glass-card {
+    @apply bg-gray-900/40 backdrop-blur-lg border border-gray-700/30 shadow-lg shadow-black/10;
+  }
+  
+  .gradient-border {
+    @apply relative before:absolute before:inset-0 before:-z-10 before:p-[1px] before:rounded-[inherit] before:bg-gradient-to-r before:from-accent/60 before:via-accent before:to-accent/60;
+  }
+  
+  .turquoise-glow {
+    @apply shadow-lg shadow-accent/20;
+  }
+  
+  .gradient-text {
+    @apply bg-gradient-to-r from-white via-white to-gray-300 bg-clip-text text-transparent;
+  }
+  
+  .gradient-text-accent {
+    @apply bg-gradient-to-r from-accent via-accent/90 to-accent/70 bg-clip-text text-transparent;
   }
 }

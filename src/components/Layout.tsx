@@ -51,7 +51,7 @@ const Layout = () => {
   const showActions = canManage();
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] min-h-screen bg-gray-950 text-white">
+    <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] min-h-screen bg-background text-foreground">
       {/* Mobile Menu */}
       <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
         <SheetTrigger asChild>
@@ -73,8 +73,8 @@ const Layout = () => {
                   to={item.path}
                   onClick={() => setIsMenuOpen(false)}
                   className={({ isActive }) =>
-                    `flex items-center space-x-2 px-4 py-2 font-medium transition-colors hover:bg-gray-800 focus:outline-none ${
-                      isActive ? "bg-gray-800 text-white" : "text-gray-300"
+                    `flex items-center space-x-2 px-4 py-2 font-medium transition-colors hover:bg-gray-800/70 focus:outline-none ${
+                      isActive ? "bg-accent/20 text-accent" : "text-gray-300"
                     }`
                   }
                 >
@@ -88,21 +88,21 @@ const Layout = () => {
                   <div className="border-t border-gray-800 my-4"></div>
                   
                   {/* Actions menu */}
-                  <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
+                  <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800/70 hover:text-white">
                     <NavLink to="/players/add" onClick={() => setIsMenuOpen(false)} className="flex items-center space-x-2 px-4 py-2">
                       <Plus className="h-4 w-4" />
                       <span>Add Player</span>
                     </NavLink>
                   </Button>
                   
-                  <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
+                  <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800/70 hover:text-white">
                     <NavLink to="/matches/create" onClick={() => setIsMenuOpen(false)} className="flex items-center space-x-2 px-4 py-2">
                       <Plus className="h-4 w-4" />
                       <span>Create Match</span>
                     </NavLink>
                   </Button>
                   
-                  <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
+                  <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800/70 hover:text-white">
                     <NavLink to="/seasons/create" onClick={() => setIsMenuOpen(false)} className="flex items-center space-x-2 px-4 py-2">
                       <Plus className="h-4 w-4" />
                       <span>Create Season</span>
@@ -118,7 +118,7 @@ const Layout = () => {
       {/* Desktop Sidebar */}
       <aside 
         className={cn(
-          "hidden md:flex flex-col border-r border-gray-800 bg-gray-900 transition-all duration-300 overflow-hidden",
+          "hidden md:flex flex-col border-r border-gray-800 bg-gray-900/90 transition-all duration-300 overflow-hidden",
           isSidebarCollapsed ? "w-16" : "w-64"
         )}
       >
@@ -131,7 +131,7 @@ const Layout = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="text-gray-400 hover:text-white hover:bg-gray-800"
+            className="text-gray-400 hover:text-white hover:bg-gray-800/70"
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           >
             {isSidebarCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
@@ -147,8 +147,8 @@ const Layout = () => {
                 to={item.path}
                 className={({ isActive }) =>
                   cn(
-                    "flex items-center space-x-2 py-2 font-medium transition-colors hover:bg-gray-800 focus:outline-none",
-                    isActive ? "bg-gray-800 text-white" : "text-gray-300",
+                    "flex items-center space-x-2 py-2 font-medium transition-colors hover:bg-gray-800/70 focus:outline-none",
+                    isActive ? "bg-accent/20 text-accent" : "text-gray-300",
                     isSidebarCollapsed ? "justify-center px-0" : "px-4"
                   )
                 }
@@ -165,21 +165,21 @@ const Layout = () => {
                 {/* Actions menu - only show when expanded and user is admin */}
                 {!isSidebarCollapsed && (
                   <>
-                    <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
+                    <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800/70 hover:text-white">
                       <NavLink to="/players/add" className="flex items-center space-x-2 px-4 py-2">
                         <Plus className="h-4 w-4" />
                         <span>Add Player</span>
                       </NavLink>
                     </Button>
                     
-                    <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
+                    <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800/70 hover:text-white">
                       <NavLink to="/matches/create" className="flex items-center space-x-2 px-4 py-2">
                         <Plus className="h-4 w-4" />
                         <span>Create Match</span>
                       </NavLink>
                     </Button>
                     
-                    <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800 hover:text-white">
+                    <Button asChild variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800/70 hover:text-white">
                       <NavLink to="/seasons/create" className="flex items-center space-x-2 px-4 py-2">
                         <Plus className="h-4 w-4" />
                         <span>Create Season</span>
@@ -194,9 +194,9 @@ const Layout = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex flex-col h-full bg-gray-950 text-white">
+      <main className="flex flex-col h-full bg-background text-foreground">
         {/* Header with team info - visible on all pages */}
-        <div className="bg-gray-900 p-4 border-b border-gray-800 md:hidden">
+        <div className="bg-gray-900/90 p-4 border-b border-gray-800 md:hidden">
           <TeamSwitcher variant="minimal" />
         </div>
         

@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Users, Share2, UserPlus } from "lucide-react";
 
 const TeamManagement = () => {
   const { currentTeam, userRole, inviteToTeam, createTeam } = useTeam();
@@ -178,44 +178,41 @@ const TeamManagement = () => {
     }
   };
 
-  if (error) {
-    console.error("Team members query error:", error);
-  }
-
   if (!currentTeam) {
     return (
-      <div className="container mx-auto py-8 max-w-7xl">
-        <h1 className="text-3xl font-bold mb-8">Team Management</h1>
+      <div className="container mx-auto py-8 max-w-7xl animate-fade-in">
+        <h1 className="text-3xl font-bold mb-8 text-white">Team Management</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-gray-900/80 border-gray-800 shadow-xl hover:shadow-accent/5 transition-shadow duration-300">
             <CardHeader>
-              <CardTitle>Create Your First Team</CardTitle>
-              <CardDescription>Get started by creating a team to manage players and matches</CardDescription>
+              <CardTitle className="text-white">Create Your First Team</CardTitle>
+              <CardDescription className="text-gray-400">Get started by creating a team to manage players and matches</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="flex items-center gap-2" size="lg">
+                  <Button className="flex items-center gap-2 bg-accent hover:bg-accent/90 text-white shadow-lg shadow-accent/20" size="lg">
                     <PlusCircle className="h-5 w-5" />
                     Create New Team
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md bg-gray-900 border-gray-800">
                   <DialogHeader>
-                    <DialogTitle>Create New Team</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-white">Create New Team</DialogTitle>
+                    <DialogDescription className="text-gray-400">
                       Create a new team to organize your players and matches
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <Label htmlFor="team-name">Team Name</Label>
+                      <Label htmlFor="team-name" className="text-gray-300">Team Name</Label>
                       <Input
                         id="team-name"
                         placeholder="Enter team name"
                         value={newTeamName}
                         onChange={(e) => setNewTeamName(e.target.value)}
+                        className="bg-gray-800/50 border-gray-700 focus:border-accent/50 focus:ring-accent/20"
                       />
                     </div>
                   </div>
@@ -224,6 +221,7 @@ const TeamManagement = () => {
                       type="button"
                       variant="outline"
                       onClick={() => setIsCreateDialogOpen(false)}
+                      className="border-gray-700 hover:bg-gray-800 text-gray-300"
                     >
                       Cancel
                     </Button>
@@ -231,6 +229,7 @@ const TeamManagement = () => {
                       type="button" 
                       onClick={handleCreateTeam}
                       disabled={!newTeamName.trim() || isCreatingTeam}
+                      className="bg-accent hover:bg-accent/90 text-white"
                     >
                       {isCreatingTeam ? "Creating..." : "Create Team"}
                     </Button>
@@ -247,32 +246,33 @@ const TeamManagement = () => {
   }
 
   return (
-    <div className="container mx-auto py-8 max-w-7xl">
+    <div className="container mx-auto py-8 max-w-7xl animate-fade-in">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Team Management</h1>
+        <h1 className="text-3xl font-bold text-white">Team Management</h1>
         
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2 bg-accent hover:bg-accent/90 text-white shadow-lg shadow-accent/10">
               <PlusCircle className="h-4 w-4" />
               Create New Team
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md bg-gray-900 border-gray-800">
             <DialogHeader>
-              <DialogTitle>Create New Team</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-white">Create New Team</DialogTitle>
+              <DialogDescription className="text-gray-400">
                 Create a new team to organize your players and matches
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="team-name">Team Name</Label>
+                <Label htmlFor="team-name" className="text-gray-300">Team Name</Label>
                 <Input
                   id="team-name"
                   placeholder="Enter team name"
                   value={newTeamName}
                   onChange={(e) => setNewTeamName(e.target.value)}
+                  className="bg-gray-800/50 border-gray-700 focus:border-accent/50 focus:ring-accent/20"
                 />
               </div>
             </div>
@@ -281,6 +281,7 @@ const TeamManagement = () => {
                 type="button"
                 variant="outline"
                 onClick={() => setIsCreateDialogOpen(false)}
+                className="border-gray-700 hover:bg-gray-800 text-gray-300"
               >
                 Cancel
               </Button>
@@ -288,6 +289,7 @@ const TeamManagement = () => {
                 type="button" 
                 onClick={handleCreateTeam}
                 disabled={!newTeamName.trim() || isCreatingTeam}
+                className="bg-accent hover:bg-accent/90 text-white"
               >
                 {isCreatingTeam ? "Creating..." : "Create Team"}
               </Button>
@@ -298,10 +300,13 @@ const TeamManagement = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="col-span-2">
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-gray-900/80 border-gray-800 shadow-xl hover:shadow-accent/5 transition-shadow duration-300">
             <CardHeader>
-              <CardTitle>Team Members</CardTitle>
-              <CardDescription>Manage members of {currentTeam.name}</CardDescription>
+              <CardTitle className="flex items-center gap-2 text-white">
+                <Users className="h-5 w-5 text-accent" />
+                Team Members
+              </CardTitle>
+              <CardDescription className="text-gray-400">Manage members of {currentTeam.name}</CardDescription>
             </CardHeader>
             <CardContent>
               <TeamMembersTable 
@@ -320,12 +325,26 @@ const TeamManagement = () => {
           
           {userRole === "admin" && (
             <>
-              <TeamShareCard />
-              
-              <Card className="bg-gray-900 border-gray-800">
+              <Card className="bg-gray-900/80 border-gray-800 shadow-xl hover:shadow-accent/5 transition-shadow duration-300">
                 <CardHeader>
-                  <CardTitle>Invite Member</CardTitle>
-                  <CardDescription>Add new members to your team</CardDescription>
+                  <CardTitle className="flex items-center gap-2 text-white">
+                    <Share2 className="h-5 w-5 text-accent" />
+                    Share Team
+                  </CardTitle>
+                  <CardDescription className="text-gray-400">Share your team with others</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TeamShareCard />
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gray-900/80 border-gray-800 shadow-xl hover:shadow-accent/5 transition-shadow duration-300">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-white">
+                    <UserPlus className="h-5 w-5 text-accent" />
+                    Invite Member
+                  </CardTitle>
+                  <CardDescription className="text-gray-400">Add new members to your team</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <InviteMemberForm 
@@ -339,34 +358,38 @@ const TeamManagement = () => {
           )}
           
           {/* Always show these options regardless of user role */}
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-gray-900/80 border-gray-800 shadow-xl hover:shadow-accent/5 transition-shadow duration-300">
             <CardHeader>
-              <CardTitle>Create New Team</CardTitle>
-              <CardDescription>Start a fresh team for your players and matches</CardDescription>
+              <CardTitle className="flex items-center gap-2 text-white">
+                <PlusCircle className="h-5 w-5 text-accent" />
+                Create New Team
+              </CardTitle>
+              <CardDescription className="text-gray-400">Start a fresh team for your players and matches</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center py-6">
               <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="flex items-center gap-2 w-full justify-center">
+                  <Button className="flex items-center gap-2 w-full justify-center bg-accent hover:bg-accent/90 text-white shadow-md">
                     <PlusCircle className="h-4 w-4" />
                     Create New Team
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md bg-gray-900 border-gray-800">
                   <DialogHeader>
-                    <DialogTitle>Create New Team</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-white">Create New Team</DialogTitle>
+                    <DialogDescription className="text-gray-400">
                       Create a new team to organize your players and matches
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <Label htmlFor="team-name">Team Name</Label>
+                      <Label htmlFor="team-name" className="text-gray-300">Team Name</Label>
                       <Input
                         id="team-name"
                         placeholder="Enter team name"
                         value={newTeamName}
                         onChange={(e) => setNewTeamName(e.target.value)}
+                        className="bg-gray-800/50 border-gray-700 focus:border-accent/50 focus:ring-accent/20"
                       />
                     </div>
                   </div>
@@ -375,6 +398,7 @@ const TeamManagement = () => {
                       type="button"
                       variant="outline"
                       onClick={() => setIsCreateDialogOpen(false)}
+                      className="border-gray-700 hover:bg-gray-800 text-gray-300"
                     >
                       Cancel
                     </Button>
@@ -382,6 +406,7 @@ const TeamManagement = () => {
                       type="button" 
                       onClick={handleCreateTeam}
                       disabled={!newTeamName.trim() || isCreatingTeam}
+                      className="bg-accent hover:bg-accent/90 text-white"
                     >
                       {isCreatingTeam ? "Creating..." : "Create Team"}
                     </Button>
