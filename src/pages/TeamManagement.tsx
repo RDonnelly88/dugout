@@ -319,80 +319,80 @@ const TeamManagement = () => {
           <TeamSwitcher />
           
           {userRole === "admin" && (
-            <TeamShareCard />
-          )}
-          
-          {userRole === "admin" ? (
-            <Card className="bg-gray-900 border-gray-800">
-              <CardHeader>
-                <CardTitle>Invite Member</CardTitle>
-                <CardDescription>Add new members to your team</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <InviteMemberForm 
-                  currentTeam={currentTeam}
-                  inviteToTeam={inviteToTeam}
-                  refetch={refetch}
-                />
-              </CardContent>
-            </Card>
-          ) : (
             <>
+              <TeamShareCard />
+              
               <Card className="bg-gray-900 border-gray-800">
                 <CardHeader>
-                  <CardTitle>Create New Team</CardTitle>
-                  <CardDescription>Start a fresh team for your players and matches</CardDescription>
+                  <CardTitle>Invite Member</CardTitle>
+                  <CardDescription>Add new members to your team</CardDescription>
                 </CardHeader>
-                <CardContent className="flex flex-col items-center py-6">
-                  <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="flex items-center gap-2 w-full justify-center">
-                        <PlusCircle className="h-4 w-4" />
-                        Create New Team
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md bg-gray-900 border-gray-800">
-                      <DialogHeader>
-                        <DialogTitle>Create New Team</DialogTitle>
-                        <DialogDescription>
-                          Create a new team to organize your players and matches
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="team-name">Team Name</Label>
-                          <Input
-                            id="team-name"
-                            placeholder="Enter team name"
-                            value={newTeamName}
-                            onChange={(e) => setNewTeamName(e.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setIsCreateDialogOpen(false)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button 
-                          type="button" 
-                          onClick={handleCreateTeam}
-                          disabled={!newTeamName.trim() || isCreatingTeam}
-                        >
-                          {isCreatingTeam ? "Creating..." : "Create Team"}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                <CardContent>
+                  <InviteMemberForm 
+                    currentTeam={currentTeam}
+                    inviteToTeam={inviteToTeam}
+                    refetch={refetch}
+                  />
                 </CardContent>
               </Card>
-              
-              <JoinTeamForm />
             </>
           )}
+          
+          {/* Always show these options regardless of user role */}
+          <Card className="bg-gray-900 border-gray-800">
+            <CardHeader>
+              <CardTitle>Create New Team</CardTitle>
+              <CardDescription>Start a fresh team for your players and matches</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center py-6">
+              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="flex items-center gap-2 w-full justify-center">
+                    <PlusCircle className="h-4 w-4" />
+                    Create New Team
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md bg-gray-900 border-gray-800">
+                  <DialogHeader>
+                    <DialogTitle>Create New Team</DialogTitle>
+                    <DialogDescription>
+                      Create a new team to organize your players and matches
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="team-name">Team Name</Label>
+                      <Input
+                        id="team-name"
+                        placeholder="Enter team name"
+                        value={newTeamName}
+                        onChange={(e) => setNewTeamName(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsCreateDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="button" 
+                      onClick={handleCreateTeam}
+                      disabled={!newTeamName.trim() || isCreatingTeam}
+                    >
+                      {isCreatingTeam ? "Creating..." : "Create Team"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </CardContent>
+          </Card>
+          
+          {/* Always show Join Team form regardless of user role */}
+          <JoinTeamForm />
         </div>
       </div>
     </div>
