@@ -36,6 +36,10 @@ const JoinTeamForm = () => {
           variant: "destructive",
         });
       } else if (success) {
+        toast({
+          title: "Team joined",
+          description: "You have successfully joined the team",
+        });
         setTeamId("");
       }
     } catch (error: any) {
