@@ -62,7 +62,11 @@ const PlayerSpotlight = ({ player }: PlayerSpotlightProps) => {
                   <div className="text-sm text-gray-300">Win Rate</div>
                   <div className="text-sm font-bold text-accent">{winRate}%</div>
                 </div>
-                <Progress value={winRate} className="h-2 bg-gray-800/70 border border-gray-700/50" indicatorClassName="bg-gradient-to-r from-accent/80 to-accent" />
+                <Progress 
+                  value={winRate} 
+                  className="h-2 bg-gray-800/70 border border-gray-700/50" 
+                  indicatorClassName="bg-gradient-to-r from-accent/80 to-accent" 
+                />
               </div>
             )}
           </div>
