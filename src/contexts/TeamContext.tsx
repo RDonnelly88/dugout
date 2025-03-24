@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
@@ -13,10 +12,12 @@ type TeamContextType = {
   createTeam: (name: string) => Promise<{ error: any | null }>;
   switchTeam: (teamId: string) => void;
   inviteToTeam: (teamId: string, email: string, role: TeamRole) => Promise<{ error: any | null }>;
+  joinTeamById: (teamId: string) => Promise<{ error: any | null, success: boolean }>;
   leaveTeam: (teamId: string) => Promise<{ error: any | null }>;
   updateTeam: (teamId: string, updates: { name: string }) => Promise<{ error: any | null }>;
   deleteTeam: (teamId: string) => Promise<{ error: any | null }>;
   isTeamAdmin: () => boolean;
+  updateMemberRole: (memberId: string, newRole: TeamRole) => Promise<{ error: any | null }>;
 };
 
 const TeamContext = createContext<TeamContextType | undefined>(undefined);
@@ -200,7 +201,6 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       console.log("Team created successfully:", data);
 
-      // Properly type and access the data as an object with team_id property
       const teamId = typeof data === 'object' && data !== null && 'team_id' in data 
         ? (data as { team_id: string }).team_id 
         : null;
@@ -296,7 +296,6 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return { error: "Not authenticated" };
 
     try {
-      // First check if the current user has admin rights
       const { data: roleCheck, error: roleError } = await supabase
         .from("team_members")
         .select("role")
@@ -313,7 +312,6 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error: "Only admins can invite members" };
       }
 
-      // Find the user by email (username) in profiles
       const { data: userData, error: userError } = await supabase
         .from("profiles")
         .select("id")
@@ -330,7 +328,6 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const targetUserId = userData[0].id;
 
-      // Check if user is already a member
       const { data: existingMember, error: memberCheckError } = await supabase
         .from("team_members")
         .select("id")
@@ -346,7 +343,6 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error: "User is already a team member" };
       }
 
-      // Add user to team
       const { error: inviteError } = await supabase
         .from("team_members")
         .insert([{
@@ -496,6 +492,109 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return userRole === "admin";
   };
 
+  const joinTeamById = async (teamId: string) => {
+    if (!user) return { error: "Not authenticated", success: false };
+
+    try {
+      const { data: teamData, error: teamError } = await supabase
+        .from("teams")
+        .select("id, name")
+        .eq("id", teamId)
+        .single();
+
+      if (teamError) {
+        console.error("Error finding team:", teamError);
+        return { error: "Team not found", success: false };
+      }
+
+      const { data: existingMember, error: memberCheckError } = await supabase
+        .from("team_members")
+        .select("id")
+        .eq("team_id", teamId)
+        .eq("user_id", user.id);
+
+      if (memberCheckError) {
+        console.error("Error checking existing membership:", memberCheckError);
+        return { error: memberCheckError, success: false };
+      }
+      
+      if (existingMember && existingMember.length > 0) {
+        return { error: "You are already a member of this team", success: false };
+      }
+
+      const { error: joinError } = await supabase
+        .from("team_members")
+        .insert([{
+          team_id: teamId,
+          user_id: user.id,
+          role: "viewer"
+        }]);
+
+      if (joinError) {
+        console.error("Error joining team:", joinError);
+        return { error: joinError, success: false };
+      }
+
+      const newTeam = {
+        id: teamData.id,
+        name: teamData.name,
+        created_at: new Date().toISOString()
+      };
+
+      setUserTeams(prevTeams => [...prevTeams, newTeam]);
+      setCurrentTeam(newTeam);
+      setUserRole("viewer");
+      localStorage.setItem("currentTeamId", newTeam.id);
+
+      toast({
+        title: "Team joined",
+        description: `You have successfully joined the team "${teamData.name}".`,
+      });
+
+      return { error: null, success: true };
+    } catch (error) {
+      console.error("Error joining team:", error);
+      toast({
+        title: "Error joining team",
+        description: "Could not join the team. Please try again.",
+        variant: "destructive",
+      });
+      return { error, success: false };
+    }
+  };
+
+  const updateMemberRole = async (memberId: string, newRole: TeamRole) => {
+    if (!user || !currentTeam) return { error: "Not authenticated or no team selected" };
+
+    try {
+      if (userRole !== "admin") {
+        return { error: "Only admins can update member roles" };
+      }
+
+      const { error } = await supabase
+        .from("team_members")
+        .update({ role: newRole })
+        .eq("id", memberId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Role updated",
+        description: `Team member's role has been updated to ${newRole}.`,
+      });
+
+      return { error: null };
+    } catch (error) {
+      console.error("Error updating member role:", error);
+      toast({
+        title: "Error updating role",
+        description: "Could not update the member's role. Please try again.",
+        variant: "destructive",
+      });
+      return { error };
+    }
+  };
+
   return (
     <TeamContext.Provider
       value={{
@@ -506,10 +605,12 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
         createTeam,
         switchTeam,
         inviteToTeam,
+        joinTeamById,
         leaveTeam,
         updateTeam,
         deleteTeam,
         isTeamAdmin,
+        updateMemberRole,
       }}
     >
       {children}

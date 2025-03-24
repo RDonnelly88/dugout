@@ -7,6 +7,7 @@ import { TeamMember } from "@/types/team";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTeam } from "@/contexts/TeamContext";
 
 interface TeamMembersTableProps {
   teamMembers: TeamMember[];
@@ -25,6 +26,7 @@ const TeamMembersTable = ({
 }: TeamMembersTableProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { updateMemberRole } = useTeam();
 
   const handleRemoveMember = async (memberId: string, memberUserId: string) => {
     if (!currentTeamId || memberUserId === user?.id) return;
@@ -56,17 +58,9 @@ const TeamMembersTable = ({
     if (!currentTeamId) return;
     
     try {
-      const { error } = await supabase
-        .from("team_members")
-        .update({ role: newRole })
-        .eq("id", memberId);
+      const { error } = await updateMemberRole(memberId, newRole);
       
       if (error) throw error;
-      
-      toast({
-        title: "Role updated",
-        description: `The member's role has been updated to ${newRole}`,
-      });
       
       refetch();
     } catch (error: any) {
@@ -86,7 +80,6 @@ const TeamMembersTable = ({
     );
   }
 
-  // Show message when there are no team members (which shouldn't happen as creator should be a member)
   if (teamMembers.length === 0) {
     return (
       <div className="text-center py-8 text-gray-400">
