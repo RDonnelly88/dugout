@@ -496,15 +496,21 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return { error: "Not authenticated", success: false };
 
     try {
+      console.log("Joining team with ID:", teamId);
+      
       const { data: teamData, error: teamError } = await supabase
         .from("teams")
         .select("id, name")
-        .eq("id", teamId)
-        .single();
+        .eq("id", teamId);
 
       if (teamError) {
         console.error("Error finding team:", teamError);
-        return { error: "Team not found", success: false };
+        return { error: teamError, success: false };
+      }
+
+      if (!teamData || teamData.length === 0) {
+        console.error("Team not found with ID:", teamId);
+        return { error: { message: "Team not found" }, success: false };
       }
 
       const { data: existingMember, error: memberCheckError } = await supabase
@@ -519,7 +525,14 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       if (existingMember && existingMember.length > 0) {
-        return { error: "You are already a member of this team", success: false };
+        console.log("User is already a member of this team");
+        return { error: { message: "You are already a member of this team" }, success: false };
+      }
+
+      const { error: profileError } = await ensureProfileExists();
+      if (profileError) {
+        console.error("Error ensuring profile exists:", profileError);
+        return { error: { message: "Unable to verify user profile. Please try again." }, success: false };
       }
 
       const { error: joinError } = await supabase
@@ -536,10 +549,12 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const newTeam = {
-        id: teamData.id,
-        name: teamData.name,
+        id: teamData[0].id,
+        name: teamData[0].name,
         created_at: new Date().toISOString()
       };
+
+      console.log("Successfully joined team:", newTeam);
 
       setUserTeams(prevTeams => [...prevTeams, newTeam]);
       setCurrentTeam(newTeam);
@@ -548,7 +563,7 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       toast({
         title: "Team joined",
-        description: `You have successfully joined the team "${teamData.name}".`,
+        description: `You have successfully joined the team "${teamData[0].name}".`,
       });
 
       return { error: null, success: true };
