@@ -7,7 +7,6 @@ import TeamSwitcher from "@/components/team/TeamSwitcher";
 import SeasonLeaderboard from "@/components/seasons/SeasonLeaderboard";
 import CurrentSeasonCard from "@/components/players/CurrentSeasonCard";
 import RecentMatchesList from "./RecentMatchesList";
-import TeamManagementCard from "./TeamManagementCard";
 
 const Dashboard = () => {
   const { currentTeam } = useTeam();
@@ -86,13 +85,8 @@ const Dashboard = () => {
         </div>
         
         {/* Recent Matches */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-3 space-y-6">
           <RecentMatchesList matches={recentMatches} />
-        </div>
-        
-        {/* Team Info */}
-        <div className="space-y-6">
-          <TeamManagementCard />
         </div>
       </div>
     </div>

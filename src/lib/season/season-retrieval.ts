@@ -133,10 +133,11 @@ export const getSeasonPlayerStats = async (seasonId: string): Promise<SeasonPlay
       .from("seasons")
       .select("team_id")
       .eq("id", seasonId)
+      .eq("team_id", currentTeamId)
       .maybeSingle();
     
     if (seasonError || !seasonData) {
-      console.error("Error verifying season:", seasonError);
+      console.error("Error verifying season or season not found:", seasonError);
       return [];
     }
     
@@ -188,17 +189,6 @@ export const getSeasonChampions = async (seasonId?: string): Promise<SeasonChamp
       return [];
     }
     
-    let query = supabase
-      .from("season_champions")
-      .select("*")
-      .order("season_name", { ascending: false })
-      .order("rank", { ascending: true });
-    
-    // Filter by season ID if provided
-    if (seasonId) {
-      query = query.eq("season_id", seasonId);
-    }
-    
     // Get seasons for the current team to filter champions
     const { data: teamSeasons, error: seasonsError } = await supabase
       .from("seasons")
@@ -212,12 +202,27 @@ export const getSeasonChampions = async (seasonId?: string): Promise<SeasonChamp
     
     const teamSeasonIds = (teamSeasons || []).map(season => season.id);
     
-    if (teamSeasonIds.length > 0) {
-      query = query.in("season_id", teamSeasonIds);
-    } else {
+    if (teamSeasonIds.length === 0) {
       // If no seasons exist for this team, return empty array
       console.log("No seasons found for current team");
       return [];
+    }
+    
+    let query = supabase
+      .from("season_champions")
+      .select("*")
+      .in("season_id", teamSeasonIds)
+      .order("season_name", { ascending: false })
+      .order("rank", { ascending: true });
+    
+    // Filter by season ID if provided
+    if (seasonId) {
+      // Make sure the season belongs to current team
+      if (!teamSeasonIds.includes(seasonId)) {
+        console.log("Requested season doesn't belong to current team");
+        return [];
+      }
+      query = query.eq("season_id", seasonId);
     }
     
     const { data, error } = await query;
@@ -264,6 +269,7 @@ export const getPlayerFormInSeason = async (seasonId: string, playerId: string):
       .from("seasons")
       .select("team_id")
       .eq("id", seasonId)
+      .eq("team_id", currentTeamId)
       .maybeSingle();
     
     if (seasonError || !seasonData) {
