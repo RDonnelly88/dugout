@@ -20,7 +20,7 @@ export const getMatches = async (): Promise<Match[]> => {
     const { data, error } = await supabase
       .from("matches")
       .select("*")
-      .eq("team_id", currentTeamId)
+      .eq("team_id", currentTeamId) // Critical: Only fetch matches for current team
       .order("created_at", { ascending: false });
     
     if (error) {
@@ -65,7 +65,7 @@ export const getMatch = async (id: string): Promise<Match | undefined> => {
       .from("matches")
       .select("*")
       .eq("id", id)
-      .eq("team_id", currentTeamId)
+      .eq("team_id", currentTeamId) // Critical: Ensure this match belongs to current team
       .maybeSingle();
     
     if (error) {
@@ -73,7 +73,10 @@ export const getMatch = async (id: string): Promise<Match | undefined> => {
       return undefined;
     }
     
-    if (!data) return undefined;
+    if (!data) {
+      console.log(`Match ${id} not found for team ${currentTeamId}`);
+      return undefined;
+    }
     
     // Map data to ensure it matches the Match type
     return mapSupabaseMatchToMatch(data);

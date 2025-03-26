@@ -19,6 +19,8 @@ const Home = () => {
       queryClient.invalidateQueries({ queryKey: ["currentSeason"] });
       queryClient.invalidateQueries({ queryKey: ["seasonPlayerStats"] });
       queryClient.invalidateQueries({ queryKey: ["seasons"] });
+      // Force clear cache for batch player forms
+      queryClient.removeQueries({ queryKey: ["batchPlayerForms"] });
       console.log("Home: Refreshing data for team:", currentTeam.id);
     }
   }, [currentTeam?.id, queryClient]);

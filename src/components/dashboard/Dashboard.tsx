@@ -11,27 +11,29 @@ import RecentMatchesList from "./RecentMatchesList";
 const Dashboard = () => {
   const { currentTeam } = useTeam();
   
-  // Get current season data
+  // Get current season data with improved team filtering
   const { data: currentSeason } = useQuery({
     queryKey: ["currentSeason", currentTeam?.id],
-    queryFn: getCurrentSeason,
+    queryFn: () => currentTeam ? getCurrentSeason() : Promise.resolve(undefined),
     enabled: !!currentTeam,
     staleTime: 0, // Always fetch fresh data
     refetchOnMount: "always"
   });
 
-  // Get player stats for current season
+  // Get player stats for current season with strict team checking
   const { data: seasonPlayerStats = [] } = useQuery({
     queryKey: ["seasonPlayerStats", currentSeason?.id, currentTeam?.id],
-    queryFn: () => currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
+    queryFn: () => currentSeason && currentTeam 
+      ? getSeasonPlayerStats(currentSeason.id) 
+      : Promise.resolve([]),
     enabled: !!currentSeason && !!currentTeam,
     staleTime: 0
   });
   
-  // Get matches
+  // Get matches with improved team filtering
   const { data: matches = [], isLoading: isLoadingMatches } = useQuery({
     queryKey: ["matches", currentTeam?.id],
-    queryFn: getMatches,
+    queryFn: () => currentTeam ? getMatches() : Promise.resolve([]),
     enabled: !!currentTeam,
     staleTime: 0,
     refetchOnMount: "always"
@@ -45,7 +47,7 @@ const Dashboard = () => {
     .slice(0, 5)
     .map(player => player.playerId);
     
-  // Get form data for top players
+  // Get form data for top players with strict team checking
   const { formData: topPlayerForms } = useBatchFormLoader(
     currentSeason?.id || null,
     topPlayerIds

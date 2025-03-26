@@ -58,7 +58,7 @@ export const getSeason = async (id: string): Promise<Season | undefined> => {
       .from("seasons")
       .select("*")
       .eq("id", id)
-      .eq("team_id", currentTeamId)
+      .eq("team_id", currentTeamId)  // Enforce team check
       .maybeSingle();
     
     if (error) {
@@ -91,11 +91,12 @@ export const getCurrentSeason = async (): Promise<Season | undefined> => {
       return undefined;
     }
     
+    // First try to get current season by is_current flag
     const { data, error } = await supabase
       .from("seasons")
       .select("*")
       .eq("is_current", true)
-      .eq("team_id", currentTeamId)
+      .eq("team_id", currentTeamId)  // Critical: Only get current season for this team
       .maybeSingle();
     
     if (error) {
@@ -103,13 +104,35 @@ export const getCurrentSeason = async (): Promise<Season | undefined> => {
       return undefined;
     }
     
-    if (!data) {
-      console.log("No current season found for team:", currentTeamId);
+    // If we found a current season, return it
+    if (data) {
+      return mapSupabaseToSeason(data);
+    }
+    
+    // If no season is marked as current, get the most recent one
+    console.log("No current season found for team:", currentTeamId);
+    
+    // Fall back to most recent season for this team
+    const { data: recentData, error: recentError } = await supabase
+      .from("seasons")
+      .select("*")
+      .eq("team_id", currentTeamId)  // Critical: Only for this team
+      .order("start_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    
+    if (recentError) {
+      console.error("Error fetching recent season:", recentError);
+      return undefined;
+    }
+    
+    if (!recentData) {
+      console.log("No seasons found for team:", currentTeamId);
       return undefined;
     }
     
     // Map data to ensure it matches the Season type
-    return mapSupabaseToSeason(data);
+    return mapSupabaseToSeason(recentData);
   } catch (error) {
     console.error("Error fetching current season:", error);
     return undefined;
@@ -133,7 +156,7 @@ export const getSeasonPlayerStats = async (seasonId: string): Promise<SeasonPlay
       .from("seasons")
       .select("team_id")
       .eq("id", seasonId)
-      .eq("team_id", currentTeamId)
+      .eq("team_id", currentTeamId)  // Critical security check
       .maybeSingle();
     
     if (seasonError || !seasonData) {
@@ -211,7 +234,7 @@ export const getSeasonChampions = async (seasonId?: string): Promise<SeasonChamp
     let query = supabase
       .from("season_champions")
       .select("*")
-      .in("season_id", teamSeasonIds)
+      .in("season_id", teamSeasonIds)  // Critical: Only include seasons for this team
       .order("season_name", { ascending: false })
       .order("rank", { ascending: true });
     
@@ -269,11 +292,11 @@ export const getPlayerFormInSeason = async (seasonId: string, playerId: string):
       .from("seasons")
       .select("team_id")
       .eq("id", seasonId)
-      .eq("team_id", currentTeamId)
+      .eq("team_id", currentTeamId)  // Critical security check
       .maybeSingle();
     
     if (seasonError || !seasonData) {
-      console.error("Error verifying season:", seasonError);
+      console.error("Error verifying season or season not found:", seasonError);
       return [];
     }
     
