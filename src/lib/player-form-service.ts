@@ -2,6 +2,61 @@
 import { PlayerFormResult } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 
+// Function to get a player's form data for a specific season
+export const getPlayerFormInSeason = async (
+  seasonId: string,
+  playerId: string
+): Promise<PlayerFormResult[]> => {
+  try {
+    // Get the current team ID from localStorage
+    const currentTeamId = localStorage.getItem("currentTeamId");
+    
+    // If no team is selected, return empty array
+    if (!currentTeamId) {
+      console.log("No team selected, returning empty player form");
+      return [];
+    }
+    
+    // First, verify this season belongs to the current team
+    const { data: seasonData, error: seasonError } = await supabase
+      .from("seasons")
+      .select("team_id")
+      .eq("id", seasonId)
+      .eq("team_id", currentTeamId)  // Critical security check
+      .maybeSingle();
+    
+    if (seasonError || !seasonData) {
+      console.error("Error verifying season or season not found:", seasonError);
+      return [];
+    }
+    
+    // If season doesn't belong to current team, return empty array
+    if (seasonData.team_id !== currentTeamId) {
+      console.log("Season doesn't belong to current team");
+      return [];
+    }
+    
+    const { data, error } = await supabase
+      .from("player_match_results")
+      .select("*")
+      .eq("season_id", seasonId)
+      .eq("player_id", playerId)
+      .order("date", { ascending: false })
+      .limit(5);
+    
+    if (error) {
+      console.error("Error fetching player form:", error);
+      return [];
+    }
+    
+    // Return the results as an array of win/loss/draw
+    return (data || []).map(item => item.result as PlayerFormResult);
+  } catch (error) {
+    console.error("Error fetching player form:", error);
+    return [];
+  }
+};
+
 // Function to fetch a batch of player forms in a single request
 export const getPlayerFormBatch = async (
   seasonId: string,

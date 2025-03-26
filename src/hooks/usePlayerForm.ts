@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { getPlayerFormInSeason } from "@/lib/player-form-service";
+import { getPlayerFormInSeason, getPlayerFormBatch } from "@/lib/player-form-service";
 import { PlayerFormResult } from "@/types";
 
 // Single player form loading hook
@@ -27,22 +27,7 @@ export const useBatchPlayerForms = (seasonId: string | null, playerIds: string[]
     queryFn: async () => {
       if (!seasonId || playerIds.length === 0) return {};
       
-      const formsMap: Record<string, PlayerFormResult[]> = {};
-      
-      // Use Promise.all to fetch all player forms in parallel
-      await Promise.all(
-        playerIds.map(async (playerId) => {
-          try {
-            const form = await getPlayerFormInSeason(seasonId, playerId);
-            formsMap[playerId] = form;
-          } catch (error) {
-            console.error(`Error loading form for player ${playerId}:`, error);
-            formsMap[playerId] = [];
-          }
-        })
-      );
-      
-      return formsMap;
+      return getPlayerFormBatch(seasonId, playerIds);
     },
     enabled: !!seasonId && playerIds.length > 0,
     staleTime: 1000 * 60 * 5, // 5 minutes

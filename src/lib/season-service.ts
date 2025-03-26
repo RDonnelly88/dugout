@@ -4,8 +4,7 @@ import {
   getSeason, 
   getCurrentSeason, 
   getSeasonPlayerStats, 
-  getSeasonChampions, 
-  getPlayerFormInSeason 
+  getSeasonChampions
 } from "./season/season-retrieval";
 
 import {
@@ -20,7 +19,6 @@ export {
   getCurrentSeason,
   getSeasonPlayerStats,
   getSeasonChampions,
-  getPlayerFormInSeason,
   addSeason,
   updateSeason,
   deleteSeason
