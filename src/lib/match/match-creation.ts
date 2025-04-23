@@ -22,7 +22,9 @@ export const addMatch = async (match: Omit<Match, "id" | "createdAt" | "updatedA
       name: match.teamB?.name || "Team B",
       players: match.teamB?.players || [],
       score: match.teamB?.score ?? 0
-    }
+    },
+    // Always ensure teamId is set
+    teamId: match.teamId || localStorage.getItem("currentTeamId") || ""
   };
   
   // If no season is specified, try to get the current season
@@ -44,6 +46,9 @@ export const addMatch = async (match: Omit<Match, "id" | "createdAt" | "updatedA
   };
   
   try {
+    // Log the match being created
+    console.log("Creating match with team_id:", supabaseMatch.team_id);
+    
     const { data, error } = await supabase
       .from("matches")
       .insert(supabaseMatch)

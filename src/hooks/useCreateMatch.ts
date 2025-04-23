@@ -81,7 +81,9 @@ export const useCreateMatch = () => {
     mutationFn: (matchData: any) => addMatch(matchData),
     onSuccess: (data) => {
       // Invalidate all team-specific queries to ensure data is refreshed
-      queryClient.invalidateQueries({ queryKey: ['matches', currentTeam?.id] });
+      if (currentTeam) {
+        queryClient.invalidateQueries({ queryKey: ['matches', currentTeam.id] });
+      }
       
       const typedData = data as any;
       navigate(`/matches/${typedData.id}`);

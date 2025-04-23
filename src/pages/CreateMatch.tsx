@@ -13,11 +13,13 @@ import { useCreateMatch } from "@/hooks/useCreateMatch";
 import { useState } from "react";
 import { usePermission } from "@/lib/permission-utils";
 import { useToast } from "@/hooks/use-toast";
+import { useTeam } from "@/contexts/TeamContext";
 
 const CreateMatch = () => {
   const { canManage } = usePermission();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { currentTeam } = useTeam();
   
   const { 
     teamA, 
@@ -45,13 +47,22 @@ const CreateMatch = () => {
     }
   }, [canManage, navigate, toast]);
 
+  // Update query to filter players by team
   const { data: players = [] } = useQuery({
-    queryKey: ['players'],
+    queryKey: ['players', currentTeam?.id],
     queryFn: getPlayers,
-    enabled: canManage()
+    enabled: canManage(),
+    select: (data) => {
+      // Filter players by current team ID
+      if (currentTeam) {
+        console.log("Filtering players for team:", currentTeam.id);
+        return data.filter(player => player.teamId === currentTeam.id);
+      }
+      return data;
+    }
   });
   
-  // Initialize selected players with all players
+  // Initialize selected players with all team players
   useEffect(() => {
     console.log("CreateMatch: Setting initial selected players from", players.length, "players");
     setSelectedPlayers(players.map(player => player.id));
@@ -62,14 +73,6 @@ const CreateMatch = () => {
     console.log("CreateMatch: Player selection changed to", playerIds.length, "players");
     setSelectedPlayers(playerIds);
   };
-
-  // Debugging log for teams
-  useEffect(() => {
-    console.log("CreateMatch: Team A updated:", teamA);
-    console.log("CreateMatch: Team A players:", players.filter(p => teamA.includes(p.id)).map(p => p.name));
-    console.log("CreateMatch: Team B updated:", teamB);
-    console.log("CreateMatch: Team B players:", players.filter(p => teamB.includes(p.id)).map(p => p.name));
-  }, [teamA, teamB, players]);
 
   return (
     <div className="page-container animate-slide-up">
@@ -83,7 +86,7 @@ const CreateMatch = () => {
       <Card className="neo-glassmorphism border-blue-500/30 shadow-blue-500/10">
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="team-randomizer-container rounded-xl overflow-hidden shadow-lg border border-blue-500/30">
+            <div className="bg-card/50 rounded-xl overflow-hidden shadow-lg border border-blue-500/30 p-4">
               <TeamRandomizer 
                 players={players} 
                 onRandomize={randomizeTeams}
@@ -102,7 +105,7 @@ const CreateMatch = () => {
               />
             </div>
             
-            <div className="date-picker-container glass-card p-6 rounded-xl border border-blue-500/20 shadow-lg">
+            <div className="glass-card p-6 rounded-xl border border-blue-500/20 shadow-lg">
               <h3 className="text-xl font-semibold mb-4 text-center">Match Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
