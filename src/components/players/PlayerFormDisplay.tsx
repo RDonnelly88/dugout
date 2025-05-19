@@ -50,7 +50,9 @@ const PlayerFormDisplay = ({
   }
   
   // Only show the 5 most recent results
-  const recentResults = results.slice(0, 5);
+  // Order matches from oldest to newest (left to right)
+  // Slice first to get the 5 most recent results, then reverse for display
+  const recentResults = results.slice(0, 5).reverse();
   
   const getFormSquare = (result: PlayerFormResult, index: number) => {
     let bgColor = "bg-gray-400";
