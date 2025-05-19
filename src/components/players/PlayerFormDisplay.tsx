@@ -99,13 +99,13 @@ const PlayerFormDisplay = ({
           result === 'dnp' ? 'Did Not Play' : 'No result'
         }
       >
-        {result === 'dnp' ? (
-          size === 'xs' || size === 'sm' ? (
-            <UserX className={size === 'xs' ? "w-2.5 h-2.5" : "w-3 h-3"} />
-          ) : (
-            letter === "DNP" && (size === 'md' || size === 'lg') ? "DNP" : <UserX className="w-4 h-4" />
-          )
-        ) : letter}
+        {result === 'dnp' ? 
+          (size === 'xs' || size === 'sm') ? 
+            <UserX className={size === 'xs' ? "w-2.5 h-2.5" : "w-3 h-3"} /> : 
+            (size === 'md') ?
+              <UserX className="w-3.5 h-3.5" /> :
+              "DNP"
+          : letter}
       </div>
     );
   };
