@@ -61,8 +61,8 @@ const Matches = () => {
   return (
     <div className="page-container animate-slide-up">
       <div className="page-header">
-        <h1 className="page-title">Matches</h1>
-        <p className="mt-2 text-muted-foreground">
+        <h1 className="page-title text-gradient">Matches</h1>
+        <p className="mt-2 text-muted-foreground text-center">
           Create and manage your football matches
         </p>
       </div>
@@ -77,7 +77,7 @@ const Matches = () => {
             className="pl-9 w-full sm:w-[300px]"
           />
         </div>
-        <Button asChild>
+        <Button asChild className="bg-gradient-to-r from-accent/80 to-accent hover:from-accent hover:to-accent/90">
           <Link to="/matches/create">
             <Plus className="h-4 w-4 mr-2" />
             Create Match

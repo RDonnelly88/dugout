@@ -19,7 +19,7 @@ const MatchList = ({ matches, isLoading, searchTerm, onDeleteClick }: MatchListP
     return (
       <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
-          <Card key={i} className="shimmer h-[150px]" />
+          <Card key={i} className="shimmer h-[150px] border-accent/20" />
         ))}
       </div>
     );
@@ -27,12 +27,12 @@ const MatchList = ({ matches, isLoading, searchTerm, onDeleteClick }: MatchListP
 
   if (matches.length === 0) {
     return (
-      <div className="text-center py-12 bg-muted/30 rounded-lg">
+      <div className="text-center py-12 bg-muted/30 rounded-lg border border-accent/10">
         <p className="text-muted-foreground mb-4">
           {searchTerm ? "No matches match your search" : "No matches created yet"}
         </p>
         {!searchTerm && (
-          <Button asChild>
+          <Button asChild className="bg-gradient-to-r from-accent/80 to-accent hover:from-accent hover:to-accent/90">
             <Link to="/matches/create">
               <Plus className="h-4 w-4 mr-2" />
               Create Match

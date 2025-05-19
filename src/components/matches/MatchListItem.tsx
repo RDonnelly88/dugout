@@ -14,7 +14,7 @@ interface MatchListItemProps {
 
 const MatchListItem = ({ match, onDeleteClick }: MatchListItemProps) => {
   return (
-    <Card key={match.id} className="match-card hover-scale overflow-hidden">
+    <Card key={match.id} className="match-card hover-scale overflow-hidden neo-glassmorphism border-accent/30 shadow-accent/10">
       <CardContent className="p-0">
         <div className="p-5">
           <MatchStatusHeader match={match} />

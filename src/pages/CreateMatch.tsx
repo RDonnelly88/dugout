@@ -83,10 +83,10 @@ const CreateMatch = () => {
         </p>
       </div>
 
-      <Card className="neo-glassmorphism border-blue-500/30 shadow-blue-500/10">
+      <Card className="neo-glassmorphism border-accent/30 shadow-accent/10">
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="bg-card/50 rounded-xl overflow-hidden shadow-lg border border-blue-500/30 p-4">
+            <div className="bg-card/50 rounded-xl overflow-hidden shadow-lg border border-accent/30 p-4">
               <TeamRandomizer 
                 players={players} 
                 onRandomize={randomizeTeams}
@@ -105,7 +105,7 @@ const CreateMatch = () => {
               />
             </div>
             
-            <div className="glass-card p-6 rounded-xl border border-blue-500/20 shadow-lg">
+            <div className="glass-card p-6 rounded-xl border border-accent/20 shadow-lg">
               <h3 className="text-xl font-semibold mb-4 text-center">Match Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -121,7 +121,7 @@ const CreateMatch = () => {
 
             <Button 
               type="submit" 
-              className="w-full h-12 text-lg font-medium shadow-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-300" 
+              className="w-full h-12 text-lg font-medium shadow-lg bg-gradient-to-r from-accent/80 to-accent/90 hover:from-accent/90 hover:to-accent transition-all duration-300" 
               disabled={createMatchMutation.isPending}
             >
               {createMatchMutation.isPending ? "Creating..." : "Create Match"}
