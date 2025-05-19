@@ -3,7 +3,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { PlayerFormResult } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2 } from "lucide-react";
+import { Loader2, UserX } from "lucide-react";
 
 interface PlayerFormDisplayProps {
   results: Array<PlayerFormResult>;
@@ -100,7 +100,15 @@ const PlayerFormDisplay = ({
           result === 'dnp' ? 'Did Not Play' : 'No result'
         }
       >
-        {result === 'dnp' && size === 'xs' ? '-' : letter}
+        {result === 'dnp' ? (
+          size === 'xs' ? (
+            <UserX className="w-3 h-3" />
+          ) : size === 'sm' ? (
+            <UserX className="w-3 h-3" />
+          ) : (
+            letter
+          )
+        ) : letter}
       </div>
     );
   };
