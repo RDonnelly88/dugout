@@ -51,8 +51,7 @@ const PlayerFormDisplay = ({
   
   // Only show the 5 most recent results
   // Order matches from oldest to newest (left to right)
-  // Slice first to get the 5 most recent results, then reverse for display
-  const recentResults = results.slice(0, 5).reverse();
+  const recentResults = results.slice(0, 5);
   
   const getFormSquare = (result: PlayerFormResult, index: number) => {
     let bgColor = "bg-gray-400";
@@ -101,10 +100,8 @@ const PlayerFormDisplay = ({
         }
       >
         {result === 'dnp' ? (
-          size === 'xs' ? (
-            <UserX className="w-3 h-3" />
-          ) : size === 'sm' ? (
-            <UserX className="w-3 h-3" />
+          size === 'xs' || size === 'sm' ? (
+            <UserX className={size === 'xs' ? "w-2.5 h-2.5" : "w-3 h-3"} />
           ) : (
             letter
           )
