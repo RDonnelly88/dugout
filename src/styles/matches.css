@@ -1,3 +1,4 @@
+
 @layer components {
   /* Team randomizer styling */
   .team-randomizer-container {
@@ -248,8 +249,8 @@
     @apply mt-6;
   }
   
-  .available-players-card {
-    @apply rounded-xl py-4 px-3 bg-gradient-to-b from-accent/20 to-black/40 border border-white/10;
+  .available-players-grid {
+    @apply rounded-xl py-4 px-3 bg-gradient-to-b from-accent/20 to-accent/5 border border-accent/20 shadow-lg;
   }
   
   /* Animation for player cards */
@@ -325,7 +326,7 @@
   /* Team pitch styling */
   .team-pitch {
     @apply relative overflow-hidden flex flex-col items-center justify-center py-8;
-    background: linear-gradient(to bottom, #0c326e, #0a2351);
+    background: linear-gradient(to bottom, #025214, #053b12);
     position: relative;
   }
   
@@ -363,6 +364,6 @@
   
   /* Team name banner */
   .team-name-banner {
-    @apply shadow-md border-t border-blue-500/20;
+    @apply shadow-md border-t border-accent/20;
   }
 }

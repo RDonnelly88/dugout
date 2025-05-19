@@ -11,6 +11,7 @@ import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
 import Formation from './team-randomizer/Formation';
 import { PlayerHoverContent } from './team-randomizer/PlayerSelection';
 import { calculatePlayerRanks } from "@/lib/ranking-utils";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface TeamSelectionProps {
   teamA: string[];
@@ -76,7 +77,7 @@ const TeamSelection = ({
     <div className="space-y-8">
       <div className="teams-container">
         <Label className="team-label mb-4 block">
-          <Shield className="h-5 w-5 mr-2 text-blue-400 inline" />
+          <Shield className="h-5 w-5 mr-2 text-accent inline" />
           <span className="text-xl font-bold">Team Formations</span>
         </Label>
         
@@ -90,10 +91,10 @@ const TeamSelection = ({
 
       <div className="available-players-container">
         <Label className="team-label mb-4 block">
-          <Users className="h-5 w-5 mr-2 text-gray-400 inline" />
+          <Users className="h-5 w-5 mr-2 text-accent inline" />
           <span className="text-xl font-bold">Available Players</span>
         </Label>
-        <div className="available-players-card bg-blue-950/20 rounded-xl p-4 border border-blue-500/20">
+        <div className="available-players-grid">
           {availablePlayers.length === 0 ? (
             <div className="text-center p-8 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-2 opacity-30" />
@@ -101,7 +102,7 @@ const TeamSelection = ({
               <p className="text-sm mt-1">Select players above or add all players to teams</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {availablePlayers.map((player) => (
                 <PlayerCard
                   key={player.id}
@@ -139,55 +140,54 @@ const PlayerCard = ({ player, currentSeason, seasonStats, onClick, playerRanks =
   const playerRank = hasPlayedGames ? playerRanks[player.id] : null;
 
   return (
-    <div 
+    <Card 
       onClick={onClick}
-      className="relative cursor-pointer transition-all duration-300 hover:scale-105 animate-pop-in"
+      className="player-card hover:shadow-xl cursor-pointer transition-all duration-300 hover:scale-105 animate-pop-in overflow-hidden bg-card border-accent/30 shadow-accent/10"
     >
-      <HoverCard>
-        <HoverCardTrigger asChild>
-          <div className="player-card-mini bg-blue-900/60 rounded-lg p-3 flex items-center space-x-2 shadow-md border border-blue-500/20 hover:border-blue-400/50 hover:shadow-blue-500/20 hover:shadow-lg transition-all duration-200">
-            <Avatar className="h-10 w-10 border-2 border-blue-500/30">
-              {player.image ? (
-                <AvatarImage src={player.image} alt={player.name} />
-              ) : (
-                <AvatarFallback className="bg-blue-700 text-white">
-                  {player.name.charAt(0)}
-                </AvatarFallback>
-              )}
-            </Avatar>
-            <div>
-              <span className="text-sm font-medium truncate text-blue-50">{player.name}</span>
-              {playerRank && (
-                <div className="flex items-center text-xs">
-                  <Flag className="h-3 w-3 text-yellow-500 mr-1" />
-                  <span className="text-yellow-300">#{playerRank}</span>
-                </div>
-              )}
-              {!playerRank && hasPlayedGames && (
-                <div className="flex items-center text-xs">
-                  <Flag className="h-3 w-3 text-yellow-500 mr-1" />
-                  <span className="text-yellow-300">Not ranked</span>
-                </div>
-              )}
-              {!hasPlayedGames && (
-                <div className="flex items-center text-xs">
-                  <Flag className="h-3 w-3 text-gray-500 mr-1" />
-                  <span className="text-gray-400">No games</span>
-                </div>
-              )}
-            </div>
+      <CardContent className="p-0">
+        <div className="p-4 flex items-center space-x-3">
+          <Avatar className="h-12 w-12 border-2 border-accent/30">
+            {player.image ? (
+              <AvatarImage src={player.image} alt={player.name} className="object-cover" />
+            ) : (
+              <AvatarFallback className="bg-accent/30 text-white">
+                {player.name.charAt(0)}
+              </AvatarFallback>
+            )}
+          </Avatar>
+          <div>
+            <div className="font-medium text-foreground">{player.name}</div>
+            {playerRank && (
+              <div className="flex items-center text-xs">
+                <Flag className="h-3 w-3 text-yellow-500 mr-1" />
+                <span className="text-yellow-300">#{playerRank}</span>
+              </div>
+            )}
+            {!playerRank && hasPlayedGames && (
+              <div className="flex items-center text-xs">
+                <Flag className="h-3 w-3 text-yellow-500 mr-1" />
+                <span className="text-yellow-300">Not ranked</span>
+              </div>
+            )}
           </div>
-        </HoverCardTrigger>
-        <HoverCardContent className="w-72 p-3 bg-blue-950 border border-blue-500/30 text-white">
-          <PlayerHoverContent 
-            player={player} 
-            currentSeasonId={currentSeason?.id || null}
-            seasonPlayerStats={seasonStats}
-            playerRanks={playerRanks}
-          />
-        </HoverCardContent>
-      </HoverCard>
-    </div>
+        </div>
+        
+        <div className="player-stats grid grid-cols-3 p-2 bg-accent/10 border-t">
+          <div className="stat-item flex flex-col items-center justify-center p-1">
+            <span className="text-xs text-muted-foreground">Played</span>
+            <span className="font-semibold">{player.stats?.played || 0}</span>
+          </div>
+          <div className="stat-item flex flex-col items-center justify-center p-1">
+            <span className="text-xs text-muted-foreground">Won</span>
+            <span className="font-semibold text-green-400">{player.stats?.won || 0}</span>
+          </div>
+          <div className="stat-item flex flex-col items-center justify-center p-1">
+            <span className="text-xs text-muted-foreground">Lost</span>
+            <span className="font-semibold text-red-400">{player.stats?.lost || 0}</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
