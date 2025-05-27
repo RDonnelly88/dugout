@@ -36,21 +36,58 @@ export const getPlayerFormInSeason = async (
       return [];
     }
     
-    const { data, error } = await supabase
-      .from("player_match_results")
-      .select("*")
+    // Get the last 5 matches in the season (not the last 5 matches the player played)
+    const { data: matches, error: matchesError } = await supabase
+      .from("matches")
+      .select("id, date, team_a, team_b, status")
       .eq("season_id", seasonId)
-      .eq("player_id", playerId)
+      .eq("team_id", currentTeamId)
+      .eq("status", "completed")
       .order("date", { ascending: false })
       .limit(5);
     
-    if (error) {
-      console.error("Error fetching player form:", error);
+    if (matchesError) {
+      console.error("Error fetching season matches:", matchesError);
       return [];
     }
     
-    // Return the results as an array of win/loss/draw
-    return (data || []).map(item => item.result as PlayerFormResult);
+    if (!matches || matches.length === 0) {
+      return [];
+    }
+    
+    // For each match, check if the player participated and what the result was
+    const playerForm: PlayerFormResult[] = [];
+    
+    for (const match of matches) {
+      // Check if player was in team A or team B
+      const teamA = match.team_a as { players: string[], score?: number };
+      const teamB = match.team_b as { players: string[], score?: number };
+      
+      const isInTeamA = teamA.players?.includes(playerId);
+      const isInTeamB = teamB.players?.includes(playerId);
+      
+      if (!isInTeamA && !isInTeamB) {
+        // Player didn't participate in this match
+        playerForm.push('dnp');
+      } else {
+        // Player participated, determine the result
+        const teamAScore = teamA.score || 0;
+        const teamBScore = teamB.score || 0;
+        
+        if (teamAScore === teamBScore) {
+          playerForm.push('draw');
+        } else if (
+          (isInTeamA && teamAScore > teamBScore) || 
+          (isInTeamB && teamBScore > teamAScore)
+        ) {
+          playerForm.push('win');
+        } else {
+          playerForm.push('loss');
+        }
+      }
+    }
+    
+    return playerForm;
   } catch (error) {
     console.error("Error fetching player form:", error);
     return [];
@@ -95,38 +132,60 @@ export const getPlayerFormBatch = async (
       return {};
     }
     
-    // Get results for all players in a single query
-    const { data, error } = await supabase
-      .from("player_match_results")
-      .select("*")
+    // Get the last 5 completed matches in the season
+    const { data: matches, error: matchesError } = await supabase
+      .from("matches")
+      .select("id, date, team_a, team_b, status")
       .eq("season_id", seasonId)
-      .in("player_id", playerIds)
-      .order("date", { ascending: false });
+      .eq("team_id", currentTeamId)
+      .eq("status", "completed")
+      .order("date", { ascending: false })
+      .limit(5);
     
-    if (error) {
-      console.error("Error fetching batch player forms:", error);
+    if (matchesError) {
+      console.error("Error fetching season matches:", matchesError);
       return {};
     }
     
-    // Group results by player ID
+    if (!matches || matches.length === 0) {
+      return {};
+    }
+    
+    // Initialize results for all players
     const results: Record<string, PlayerFormResult[]> = {};
     playerIds.forEach(playerId => {
-      // Initialize with empty array for each player
       results[playerId] = [];
     });
     
-    // Fill in results
-    data?.forEach(item => {
-      if (item.player_id && item.result) {
-        if (!results[item.player_id]) {
-          results[item.player_id] = [];
-        }
-        // Only take the 5 most recent results
-        if (results[item.player_id].length < 5) {
-          results[item.player_id].push(item.result as PlayerFormResult);
+    // For each match, determine each player's participation and result
+    for (const match of matches) {
+      const teamA = match.team_a as { players: string[], score?: number };
+      const teamB = match.team_b as { players: string[], score?: number };
+      const teamAScore = teamA.score || 0;
+      const teamBScore = teamB.score || 0;
+      
+      for (const playerId of playerIds) {
+        const isInTeamA = teamA.players?.includes(playerId);
+        const isInTeamB = teamB.players?.includes(playerId);
+        
+        if (!isInTeamA && !isInTeamB) {
+          // Player didn't participate in this match
+          results[playerId].push('dnp');
+        } else {
+          // Player participated, determine the result
+          if (teamAScore === teamBScore) {
+            results[playerId].push('draw');
+          } else if (
+            (isInTeamA && teamAScore > teamBScore) || 
+            (isInTeamB && teamBScore > teamAScore)
+          ) {
+            results[playerId].push('win');
+          } else {
+            results[playerId].push('loss');
+          }
         }
       }
-    });
+    }
     
     return results;
   } catch (error) {
