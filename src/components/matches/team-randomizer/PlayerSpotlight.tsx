@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Player } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Award, Star, Ghost } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
 
 interface PlayerSpotlightProps {
   player: Player;
@@ -39,6 +39,10 @@ const PlayerSpotlight = ({ player }: PlayerSpotlightProps) => {
             
             <div className="spotlight-name text-3xl font-bold mt-4 mb-2 gradient-text-accent">
               {player.name.toUpperCase()}
+            </div>
+            
+            <div className="flex justify-center mb-4">
+              <PlayerSeasonStars playerId={player.id} size="lg" />
             </div>
             
             <div className="spotlight-stats grid grid-cols-3 gap-3 mt-4">

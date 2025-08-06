@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Player } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
+import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
 
 interface PlayerCardProps {
   player: Player;
@@ -63,7 +63,10 @@ const PlayerCard = ({
             )}
           </Avatar>
           
-          <h3 className="font-medium text-center line-clamp-1 mt-1">{player.name}</h3>
+          <div className="flex flex-col items-center">
+            <h3 className="font-medium text-center line-clamp-1 mt-1">{player.name}</h3>
+            <PlayerSeasonStars playerId={player.id} size="sm" className="mt-1" />
+          </div>
           
           <div className="mt-2 grid grid-cols-3 gap-1 w-full text-xs">
             <div className="bg-blue-800/50 rounded p-1 text-center">

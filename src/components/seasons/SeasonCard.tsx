@@ -8,6 +8,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import PlayerForm from "@/components/players/PlayerForm";
 import { Season, SeasonChampion, PlayerFormResult } from "@/types";
+import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
 
 interface SeasonCardProps {
   season: Season;
@@ -133,7 +134,10 @@ const SeasonCard = ({
                   <div className="text-xs text-muted-foreground">
                     {season.isFinished ? "Champion" : "Leader"}
                   </div>
-                  <div className="font-medium">{topPlayer.playerName}</div>
+                  <div className="font-medium flex items-center gap-2">
+                    {topPlayer.playerName}
+                    <PlayerSeasonStars playerId={topPlayer.playerId} size="sm" />
+                  </div>
                 </div>
                 <div className="ml-auto">
                   <div className="text-xs text-muted-foreground">Points</div>
@@ -172,7 +176,12 @@ const SeasonCard = ({
                         <TableCell className="py-1">
                           <div className="flex items-center">
                             {renderAvatar(player.playerImage, player.playerName)}
-                            <span className="truncate">{player.playerName}</span>
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-1">
+                                <span className="truncate">{player.playerName}</span>
+                                <PlayerSeasonStars playerId={player.playerId} size="sm" />
+                              </div>
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell className="text-right py-1">

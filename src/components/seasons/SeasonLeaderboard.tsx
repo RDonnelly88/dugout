@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Trophy, Medal, Ghost } from "lucide-react";
@@ -11,6 +10,7 @@ import { SeasonPlayerStats, PlayerFormResult } from "@/types";
 import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
 import { useQueryClient } from "@tanstack/react-query";
 import { calculatePlayerRanks, sortPlayersByRank } from "@/lib/ranking-utils";
+import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
 
 interface SeasonLeaderboardProps {
   stats: SeasonPlayerStats[];
@@ -189,7 +189,10 @@ const SeasonLeaderboard = ({
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="font-medium">{stat.playerName}</div>
+                      <div className="font-medium flex items-center gap-2">
+                        {stat.playerName}
+                        <PlayerSeasonStars playerId={stat.playerId} size="sm" />
+                      </div>
                       {playerRanks[stat.playerId] <= 3 && <div className="md:hidden mt-1">{getRankBadge(playerRanks[stat.playerId])}</div>}
                     </div>
                   </Link>
