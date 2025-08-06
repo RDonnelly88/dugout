@@ -224,6 +224,9 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
               <Flame className="h-5 w-5" />
               Strengths
             </CardTitle>
+            <CardDescription className="text-green-300/80">
+              Opponents you dominate (70%+ win rate against)
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {currentEnhancedStats.dominantOpponents.slice(0, 3).map((opponent, index) => (
@@ -250,6 +253,9 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
               <Snowflake className="h-5 w-5" />
               Challenges
             </CardTitle>
+            <CardDescription className="text-red-300/80">
+              Opponents that give you trouble (40% or lower win rate against)
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {currentEnhancedStats.strugglingAgainst.slice(0, 3).map((opponent, index) => (
