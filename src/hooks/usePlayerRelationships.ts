@@ -270,13 +270,14 @@ export const usePlayerRelationships = (playerId: string) => {
       const teammates = allRelationships.filter(r => r.matchesWithSameTeam > 0);
       const opponents = allRelationships.filter(r => r.matchesAsOpponent > 0);
       
-      const overallTeammateWinRate = teammates.length > 0 
-        ? teammates.reduce((sum, t) => sum + (t.winsWithSameTeam / Math.max(1, t.matchesWithSameTeam)), 0) / teammates.length
-        : 0;
-        
-      const overallOpponentWinRate = opponents.length > 0
-        ? opponents.reduce((sum, o) => sum + (o.winsAgainst / Math.max(1, o.matchesAsOpponent)), 0) / opponents.length
-        : 0;
+      // Calculate actual overall win rates (total wins / total matches)
+      const totalTeammateWins = teammates.reduce((sum, t) => sum + t.winsWithSameTeam, 0);
+      const totalTeammateMatches = teammates.reduce((sum, t) => sum + t.matchesWithSameTeam, 0);
+      const overallTeammateWinRate = totalTeammateMatches > 0 ? totalTeammateWins / totalTeammateMatches : 0;
+      
+      const totalOpponentWins = opponents.reduce((sum, o) => sum + o.winsAgainst, 0);
+      const totalOpponentMatches = opponents.reduce((sum, o) => sum + o.matchesAsOpponent, 0);
+      const overallOpponentWinRate = totalOpponentMatches > 0 ? totalOpponentWins / totalOpponentMatches : 0;
       
       // Find dominant and struggling matchups
       const dominantOpponents = opponents
