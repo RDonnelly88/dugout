@@ -197,6 +197,7 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
               {Math.round(currentEnhancedStats.overallTeammateWinRate * 100)}%
             </div>
             <div className="text-sm text-green-300">Teammate Win Rate</div>
+            <div className="text-xs text-green-200/60 mt-1">Average win rate when playing with teammates</div>
           </CardContent>
         </Card>
         
@@ -207,6 +208,7 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
               {Math.round(currentEnhancedStats.overallOpponentWinRate * 100)}%
             </div>
             <div className="text-sm text-purple-300">vs Opponents Win Rate</div>
+            <div className="text-xs text-purple-200/60 mt-1">Average win rate when playing against opponents</div>
           </CardContent>
         </Card>
       </div>
