@@ -33,9 +33,30 @@ export interface PlayerRelationshipsStats {
   }>;
 }
 
+export interface EnhancedPlayerStats {
+  totalUniqueTeammates: number;
+  totalUniqueOpponents: number;
+  overallTeammateWinRate: number;
+  overallOpponentWinRate: number;
+  dominantOpponents: PlayerRelationship[];
+  strugglingAgainst: PlayerRelationship[];
+  synergisticTeammates: PlayerRelationship[];
+  challengingTeammates: PlayerRelationship[];
+}
+
 export const usePlayerRelationships = (playerId: string) => {
   const [relationships, setRelationships] = useState<Record<string, PlayerRelationship>>({});
   const [stats, setStats] = useState<PlayerRelationshipsStats>({});
+  const [enhancedStats, setEnhancedStats] = useState<EnhancedPlayerStats>({
+    totalUniqueTeammates: 0,
+    totalUniqueOpponents: 0,
+    overallTeammateWinRate: 0,
+    overallOpponentWinRate: 0,
+    dominantOpponents: [],
+    strugglingAgainst: [],
+    synergisticTeammates: [],
+    challengingTeammates: []
+  });
 
   // Get all matches
   const { data: matches = [], isLoading: isLoadingMatches } = useQuery({
@@ -242,6 +263,42 @@ export const usePlayerRelationships = (playerId: string) => {
         };
       }
       
+      // Calculate enhanced statistics
+      const allRelationships = Object.values(playerRelationships);
+      
+      // Calculate overall statistics
+      const teammates = allRelationships.filter(r => r.matchesWithSameTeam > 0);
+      const opponents = allRelationships.filter(r => r.matchesAsOpponent > 0);
+      
+      const overallTeammateWinRate = teammates.length > 0 
+        ? teammates.reduce((sum, t) => sum + (t.winsWithSameTeam / Math.max(1, t.matchesWithSameTeam)), 0) / teammates.length
+        : 0;
+        
+      const overallOpponentWinRate = opponents.length > 0
+        ? opponents.reduce((sum, o) => sum + (o.winsAgainst / Math.max(1, o.matchesAsOpponent)), 0) / opponents.length
+        : 0;
+      
+      // Find dominant and struggling matchups
+      const dominantOpponents = opponents
+        .filter(o => o.matchesAsOpponent >= 2 && o.winRateAgainst >= 0.7)
+        .sort((a, b) => b.winRateAgainst - a.winRateAgainst)
+        .slice(0, 5);
+      
+      const strugglingAgainst = opponents
+        .filter(o => o.matchesAsOpponent >= 2 && o.winRateAgainst <= 0.4)
+        .sort((a, b) => a.winRateAgainst - b.winRateAgainst)
+        .slice(0, 5);
+      
+      const synergisticTeammates = teammates
+        .filter(t => t.matchesWithSameTeam >= 2 && t.winRateWithSameTeam >= 0.7)
+        .sort((a, b) => b.winRateWithSameTeam - a.winRateWithSameTeam)
+        .slice(0, 5);
+      
+      const challengingTeammates = teammates
+        .filter(t => t.matchesWithSameTeam >= 2 && t.winRateWithSameTeam <= 0.4)
+        .sort((a, b) => a.winRateWithSameTeam - b.winRateWithSameTeam)
+        .slice(0, 5);
+      
       setRelationships(playerRelationships);
       setStats({
         bestTeammate,
@@ -251,6 +308,16 @@ export const usePlayerRelationships = (playerId: string) => {
         easiestOpponent,
         bySeasonId: bySeasonStats
       });
+      setEnhancedStats({
+        totalUniqueTeammates: teammates.length,
+        totalUniqueOpponents: opponents.length,
+        overallTeammateWinRate,
+        overallOpponentWinRate,
+        dominantOpponents,
+        strugglingAgainst,
+        synergisticTeammates,
+        challengingTeammates
+      });
     };
     
     processMatches();
@@ -259,6 +326,7 @@ export const usePlayerRelationships = (playerId: string) => {
   return {
     relationships,
     stats,
+    enhancedStats,
     isLoading: isLoadingMatches || isLoadingPlayer
   };
 };
