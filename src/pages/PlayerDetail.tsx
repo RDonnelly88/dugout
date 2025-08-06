@@ -12,6 +12,7 @@ import { usePlayerRank } from "@/hooks/usePlayerRank";
 import PlayerSeasonStats from "@/components/players/PlayerSeasonStats";
 import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import PlayerRelationships from "@/components/players/PlayerRelationships";
+import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
 
 const PlayerDetail = () => {
   const {
@@ -115,7 +116,10 @@ const PlayerDetail = () => {
             </Avatar>
             
             <div className="flex-1 text-center md:text-left">
-              <h1 className="text-3xl font-bold mb-2">{player.name}</h1>
+              <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
+                <h1 className="text-3xl font-bold">{player.name}</h1>
+                <PlayerSeasonStars playerId={player.id} size="lg" />
+              </div>
               
               <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
                 <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200">
