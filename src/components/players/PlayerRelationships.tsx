@@ -194,10 +194,11 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
           <CardContent className="p-4 text-center">
             <TrendingUp className="h-8 w-8 mx-auto mb-2 text-green-400" />
             <div className="text-2xl font-bold text-green-400">
-              {Math.round(currentEnhancedStats.overallTeammateWinRate * 100)}%
+              {currentEnhancedStats.synergisticTeammates.length > 0 ? 
+                Math.round(currentEnhancedStats.synergisticTeammates[0]?.winRateWithSameTeam * 100) : 0}%
             </div>
-            <div className="text-sm text-green-300">Team Win Rate</div>
-            <div className="text-xs text-green-200/60 mt-1">Win rate in all matches with teammates</div>
+            <div className="text-sm text-green-300">Best Teammate Chemistry</div>
+            <div className="text-xs text-green-200/60 mt-1">Highest win rate with any teammate</div>
           </CardContent>
         </Card>
         
@@ -205,10 +206,11 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
           <CardContent className="p-4 text-center">
             <Swords className="h-8 w-8 mx-auto mb-2 text-purple-400" />
             <div className="text-2xl font-bold text-purple-400">
-              {Math.round(currentEnhancedStats.overallOpponentWinRate * 100)}%
+              {currentEnhancedStats.dominantOpponents.length > 0 ? 
+                Math.round(currentEnhancedStats.dominantOpponents[0]?.winRateAgainst * 100) : 0}%
             </div>
-            <div className="text-sm text-purple-300">vs Opponents Win Rate</div>
-            <div className="text-xs text-purple-200/60 mt-1">Win rate in all matches against opponents</div>
+            <div className="text-sm text-purple-300">Best vs Opponent</div>
+            <div className="text-xs text-purple-200/60 mt-1">Highest win rate against any opponent</div>
           </CardContent>
         </Card>
       </div>
