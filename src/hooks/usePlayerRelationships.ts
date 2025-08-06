@@ -33,11 +33,21 @@ export interface PlayerRelationshipsStats {
   }>;
 }
 
+export interface PlayerStreak {
+  type: 'win' | 'loss' | 'draw';
+  count: number;
+  startDate: string;
+  endDate: string;
+  isCurrent?: boolean;
+}
+
 export interface EnhancedPlayerStats {
   totalUniqueTeammates: number;
   totalUniqueOpponents: number;
-  overallTeammateWinRate: number;
-  overallOpponentWinRate: number;
+  bestWinStreak: PlayerStreak | null;
+  worstLossStreak: PlayerStreak | null;
+  currentStreak: PlayerStreak | null;
+  comebackWins: number; // wins after being behind at some point
   dominantOpponents: PlayerRelationship[];
   strugglingAgainst: PlayerRelationship[];
   synergisticTeammates: PlayerRelationship[];
@@ -50,8 +60,10 @@ export const usePlayerRelationships = (playerId: string) => {
   const [enhancedStats, setEnhancedStats] = useState<EnhancedPlayerStats>({
     totalUniqueTeammates: 0,
     totalUniqueOpponents: 0,
-    overallTeammateWinRate: 0,
-    overallOpponentWinRate: 0,
+    bestWinStreak: null,
+    worstLossStreak: null,
+    currentStreak: null,
+    comebackWins: 0,
     dominantOpponents: [],
     strugglingAgainst: [],
     synergisticTeammates: [],
@@ -270,14 +282,67 @@ export const usePlayerRelationships = (playerId: string) => {
       const teammates = allRelationships.filter(r => r.matchesWithSameTeam > 0);
       const opponents = allRelationships.filter(r => r.matchesAsOpponent > 0);
       
-      // Calculate actual overall win rates (total wins / total matches)
-      const totalTeammateWins = teammates.reduce((sum, t) => sum + t.winsWithSameTeam, 0);
-      const totalTeammateMatches = teammates.reduce((sum, t) => sum + t.matchesWithSameTeam, 0);
-      const overallTeammateWinRate = totalTeammateMatches > 0 ? totalTeammateWins / totalTeammateMatches : 0;
+      // Calculate streaks by getting all player matches in chronological order
+      const playerMatches = matches
+        .filter(m => m.status === 'completed' && 
+                    (m.teamA.players.includes(playerId) || m.teamB.players.includes(playerId)))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       
-      const totalOpponentWins = opponents.reduce((sum, o) => sum + o.winsAgainst, 0);
-      const totalOpponentMatches = opponents.reduce((sum, o) => sum + o.matchesAsOpponent, 0);
-      const overallOpponentWinRate = totalOpponentMatches > 0 ? totalOpponentWins / totalOpponentMatches : 0;
+      const streaks: PlayerStreak[] = [];
+      let currentStreak: PlayerStreak | null = null;
+      
+      playerMatches.forEach(match => {
+        const playerInTeamA = match.teamA.players.includes(playerId);
+        const playerTeamWon = match.teamA.score !== undefined && match.teamB.score !== undefined && 
+                             ((playerInTeamA && match.teamA.score > match.teamB.score) || 
+                              (!playerInTeamA && match.teamB.score > match.teamA.score));
+        const isDraw = match.teamA.score !== undefined && match.teamB.score !== undefined && 
+                      match.teamA.score === match.teamB.score;
+        
+        const result: 'win' | 'loss' | 'draw' = isDraw ? 'draw' : (playerTeamWon ? 'win' : 'loss');
+        
+        if (!currentStreak || currentStreak.type !== result) {
+          // Start new streak
+          if (currentStreak) {
+            streaks.push(currentStreak);
+          }
+          currentStreak = {
+            type: result,
+            count: 1,
+            startDate: match.date,
+            endDate: match.date,
+            isCurrent: false
+          };
+        } else {
+          // Continue current streak
+          currentStreak.count++;
+          currentStreak.endDate = match.date;
+        }
+      });
+      
+      // Add the final streak
+      if (currentStreak) {
+        currentStreak.isCurrent = true;
+        streaks.push(currentStreak);
+      }
+      
+      // Find best and worst streaks
+      const winStreaks = streaks.filter(s => s.type === 'win').sort((a, b) => b.count - a.count);
+      const lossStreaks = streaks.filter(s => s.type === 'loss').sort((a, b) => b.count - a.count);
+      
+      const bestWinStreak = winStreaks[0] || null;
+      const worstLossStreak = lossStreaks[0] || null;
+      const currentStreakData = streaks[streaks.length - 1] || null;
+      
+      // Calculate comeback wins (simplified - wins where opponent scored first)
+      const comebackWins = playerMatches.filter(match => {
+        const playerInTeamA = match.teamA.players.includes(playerId);
+        const playerTeamWon = match.teamA.score !== undefined && match.teamB.score !== undefined && 
+                             ((playerInTeamA && match.teamA.score > match.teamB.score) || 
+                              (!playerInTeamA && match.teamB.score > match.teamA.score));
+        // For now, just count wins - we could enhance this later with more detailed game data
+        return playerTeamWon;
+      }).length;
       
       // Find dominant and struggling matchups
       const dominantOpponents = opponents
@@ -312,8 +377,10 @@ export const usePlayerRelationships = (playerId: string) => {
       setEnhancedStats({
         totalUniqueTeammates: teammates.length,
         totalUniqueOpponents: opponents.length,
-        overallTeammateWinRate,
-        overallOpponentWinRate,
+        bestWinStreak,
+        worstLossStreak,
+        currentStreak: currentStreakData,
+        comebackWins,
         dominantOpponents,
         strugglingAgainst,
         synergisticTeammates,

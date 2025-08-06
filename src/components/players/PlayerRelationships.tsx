@@ -172,45 +172,68 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
   const renderOverviewStats = () => {
     if (!currentEnhancedStats) return null;
 
+    const formatStreakDates = (startDate: string, endDate: string) => {
+      const start = new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const end = new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return startDate === endDate ? start : `${start} - ${end}`;
+    };
+
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-gradient-to-br from-blue-900/20 to-blue-800/20 border-blue-700/50">
+        <Card className="bg-gradient-to-br from-green-900/20 to-green-800/20 border-green-700/50">
           <CardContent className="p-4 text-center">
-            <Users className="h-8 w-8 mx-auto mb-2 text-blue-400" />
-            <div className="text-2xl font-bold text-blue-400">{currentEnhancedStats.totalUniqueTeammates}</div>
-            <div className="text-sm text-blue-300">Unique Teammates</div>
+            <Flame className="h-8 w-8 mx-auto mb-2 text-green-400" />
+            <div className="text-2xl font-bold text-green-400">
+              {currentEnhancedStats.bestWinStreak?.count || 0}
+            </div>
+            <div className="text-sm text-green-300">Best Win Streak</div>
+            {currentEnhancedStats.bestWinStreak && (
+              <div className="text-xs text-green-200/60 mt-1">
+                {formatStreakDates(currentEnhancedStats.bestWinStreak.startDate, currentEnhancedStats.bestWinStreak.endDate)}
+              </div>
+            )}
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-red-900/20 to-red-800/20 border-red-700/50">
           <CardContent className="p-4 text-center">
-            <Target className="h-8 w-8 mx-auto mb-2 text-red-400" />
-            <div className="text-2xl font-bold text-red-400">{currentEnhancedStats.totalUniqueOpponents}</div>
-            <div className="text-sm text-red-300">Unique Opponents</div>
+            <Snowflake className="h-8 w-8 mx-auto mb-2 text-red-400" />
+            <div className="text-2xl font-bold text-red-400">
+              {currentEnhancedStats.worstLossStreak?.count || 0}
+            </div>
+            <div className="text-sm text-red-300">Worst Loss Streak</div>
+            {currentEnhancedStats.worstLossStreak && (
+              <div className="text-xs text-red-200/60 mt-1">
+                {formatStreakDates(currentEnhancedStats.worstLossStreak.startDate, currentEnhancedStats.worstLossStreak.endDate)}
+              </div>
+            )}
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-green-900/20 to-green-800/20 border-green-700/50">
+        <Card className="bg-gradient-to-br from-blue-900/20 to-blue-800/20 border-blue-700/50">
           <CardContent className="p-4 text-center">
-            <TrendingUp className="h-8 w-8 mx-auto mb-2 text-green-400" />
-            <div className="text-2xl font-bold text-green-400">
-              {currentEnhancedStats.synergisticTeammates.length > 0 ? 
-                Math.round(currentEnhancedStats.synergisticTeammates[0]?.winRateWithSameTeam * 100) : 0}%
+            <Zap className="h-8 w-8 mx-auto mb-2 text-blue-400" />
+            <div className="text-2xl font-bold text-blue-400">
+              {currentEnhancedStats.currentStreak?.count || 0}
             </div>
-            <div className="text-sm text-green-300">Best Teammate Chemistry</div>
-            <div className="text-xs text-green-200/60 mt-1">Highest win rate with any teammate</div>
+            <div className="text-sm text-blue-300">Current Streak</div>
+            {currentEnhancedStats.currentStreak && (
+              <div className="text-xs text-blue-200/60 mt-1">
+                {currentEnhancedStats.currentStreak.count} {currentEnhancedStats.currentStreak.type}
+                {currentEnhancedStats.currentStreak.count > 1 ? 's' : ''}
+              </div>
+            )}
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-purple-900/20 to-purple-800/20 border-purple-700/50">
           <CardContent className="p-4 text-center">
-            <Swords className="h-8 w-8 mx-auto mb-2 text-purple-400" />
-            <div className="text-2xl font-bold text-purple-400">
-              {currentEnhancedStats.dominantOpponents.length > 0 ? 
-                Math.round(currentEnhancedStats.dominantOpponents[0]?.winRateAgainst * 100) : 0}%
+            <Users className="h-8 w-8 mx-auto mb-2 text-purple-400" />
+            <div className="text-2xl font-bold text-purple-400">{currentEnhancedStats.totalUniqueTeammates}</div>
+            <div className="text-sm text-purple-300">Unique Teammates</div>
+            <div className="text-xs text-purple-200/60 mt-1">
+              vs {currentEnhancedStats.totalUniqueOpponents} opponents
             </div>
-            <div className="text-sm text-purple-300">Best vs Opponent</div>
-            <div className="text-xs text-purple-200/60 mt-1">Highest win rate against any opponent</div>
           </CardContent>
         </Card>
       </div>
