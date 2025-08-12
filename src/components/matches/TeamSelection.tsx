@@ -49,12 +49,27 @@ const TeamSelection = ({
   }, [seasonStats]);
   
   const availablePlayers = useMemo(() => {
-    return players.filter(player => 
+    const filtered = players.filter(player => 
       selectedPlayers.includes(player.id) && 
       !teamA.includes(player.id) && 
       !teamB.includes(player.id)
     );
-  }, [players, selectedPlayers, teamA, teamB]);
+    
+    // Sort by frequency (games played) descending, then by name
+    return filtered.sort((a, b) => {
+      const aSeasonStats = seasonStats.find(stat => stat.playerId === a.id);
+      const bSeasonStats = seasonStats.find(stat => stat.playerId === b.id);
+      
+      // Use season stats if available, otherwise overall stats
+      const aPlayed = aSeasonStats?.played || a.stats?.played || 0;
+      const bPlayed = bSeasonStats?.played || b.stats?.played || 0;
+      
+      if (aPlayed !== bPlayed) {
+        return bPlayed - aPlayed; // Most frequent first
+      }
+      return a.name.localeCompare(b.name); // Then alphabetically
+    });
+  }, [players, selectedPlayers, teamA, teamB, seasonStats]);
   
   // Convert player IDs to actual Player objects
   const teamAPlayers = useMemo(() => {
@@ -175,15 +190,31 @@ const PlayerCard = ({ player, currentSeason, seasonStats, onClick, playerRanks =
         <div className="player-stats grid grid-cols-3 p-2 bg-accent/10 border-t">
           <div className="stat-item flex flex-col items-center justify-center p-1">
             <span className="text-xs text-muted-foreground">Played</span>
-            <span className="font-semibold">{player.stats?.played || 0}</span>
+            <span className="font-semibold">{
+              (() => {
+                const seasonStat = seasonStats.find(stat => stat.playerId === player.id);
+                // Always show current season games if available, otherwise total games
+                return seasonStat?.played || player.stats?.played || 0;
+              })()
+            }</span>
           </div>
           <div className="stat-item flex flex-col items-center justify-center p-1">
             <span className="text-xs text-muted-foreground">Won</span>
-            <span className="font-semibold text-green-400">{player.stats?.won || 0}</span>
+            <span className="font-semibold text-green-400">{
+              (() => {
+                const seasonStat = seasonStats.find(stat => stat.playerId === player.id);
+                return seasonStat?.wins || player.stats?.won || 0;
+              })()
+            }</span>
           </div>
           <div className="stat-item flex flex-col items-center justify-center p-1">
             <span className="text-xs text-muted-foreground">Lost</span>
-            <span className="font-semibold text-red-400">{player.stats?.lost || 0}</span>
+            <span className="font-semibold text-red-400">{
+              (() => {
+                const seasonStat = seasonStats.find(stat => stat.playerId === player.id);
+                return seasonStat?.losses || player.stats?.lost || 0;
+              })()
+            }</span>
           </div>
         </div>
       </CardContent>
