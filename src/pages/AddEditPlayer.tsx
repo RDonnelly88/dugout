@@ -45,7 +45,8 @@ const AddEditPlayer = () => {
     if (player) {
       setInitialValues({
         name: player.name,
-        imageUrl: player.imageUrl || player.image
+        imageUrl: player.imageUrl || player.image,
+        isActive: player.isActive ?? true
       });
     }
   }, [player]);
@@ -85,7 +86,8 @@ const AddEditPlayer = () => {
             <PlayerEditForm
               initialValues={initialValues || {
                 name: '',
-                imageUrl: null
+                imageUrl: null,
+                isActive: true
               }}
               onSubmit={onSubmit}
               isSubmitting={addPlayerMutation.isPending || updatePlayerMutation.isPending}

@@ -19,6 +19,7 @@ export interface Player {
   createdAt: string;
   updatedAt: string;
   teamId?: string;
+  isActive?: boolean;
 }
 
 // Match types

@@ -14,7 +14,8 @@ export const mapSupabasePlayerToPlayer = (data: any): Player => {
     createdAt: data.created_at,
     updatedAt: data.updated_at,
     teamId: data.team_id,
-    imageUrl: data.image
+    imageUrl: data.image,
+    isActive: data.is_active
   };
 };
 
@@ -24,7 +25,8 @@ export const mapPlayerToSupabase = (player: Omit<Player, "id" | "createdAt" | "u
     name: player.name,
     image: player.image || player.imageUrl,
     stats: player.stats as unknown as Json,
-    team_id: player.teamId
+    team_id: player.teamId,
+    is_active: player.isActive
   };
 };
 
