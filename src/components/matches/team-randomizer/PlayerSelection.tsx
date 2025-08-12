@@ -62,12 +62,30 @@ const PlayerSelection = ({
       );
     }
     
+    // Debug logging
+    console.log('PlayerSelection: Sorting data available:');
+    console.log('- seasonPlayerStats count:', seasonPlayerStats.length);
+    console.log('- players count:', filtered.length);
+    if (seasonPlayerStats.length > 0) {
+      console.log('- sample season stat:', seasonPlayerStats[0]);
+    }
+    if (filtered.length > 0) {
+      const samplePlayer = filtered[0];
+      const sampleSeasonStat = seasonPlayerStats.find(stat => stat.playerId === samplePlayer.id);
+      console.log('- sample player:', samplePlayer.name, 'overall played:', samplePlayer.stats?.played);
+      console.log('- sample season stat for player:', sampleSeasonStat);
+    }
+    
     // Sort by frequency (games played) descending, then by name
     return filtered.sort((a, b) => {
-      const aStats = seasonPlayerStats.find(stat => stat.playerId === a.id);
-      const bStats = seasonPlayerStats.find(stat => stat.playerId === b.id);
-      const aPlayed = aStats?.played || a.stats?.played || 0;
-      const bPlayed = bStats?.played || b.stats?.played || 0;
+      const aSeasonStats = seasonPlayerStats.find(stat => stat.playerId === a.id);
+      const bSeasonStats = seasonPlayerStats.find(stat => stat.playerId === b.id);
+      
+      // Prioritize current season stats, fallback to overall stats
+      const aPlayed = aSeasonStats?.played || a.stats?.played || 0;
+      const bPlayed = bSeasonStats?.played || b.stats?.played || 0;
+      
+      console.log(`Comparing ${a.name} (${aPlayed}) vs ${b.name} (${bPlayed})`);
       
       if (aPlayed !== bPlayed) {
         return bPlayed - aPlayed; // Most frequent first
