@@ -60,32 +60,45 @@ const TeamSelection = ({
       !teamB.includes(player.id)
     );
     
+    console.log("Before filters - available players:", filtered.length);
+    
     // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(player =>
         player.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
+      console.log("After search filter:", filtered.length);
     }
     
     // Apply active filter
     if (showActiveOnly) {
       filtered = filtered.filter(player => player.isActive);
+      console.log("After active filter:", filtered.length);
     }
     
     // Sort by frequency (games played) descending, then by name
-    return filtered.sort((a, b) => {
+    const sorted = filtered.sort((a, b) => {
       const aSeasonStats = seasonStats.find(stat => stat.playerId === a.id);
       const bSeasonStats = seasonStats.find(stat => stat.playerId === b.id);
       
-      // Use season stats if available, otherwise overall stats
-      const aPlayed = aSeasonStats?.played || a.stats?.played || 0;
-      const bPlayed = bSeasonStats?.played || b.stats?.played || 0;
+      // Use current season stats only, don't fall back to overall stats
+      const aPlayed = aSeasonStats?.played || 0;
+      const bPlayed = bSeasonStats?.played || 0;
+      
+      console.log(`Comparing ${a.name} (${aPlayed} games) vs ${b.name} (${bPlayed} games)`);
       
       if (aPlayed !== bPlayed) {
         return bPlayed - aPlayed; // Most frequent first
       }
       return a.name.localeCompare(b.name); // Then alphabetically
     });
+    
+    console.log("Final sorted players:", sorted.map(p => {
+      const stats = seasonStats.find(stat => stat.playerId === p.id);
+      return `${p.name}: ${stats?.played || 0} games`;
+    }));
+    
+    return sorted;
   }, [players, selectedPlayers, teamA, teamB, seasonStats, searchTerm, showActiveOnly]);
   
   // Calculate filter counts
