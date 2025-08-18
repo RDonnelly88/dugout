@@ -38,9 +38,14 @@ const PlayerSelectionFilters = ({
         
         <div className="flex items-center gap-2">
           <Button
+            type="button"
             variant={showActiveOnly ? "default" : "outline"}
             size="sm"
-            onClick={() => setShowActiveOnly(!showActiveOnly)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowActiveOnly(!showActiveOnly);
+            }}
             className="gap-2"
           >
             {showActiveOnly ? <UserCheck className="h-3 w-3" /> : <Users className="h-3 w-3" />}
