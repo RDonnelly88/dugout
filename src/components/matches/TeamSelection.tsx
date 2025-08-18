@@ -230,8 +230,8 @@ const PlayerCard = ({ player, currentSeason, seasonStats, onClick, playerRanks =
             <span className="font-semibold">{
               (() => {
                 const seasonStat = seasonStats.find(stat => stat.playerId === player.id);
-                // Always show current season games if available, otherwise total games
-                return seasonStat?.played || player.stats?.played || 0;
+                // Show current season games if available, otherwise show 0 (not total games)
+                return seasonStat?.played || 0;
               })()
             }</span>
           </div>
@@ -240,7 +240,7 @@ const PlayerCard = ({ player, currentSeason, seasonStats, onClick, playerRanks =
             <span className="font-semibold text-green-400">{
               (() => {
                 const seasonStat = seasonStats.find(stat => stat.playerId === player.id);
-                return seasonStat?.wins || player.stats?.won || 0;
+                return seasonStat?.wins || 0;
               })()
             }</span>
           </div>
@@ -249,7 +249,7 @@ const PlayerCard = ({ player, currentSeason, seasonStats, onClick, playerRanks =
             <span className="font-semibold text-red-400">{
               (() => {
                 const seasonStat = seasonStats.find(stat => stat.playerId === player.id);
-                return seasonStat?.losses || player.stats?.lost || 0;
+                return seasonStat?.losses || 0;
               })()
             }</span>
           </div>
