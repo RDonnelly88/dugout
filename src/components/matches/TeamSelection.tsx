@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Player } from "@/types";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,6 +12,7 @@ import Formation from './team-randomizer/Formation';
 import { PlayerHoverContent } from './team-randomizer/PlayerSelection';
 import { calculatePlayerRanks } from "@/lib/ranking-utils";
 import { Card, CardContent } from "@/components/ui/card";
+import PlayerSelectionFilters from './team-randomizer/PlayerSelectionFilters';
 
 interface TeamSelectionProps {
   teamA: string[];
@@ -31,6 +32,10 @@ const TeamSelection = ({
   console.log("TeamSelection render - Team A:", teamA.length, "players");
   console.log("TeamSelection render - Team B:", teamB.length, "players");
   
+  // Filter state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showActiveOnly, setShowActiveOnly] = useState(false);
+  
   const { data: currentSeason } = useQuery({
     queryKey: ['currentSeason'],
     queryFn: getCurrentSeason
@@ -49,11 +54,23 @@ const TeamSelection = ({
   }, [seasonStats]);
   
   const availablePlayers = useMemo(() => {
-    const filtered = players.filter(player => 
+    let filtered = players.filter(player => 
       selectedPlayers.includes(player.id) && 
       !teamA.includes(player.id) && 
       !teamB.includes(player.id)
     );
+    
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(player =>
+        player.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    // Apply active filter
+    if (showActiveOnly) {
+      filtered = filtered.filter(player => player.isActive);
+    }
     
     // Sort by frequency (games played) descending, then by name
     return filtered.sort((a, b) => {
@@ -69,7 +86,16 @@ const TeamSelection = ({
       }
       return a.name.localeCompare(b.name); // Then alphabetically
     });
-  }, [players, selectedPlayers, teamA, teamB, seasonStats]);
+  }, [players, selectedPlayers, teamA, teamB, seasonStats, searchTerm, showActiveOnly]);
+  
+  // Calculate filter counts
+  const baseAvailablePlayers = players.filter(player => 
+    selectedPlayers.includes(player.id) && 
+    !teamA.includes(player.id) && 
+    !teamB.includes(player.id)
+  );
+  const totalCount = baseAvailablePlayers.length;
+  const filteredCount = availablePlayers.length;
   
   // Convert player IDs to actual Player objects
   const teamAPlayers = useMemo(() => {
@@ -109,7 +135,18 @@ const TeamSelection = ({
           <Users className="h-5 w-5 mr-2 text-accent inline" />
           <span className="text-xl font-bold">Available Players</span>
         </Label>
-        <div className="available-players-grid">
+        
+        <PlayerSelectionFilters
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          showActiveOnly={showActiveOnly}
+          setShowActiveOnly={setShowActiveOnly}
+          totalCount={totalCount}
+          filteredCount={filteredCount}
+          selectedCount={0} // Not applicable here since these are available players
+        />
+        
+        <div className="available-players-grid mt-4">
           {availablePlayers.length === 0 ? (
             <div className="text-center p-8 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-2 opacity-30" />
