@@ -55,8 +55,11 @@ export function usePlayerMutation() {
       
       return updatePlayer(id, modifiedUpdates);
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['players'] });
+      if (variables?.id) {
+        queryClient.invalidateQueries({ queryKey: ['player', variables.id] });
+      }
       toast({
         title: "Player updated",
         description: "The player has been updated successfully.",
