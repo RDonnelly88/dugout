@@ -220,7 +220,11 @@ export const updatePlayerStats = async (match: Match): Promise<void> => {
   const teamBWon = match.teamB.score > match.teamA.score;
   const draw = match.teamA.score === match.teamB.score;
   
-  // Update each player's stats
+  // Determine result for each team
+  const teamAResult = teamAWon ? 'won' : draw ? 'drawn' : 'lost';
+  const teamBResult = teamBWon ? 'won' : draw ? 'drawn' : 'lost';
+  
+  // Update each player's stats and insert match results
   const updatePromises = [
     ...match.teamA.players.map(async (playerId) => {
       const player = await getPlayer(playerId);
@@ -233,6 +237,15 @@ export const updatePlayerStats = async (match: Match): Promise<void> => {
           drawn: player.stats.drawn + (draw ? 1 : 0)
         };
         await updatePlayer(playerId, { stats });
+        
+        // Insert into player_match_results
+        await supabase.from('player_match_results').insert({
+          player_id: playerId,
+          match_id: match.id,
+          season_id: match.seasonId,
+          date: match.date,
+          result: teamAResult
+        } as any);
       }
     }),
     ...match.teamB.players.map(async (playerId) => {
@@ -246,6 +259,15 @@ export const updatePlayerStats = async (match: Match): Promise<void> => {
           drawn: player.stats.drawn + (draw ? 1 : 0)
         };
         await updatePlayer(playerId, { stats });
+        
+        // Insert into player_match_results
+        await supabase.from('player_match_results').insert({
+          player_id: playerId,
+          match_id: match.id,
+          season_id: match.seasonId,
+          date: match.date,
+          result: teamBResult
+        } as any);
       }
     })
   ];
@@ -262,6 +284,12 @@ export const revertPlayerStats = async (match: Match): Promise<void> => {
   const teamAWon = match.teamA.score > match.teamB.score;
   const teamBWon = match.teamB.score > match.teamA.score;
   const draw = match.teamA.score === match.teamB.score;
+  
+  // Delete player_match_results entries for this match
+  await supabase
+    .from('player_match_results')
+    .delete()
+    .eq('match_id', match.id);
   
   // Update each player's stats
   const updatePromises = [
