@@ -1,7 +1,8 @@
 
 import React from "react";
+import { Link } from "react-router-dom";
 import { Match } from "@/types";
-import { Calendar, MapPin, Clock, Edit } from "lucide-react";
+import { Calendar, MapPin, Clock, Edit, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -44,17 +45,30 @@ const MatchHeader = ({ match, isCompleted, onEditClick }: MatchHeaderProps) => {
           </div>
         </div>
         
-        {!isCompleted && (
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={onEditClick}
-            className="flex items-center gap-1"
-          >
-            <Edit className="h-4 w-4" />
-            Record Result
-          </Button>
-        )}
+        <div className="flex gap-2">
+          <Link to={`/matches/edit/${match.id}`}>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="flex items-center gap-1"
+            >
+              <Pencil className="h-4 w-4" />
+              Edit
+            </Button>
+          </Link>
+          
+          {!isCompleted && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={onEditClick}
+              className="flex items-center gap-1"
+            >
+              <Edit className="h-4 w-4" />
+              Record Result
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -12,6 +12,7 @@ import AddEditPlayer from "@/pages/AddEditPlayer";
 import Matches from "@/pages/Matches";
 import MatchDetail from "@/pages/MatchDetail";
 import CreateMatch from "@/pages/CreateMatch";
+import EditMatch from "@/pages/EditMatch";
 import Seasons from "@/pages/Seasons";
 import SeasonDetail from "@/pages/SeasonDetail";
 import CreateSeason from "@/pages/CreateSeason";
@@ -57,6 +58,7 @@ function App() {
                 <Route path="/matches" element={<Matches />} />
                 <Route path="/matches/:id" element={<MatchDetail />} />
                 <Route path="/matches/create" element={<CreateMatch />} />
+                <Route path="/matches/edit/:id" element={<EditMatch />} />
                 
                 {/* Season routes */}
                 <Route path="/seasons" element={<Seasons />} />
