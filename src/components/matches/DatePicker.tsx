@@ -34,9 +34,6 @@ const DatePicker = ({ date, setDate }: DatePickerProps) => {
             mode="single"
             selected={date}
             onSelect={setDate}
-            disabled={(date) =>
-              date < new Date()
-            }
             initialFocus
             className={cn("p-3 pointer-events-auto")}
           />
