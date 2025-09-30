@@ -3,7 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getPlayers } from "@/lib/db";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { ArrowLeft } from "lucide-react";
 import TeamSelection from "@/components/matches/TeamSelection";
 import TeamRandomizer from "@/components/matches/TeamRandomizer";
@@ -28,8 +31,14 @@ const EditMatch = () => {
     teamB, 
     date, 
     seasonId,
+    teamAScore,
+    teamBScore,
+    status,
     setDate,
-    setSeasonId, 
+    setSeasonId,
+    setTeamAScore,
+    setTeamBScore,
+    setStatus,
     togglePlayer, 
     randomizeTeams,
     updateMatchMutation, 
@@ -140,6 +149,49 @@ const EditMatch = () => {
                 selectedPlayers={selectedPlayers}
                 togglePlayer={togglePlayer}
               />
+            </div>
+
+            <div className="space-y-6 bg-card/50 rounded-xl p-6 border border-accent/30">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="match-completed" className="text-base font-semibold">
+                  Match Completed
+                </Label>
+                <Switch
+                  id="match-completed"
+                  checked={status === "completed"}
+                  onCheckedChange={(checked) => setStatus(checked ? "completed" : "pending")}
+                />
+              </div>
+
+              {status === "completed" && (
+                <div className="space-y-4 pt-4 border-t border-accent/20">
+                  <h3 className="text-lg font-semibold">Match Result</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="team-a-score">Team A Score</Label>
+                      <Input
+                        id="team-a-score"
+                        type="number"
+                        min="0"
+                        value={teamAScore}
+                        onChange={(e) => setTeamAScore(parseInt(e.target.value) || 0)}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="team-b-score">Team B Score</Label>
+                      <Input
+                        id="team-b-score"
+                        type="number"
+                        min="0"
+                        value={teamBScore}
+                        onChange={(e) => setTeamBScore(parseInt(e.target.value) || 0)}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-4">

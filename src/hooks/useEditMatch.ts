@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { updateMatch, getMatch } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
-import { Player, Match } from "@/types";
+import { Player, Match, MatchStatus } from "@/types";
 import { useTeam } from "@/contexts/TeamContext";
 
 export const useEditMatch = (matchId: string) => {
@@ -11,6 +11,9 @@ export const useEditMatch = (matchId: string) => {
   const [teamB, setTeamB] = useState<string[]>([]);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [seasonId, setSeasonId] = useState<string | undefined>(undefined);
+  const [teamAScore, setTeamAScore] = useState<number>(0);
+  const [teamBScore, setTeamBScore] = useState<number>(0);
+  const [status, setStatus] = useState<MatchStatus>("pending");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -30,6 +33,9 @@ export const useEditMatch = (matchId: string) => {
       setTeamB(match.teamB?.players || []);
       setDate(match.date ? new Date(match.date) : undefined);
       setSeasonId(match.seasonId);
+      setTeamAScore(match.teamA?.score || 0);
+      setTeamBScore(match.teamB?.score || 0);
+      setStatus(match.status);
     }
   }, [match]);
 
@@ -150,14 +156,15 @@ export const useEditMatch = (matchId: string) => {
       teamA: {
         name: "Team A",
         players: teamA,
-        score: match?.teamA?.score || 0
+        score: teamAScore
       },
       teamB: {
         name: "Team B",
         players: teamB,
-        score: match?.teamB?.score || 0
+        score: teamBScore
       },
       date: date.toISOString(),
+      status: status,
       seasonId: seasonId === "none" ? undefined : seasonId,
       teamId: currentTeam.id
     };
@@ -172,8 +179,14 @@ export const useEditMatch = (matchId: string) => {
     teamB,
     date,
     seasonId,
+    teamAScore,
+    teamBScore,
+    status,
     setDate,
     setSeasonId,
+    setTeamAScore,
+    setTeamBScore,
+    setStatus,
     togglePlayer,
     randomizeTeams,
     updateMatchMutation,
