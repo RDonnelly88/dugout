@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ArrowLeft } from "lucide-react";
 import TeamSelection from "@/components/matches/TeamSelection";
@@ -34,11 +35,13 @@ const EditMatch = () => {
     teamAScore,
     teamBScore,
     status,
+    notes,
     setDate,
     setSeasonId,
     setTeamAScore,
     setTeamBScore,
     setStatus,
+    setNotes,
     togglePlayer, 
     randomizeTeams,
     updateMatchMutation, 
@@ -199,6 +202,18 @@ const EditMatch = () => {
               <SeasonSelect 
                 value={seasonId} 
                 onChange={setSeasonId}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="match-notes">Match Notes</Label>
+              <Textarea
+                id="match-notes"
+                placeholder="Add any notes about this match..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={4}
+                className="resize-none"
               />
             </div>
 

@@ -14,6 +14,7 @@ export const useEditMatch = (matchId: string) => {
   const [teamAScore, setTeamAScore] = useState<number>(0);
   const [teamBScore, setTeamBScore] = useState<number>(0);
   const [status, setStatus] = useState<MatchStatus>("pending");
+  const [notes, setNotes] = useState<string>("");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -36,6 +37,7 @@ export const useEditMatch = (matchId: string) => {
       setTeamAScore(match.teamA?.score || 0);
       setTeamBScore(match.teamB?.score || 0);
       setStatus(match.status);
+      setNotes(match.notes || "");
     }
   }, [match]);
 
@@ -166,7 +168,8 @@ export const useEditMatch = (matchId: string) => {
       date: date.toISOString(),
       status: status,
       seasonId: seasonId === "none" ? undefined : seasonId,
-      teamId: currentTeam.id
+      teamId: currentTeam.id,
+      notes: notes || undefined
     };
 
     updateMatchMutation.mutate(matchData);
@@ -182,11 +185,13 @@ export const useEditMatch = (matchId: string) => {
     teamAScore,
     teamBScore,
     status,
+    notes,
     setDate,
     setSeasonId,
     setTeamAScore,
     setTeamBScore,
     setStatus,
+    setNotes,
     togglePlayer,
     randomizeTeams,
     updateMatchMutation,

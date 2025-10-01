@@ -118,6 +118,16 @@ const MatchDetail = () => {
         players={players} 
         getPlayerName={getPlayerName} 
       />
+
+      {/* Match Notes */}
+      {match.notes && (
+        <Card className="shadow-lg mt-8">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-3">Match Notes</h3>
+            <p className="text-muted-foreground whitespace-pre-wrap">{match.notes}</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

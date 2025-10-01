@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -20,6 +20,7 @@ export type Database = {
           date: string
           id: string
           location: string | null
+          notes: string | null
           season_id: string | null
           status: string
           team_a: Json
@@ -32,6 +33,7 @@ export type Database = {
           date: string
           id?: string
           location?: string | null
+          notes?: string | null
           season_id?: string | null
           status: string
           team_a: Json
@@ -44,6 +46,7 @@ export type Database = {
           date?: string
           id?: string
           location?: string | null
+          notes?: string | null
           season_id?: string | null
           status?: string
           team_a?: Json
@@ -321,13 +324,13 @@ export type Database = {
       get_team_members: {
         Args: { team_id_param: string }
         Returns: {
-          id: string
-          user_id: string
-          team_id: string
-          role: string
-          created_at: string
-          username: string
           avatar_url: string
+          created_at: string
+          id: string
+          role: string
+          team_id: string
+          user_id: string
+          username: string
         }[]
       }
       is_team_admin: {

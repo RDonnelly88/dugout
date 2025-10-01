@@ -42,6 +42,7 @@ export interface Match {
   updatedAt: string;
   seasonId?: string;
   teamId?: string;
+  notes?: string;
 }
 
 // Season types
