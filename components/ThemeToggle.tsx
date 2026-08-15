@@ -69,7 +69,9 @@ export default function ThemeToggle({
 
   return (
     <fieldset
-      className="flex items-center gap-0.5 rounded-full border border-border bg-surface p-0.5"
+      // `w-fit`: a fieldset is a block element, so it would otherwise stretch
+      // to the width of the card and draw a pill round nothing.
+      className="flex w-fit items-center gap-0.5 rounded-full border border-border bg-surface p-0.5"
       aria-busy={!mounted}
     >
       <legend className="sr-only">Colour theme</legend>
