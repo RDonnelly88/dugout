@@ -85,24 +85,38 @@ const mean = (xs: number[]) =>
  * side. Only the ratio between teammates' weights matters — the pot itself
  * is fixed by the match, not by the weights, so nothing here can create or
  * destroy rating.
+ *
+ * A weight must not depend on which way the result went. Sharing a defeat
+ * out differently from a win correlates a player's share with the sign of
+ * the pot, and that correlation is a one-way ratchet: teams are picked to
+ * be level, so the strongest man on a side is nearly always above its mean,
+ * and anything that pays him less for a win than it charges him for a
+ * defeat bleeds him towards the middle every week. Weighting a defeat
+ * towards the favourite reads well on a single match card and flattens the
+ * ladder to almost nothing over a season.
  */
-export type Weigher = (player: PlayerRating, teamMeanRating: number) => number;
+export type Weigher = (player: PlayerRating) => number;
 
 /**
- * The default. A player rated below their own side's mean is the underdog
- * within their own team, so they take a bigger share of a win — and a
- * smaller share of a defeat — than a teammate rated above it. Reuses
- * `expectedScore` rather than a second curve: at the mean it is 0.5, exactly
- * even, same as everyone else on a side of equals.
+ * The default. You win as a team, so everyone on the side takes the same
+ * share of what the result was worth.
+ *
+ * A five-a-side result says what the five of them did between them and
+ * nothing about which of them did it. Splitting the pot by any measure of
+ * the players themselves is inventing that missing detail, and inventing it
+ * costs more than it gives: the spread of the ladder is the one thing the
+ * table is for.
  */
-export const spreadWeigher: Weigher = (player, teamMeanRating) =>
-  expectedScore(teamMeanRating, player.rating);
+export const evenWeigher: Weigher = () => 1;
 
 /**
- * Weight by how unsettled a rating still is, ignoring where it sits
- * relative to teammates. Not the default — a squad that would rather a new
- * player's rating settle quickly than have results shared out by strength
- * can pass this to `computeRatings` instead.
+ * Weight by how unsettled a rating still is, so a new player's finds its
+ * level in a few weeks rather than a season. Not the default — it buys
+ * faster settling at the cost of two players on the same side, in the same
+ * result, being moved by different amounts.
+ *
+ * Safe for the ladder in a way a strength-based weight is not: games played
+ * has nothing to do with which way a result went, so it adds no drift.
  */
 export const uncertaintyWeigher: Weigher = (player) =>
   player.games < ELO.provisionalGames ? ELO.kProvisional : ELO.kEstablished;
@@ -130,7 +144,7 @@ export const uncertaintyWeigher: Weigher = (player) =>
  */
 export function computeRatings(
   matches: Match[],
-  weigh: Weigher = spreadWeigher
+  weigh: Weigher = evenWeigher
 ): Map<string, PlayerRating> {
   const ratings = new Map<string, PlayerRating>();
 
@@ -209,11 +223,10 @@ export function computeRatings(
     const apply = (
       side: PlayerRating[],
       pot: number,
-      teamMeanRating: number,
       opponentRating: number,
       result: "win" | "draw" | "loss"
     ) => {
-      const weights = side.map((player) => weigh(player, teamMeanRating));
+      const weights = side.map((player) => weigh(player));
       const totalWeight = weights.reduce((sum, w) => sum + w, 0);
 
       side.forEach((player, i) => {
@@ -242,8 +255,8 @@ export function computeRatings(
     // Both sides are adjusted from the ratings they carried into the match,
     // captured above — updating A first and then reading it for B would let
     // the first result of the evening influence the second.
-    apply(sideA, potA, ratingA, ratingB, resultA);
-    apply(sideB, potB, ratingB, ratingA, resultB);
+    apply(sideA, potA, ratingB, resultA);
+    apply(sideB, potB, ratingA, resultB);
   });
 
   // Bring everyone up to the last match played, so two players are comparable

@@ -3,7 +3,7 @@ import {
   computeRatings,
   decayed,
   expectedScore,
-  spreadWeigher,
+  evenWeigher,
   uncertaintyWeigher,
   type PlayerRating,
 } from "@/lib/elo";
@@ -424,33 +424,55 @@ describe("a match's pot is conserved", () => {
   });
 });
 
-describe("weighing by strength within a side", () => {
-  it("gives a weaker teammate more of a win than a stronger one", () => {
-    // Pull "strong" well above the start and "weak" well below it against
-    // fresh opponents that play no further part, then have them share a
-    // side for the match that actually gets asserted on.
+describe("sharing a result out across a side", () => {
+  /**
+   * Two players a long way apart in rating, on the same side, in the same
+   * result. Weighting the split by strength moved them by different amounts
+   * — and because teams are picked to be level, the stronger man is nearly
+   * always the one above his side's mean, so paying him less for a win than
+   * charging him for a defeat walked every outlier back towards 1200 and
+   * left the table almost flat.
+   */
+  const spread = (scoreA: number, scoreB: number) => {
     const warmUps = [
       ...Array.from({ length: 6 }, (_, i) => match(["strong"], [`up${i}`], 1, 0)),
       ...Array.from({ length: 6 }, (_, i) => match([`down${i}`], ["weak"], 1, 0)),
     ];
-    const decider = match(["strong", "weak"], ["x", "y"], 1, 0);
+    const ratings = computeRatings([
+      ...warmUps,
+      match(["strong", "weak"], ["x", "y"], scoreA, scoreB),
+    ]);
+    return {
+      strong: ratings.get("strong")!,
+      weak: ratings.get("weak")!,
+    };
+  };
 
-    const ratings = computeRatings([...warmUps, decider]);
-
-    const strong = ratings.get("strong")!;
-    const weak = ratings.get("weak")!;
-    const strongChange = strong.history.at(-1)!.change;
-    const weakChange = weak.history.at(-1)!.change;
+  it("moves teammates of very different strength alike on a win", () => {
+    const { strong, weak } = spread(1, 0);
 
     expect(strong.rating).toBeGreaterThan(weak.rating);
-    expect(strongChange).toBeGreaterThan(0);
-    expect(weakChange).toBeGreaterThan(strongChange);
+    expect(strong.history.at(-1)!.change).toBeGreaterThan(0);
+    expect(strong.history.at(-1)!.change).toBeCloseTo(
+      weak.history.at(-1)!.change,
+      9
+    );
+  });
+
+  it("moves them alike on a defeat too", () => {
+    const { strong, weak } = spread(0, 1);
+
+    expect(strong.history.at(-1)!.change).toBeLessThan(0);
+    expect(strong.history.at(-1)!.change).toBeCloseTo(
+      weak.history.at(-1)!.change,
+      9
+    );
   });
 
   it("is the default weigher", () => {
-    const fixtures = [match(["strong", "weak"], ["x", "y"], 1, 0)];
+    const fixtures = [match(["a", "b"], ["x", "y"], 1, 0)];
 
-    expect(computeRatings(fixtures, spreadWeigher)).toEqual(
+    expect(computeRatings(fixtures, evenWeigher)).toEqual(
       computeRatings(fixtures)
     );
   });
