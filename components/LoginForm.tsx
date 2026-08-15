@@ -142,8 +142,10 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-bg p-4">
-      <div className="w-full max-w-md">
+    /* The page owns the layout, so the form can sit beside an explanation of
+       what it is a form for. */
+    <div className="w-full max-w-md">
+      <div>
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">Login</TabsTrigger>

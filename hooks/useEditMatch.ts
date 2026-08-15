@@ -7,15 +7,18 @@ import { useToast } from "@/hooks/use-toast";
 import { Player, Match, MatchStatus } from "@/types";
 import { useTeam } from "@/contexts/TeamContext";
 import { useSideNames } from "@/hooks/useSideNames";
-import type { Outcome } from "@/lib/match-result";
+import { outcomeOf, type Outcome } from "@/lib/match-result";
 
 export const useEditMatch = (matchId: string) => {
   const [teamA, setTeamA] = useState<string[]>([]);
   const [teamB, setTeamB] = useState<string[]>([]);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [seasonId, setSeasonId] = useState<string | undefined>(undefined);
-  const [teamAScore, setTeamAScore] = useState<number>(0);
-  const [teamBScore, setTeamBScore] = useState<number>(0);
+  // Undefined rather than nought: a match can be played without anybody having
+  // written the score down, and nought is a scoreline.
+  const [teamAScore, setTeamAScore] = useState<number | undefined>(undefined);
+  const [teamBScore, setTeamBScore] = useState<number | undefined>(undefined);
+  const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [status, setStatus] = useState<MatchStatus>("pending");
   const [notes, setNotes] = useState<string>("");
   const router = useRouter();
@@ -38,12 +41,24 @@ export const useEditMatch = (matchId: string) => {
       setTeamB(match.teamB?.players || []);
       setDate(match.date ? new Date(match.date) : undefined);
       setSeasonId(match.seasonId);
-      setTeamAScore(match.teamA?.score || 0);
-      setTeamBScore(match.teamB?.score || 0);
+      setTeamAScore(match.teamA?.score);
+      setTeamBScore(match.teamB?.score);
+      setOutcome(outcomeOf(match));
       setStatus(match.status);
       setNotes(match.notes || "");
     }
   }, [match]);
+
+  // A score, when both halves are given, decides the result, so the two can
+  // never be saved disagreeing. The database enforces the same rule.
+  const effectiveOutcome: Outcome | null =
+    teamAScore !== undefined && teamBScore !== undefined
+      ? teamAScore > teamBScore
+        ? "a"
+        : teamAScore < teamBScore
+          ? "b"
+          : "draw"
+      : outcome;
 
   const togglePlayer = (team: 'A' | 'B', playerId: string) => {
     if (team === 'A') {
@@ -140,32 +155,33 @@ export const useEditMatch = (matchId: string) => {
       return;
     }
 
-    // The outcome has to follow the scores being saved. Leaving the old one in
-    // place while the score changed would put the two in contradiction, and
-    // the database rejects that outright.
-    const outcome: Outcome | null =
-      status === "completed"
-        ? teamAScore > teamBScore
-          ? "a"
-          : teamAScore < teamBScore
-            ? "b"
-            : "draw"
-        : null;
+    if (status === "completed" && !effectiveOutcome) {
+      toast({
+        title: "Nothing to record",
+        description: "Say who won, or enter the score.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Half a score is no score: saving one side would leave a match reading
+    // "4 – " for ever.
+    const bothScores = teamAScore !== undefined && teamBScore !== undefined;
 
     const matchData = {
       teamA: {
         name: sides.A,
         players: teamA,
-        score: teamAScore
+        score: bothScores ? teamAScore : undefined
       },
       teamB: {
         name: sides.B,
         players: teamB,
-        score: teamBScore
+        score: bothScores ? teamBScore : undefined
       },
       date: date.toISOString(),
       status: status,
-      outcome,
+      outcome: status === "completed" ? effectiveOutcome : null,
       seasonId: seasonId === "none" ? undefined : seasonId,
       teamId: currentTeam.id,
       notes: notes || undefined
@@ -183,6 +199,8 @@ export const useEditMatch = (matchId: string) => {
     seasonId,
     teamAScore,
     teamBScore,
+    setOutcome,
+    effectiveOutcome,
     status,
     notes,
     setDate,
