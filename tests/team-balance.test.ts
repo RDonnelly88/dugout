@@ -126,3 +126,24 @@ describe("splitTeams", () => {
     expect(difference).toBe(0);
   });
 });
+
+describe("splitTeams by skill", () => {
+  /**
+   * A hand-set level is just another weight, but it is the one that has to work
+   * for somebody with no games at all — which is the whole reason it exists.
+   */
+  it("puts the two strongest on opposite sides", () => {
+    const squad = [
+      { id: "a", skill: 5 },
+      { id: "b", skill: 5 },
+      { id: "c", skill: 1 },
+      { id: "d", skill: 1 },
+    ];
+
+    const split = splitTeams(squad, "skill", (p) => p.skill);
+
+    expect(split.difference).toBe(0);
+    expect(split.teamA.map((p) => p.skill).sort()).toEqual([1, 5]);
+    expect(split.teamB.map((p) => p.skill).sort()).toEqual([1, 5]);
+  });
+});

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { Dices, Hand, Scale, TrendingUp } from "lucide-react";
+import { Dices, Hand, Scale, Star, TrendingUp } from "lucide-react";
 import type { Split } from "@/lib/team-balance";
 import type { PickMethod } from "./pick-method";
 import type { Player } from "@/types";
@@ -39,6 +39,13 @@ const METHODS: {
     gap: (d) => (d < 0.05 ? "dead even" : `${d.toFixed(2)} pts a game apart`),
   },
   {
+    value: "skill",
+    label: "Even by skill",
+    blurb: "Uses the level you set on each player, so a debutant still counts.",
+    Icon: Star,
+    gap: (d) => (d < 0.1 ? "dead even" : `${d.toFixed(1)} levels apart`),
+  },
+  {
     value: "manual",
     label: "Pick them yourself",
     blurb: "Sort everyone into sides by hand.",
@@ -69,7 +76,7 @@ export default function MethodPicker({
   const reduced = useReducedMotion();
 
   return (
-    <fieldset disabled={disabled} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+    <fieldset disabled={disabled} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       <legend className="sr-only">How to pick the teams</legend>
       {METHODS.map(({ value: method, label, blurb, Icon, gap }, i) => {
         const split = preview[method];

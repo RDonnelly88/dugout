@@ -1,6 +1,7 @@
 
 import { Json } from "@/lib/database.types";
 import { Match, MatchStatus, Player, Season, TeamInfo } from "@/types";
+import { SKILL } from "@/lib/config";
 
 // Helper function to map Supabase player response to our Player type
 export const mapSupabasePlayerToPlayer = (data: any): Player => {
@@ -14,7 +15,8 @@ export const mapSupabasePlayerToPlayer = (data: any): Player => {
     updatedAt: data.updated_at,
     teamId: data.team_id,
     imageUrl: data.image,
-    isActive: data.is_active
+    isActive: data.is_active,
+    skillLevel: data.skill_level ?? SKILL.default
   };
 };
 
@@ -24,7 +26,8 @@ export const mapPlayerToSupabase = (player: Omit<Player, "id" | "createdAt" | "u
     name: player.name,
     image: player.image || player.imageUrl,
     team_id: player.teamId,
-    is_active: player.isActive
+    is_active: player.isActive,
+    skill_level: player.skillLevel ?? SKILL.default
   };
 };
 

@@ -21,7 +21,7 @@ import { recentForm } from "@/lib/form";
 import { getMatches } from "@/lib/db";
 import { useQuery } from "@tanstack/react-query";
 import { useTeam } from "@/contexts/TeamContext";
-import { ELO } from "@/lib/config";
+import { ELO, SKILL } from "@/lib/config";
 
 interface TeamRandomizerProps {
   players: Player[];
@@ -81,6 +81,7 @@ const TeamRandomizer = ({
       random: () => 0,
       rating: (p: Player) => ratingFor(p.id)?.rating ?? ELO.start,
       form: (p: Player) => form.get(p.id)?.pointsPerGame ?? 1,
+      skill: (p: Player) => p.skillLevel ?? SKILL.default,
     }),
     [ratingFor, form]
   );
@@ -95,6 +96,9 @@ const TeamRandomizer = ({
           : null,
         form: canRandomize
           ? splitTeams(availablePlayers, "form", weightFor.form)
+          : null,
+        skill: canRandomize
+          ? splitTeams(availablePlayers, "skill", weightFor.skill)
           : null,
       }) as Record<PickMethod, Split<Player> | null>,
     [availablePlayers, canRandomize, weightFor]

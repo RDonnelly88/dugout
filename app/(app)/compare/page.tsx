@@ -4,13 +4,14 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowLeftRight, Handshake, Swords } from "lucide-react";
-import { getMatches, getPlayers } from "@/lib/db";
+import { getMatches, getPlayers, getSeasonPlayerStats, getSeasons } from "@/lib/db";
 import { useTeam } from "@/contexts/TeamContext";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
 import { headToHead, rate, type Tally } from "@/lib/head-to-head";
 import { winRate } from "@/lib/player-stats";
-import { displayRating } from "@/lib/elo";
+import { computeRatings, displayRating } from "@/lib/elo";
+import { emptyRecord } from "@/lib/player-stats";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import {
   Card,
@@ -143,6 +144,41 @@ export default function ComparePage() {
   const { recordFor } = usePlayerRecords();
   const { ratingFor } = usePlayerRatings();
 
+  const [scope, setScope] = useState<string>("overall");
+  const { data: seasons = [] } = useQuery({
+    queryKey: ["seasons"],
+    queryFn: getSeasons,
+  });
+  const { data: seasonStats = [] } = useQuery({
+    queryKey: ["seasonPlayerStats", scope],
+    queryFn: () => getSeasonPlayerStats(scope),
+    enabled: scope !== "overall",
+  });
+
+  const scopedMatches = useMemo(
+    () => (scope === "overall" ? matches : matches.filter((m) => m.seasonId === scope)),
+    [matches, scope]
+  );
+
+  // All-time comes from the `player_stats` view and a season from
+  // `season_player_stats` — the same two sources every other page reads, so a
+  // figure here can never disagree with the same figure on the players page.
+  const record = (playerId: string, name: string) => {
+    if (scope === "overall") return recordFor(playerId, name);
+    const found = seasonStats.find((stat) => stat.playerId === playerId);
+    return found ? { ...emptyRecord(playerId, name), ...found } : emptyRecord(playerId, name);
+  };
+
+  // Elo has no per-season figure to look up, so a season is rated by replaying
+  // only that season's results. Everyone starts level again, which is the
+  // honest reading of "how did this season go".
+  const seasonRatings = useMemo(
+    () => (scope === "overall" ? null : computeRatings(scopedMatches)),
+    [scope, scopedMatches]
+  );
+  const rating = (playerId: string) =>
+    seasonRatings ? seasonRatings.get(playerId) : ratingFor(playerId);
+
   const sorted = useMemo(
     () => [...players].sort((a, b) => a.name.localeCompare(b.name)),
     [players]
@@ -155,8 +191,8 @@ export default function ComparePage() {
   const b = sorted.find((p) => p.id === bId) ?? sorted[1];
 
   const h2h = useMemo(
-    () => (a && b ? headToHead(matches, a.id, b.id) : null),
-    [matches, a, b]
+    () => (a && b ? headToHead(scopedMatches, a.id, b.id) : null),
+    [scopedMatches, a, b]
   );
 
   if (sorted.length < 2) {
@@ -170,10 +206,14 @@ export default function ComparePage() {
     );
   }
 
-  const recordA = recordFor(a.id, a.name);
-  const recordB = recordFor(b.id, b.name);
-  const ratingA = ratingFor(a.id);
-  const ratingB = ratingFor(b.id);
+  const recordA = record(a.id, a.name);
+  const recordB = record(b.id, b.name);
+  const ratingA = rating(a.id);
+  const ratingB = rating(b.id);
+  const scopeName =
+    scope === "overall"
+      ? "all time"
+      : (seasons.find((season) => season.id === scope)?.name ?? "this season");
 
   return (
     <div className="page-container animate-slide-up">
@@ -183,6 +223,23 @@ export default function ComparePage() {
           Two players side by side, and — the part a league table can never show
           — how they get on with each other.
         </p>
+      </div>
+
+      <div className="mb-4">
+        <Label htmlFor="compare-scope">Over</Label>
+        <Select value={scope} onValueChange={setScope}>
+          <SelectTrigger id="compare-scope" className="mt-1 w-full sm:w-[240px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="overall">All time</SelectItem>
+            {seasons.map((season) => (
+              <SelectItem key={season.id} value={season.id}>
+                {season.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-[1fr_auto_1fr]">
@@ -246,7 +303,7 @@ export default function ComparePage() {
 
           <div className="divide-y divide-border">
             <CompareRow
-              label="Rating"
+              label={scope === "overall" ? "Rating" : "Rating this season"}
               a={ratingA?.rating ?? 0}
               b={ratingB?.rating ?? 0}
               format={(n) => String(displayRating(n))}
@@ -269,7 +326,7 @@ export default function ComparePage() {
         <CardHeader>
           <CardTitle className="text-lg">When they meet</CardTitle>
           <CardDescription>
-            Counted from {a.name}&apos;s side.
+            Counted from {a.name}&apos;s side, over {scopeName}.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
