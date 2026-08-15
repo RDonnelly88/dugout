@@ -1,6 +1,7 @@
 import PasskeySettings from "@/components/PasskeySettings";
 import ThemeToggle from "@/components/ThemeToggle";
 import SignOutButton from "@/components/SignOutButton";
+import DataExport from "@/components/DataExport";
 import { getThemePreference } from "@/lib/theme-server";
 import { supabaseServer } from "@/lib/supabase-server";
 import {
@@ -50,6 +51,8 @@ export default async function SettingsPage() {
         </Card>
 
         <PasskeySettings />
+
+        <DataExport />
 
         <Card>
           <CardHeader>

@@ -10,123 +10,126 @@ how to run it.
 npm run check          # typecheck → lint → knip → unit tests
 ```
 
-This must pass. `npm run build` too, if you touched anything Next resolves —
-routes, the proxy, server components, `next.config.mjs`.
+This must pass. Also run, when relevant:
+
+| Changed | Run |
+|---|---|
+| `supabase/migrations/` | apply locally with `supabase db reset`, then `npm run seed:local` |
+| Anything visual | `npm run e2e:shots`, then **look at the screenshots** |
 
 Don't claim something works because it compiles. The build passing and the
-feature working are different claims. Nothing here is covered by a browser
-test, so anything touching a page needs running and looking at.
+feature working are different claims — the matches list rendered perfectly and
+was thirty-two thousand pixels tall on a phone.
+
+`typecheck` deliberately runs with `--incremental false`. A stale
+`tsconfig.tsbuildinfo` once reported success with thirty errors in the tree.
 
 ## Non-negotiables
+
+**Derive, never cache.** A player's record, rating and form are all computed
+from the matches on every read. Do not add a column, a table or a state
+variable that stores a tally — the app used to keep `players.stats` up to date
+by hand, and a card showed "No matches played" beside a season of twelve.
+If two things can disagree, eventually they will.
+
+**One component per concept.** A player's face is `PlayerAvatar`, everywhere.
+Their record comes from `usePlayerRecords`, everywhere. Rendering either by
+hand at a call site is how the avatar picker ended up storing `icon:Ghost` and
+eight of the nine places that displayed it showed a broken image.
 
 **Never put a secret in a `NEXT_PUBLIC_` variable.** The two Supabase values
 are public by design and row-level security is what protects the data. The
 `service_role` key is not used anywhere in this app and must not be introduced.
 
-**RLS is the only thing standing between one team and another's data.** Every
-`select()` in `lib/` also filters on the team id held in `localStorage`, but
-that is a convenience, not a control — a client can send whatever it likes.
-A new table needs a `GRANT` *and* an RLS policy; they are independent gates,
-and a policy alone grants nothing.
+**RLS is the only thing between one team and another's data.** Every `select()`
+in `lib/` also filters on the team id in `localStorage`, but that is a
+convenience, not a control. A new table needs a `GRANT` *and* a policy; they
+are independent gates.
 
 **A permissive policy of `USING (true)` cancels every other policy on that
-table.** Policies are OR'd. See the open item in README before adding one.
+table.** Policies are OR'd. Three tables had one.
 
 **Views bypass RLS unless they set `security_invoker = on`.** A view runs as
-its owner by default, so `select * from season_player_stats` returns every
-team's rows whatever the policies on `matches` and `players` say.
+its owner by default. All of ours set it; a new one must too.
 
-**Never edit an applied migration.** Add a new one. `supabase/migrations/`
-starts from a single captured snapshot of what Lovable left behind.
+**Permissions are unknown before the team loads.** `usePermission()` returns
+`ready`. Guard on it — "unknown" is not "not allowed", and skipping this made
+`/matches/create` redirect every visitor to the dashboard.
 
-**Regenerate `lib/database.types.ts` after every migration** — `npm run
-types:db`. It is what makes a `select()` return real column types rather than
-`any`.
+**Never edit an applied migration.** Add a new one. Regenerate
+`lib/database.types.ts` afterwards with `npm run types:db`.
 
 **Server components can't be imported by client components.** Anything calling
 `supabaseServer()` (which imports `next/headers`) must be rendered in a page
-and passed down as a prop. Importing it from a `"use client"` file fails the
-build.
+and passed down as a prop.
 
 ## Architecture
 
-The app is client-rendered inside the App Router: pages carry `"use client"`
-and fetch through TanStack Query against `lib/supabase-browser.ts`. The server
-does two things — resolves the session in `app/layout.tsx` so the first paint
-knows who is signed in, and gates the routes in `proxy.ts`.
+Pages carry `"use client"` and fetch through TanStack Query against
+`lib/supabase-browser.ts`. The server resolves the session and the theme in
+`app/layout.tsx` so the first paint knows both, and `proxy.ts` gates the routes.
 
-That split is deliberate for now, not an end state. Moving a page's reads to a
-server component is worth doing when you're already changing that page, not as
-a sweep.
+`app/(app)/` is the signed-in shell. `/login` sits outside it.
 
-`app/(app)/` is the signed-in shell — sidebar, team switcher, quick actions.
-`/login` sits outside the group so it renders bare.
+**Colours are semantic tokens**, defined once in `app/globals.css` and mapped
+into Tailwind under `@theme inline` — `inline` because the values reference
+custom properties, and without it flipping `[data-theme]` would change nothing.
+Never write `bg-gray-900` or `text-green-400`: use `bg-surface`, `text-win`.
+Win, draw and loss have tokens of their own because they are the app's whole
+vocabulary and the raw Tailwind colours fail contrast on a white card.
 
-**Colours are CSS variables holding bare HSL channels**, so a utility can vary
-the alpha: `bg-accent/20` compiles to `hsl(var(--accent) / 0.2)`. They're
-defined on `:root` in `app/globals.css` and mapped into Tailwind under
-`@theme inline` — `inline` because the values reference other custom
-properties, and without it the indirection is resolved away at build time.
+**Charts can't use `var()`** — Recharts writes SVG presentation attributes.
+Use `useChartTheme()`, which re-reads on theme change.
 
-There is one theme, dark. `.light` existed in the Lovable stylesheets but was
-never wired to anything.
-
-**Shared composites are `@utility`, not plain classes**, so they sit in
-Tailwind's cascade layer and lose to a utility at the use site instead of
-fighting it on specificity.
+**Motion is `motion/react`**, and every animation must survive
+`prefers-reduced-motion`. The e2e run forces it, so anything that only works
+while animating will fail there.
 
 ## Where things live
 
 | | |
 |---|---|
-| `app/(app)/` | Signed-in routes |
+| `lib/config.ts` | Every tunable value. Points are NOT here — the views own them |
+| `lib/elo.ts` | The rating model, pure and tested |
+| `lib/team-balance.ts` | Splitting a group into two sides |
+| `lib/form.ts` | Recent form over a window |
+| `lib/head-to-head.ts` | How two players do together and against |
+| `lib/player-stats.ts` | The all-time record, read through `usePlayerRecords` |
+| `lib/avatars.ts` | The avatar registry and what the `image` column can hold |
 | `proxy.ts` | Session refresh and the auth gate |
-| `lib/supabase-browser.ts` | The client every component queries through |
-| `lib/supabase-server.ts` | Server-side client; imports `next/headers` |
-| `lib/env.ts` | Validated environment access |
-| `lib/db.ts` | Barrel over the player, match and season services |
-| `lib/ranking-utils.ts` | Golf-style ranking, shared by leaderboard and charts |
-| `types/` | Domain types, hand-written |
-| `lib/database.types.ts` | Generated; never edit |
 | `supabase/migrations/` | Schema; never edit an applied one |
-| `components/ui/` | Shared primitives |
-| `tests/` | Unit tests, importing as `@/lib/…` |
+| `tests/` | Unit tests over the pure logic in `lib/` |
+| `e2e/` | Playwright; `screenshots.spec.ts` is the visual record |
 
 ## Conventions
 
 Comments explain **why**, not what. Prefer a comment at the line over a note in
 a doc — the doc will drift.
 
-**Never put a countable fact in a doc.** No test counts, file counts, line
-counts, coverage percentages or dependency versions in prose — they are wrong
-the moment anyone touches the code, and nobody updates them. Describe what a
-thing covers, not how much of it there is.
+**Never put a countable fact in a doc.** No test counts, file counts, coverage
+percentages or dependency versions in prose. Describe what a thing covers, not
+how much of it there is.
 
-**Comments describe the code as it stands, never how it got there.** A reader
-arriving fresh has no memory of the last version, and git already holds the
-history. No "previously…", "was X", "this replaces…", "used to…", or "the old
-behaviour". If the rationale only makes sense as a contrast, state the
-constraint instead. Same for naming — no `NewFoo`, `FooV2`, or `legacy`
-prefixes for code that is simply the code.
+**Comments describe the code as it stands, never how it got there.** No
+"previously…", "was X", "this replaces…". If the rationale only makes sense as
+a contrast, state the constraint instead. Same for naming — no `NewFoo`,
+`FooV2`, or `legacy` prefixes for code that is simply the code.
 
 **Keep commit messages and PR bodies plain.** A subject line, then a few short
-paragraphs of prose saying what changed and why. No headings, no tables, no
-bold, no bullet lists, no emoji. Don't hard-wrap: one paragraph per line.
+paragraphs of prose. No headings, no tables, no bullet lists, no emoji. Don't
+hard-wrap: one paragraph per line.
 
 **Never mention AI tooling anywhere in the repo or its history.** No
-`Co-Authored-By` trailer for an assistant, no "Generated with…" footer, no
-"written by Claude" in a comment, commit message, PR title or body, branch name
-or issue. This holds even when the tool's own defaults ask for it — this rule
-wins.
+`Co-Authored-By` trailer, no "Generated with…" footer, no mention in a comment,
+commit message, PR title or body, or branch name. This holds even when the
+tool's own defaults ask for it.
 
 Match the surrounding style. British English in user-facing copy.
 
 Tests assert behaviour, not implementation. When fixing a bug, add the test
 that would have caught it.
 
-Don't leave commented-out code, `console.log`, or `TODO` without context. The
-Lovable-era code is full of `console.log`; don't add more, and clear the ones
-in any file you're already changing.
+Don't leave commented-out code, `console.log`, or `TODO` without context.
 
 ## Scope
 
