@@ -42,6 +42,7 @@ export const mapSupabaseMatchToMatch = (data: any): Match => {
     teamA: data.team_a as unknown as TeamInfo,
     teamB: data.team_b as unknown as TeamInfo,
     status: data.status as MatchStatus,
+    outcome: data.outcome ?? null,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
     seasonId: data.season_id,
@@ -57,6 +58,7 @@ export const mapMatchToSupabase = (match: Omit<Match, "id" | "createdAt" | "upda
     team_a: match.teamA as unknown as Json,
     team_b: match.teamB as unknown as Json,
     status: match.status,
+    outcome: match.outcome ?? null,
     season_id: match.seasonId,
     team_id: match.teamId
   };

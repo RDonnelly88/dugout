@@ -41,6 +41,7 @@ export type Database = {
           id: string
           location: string | null
           notes: string | null
+          outcome: string | null
           season_id: string | null
           status: string
           team_a: Json
@@ -54,6 +55,7 @@ export type Database = {
           id?: string
           location?: string | null
           notes?: string | null
+          outcome?: string | null
           season_id?: string | null
           status: string
           team_a: Json
@@ -67,6 +69,7 @@ export type Database = {
           id?: string
           location?: string | null
           notes?: string | null
+          outcome?: string | null
           season_id?: string | null
           status?: string
           team_a?: Json

@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  computeRatings,
-  decayed,
-  expectedScore,
-  marginMultiplier,
-} from "@/lib/elo";
+import { computeRatings, decayed, expectedScore } from "@/lib/elo";
 import { ELO } from "@/lib/config";
 import type { Match } from "@/types";
 
@@ -48,24 +43,30 @@ describe("expectedScore", () => {
   });
 });
 
-describe("marginMultiplier", () => {
-  it("does not inflate a one-goal win", () => {
-    expect(marginMultiplier(1)).toBe(1);
-    expect(marginMultiplier(-1)).toBe(1);
+describe("the size of a win", () => {
+  /**
+   * A win is a win. The margin used to scale the adjustment by up to
+   * three-quarters again, which weighted the least reliable thing on the
+   * record — and the score is optional now, so most results have none.
+   */
+  it("moves a rating the same however heavy the win", () => {
+    const narrow = computeRatings([match(["a"], ["b"], 1, 0, "2026-01-01")], NOW);
+    const heavy = computeRatings([match(["c"], ["d"], 9, 0, "2026-01-01")], NOW);
+
+    expect(narrow.get("a")!.rating).toBeCloseTo(heavy.get("c")!.rating);
   });
 
-  it("ignores which way round the margin is", () => {
-    expect(marginMultiplier(4)).toBe(marginMultiplier(-4));
-  });
+  it("counts a win with no score recorded at all", () => {
+    const scoreless: Match = {
+      ...match(["a"], ["b"], 0, 0, "2026-01-02"),
+      teamA: { name: "Bibs", players: ["a"] },
+      teamB: { name: "No bibs", players: ["b"] },
+      outcome: "a",
+    };
+    const ratings = computeRatings([scoreless], NOW);
 
-  it("steps up with the margin", () => {
-    expect(marginMultiplier(2)).toBeGreaterThan(marginMultiplier(1));
-    expect(marginMultiplier(3)).toBeGreaterThan(marginMultiplier(2));
-  });
-
-  it("stops climbing, so one thrashing cannot rewrite a rating", () => {
-    expect(marginMultiplier(20)).toBe(ELO.maxMarginMultiplier);
-    expect(marginMultiplier(200)).toBe(ELO.maxMarginMultiplier);
+    expect(ratings.get("a")!.rating).toBeGreaterThan(ELO.start);
+    expect(ratings.get("b")!.rating).toBeLessThan(ELO.start);
   });
 });
 

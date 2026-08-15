@@ -64,9 +64,8 @@ export default function RatingsPage() {
         <p className="page-subtitle">
           Elo, adapted for five-a-side. A side is rated at the average of its
           players, everyone on it takes the same adjustment, and beating a
-          stronger team is worth more than beating a weaker one. Margin counts,
-          but a thrashing is capped — it is one team having a night, not
-          {" "}{ELO.maxMarginMultiplier} times the evidence. Stay away longer than{" "}
+          stronger team is worth more than beating a weaker one. A win is a win
+          — a thrashing counts the same as a scrape. Stay away longer than{" "}
           {ELO.decay.graceWeeks} weeks and your rating drifts back towards{" "}
           {ELO.start}, so every week is comparable to the last.
         </p>

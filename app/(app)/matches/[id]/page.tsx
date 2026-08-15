@@ -20,6 +20,8 @@ const MatchDetail = () => {
     isLoadingMatch,
     isEditing,
     setIsEditing,
+    setOutcome,
+    effectiveOutcome,
     teamAScore,
     setTeamAScore,
     teamBScore,
@@ -97,6 +99,8 @@ const MatchDetail = () => {
             match={match}
             isCompleted={isCompleted}
             isEditing={isEditing}
+            setOutcome={setOutcome}
+            effectiveOutcome={effectiveOutcome}
             teamAScore={teamAScore}
             teamBScore={teamBScore}
             onScoreChange={{

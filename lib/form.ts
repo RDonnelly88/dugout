@@ -1,5 +1,6 @@
 import { FORM_LENGTH } from "./config";
 import type { Match } from "@/types";
+import { outcomeOf } from "./match-result";
 
 export interface RecentForm {
   playerId: string;
@@ -27,27 +28,21 @@ export function recentForm(
   const byPlayer = new Map<string, RecentForm>();
 
   const played = matches
-    .filter(
-      (m) =>
-        m.status === "completed" &&
-        typeof m.teamA.score === "number" &&
-        typeof m.teamB.score === "number"
-    )
+    .filter((m) => outcomeOf(m) !== null)
     // Newest first, so taking the window is just a length check.
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   for (const match of played) {
-    const scoreA = match.teamA.score as number;
-    const scoreB = match.teamB.score as number;
+    const outcome = outcomeOf(match)!;
 
     const sides = [
-      { players: match.teamA.players, own: scoreA, other: scoreB },
-      { players: match.teamB.players, own: scoreB, other: scoreA },
+      { players: match.teamA.players, key: "a" as const },
+      { players: match.teamB.players, key: "b" as const },
     ];
 
     for (const side of sides) {
       const result =
-        side.own > side.other ? "win" : side.own === side.other ? "draw" : "loss";
+        outcome === "draw" ? "draw" : outcome === side.key ? "win" : "loss";
       const points = result === "win" ? 3 : result === "draw" ? 1 : 0;
 
       for (const playerId of side.players) {

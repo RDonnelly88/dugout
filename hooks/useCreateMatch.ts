@@ -133,6 +133,7 @@ export const useCreateMatch = () => {
       },
       date: date.toISOString(),
       status: "scheduled",
+      outcome: null,
       seasonId: seasonId === "none" ? undefined : seasonId,
       teamId: currentTeam.id
     };

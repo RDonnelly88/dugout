@@ -44,13 +44,6 @@ export const ELO = {
     perWeek: 0.05,
   },
 
-  /**
-   * A thrashing counts for more than a scrape, but not proportionally — a
-   * 9–0 is not nine times the evidence of a 1–0, it is one team having a
-   * night. The multiplier steps up per goal and stops.
-   */
-  marginStep: 0.25,
-  maxMarginMultiplier: 1.75,
 } as const;
 
 /** How many results the form strip shows. */

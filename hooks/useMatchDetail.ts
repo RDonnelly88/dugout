@@ -7,6 +7,7 @@ import { getMatch, getPlayers, updateMatch } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { Match } from "@/types";
 import { useTeam } from "@/contexts/TeamContext";
+import { outcomeOf, type Outcome } from "@/lib/match-result";
 
 export const useMatchDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,6 +17,8 @@ export const useMatchDetail = () => {
   const { currentTeam } = useTeam();
 
   const [isEditing, setIsEditing] = useState(false);
+  // Who won is the result; the score is optional detail on top of it.
+  const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [teamAScore, setTeamAScore] = useState<number | undefined>(undefined);
   const [teamBScore, setTeamBScore] = useState<number | undefined>(undefined);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -76,24 +79,40 @@ export const useMatchDetail = () => {
     }
   }, [match, currentTeam, router, toast]);
 
+  // A score, when both halves are given, decides the result — so the two can
+  // never be saved disagreeing with each other. The database enforces the same
+  // rule.
+  const effectiveOutcome: Outcome | null =
+    teamAScore !== undefined && teamBScore !== undefined
+      ? teamAScore > teamBScore
+        ? "a"
+        : teamAScore < teamBScore
+          ? "b"
+          : "draw"
+      : outcome;
+
   const handleSaveResult = () => {
-    if (teamAScore === undefined || teamBScore === undefined) {
+    if (!effectiveOutcome) {
       toast({
-        title: "Validation Error",
-        description: "Please enter scores for both teams.",
+        title: "Nothing to save",
+        description: "Say who won, or enter the score.",
         variant: "destructive",
       });
       return;
     }
 
-    if (teamAScore < 0 || teamBScore < 0) {
+    if ((teamAScore ?? 0) < 0 || (teamBScore ?? 0) < 0) {
       toast({
-        title: "Validation Error",
-        description: "Scores cannot be negative.",
+        title: "That score cannot be right",
+        description: "Neither side can score fewer than none.",
         variant: "destructive",
       });
       return;
     }
+
+    // Half a score is no score. Saving one side would leave a match reading
+    // "4 – " for ever.
+    const bothScores = teamAScore !== undefined && teamBScore !== undefined;
 
     if (!match || !match.teamA || !match.teamB) return;
     if (!currentTeam) {
@@ -108,12 +127,13 @@ export const useMatchDetail = () => {
     const updates = {
       teamA: {
         ...match.teamA,
-        score: teamAScore
+        score: bothScores ? teamAScore : undefined
       },
       teamB: {
         ...match.teamB,
-        score: teamBScore
+        score: bothScores ? teamBScore : undefined
       },
+      outcome: effectiveOutcome,
       status: "completed" as const
     };
 
@@ -134,6 +154,7 @@ export const useMatchDetail = () => {
       if (match.teamB?.score !== undefined) {
         setTeamBScore(match.teamB.score);
       }
+      setOutcome(outcomeOf(match));
     }
   }, [match]);
 
@@ -144,6 +165,9 @@ export const useMatchDetail = () => {
     isLoadingMatch,
     isEditing,
     setIsEditing,
+    outcome,
+    setOutcome,
+    effectiveOutcome,
     teamAScore,
     setTeamAScore,
     teamBScore,

@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Player, Match, MatchStatus } from "@/types";
 import { useTeam } from "@/contexts/TeamContext";
 import { useSideNames } from "@/hooks/useSideNames";
+import type { Outcome } from "@/lib/match-result";
 
 export const useEditMatch = (matchId: string) => {
   const [teamA, setTeamA] = useState<string[]>([]);
@@ -139,6 +140,18 @@ export const useEditMatch = (matchId: string) => {
       return;
     }
 
+    // The outcome has to follow the scores being saved. Leaving the old one in
+    // place while the score changed would put the two in contradiction, and
+    // the database rejects that outright.
+    const outcome: Outcome | null =
+      status === "completed"
+        ? teamAScore > teamBScore
+          ? "a"
+          : teamAScore < teamBScore
+            ? "b"
+            : "draw"
+        : null;
+
     const matchData = {
       teamA: {
         name: sides.A,
@@ -152,6 +165,7 @@ export const useEditMatch = (matchId: string) => {
       },
       date: date.toISOString(),
       status: status,
+      outcome,
       seasonId: seasonId === "none" ? undefined : seasonId,
       teamId: currentTeam.id,
       notes: notes || undefined
