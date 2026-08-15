@@ -36,6 +36,7 @@ const PAGES = [
   { path: "/players", name: "02-players" },
   { path: "/matches", name: "03-matches" },
   { path: "/seasons", name: "04-seasons" },
+  { path: "/ratings", name: "04b-ratings" },
   { path: "/team", name: "05-team" },
   { path: "/settings", name: "06-settings" },
   { path: "/matches/create", name: "07-create-match" },

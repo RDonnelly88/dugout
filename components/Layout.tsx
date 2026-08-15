@@ -14,6 +14,7 @@ import {
   PanelLeftClose,
   UserCog,
   Settings,
+  TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -29,6 +30,7 @@ const menuItems = [
   { path: "/players", label: "Players", icon: Users },
   { path: "/matches", label: "Matches", icon: CalendarDays },
   { path: "/seasons", label: "Seasons", icon: Trophy },
+  { path: "/ratings", label: "Ratings", icon: TrendingUp },
   { path: "/team", label: "Team", icon: UserCog },
   { path: "/settings", label: "Settings", icon: Settings },
 ];

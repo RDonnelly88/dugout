@@ -1,6 +1,7 @@
 
 import { PlayerFormResult } from "@/types";
 import { supabase } from "@/lib/supabase-browser";
+import { FORM_LENGTH } from "@/lib/config";
 
 // Function to get a player's form data for a specific season
 export const getPlayerFormInSeason = async (
@@ -44,7 +45,7 @@ export const getPlayerFormInSeason = async (
       .eq("team_id", currentTeamId)
       .eq("status", "completed")
       .order("date", { ascending: false })
-      .limit(5);
+      .limit(FORM_LENGTH);
     
     if (matchesError) {
       console.error("Error fetching season matches:", matchesError);
@@ -140,7 +141,7 @@ export const getPlayerFormBatch = async (
       .eq("team_id", currentTeamId)
       .eq("status", "completed")
       .order("date", { ascending: false })
-      .limit(5);
+      .limit(FORM_LENGTH);
     
     if (matchesError) {
       console.error("Error fetching season matches:", matchesError);
