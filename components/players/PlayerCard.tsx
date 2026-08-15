@@ -1,171 +1,146 @@
 import Link from "next/link";
-import React, { useEffect } from "react";
+import React from "react";
 
-import { Player, PlayerFormResult, SeasonPlayerStats } from "@/types";
-import { Trophy, Edit, Trash2, Ghost } from "lucide-react";
+import { Player, PlayerFormResult, PlayerRecord, SeasonPlayerStats } from "@/types";
+import { Edit, Ghost, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import { usePlayerRank } from "@/hooks/usePlayerRank";
-import { useQueryClient } from "@tanstack/react-query";
+import { winRate } from "@/lib/player-stats";
 
 interface PlayerCardProps {
   player: Player;
   seasonId: string | null;
+  /** This season's figures, when a season is selected. */
   seasonStats: SeasonPlayerStats | undefined;
+  /** All-time, from the same view every other surface reads. */
+  record: PlayerRecord;
   formResults: PlayerFormResult[];
   isLoadingForms: boolean;
   onDeleteClick: (player: Player) => void;
+}
+
+function Tally({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone?: "win" | "draw" | "loss";
+}) {
+  const colour =
+    tone === "win"
+      ? "text-green-400"
+      : tone === "draw"
+        ? "text-amber-400"
+        : tone === "loss"
+          ? "text-red-400"
+          : "text-foreground";
+  return (
+    <div className="flex flex-col items-center">
+      <span className={`text-base font-semibold tabular-nums ${colour}`}>{value}</span>
+      <span className="text-[11px] text-muted-foreground">{label}</span>
+    </div>
+  );
 }
 
 const PlayerCard: React.FC<PlayerCardProps> = ({
   player,
   seasonId,
   seasonStats,
+  record,
   formResults,
   isLoadingForms,
   onDeleteClick,
 }) => {
-  const queryClient = useQueryClient();
-  const hasPlayedMatches = player.stats.played > 0;
-  
-  // Use the usePlayerRank hook to get consistent rank data
-  const { rank, hasPlayedCurrentSeason } = usePlayerRank(
-    seasonId,
-    player.id
-  );
-  
-  // Ensure form data is always fresh when viewing the player card
-  useEffect(() => {
-    if (seasonId && player.id) {
-      queryClient.invalidateQueries({ 
-        queryKey: ['playerForm', seasonId, player.id] 
-      });
-    }
-  }, [seasonId, player.id, queryClient]);
+  const { rank, hasPlayedCurrentSeason } = usePlayerRank(seasonId, player.id);
+
+  // The season is the headline when one is selected, because that is what the
+  // table on every other page is showing. All-time sits underneath it as
+  // context rather than as a competing set of figures.
+  const headline = seasonId && seasonStats ? seasonStats : record;
+  const headlineLabel = seasonId && seasonStats ? "This season" : "All time";
 
   return (
-    <Card key={player.id} className="player-card hover-scale overflow-hidden bg-gray-900 border-gray-800">
-      <CardContent className="p-0 flex flex-col h-full">
-        <div className="p-5 flex items-center gap-4">
-          <div className="h-16 w-16 rounded-full bg-gray-800 flex items-center justify-center overflow-hidden">
-            {player.image ? (
-              <img
-                src={player.image}
-                alt={player.name}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <span className="text-2xl font-medium text-blue-400">
-                <Ghost className="h-8 w-8" />
-              </span>
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium truncate">{player.name}</h3>
-              {seasonId && (
-                <Badge className="bg-gray-800 text-white">
-                  {hasPlayedCurrentSeason && rank
-                    ? `#${rank} in League`
-                    : "Rank: N/A"}
-                </Badge>
-              )}
-            </div>
-            
-            <div className="text-sm text-muted-foreground mt-1">
-              {hasPlayedMatches ? (
-                <>
-                  {player.stats.won} wins in {player.stats.played} games
-                </>
-              ) : (
-                <>No matches played</>
-              )}
-            </div>
-            
-            {seasonId && (
-              <div className="flex items-center mt-2">
-                <PlayerFormDisplay 
-                  results={formResults} 
-                  size="sm" 
-                  isLoading={isLoadingForms && formResults.length === 0}
+    <Card className="player-card relative overflow-hidden bg-gray-900 border-gray-800">
+      {/* Outside the link: a button nested in an anchor is invalid, and the
+          whole card being the link is what makes a player reachable from
+          anywhere they are named. */}
+      <div className="absolute right-2 top-2 z-10 flex gap-1">
+        <Link
+          href={`/players/edit/${player.id}`}
+          aria-label={`Edit ${player.name}`}
+          className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-gray-800 hover:text-foreground"
+        >
+          <Edit className="h-4 w-4" />
+        </Link>
+        <button
+          type="button"
+          onClick={() => onDeleteClick(player)}
+          aria-label={`Delete ${player.name}`}
+          className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-red-900/30 hover:text-red-400"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+
+      <Link href={`/players/${player.id}`} className="block focus:outline-none">
+        <CardContent className="flex h-full flex-col p-0">
+          <div className="flex items-center gap-4 p-5 pr-20">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-800">
+              {player.image ? (
+                <img
+                  src={player.image}
+                  alt=""
+                  className="h-full w-full object-cover"
                 />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {seasonId && seasonStats && (
-          <div className="px-5 pb-3">
-            <div className="text-xs font-medium text-blue-400 mb-1 flex items-center">
-              <Trophy className="h-3 w-3 mr-1" />
-              Season Stats:
+              ) : (
+                <Ghost className="h-7 w-7 text-blue-400" />
+              )}
             </div>
-            <div className="grid grid-cols-4 gap-2 text-center text-xs">
-              <div className="bg-blue-900/30 rounded p-1">
-                <div className="font-bold">{seasonStats.played}</div>
-                <div className="text-blue-300">Played</div>
+
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h3 className="truncate text-lg font-medium">{player.name}</h3>
+                {seasonId && hasPlayedCurrentSeason && rank && (
+                  <Badge className="bg-gray-800 text-white">#{rank}</Badge>
+                )}
               </div>
-              <div className="bg-green-900/30 rounded p-1">
-                <div className="font-bold">{seasonStats.wins}</div>
-                <div className="text-green-300">Wins</div>
-              </div>
-              <div className="bg-amber-900/30 rounded p-1">
-                <div className="font-bold">{seasonStats.draws}</div>
-                <div className="text-amber-300">Draws</div>
-              </div>
-              <div className="bg-red-900/30 rounded p-1">
-                <div className="font-bold">{seasonStats.losses}</div>
-                <div className="text-red-300">Losses</div>
-              </div>
+
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                {record.played > 0
+                  ? `${record.wins} of ${record.played} all time · ${Math.round(winRate(record) * 100)}%`
+                  : "Yet to play"}
+              </p>
+
+              {seasonId && (
+                <div className="mt-2">
+                  <PlayerFormDisplay
+                    results={formResults}
+                    size="sm"
+                    isLoading={isLoadingForms && formResults.length === 0}
+                  />
+                </div>
+              )}
             </div>
           </div>
-        )}
 
-        <div className="player-stats grid grid-cols-4 p-3 bg-gray-800 border-t mt-auto">
-          <div className="stat-item">
-            <span className="text-xs text-muted-foreground">Played</span>
-            <span className="font-semibold">{player.stats.played}</span>
+          <div className="mt-auto border-t border-gray-800 bg-gray-800/40 px-5 py-3">
+            <p className="mb-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+              {headlineLabel}
+            </p>
+            <div className="grid grid-cols-5">
+              <Tally label="P" value={headline.played} />
+              <Tally label="W" value={headline.wins} tone="win" />
+              <Tally label="D" value={headline.draws} tone="draw" />
+              <Tally label="L" value={headline.losses} tone="loss" />
+              <Tally label="Pts" value={headline.points} />
+            </div>
           </div>
-          <div className="stat-item">
-            <span className="text-xs text-muted-foreground">Won</span>
-            <span className="font-semibold text-green-400">{player.stats.won}</span>
-          </div>
-          <div className="stat-item">
-            <span className="text-xs text-muted-foreground">Lost</span>
-            <span className="font-semibold text-red-400">{player.stats.lost}</span>
-          </div>
-          <div className="stat-item">
-            <span className="text-xs text-muted-foreground">Drawn</span>
-            <span className="font-semibold text-amber-400">{player.stats.drawn}</span>
-          </div>
-        </div>
-
-        <div className="flex border-t border-gray-800">
-          <Link 
-            href={`/players/${player.id}`} 
-            className="flex-1 py-3 text-center text-sm font-medium text-blue-400 hover:bg-gray-800 transition-colors"
-          >
-            View
-          </Link>
-          <div className="w-px bg-gray-800"></div>
-          <Link 
-            href={`/players/edit/${player.id}`} 
-            className="flex-1 py-3 text-center text-sm font-medium text-blue-400 hover:bg-gray-800 transition-colors"
-          >
-            <Edit className="h-4 w-4 inline mr-1" />
-            Edit
-          </Link>
-          <div className="w-px bg-gray-800"></div>
-          <button 
-            onClick={() => onDeleteClick(player)} 
-            className="flex-1 py-3 text-center text-sm font-medium text-red-400 hover:bg-red-900/20 transition-colors"
-          >
-            <Trash2 className="h-4 w-4 inline mr-1" />
-            Delete
-          </button>
-        </div>
-      </CardContent>
+        </CardContent>
+      </Link>
     </Card>
   );
 };

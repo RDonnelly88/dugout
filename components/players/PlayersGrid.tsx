@@ -6,6 +6,7 @@ import { Player, PlayerFormResult, SeasonPlayerStats } from "@/types";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PlayerCard from "./PlayerCard";
+import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 
 interface PlayersGridProps {
   players: Player[];
@@ -26,6 +27,10 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
   onDeleteClick,
   searchTerm,
 }) => {
+  // One query for the whole grid. Asking per card would open a dozen requests
+  // for the same answer and let them arrive at different moments.
+  const { recordFor } = usePlayerRecords();
+
   // Filter players based on search term
   const filteredPlayers = players.filter(player =>
     player.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -83,6 +88,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
             player={player}
             seasonId={currentSeasonId}
             seasonStats={seasonStats}
+            record={recordFor(player.id, player.name)}
             formResults={formResults}
             isLoadingForms={isLoadingForms}
             onDeleteClick={onDeleteClick}

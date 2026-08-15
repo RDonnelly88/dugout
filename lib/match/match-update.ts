@@ -3,7 +3,6 @@ import { Match } from "@/types";
 import { supabase } from "@/lib/supabase-browser";
 import { mapSupabaseMatchToMatch } from "../supabase-utils";
 import { getMatches } from "./match-retrieval";
-import { updatePlayerStats, revertPlayerStats } from "../player-service";
 
 // Update an existing match
 export const updateMatch = async (id: string, updates: Partial<Omit<Match, "id" | "createdAt" | "updatedAt">>): Promise<Match | undefined> => {
@@ -24,7 +23,6 @@ export const updateMatch = async (id: string, updates: Partial<Omit<Match, "id" 
         
         // If the original match was completed, we need to revert player stats
         if (originalMatch.status === "completed") {
-          await revertPlayerStats(originalMatch);
         }
       }
     } catch (error) {
@@ -74,9 +72,7 @@ export const updateMatch = async (id: string, updates: Partial<Omit<Match, "id" 
         if (updates.status === "completed" && (updates.teamA?.score !== undefined || updates.teamB?.score !== undefined)) {
           // If the original match was completed, revert its stats first
           if (originalLocalMatch.status === "completed") {
-            await revertPlayerStats(originalLocalMatch);
           }
-          await updatePlayerStats(matches[index]);
         }
         
         return matches[index];
@@ -90,7 +86,6 @@ export const updateMatch = async (id: string, updates: Partial<Omit<Match, "id" 
     
     // If the match was completed and scores were updated, update player stats
     if (updates.status === "completed" && (updates.teamA?.score !== undefined || updates.teamB?.score !== undefined)) {
-      await updatePlayerStats(updatedMatch);
     }
     
     return updatedMatch;
@@ -116,9 +111,7 @@ export const updateMatch = async (id: string, updates: Partial<Omit<Match, "id" 
       if (updates.status === "completed" && (updates.teamA?.score !== undefined || updates.teamB?.score !== undefined)) {
         // If the original match was completed, revert its stats first
         if (originalLocalMatch.status === "completed") {
-          await revertPlayerStats(originalLocalMatch);
         }
-        await updatePlayerStats(matches[index]);
       }
       
       return matches[index];

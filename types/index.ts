@@ -2,24 +2,36 @@
 // Re-export all types from separate files
 export * from "./team";
 
-// Player types
-export interface PlayerStats {
-  played: number;
-  won: number;
-  lost: number;
-  drawn: number;
-}
-
+/**
+ * A player. Identity only — no record.
+ *
+ * What a player has done is derived from completed matches and lives in
+ * `PlayerRecord`, read through `usePlayerRecords`. Keeping a tally on the
+ * player row is what let a card claim "No matches played" beside a season
+ * showing twelve.
+ */
 export interface Player {
   id: string;
   name: string;
   image: string | null;
   imageUrl?: string;
-  stats: PlayerStats;
   createdAt: string;
   updatedAt: string;
   teamId?: string;
   isActive?: boolean;
+}
+
+/** A player's all-time record, from the `player_stats` view. */
+export interface PlayerRecord {
+  playerId: string;
+  playerName: string;
+  playerImage: string | null;
+  isActive: boolean;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  points: number;
 }
 
 // Match types

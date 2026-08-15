@@ -3,16 +3,13 @@ import React from "react";
 import { Trophy, TrendingUp, TrendingDown, MinusCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { SeasonPlayerStats } from "@/types";
+import { PlayerRecord, SeasonPlayerStats } from "@/types";
+import { winRate } from "@/lib/player-stats";
 
 interface PlayerSeasonStatsProps {
   playerName: string;
-  overallStats: {
-    played: number;
-    won: number;
-    lost: number;
-    drawn: number;
-  };
+  /** All-time, from the shared `player_stats` view. */
+  overallStats: PlayerRecord;
   seasonStats: SeasonPlayerStats[];
   onSeasonSelect: (seasonId: string | null) => void;
 }
@@ -47,21 +44,21 @@ const PlayerSeasonStats = ({
               />
               <StatCard 
                 label="Victories" 
-                value={overallStats.won}
+                value={overallStats.wins}
                 icon={<TrendingUp className="h-5 w-5 text-green-500" />}
                 bgColor="bg-green-50"
                 textColor="text-green-800"
               />
               <StatCard 
                 label="Draws" 
-                value={overallStats.drawn}
+                value={overallStats.draws}
                 icon={<MinusCircle className="h-5 w-5 text-amber-500" />}
                 bgColor="bg-amber-50"
                 textColor="text-amber-800"
               />
               <StatCard 
                 label="Defeats" 
-                value={overallStats.lost}
+                value={overallStats.losses}
                 icon={<TrendingDown className="h-5 w-5 text-red-500" />}
                 bgColor="bg-red-50"
                 textColor="text-red-800"
@@ -71,10 +68,9 @@ const PlayerSeasonStats = ({
             <div className="mt-6">
               <h3 className="text-lg font-medium mb-3">Stats Summary</h3>
               <p className="text-muted-foreground">
-                {playerName} has played a total of {overallStats.played} matches, 
-                winning {overallStats.won} ({Math.round((overallStats.won / overallStats.played) * 100) || 0}%), 
-                drawing {overallStats.drawn} ({Math.round((overallStats.drawn / overallStats.played) * 100) || 0}%), 
-                and losing {overallStats.lost} ({Math.round((overallStats.lost / overallStats.played) * 100) || 0}%).
+                {playerName} has played a total of {overallStats.played} matches,
+                winning {overallStats.wins} ({Math.round(winRate(overallStats) * 100)}%),
+                drawing {overallStats.draws}, and losing {overallStats.losses}.
               </p>
             </div>
           </TabsContent>

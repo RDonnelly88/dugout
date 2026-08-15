@@ -2,7 +2,6 @@
 import { supabase } from "@/lib/supabase-browser";
 import { getMatches } from "./match-retrieval";
 import { getMatch } from "./match-retrieval";
-import { revertPlayerStats } from "../player-service";
 
 // Delete a match
 export const deleteMatch = async (id: string): Promise<boolean> => {
@@ -12,7 +11,6 @@ export const deleteMatch = async (id: string): Promise<boolean> => {
     
     // If match was completed, revert player stats before deletion
     if (match && match.status === "completed") {
-      await revertPlayerStats(match);
     }
     
     const { error } = await supabase
@@ -35,7 +33,6 @@ export const deleteMatch = async (id: string): Promise<boolean> => {
         
         // If the match was completed, revert player stats
         if (matchToDelete && matchToDelete.status === "completed") {
-          await revertPlayerStats(matchToDelete);
         }
         
         return true;
@@ -60,7 +57,6 @@ export const deleteMatch = async (id: string): Promise<boolean> => {
       
       // If the match was completed, revert player stats
       if (matchToDelete && matchToDelete.status === "completed") {
-        await revertPlayerStats(matchToDelete);
       }
       
       return true;

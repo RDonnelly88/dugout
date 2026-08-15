@@ -1,16 +1,15 @@
 
 import { Json } from "@/lib/database.types";
-import { Player, Match, PlayerStats, TeamInfo, MatchStatus, Season } from "@/types";
+import { Match, MatchStatus, Player, Season, TeamInfo } from "@/types";
 
 // Helper function to map Supabase player response to our Player type
 export const mapSupabasePlayerToPlayer = (data: any): Player => {
   if (!data) return data;
-  
+
   return {
     id: data.id,
     name: data.name,
     image: data.image,
-    stats: data.stats as PlayerStats,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
     teamId: data.team_id,
@@ -24,7 +23,6 @@ export const mapPlayerToSupabase = (player: Omit<Player, "id" | "createdAt" | "u
   return {
     name: player.name,
     image: player.image || player.imageUrl,
-    stats: player.stats as unknown as Json,
     team_id: player.teamId,
     is_active: player.isActive
   };

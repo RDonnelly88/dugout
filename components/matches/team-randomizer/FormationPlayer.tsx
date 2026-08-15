@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
 import PlayerFormDisplay from '@/components/players/PlayerFormDisplay';
 import { TrendingUp, Trophy, Flag } from "lucide-react";
+import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 
 interface FormationPlayerProps {
   player: Player;
@@ -18,6 +19,9 @@ interface FormationPlayerProps {
 }
 
 const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerProps) => {
+  const { recordFor } = usePlayerRecords();
+  const record = recordFor(player.id, player.name);
+
   console.log(`Rendering FormationPlayer for ${player.name} at index ${index} and team ${teamColor}`);
   
   const bgColor = teamColor === 'red' ? 'bg-red-600' : 'bg-green-600';
@@ -136,19 +140,19 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
           {/* Overall Stats */}
           <div className="mt-3 grid grid-cols-4 gap-2">
             <div className="bg-blue-900/50 p-2 rounded-md text-center">
-              <div className="text-sm font-bold">{player.stats?.played || 0}</div>
+              <div className="text-sm font-bold">{record.played}</div>
               <div className="text-xs text-blue-300">Played</div>
             </div>
             <div className="bg-green-900/50 p-2 rounded-md text-center">
-              <div className="text-sm font-bold">{player.stats?.won || 0}</div>
+              <div className="text-sm font-bold">{record.wins}</div>
               <div className="text-xs text-green-300">Won</div>
             </div>
             <div className="bg-amber-900/50 p-2 rounded-md text-center">
-              <div className="text-sm font-bold">{player.stats?.drawn || 0}</div>
+              <div className="text-sm font-bold">{record.draws}</div>
               <div className="text-xs text-amber-300">Draw</div>
             </div>
             <div className="bg-red-900/50 p-2 rounded-md text-center">
-              <div className="text-sm font-bold">{player.stats?.lost || 0}</div>
+              <div className="text-sm font-bold">{record.losses}</div>
               <div className="text-xs text-red-300">Lost</div>
             </div>
           </div>

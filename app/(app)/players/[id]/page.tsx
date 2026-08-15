@@ -12,6 +12,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { usePlayerDetail } from "@/hooks/usePlayerDetail";
 import { usePlayerForm } from "@/hooks/usePlayerForm";
 import { usePlayerRank } from "@/hooks/usePlayerRank";
+import { usePlayerRecords } from "@/hooks/usePlayerRecords";
+import { winRate } from "@/lib/player-stats";
 import PlayerSeasonStats from "@/components/players/PlayerSeasonStats";
 import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import PlayerRelationships from "@/components/players/PlayerRelationships";
@@ -30,6 +32,12 @@ const PlayerDetail = () => {
     isLoading,
     router
   } = usePlayerDetail();
+
+  // The same all-time record every other surface reads. Resolved before the
+  // early returns below, because hooks cannot run conditionally; an unknown id
+  // yields a record of zeroes rather than undefined.
+  const { recordFor } = usePlayerRecords();
+  const record = recordFor(player?.id ?? "", player?.name ?? "");
 
   // Get current season
   const currentSeason = seasons.find(s => s.isCurrent);
@@ -130,7 +138,7 @@ const PlayerDetail = () => {
               <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
                 <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200">
                   <Users className="h-3 w-3 mr-1" />
-                  {player.stats.played} Matches
+                  {record.played} Matches
                 </Badge>
                 <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
                   <CalendarDays className="h-3 w-3 mr-1" />
@@ -232,35 +240,35 @@ const PlayerDetail = () => {
                 <div className="flex justify-center mb-2">
                   <Users className="h-5 w-5 text-blue-400" />
                 </div>
-                <div className="text-2xl font-bold">{player.stats.played}</div>
+                <div className="text-2xl font-bold">{record.played}</div>
                 <div className="text-sm text-blue-400">Played</div>
               </div>
               <div className="bg-green-900/20 rounded-lg p-4 text-center">
                 <div className="flex justify-center mb-2">
                   <TrendingUp className="h-5 w-5 text-green-400" />
                 </div>
-                <div className="text-2xl font-bold">{player.stats.won}</div>
+                <div className="text-2xl font-bold">{record.wins}</div>
                 <div className="text-sm text-green-400">Wins</div>
               </div>
               <div className="bg-amber-900/20 rounded-lg p-4 text-center">
                 <div className="flex justify-center mb-2">
                   <MinusCircle className="h-5 w-5 text-amber-400" />
                 </div>
-                <div className="text-2xl font-bold">{player.stats.drawn}</div>
+                <div className="text-2xl font-bold">{record.draws}</div>
                 <div className="text-sm text-amber-400">Draws</div>
               </div>
               <div className="bg-red-900/20 rounded-lg p-4 text-center">
                 <div className="flex justify-center mb-2">
                   <TrendingDown className="h-5 w-5 text-red-400" />
                 </div>
-                <div className="text-2xl font-bold">{player.stats.lost}</div>
+                <div className="text-2xl font-bold">{record.losses}</div>
                 <div className="text-sm text-red-400">Losses</div>
               </div>
             </div>
             <div className="mt-4 text-muted-foreground text-sm">
               <p>
-                All-time, {player.name} has played {player.stats.played} matches
-                with a win rate of {Math.round((player.stats.won / Math.max(1, player.stats.played)) * 100)}%.
+                All-time, {player.name} has played {record.played} matches
+                with a win rate of {Math.round(winRate(record) * 100)}%.
               </p>
             </div>
           </CardContent>
@@ -276,7 +284,7 @@ const PlayerDetail = () => {
         <TabsContent value="stats">
           <PlayerSeasonStats 
             playerName={player.name}
-            overallStats={player.stats}
+            overallStats={record}
             seasonStats={seasonStats}
             onSeasonSelect={setSelectedSeasonId}
           />

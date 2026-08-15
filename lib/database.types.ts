@@ -117,7 +117,6 @@ export type Database = {
           image: string | null
           is_active: boolean
           name: string
-          stats: Json
           team_id: string
           updated_at: string
         }
@@ -127,7 +126,6 @@ export type Database = {
           image?: string | null
           is_active?: boolean
           name: string
-          stats?: Json
           team_id: string
           updated_at?: string
         }
@@ -137,7 +135,6 @@ export type Database = {
           image?: string | null
           is_active?: boolean
           name?: string
-          stats?: Json
           team_id?: string
           updated_at?: string
         }
@@ -305,6 +302,29 @@ export type Database = {
             columns: ["season_id"]
             isOneToOne: false
             referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_stats: {
+        Row: {
+          draws: number | null
+          is_active: boolean | null
+          losses: number | null
+          played: number | null
+          player_id: string | null
+          player_image: string | null
+          player_name: string | null
+          points: number | null
+          team_id: string | null
+          wins: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]

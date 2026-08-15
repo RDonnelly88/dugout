@@ -13,6 +13,7 @@ import PlayerFormDisplay from '@/components/players/PlayerFormDisplay';
 import { TrendingUp, Trophy, Flag, Zap } from "lucide-react";
 import { calculatePlayerRanks } from "@/lib/ranking-utils";
 import PlayerSelectionFilters from './PlayerSelectionFilters';
+import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 
 interface PlayerSelectionProps {
   players: Player[];
@@ -29,7 +30,8 @@ const PlayerSelection = ({
 }: PlayerSelectionProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showActiveOnly, setShowActiveOnly] = useState(true);
-  
+  const { recordFor } = usePlayerRecords();
+
   const { data: currentSeason } = useQuery({
     queryKey: ['currentSeason'],
     queryFn: getCurrentSeason
@@ -62,37 +64,21 @@ const PlayerSelection = ({
       );
     }
     
-    // Debug logging
-    console.log('PlayerSelection: Sorting data available:');
-    console.log('- seasonPlayerStats count:', seasonPlayerStats.length);
-    console.log('- players count:', filtered.length);
-    if (seasonPlayerStats.length > 0) {
-      console.log('- sample season stat:', seasonPlayerStats[0]);
-    }
-    if (filtered.length > 0) {
-      const samplePlayer = filtered[0];
-      const sampleSeasonStat = seasonPlayerStats.find(stat => stat.playerId === samplePlayer.id);
-      console.log('- sample player:', samplePlayer.name, 'overall played:', samplePlayer.stats?.played);
-      console.log('- sample season stat for player:', sampleSeasonStat);
-    }
-    
     // Sort by frequency (games played) descending, then by name
     return filtered.sort((a, b) => {
       const aSeasonStats = seasonPlayerStats.find(stat => stat.playerId === a.id);
       const bSeasonStats = seasonPlayerStats.find(stat => stat.playerId === b.id);
       
       // Prioritize current season stats, fallback to overall stats
-      const aPlayed = aSeasonStats?.played || a.stats?.played || 0;
-      const bPlayed = bSeasonStats?.played || b.stats?.played || 0;
-      
-      console.log(`Comparing ${a.name} (${aPlayed}) vs ${b.name} (${bPlayed})`);
-      
+      const aPlayed = aSeasonStats?.played ?? recordFor(a.id, a.name).played;
+      const bPlayed = bSeasonStats?.played ?? recordFor(b.id, b.name).played;
+
       if (aPlayed !== bPlayed) {
         return bPlayed - aPlayed; // Most frequent first
       }
       return a.name.localeCompare(b.name); // Then alphabetically
     });
-  }, [players, searchTerm, showActiveOnly, seasonPlayerStats]);
+  }, [players, searchTerm, showActiveOnly, seasonPlayerStats, recordFor]);
 
   const filteredSelectedPlayers = filteredAndSortedPlayers.filter(player => 
     selectedPlayers.includes(player.id)
@@ -141,7 +127,7 @@ const PlayerSelection = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
         {filteredAndSortedPlayers.map(player => {
           const seasonStats = seasonPlayerStats.find(stat => stat.playerId === player.id);
-          const gamesPlayed = seasonStats?.played || player.stats?.played || 0;
+          const gamesPlayed = seasonStats?.played ?? recordFor(player.id, player.name).played;
           const isFrequentPlayer = gamesPlayed >= 5; // Consider frequent if played 5+ games
           
           return (
@@ -235,7 +221,9 @@ const PlayerHoverContent = ({
     currentSeasonId,
     player.id
   );
-  
+  const { recordFor } = usePlayerRecords();
+  const record = recordFor(player.id, player.name);
+
   const playerSeasonStats = seasonPlayerStats.find(stat => stat.playerId === player.id);
   
   const hasPlayedGames = playerSeasonStats && playerSeasonStats.played > 0;
@@ -296,19 +284,19 @@ const PlayerHoverContent = ({
       
       <div className="mt-3 grid grid-cols-4 gap-2">
         <div className="bg-blue-900/50 p-2 rounded-md text-center">
-          <div className="text-sm font-bold">{player.stats?.played || 0}</div>
+          <div className="text-sm font-bold">{record.played}</div>
           <div className="text-xs text-blue-300">Played</div>
         </div>
         <div className="bg-green-900/50 p-2 rounded-md text-center">
-          <div className="text-sm font-bold">{player.stats?.won || 0}</div>
+          <div className="text-sm font-bold">{record.wins}</div>
           <div className="text-xs text-green-300">Won</div>
         </div>
         <div className="bg-amber-900/50 p-2 rounded-md text-center">
-          <div className="text-sm font-bold">{player.stats?.drawn || 0}</div>
+          <div className="text-sm font-bold">{record.draws}</div>
           <div className="text-xs text-amber-300">Draw</div>
         </div>
         <div className="bg-red-900/50 p-2 rounded-md text-center">
-          <div className="text-sm font-bold">{player.stats?.lost || 0}</div>
+          <div className="text-sm font-bold">{record.losses}</div>
           <div className="text-xs text-red-300">Lost</div>
         </div>
       </div>
