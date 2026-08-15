@@ -8,6 +8,8 @@ import { getMatches, getPlayers } from "@/lib/db";
 import { useTeam } from "@/contexts/TeamContext";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
+import { useSideNames } from "@/hooks/useSideNames";
+import { outcomeOf } from "@/lib/match-result";
 import { displayRating } from "@/lib/elo";
 import { winRate } from "@/lib/player-stats";
 import { downloadCsv, toCsv } from "@/lib/csv";
@@ -29,6 +31,7 @@ import {
  */
 export default function DataExport() {
   const { currentTeam } = useTeam();
+  const sides = useSideNames();
   const [done, setDone] = useState<string | null>(null);
 
   const { data: players = [] } = useQuery({
@@ -80,15 +83,17 @@ export default function DataExport() {
     const names = (ids: string[]) =>
       ids.map((id) => byId.get(id) ?? id).join(" · ");
 
+    // The team's current names for its sides, not the one stored on the match
+    // — everything played before the names were configurable carries "Team A",
+    // and a column headed with it would not match anything on screen.
     const csv = toCsv(matches, [
       { header: "Date", value: (m) => m.date },
       { header: "Status", value: (m) => m.status },
-      { header: "Home", value: (m) => m.teamA?.name ?? "" },
-      { header: "Home score", value: (m) => m.teamA?.score ?? "" },
-      { header: "Away", value: (m) => m.teamB?.name ?? "" },
-      { header: "Away score", value: (m) => m.teamB?.score ?? "" },
-      { header: "Home players", value: (m) => names(m.teamA?.players ?? []) },
-      { header: "Away players", value: (m) => names(m.teamB?.players ?? []) },
+      { header: "Result", value: (m) => outcomeOf(m) ?? "" },
+      { header: sides.A, value: (m) => names(m.teamA?.players ?? []) },
+      { header: `${sides.A} score`, value: (m) => m.teamA?.score ?? "" },
+      { header: sides.B, value: (m) => names(m.teamB?.players ?? []) },
+      { header: `${sides.B} score`, value: (m) => m.teamB?.score ?? "" },
       { header: "Notes", value: (m) => m.notes ?? "" },
     ]);
     downloadCsv(`${slug}-matches-${stamp}.csv`, csv);

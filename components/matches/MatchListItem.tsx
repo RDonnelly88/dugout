@@ -93,7 +93,7 @@ const MatchListItem = ({
                 winner === "a" ? "font-semibold" : "text-muted-foreground"
               }`}
             >
-              {match.teamA?.name || sides.A}
+              {sides.A}
             </span>
             {swing && <Swing side={swing.A} />}
           </span>
@@ -120,7 +120,7 @@ const MatchListItem = ({
                 winner === "b" ? "font-semibold" : "text-muted-foreground"
               }`}
             >
-              {match.teamB?.name || sides.B}
+              {sides.B}
             </span>
             {swing && <Swing side={swing.B} />}
           </span>

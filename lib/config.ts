@@ -27,21 +27,26 @@ export const ELO = {
   provisionalGames: 10,
 
   /**
-   * Ratings drift back towards `start` while a player is away.
+   * Ratings drift back towards `start` for matches a player missed.
    *
-   * The trade-off is real and worth stating: missing a Tuesday is not evidence
-   * that anyone got worse, so a player returning from a break is rated below
-   * their ability and the side they are picked into is stronger than the split
-   * thinks. What it buys is a ladder where every week is comparable and a good
-   * run two years ago does not hold the top of the table for ever.
+   * Counted in matches the rest of the squad played without them, not weeks on
+   * the calendar. Wall-clock decay meant a summer with no football aged every
+   * rating at once — thirty-nine-game regulars sagging fifty points for a break
+   * they had no part in — when nothing had happened to compare anyone on.
+   * Absence only means something when there was something to be absent from.
    *
-   * `graceWeeks` covers the ordinary gaps — a holiday, an injury, a week off —
-   * so nothing moves for the great majority of absences.
+   * The trade-off stands either way: missing a Tuesday is not evidence that
+   * anyone got worse, so a player returning is rated below their ability and
+   * the side they are picked into is stronger than the split thinks. What it
+   * buys is a ladder that keeps up with who is actually turning out.
+   *
+   * `graceMatches` covers the ordinary gaps — a holiday, an injury, a couple of
+   * weeks off — so nothing moves for the great majority of absences.
    */
   decay: {
-    graceWeeks: 3,
-    /** Of the distance back to `start`, per week away beyond the grace. */
-    perWeek: 0.05,
+    graceMatches: 3,
+    /** Of the distance back to `start`, per missed match beyond the grace. */
+    perMatch: 0.05,
   },
 
 } as const;

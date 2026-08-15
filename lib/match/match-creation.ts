@@ -9,18 +9,23 @@ import { getCurrentSeason } from "../season-service";
 export const addMatch = async (match: Omit<Match, "id" | "createdAt" | "updatedAt">): Promise<Match> => {
   const now = new Date().toISOString();
   
-  // Ensure teamA and teamB have all required properties
+  // The caller supplies the side names from the team's own settings. Defaulting
+  // them here wrote "Team A" into the match, which then showed up beside the
+  // team's actual names on the same page.
+  //
+  // No score is written either. A fixture has not been played, and defaulting
+  // to nought recorded a nil-nil draw for a game nobody had turned up to.
   const matchWithFormattedTeams = {
     ...match,
     teamA: {
-      name: match.teamA?.name || "Team A",
+      name: match.teamA?.name,
       players: match.teamA?.players || [],
-      score: match.teamA?.score ?? 0
+      ...(typeof match.teamA?.score === "number" && { score: match.teamA.score })
     },
     teamB: {
-      name: match.teamB?.name || "Team B",
+      name: match.teamB?.name,
       players: match.teamB?.players || [],
-      score: match.teamB?.score ?? 0
+      ...(typeof match.teamB?.score === "number" && { score: match.teamB.score })
     },
     // Always ensure teamId is set
     teamId: match.teamId || localStorage.getItem("currentTeamId") || ""

@@ -26,11 +26,13 @@ const MatchHeader = ({ match, isCompleted, onEditClick }: MatchHeaderProps) => {
 
   return (
     <PageHeader
+      // The team's own words for its two sides, not whatever name the match
+      // was saved under. Everything played before the names were configurable
+      // carries "Team A", so falling back to the stored one put "Team A v Team
+      // B" at the top of a page whose score line read "Bibs 1 – 0 No bibs".
       title={
         <>
-          {match.teamA?.name || sides.A}{" "}
-          <span className="text-muted-foreground">v</span>{" "}
-          {match.teamB?.name || sides.B}
+          {sides.A} <span className="text-muted-foreground">v</span> {sides.B}
         </>
       }
       subtitle={
