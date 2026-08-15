@@ -1,11 +1,13 @@
+"use client";
+
 import Link from "next/link";
 
-import React from "react";
-
-import { Match } from "@/types";
-import { Calendar, MapPin, Clock, Edit, Pencil } from "lucide-react";
+import { Calendar, Edit, MapPin, Pencil } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import PageHeader from "@/components/PageHeader";
+import { useSideNames } from "@/hooks/useSideNames";
+import { Match } from "@/types";
 
 interface MatchHeaderProps {
   match: Match;
@@ -13,65 +15,63 @@ interface MatchHeaderProps {
   onEditClick: () => void;
 }
 
+/**
+ * The top of a match.
+ *
+ * Uses the same header as every other page rather than a heading of its own
+ * inside a card, which is what made this the one page whose title sat in a box.
+ */
 const MatchHeader = ({ match, isCompleted, onEditClick }: MatchHeaderProps) => {
+  const sides = useSideNames();
+
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h1 className="text-2xl font-bold mb-2">
-            {match.teamA.name} vs {match.teamB.name}
-          </h1>
-          <div className="flex flex-wrap gap-3">
-            <div className="flex items-center text-sm text-muted-foreground">
-              <Calendar className="h-4 w-4 mr-1" />
-              <span>{new Date(match.date).toLocaleDateString()}</span>
-            </div>
-            {match.location && (
-              <div className="flex items-center text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4 mr-1" />
-                <span>{match.location}</span>
-              </div>
-            )}
-            <div className="flex items-center text-sm">
-              <Clock className="h-4 w-4 mr-1" />
-              <span className={cn(
-                "px-2 py-0.5 rounded-full text-xs font-medium",
-                isCompleted 
-                  ? "bg-win/15 text-win" 
-                  : "bg-info/15 text-info"
-              )}>
-                {isCompleted ? "Completed" : "Scheduled"}
-              </span>
-            </div>
-          </div>
-        </div>
-        
-        <div className="flex gap-2">
-          <Link href={`/matches/edit/${match.id}`}>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="flex items-center gap-1"
-            >
+    <PageHeader
+      title={
+        <>
+          {match.teamA?.name || sides.A}{" "}
+          <span className="text-muted-foreground">v</span>{" "}
+          {match.teamB?.name || sides.B}
+        </>
+      }
+      subtitle={
+        <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <span className="flex items-center gap-1.5">
+            <Calendar className="h-4 w-4 shrink-0" />
+            {new Date(match.date).toLocaleDateString()}
+          </span>
+          {match.location && (
+            <span className="flex items-center gap-1.5">
+              <MapPin className="h-4 w-4 shrink-0" />
+              {match.location}
+            </span>
+          )}
+        </span>
+      }
+      badges={
+        isCompleted ? (
+          <Badge className="bg-win text-win-foreground">Played</Badge>
+        ) : (
+          <Badge variant="outline">Not played</Badge>
+        )
+      }
+      actions={
+        <>
+          <Button variant="outline" size="sm" asChild className="gap-1">
+            <Link href={`/matches/edit/${match.id}`}>
               <Pencil className="h-4 w-4" />
               Edit
-            </Button>
-          </Link>
-          
+            </Link>
+          </Button>
+
           {!isCompleted && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={onEditClick}
-              className="flex items-center gap-1"
-            >
+            <Button size="sm" onClick={onEditClick} className="gap-1">
               <Edit className="h-4 w-4" />
-              Record Result
+              Record the result
             </Button>
           )}
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    />
   );
 };
 

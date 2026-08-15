@@ -126,7 +126,9 @@ const SeasonLeaderboard = ({
           <TableBody>
             {displayStats.map((stat) => (
               <TableRow key={stat.playerId}>
-                <TableCell className="font-medium">{playerRanks[stat.playerId]}</TableCell>
+                <TableCell className="tabular font-medium">
+                  {playerRanks[stat.playerId]}
+                </TableCell>
                 <TableCell>
                   <Link href={`/players/${stat.playerId}`} className="flex items-center space-x-2 hover:underline">
                     <PlayerAvatar name={stat.playerName} image={stat.playerImage} size="sm" className="bg-surface-2" />
@@ -146,11 +148,17 @@ const SeasonLeaderboard = ({
                     isLoading={isLoadingForms && !combinedForms[stat.playerId]}
                   />
                 </TableCell>
-                <TableCell className="text-right">{stat.played}</TableCell>
-                <TableCell className="text-right">{stat.wins}</TableCell>
-                <TableCell className="hidden text-right sm:table-cell">{stat.draws}</TableCell>
-                <TableCell className="hidden text-right sm:table-cell">{stat.losses}</TableCell>
-                <TableCell className="text-right font-bold">{stat.points}</TableCell>
+                {/* Won, drawn and lost carry the same colours here as they do
+                    on a player card and in the form squares. */}
+                <TableCell className="tabular text-right">{stat.played}</TableCell>
+                <TableCell className="tabular text-right text-win">{stat.wins}</TableCell>
+                <TableCell className="tabular hidden text-right text-draw sm:table-cell">
+                  {stat.draws}
+                </TableCell>
+                <TableCell className="tabular hidden text-right text-loss sm:table-cell">
+                  {stat.losses}
+                </TableCell>
+                <TableCell className="tabular text-right font-bold">{stat.points}</TableCell>
               </TableRow>
             ))}
           </TableBody>

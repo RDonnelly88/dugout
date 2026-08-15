@@ -10,6 +10,27 @@ import { usePlayerRank } from "@/hooks/usePlayerRank";
 import { winRate } from "@/lib/player-stats";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import { isActivePlayer } from "@/components/players/ActiveFilter";
+import { displayRating, type PlayerRating } from "@/lib/elo";
+import { SKILL } from "@/lib/config";
+import SkillScale from "@/components/players/SkillScale";
+
+/**
+ * Where a rating sits in the squad, nought to one, coloured warm at the top and
+ * cool at the bottom.
+ *
+ * Against the squad rather than against a fixed number, because Elo has no
+ * absolute meaning — 1250 is strong in one group and ordinary in another. Five
+ * steps rather than a gradient so the colour is a category you can name, and
+ * `undefined` where there is nothing to compare against.
+ */
+function ratingTone(standing: number | undefined): string {
+  if (standing === undefined) return "";
+  if (standing >= 0.8) return "text-win";
+  if (standing >= 0.6) return "text-accent";
+  if (standing >= 0.4) return "text-foreground";
+  if (standing >= 0.2) return "text-draw";
+  return "text-loss";
+}
 
 interface PlayerCardProps {
   player: Player;
@@ -18,6 +39,10 @@ interface PlayerCardProps {
   seasonStats: SeasonPlayerStats | undefined;
   /** All-time, from the same view every other surface reads. */
   record: PlayerRecord;
+  /** Worked out once for the whole grid, not per card. */
+  rating: PlayerRating | undefined;
+  /** Where that rating sits in the squad, nought to one. */
+  standing: number | undefined;
   formResults: PlayerFormResult[];
   isLoadingForms: boolean;
   onDeleteClick: (player: Player) => void;
@@ -53,6 +78,8 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
   seasonId,
   seasonStats,
   record,
+  rating,
+  standing,
   formResults,
   isLoadingForms,
   onDeleteClick,
@@ -114,7 +141,10 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
                   : "Yet to play"}
               </p>
 
-              {seasonId && (
+              {/* Form is the point of a squad list — who is going well right
+                  now. Hidden entirely when there is none rather than printing
+                  "no match data" across every card. */}
+              {(formResults.length > 0 || isLoadingForms) && (
                 <div className="mt-2">
                   <PlayerFormDisplay
                     results={formResults}
@@ -126,10 +156,33 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
             </div>
           </div>
 
+          {/* The two ways a player is measured that the tally below does not
+              show: what the results imply, and what a person decided. */}
+          <div className="flex items-center justify-between gap-4 border-t border-border px-5 py-2.5 text-sm">
+            <span className="flex items-baseline gap-1.5">
+              <span className="eyebrow">Elo</span>
+              {rating ? (
+                <>
+                  <span className={`tabular font-semibold ${ratingTone(standing)}`}>
+                    {displayRating(rating.rating)}
+                  </span>
+                  {rating.provisional && (
+                    <span className="text-xs text-muted-foreground">settling</span>
+                  )}
+                </>
+              ) : (
+                <span className="text-muted-foreground">—</span>
+              )}
+            </span>
+
+            <span className="flex items-center gap-1.5">
+              <span className="eyebrow">Skill</span>
+              <SkillScale level={player.skillLevel ?? SKILL.default} />
+            </span>
+          </div>
+
           <div className="mt-auto border-t border-border bg-surface-2/40 px-5 py-3">
-            <p className="mb-2 text-[11px] uppercase tracking-wider text-muted-foreground">
-              {headlineLabel}
-            </p>
+            <p className="eyebrow mb-2">{headlineLabel}</p>
             <div className="grid grid-cols-5">
               <Tally label="P" value={headline.played} />
               <Tally label="W" value={headline.wins} tone="win" />

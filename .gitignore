@@ -26,5 +26,10 @@ supabase/.branches/
 # every run anyway.
 .auth/
 
-# Screenshots pasted into the terminal land in the working directory.
+# Screenshots pasted into the terminal land in the working directory. The
+# committed visual record lives under e2e/screenshots and is written there by
+# the Playwright run, not dropped at the root.
 Screenshot *.png
+/test.png
+/*.jpg
+/*.jpeg

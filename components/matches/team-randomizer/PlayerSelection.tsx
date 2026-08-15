@@ -14,6 +14,7 @@ import { calculatePlayerRanks } from "@/lib/ranking-utils";
 import PlayerSelectionFilters from './PlayerSelectionFilters';
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
+import { useTeam } from "@/contexts/TeamContext";
 
 interface PlayerSelectionProps {
   players: Player[];
@@ -28,12 +29,13 @@ const PlayerSelection = ({
   togglePlayerSelection,
   disabled
 }: PlayerSelectionProps) => {
+  const { currentTeam } = useTeam();
   const [searchTerm, setSearchTerm] = useState('');
   const [showActiveOnly, setShowActiveOnly] = useState(true);
   const { recordFor } = usePlayerRecords();
 
   const { data: currentSeason } = useQuery({
-    queryKey: ['currentSeason'],
+    queryKey: ['currentSeason', currentTeam?.id],
     queryFn: getCurrentSeason
   });
   
@@ -90,7 +92,7 @@ const PlayerSelection = ({
   const hiddenSelectedCount = selectedPlayers.length - filteredSelectedPlayers.length;
   
   return (
-    <div className="border rounded-md p-4 bg-card">
+    <div className="rounded-xl border border-border bg-surface p-4">
       <div className="mb-4">
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-sm font-medium">Select Available Players</h3>

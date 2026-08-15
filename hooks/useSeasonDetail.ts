@@ -14,8 +14,10 @@ import {
 } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { PlayerFormResult } from "@/types";
+import { useTeam } from "@/contexts/TeamContext";
 
 export const useSeasonDetail = () => {
+  const { currentTeam } = useTeam();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { toast } = useToast();
@@ -32,7 +34,7 @@ export const useSeasonDetail = () => {
 
   // Get all seasons for the selector
   const { data: seasons = [] } = useQuery({
-    queryKey: ['seasons'],
+    queryKey: ['seasons', currentTeam?.id],
     queryFn: getSeasons
   });
 
@@ -49,7 +51,7 @@ export const useSeasonDetail = () => {
 
   // Get matches for this season
   const { data: allMatches = [], isLoading: isLoadingMatches } = useQuery({
-    queryKey: ['matches'],
+    queryKey: ['matches', currentTeam?.id],
     queryFn: getMatches,
     staleTime: 0 // Don't cache results
   });

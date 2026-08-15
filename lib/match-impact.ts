@@ -109,3 +109,76 @@ export function matchImpact(
 
   return { A: a, B: b };
 }
+
+export interface SideSwing {
+  /** Mean rating of the side going into the match, and coming out. */
+  before: number;
+  after: number;
+  change: number;
+}
+
+/**
+ * The rating swing for every match at once, keyed by match id.
+ *
+ * One replay of the whole history rather than one per row. `matchImpact` runs
+ * its own `computeRatings`, so calling it for each item of a list would replay
+ * every match once per match.
+ *
+ * Pass the complete history rather than a filtered view of it: what a side
+ * carried into a match depends on everything before it, so a search that hid
+ * last month would quietly change the numbers shown for this one.
+ */
+export function ratingSwings(
+  matches: Match[]
+): Map<string, { A: SideSwing; B: SideSwing }> {
+  const ratings = computeRatings(matches);
+
+  // Which side each player was on, per match, looked up once rather than
+  // searched for on every history point.
+  const sideByMatch = new Map<string, Set<string>>();
+  for (const match of matches) {
+    sideByMatch.set(match.id, new Set(match.teamA?.players ?? []));
+  }
+
+  const totals = new Map<
+    string,
+    { a: { before: number; after: number; n: number }; b: { before: number; after: number; n: number } }
+  >();
+
+  for (const rating of ratings.values()) {
+    for (const point of rating.history) {
+      const inA = sideByMatch.get(point.matchId);
+      if (!inA) continue;
+
+      let entry = totals.get(point.matchId);
+      if (!entry) {
+        entry = {
+          a: { before: 0, after: 0, n: 0 },
+          b: { before: 0, after: 0, n: 0 },
+        };
+        totals.set(point.matchId, entry);
+      }
+
+      const side = inA.has(rating.playerId) ? entry.a : entry.b;
+      side.before += point.rating - point.change;
+      side.after += point.rating;
+      side.n += 1;
+    }
+  }
+
+  const mean = (side: { before: number; after: number; n: number }): SideSwing =>
+    side.n === 0
+      ? { before: 0, after: 0, change: 0 }
+      : {
+          before: side.before / side.n,
+          after: side.after / side.n,
+          change: (side.after - side.before) / side.n,
+        };
+
+  return new Map(
+    [...totals].map(([matchId, entry]) => [
+      matchId,
+      { A: mean(entry.a), B: mean(entry.b) },
+    ])
+  );
+}

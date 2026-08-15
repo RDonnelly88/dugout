@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useRef, useState } from "r
 import { supabase } from "@/lib/supabase-browser";
 import { useAuth } from "./AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import { Team, TeamRole } from "@/types/team";
 
 /** The fields a team's admins can change. */
@@ -34,6 +35,7 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userRole, setUserRole] = useState<TeamRole | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const userId = user?.id;
 
@@ -283,6 +285,12 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (team) {
       setCurrentTeam(team);
       localStorage.setItem("currentTeamId", team.id);
+
+      // Every fetcher reads the team from localStorage, so switching changes
+      // what a query would return without changing the key it is cached under.
+      // Anything already fetched is the previous team's, and a query whose key
+      // does not carry the team id would otherwise never be asked again.
+      queryClient.clear();
       
       const findRole = async () => {
         if (!user) return;

@@ -5,8 +5,11 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getPlayer, getMatches, getSeasons, getSeasonPlayerStats } from "@/lib/db";
 import { Match, SeasonPlayerStats } from "@/types";
+import { useTeam } from "@/contexts/TeamContext";
+import { resultFor } from "@/lib/match-result";
 
 export const usePlayerDetail = () => {
+  const { currentTeam } = useTeam();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
@@ -20,13 +23,13 @@ export const usePlayerDetail = () => {
 
   // Get all matches
   const { data: matches = [], isLoading: isLoadingMatches } = useQuery({
-    queryKey: ['matches'],
+    queryKey: ['matches', currentTeam?.id],
     queryFn: getMatches
   });
 
   // Get all seasons
   const { data: seasons = [], isLoading: isLoadingSeasons } = useQuery({
-    queryKey: ['seasons'],
+    queryKey: ['seasons', currentTeam?.id],
     queryFn: getSeasons
   });
 
@@ -71,30 +74,25 @@ export const usePlayerDetail = () => {
     ? seasonStats.find(stat => stat.seasonId === selectedSeasonId)
     : null;
 
-  // Function to determine player's team and result
-  const getPlayerMatchResult = (match: Match): { team: 'A' | 'B', result: 'win' | 'loss' | 'draw' | null } => {
-    if (match.status !== 'completed' || match.teamA.score === undefined || match.teamB.score === undefined) {
-      return { team: match.teamA.players.includes(id!) ? 'A' : 'B', result: null };
-    }
-
-    const isTeamA = match.teamA.players.includes(id!);
-    const team = isTeamA ? 'A' : 'B';
-    let result: 'win' | 'loss' | 'draw' | null = null;
-
-    if (match.teamA.score > match.teamB.score) {
-      result = isTeamA ? 'win' : 'loss';
-    } else if (match.teamA.score < match.teamB.score) {
-      result = isTeamA ? 'loss' : 'win';
-    } else {
-      result = 'draw';
-    }
-
-    return { team, result };
-  };
+  /**
+   * Which side the player was on, and how it went for them.
+   *
+   * Read through `resultFor`, like everywhere else. This compared the two
+   * scores itself, so a result recorded without one — which is now most of
+   * them — came back as "no result" beside a match the table had counted.
+   */
+  const getPlayerMatchResult = (
+    match: Match
+  ): { team: "A" | "B"; result: "win" | "loss" | "draw" | null } => ({
+    team: match.teamA.players.includes(id!) ? "A" : "B",
+    result: id ? resultFor(match, id) : null,
+  });
 
   return {
     player,
     playerMatches: seasonMatches,
+    /** Every match the team has played, for anything that replays the history. */
+    allMatches: matches,
     seasons,
     seasonStats,
     selectedSeasonId,

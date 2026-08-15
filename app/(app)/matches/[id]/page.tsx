@@ -86,16 +86,15 @@ const MatchDetail = () => {
         </Button>
       </div>
 
-      {/* Match Header Card */}
-      <Card className="shadow-lg mb-8 overflow-hidden">
-        <CardContent className="p-0">
-          <MatchHeader 
-            match={match} 
-            isCompleted={isCompleted} 
-            onEditClick={() => setIsEditing(true)} 
-          />
+      <MatchHeader
+        match={match}
+        isCompleted={isCompleted}
+        onEditClick={() => setIsEditing(true)}
+      />
 
-          <MatchScore 
+      <Card className="mb-8 overflow-hidden">
+        <CardContent className="p-0">
+          <MatchScore
             match={match}
             isCompleted={isCompleted}
             isEditing={isEditing}

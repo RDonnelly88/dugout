@@ -33,3 +33,15 @@ export function sideOf(match: Match, playerId: string): "a" | "b" | null {
   if (match.teamB?.players?.includes(playerId)) return "b";
   return null;
 }
+
+/** How the match went for one player, or null if they were not in it. */
+export function resultFor(
+  match: Match,
+  playerId: string
+): "win" | "draw" | "loss" | null {
+  const outcome = outcomeOf(match);
+  const side = sideOf(match, playerId);
+  if (!outcome || !side) return null;
+  if (outcome === "draw") return "draw";
+  return outcome === side ? "win" : "loss";
+}

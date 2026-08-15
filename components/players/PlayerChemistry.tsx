@@ -25,6 +25,7 @@ import PlayerAvatar from "@/components/players/PlayerAvatar";
 import { getSeasons } from "@/lib/db";
 import { useChemistry, type ChemistryScope } from "@/hooks/useChemistry";
 import { MIN_GAMES, pick, type ChemistryEntry } from "@/lib/chemistry";
+import { useTeam } from "@/contexts/TeamContext";
 
 /**
  * The widest lift the bars are drawn to scale against.
@@ -192,11 +193,12 @@ export default function PlayerChemistry({
   playerId: string;
   playerName: string;
 }) {
+  const { currentTeam } = useTeam();
   const [scope, setScope] = useState<ChemistryScope>("overall");
   const { report, playerFor, isLoading } = useChemistry(playerId, scope);
 
   const { data: seasons = [] } = useQuery({
-    queryKey: ["seasons"],
+    queryKey: ["seasons", currentTeam?.id],
     queryFn: getSeasons,
   });
 

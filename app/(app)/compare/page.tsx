@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import PageHeader from "@/components/PageHeader";
 
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 
@@ -146,7 +147,7 @@ export default function ComparePage() {
 
   const [scope, setScope] = useState<string>("overall");
   const { data: seasons = [] } = useQuery({
-    queryKey: ["seasons"],
+    queryKey: ["seasons", currentTeam?.id],
     queryFn: getSeasons,
   });
   const { data: seasonStats = [] } = useQuery({
@@ -217,13 +218,15 @@ export default function ComparePage() {
 
   return (
     <div className="page-container animate-slide-up">
-      <div className="page-header">
-        <h1 className="page-title">Compare</h1>
-        <p className="page-subtitle">
-          Two players side by side, and — the part a league table can never show
+      <PageHeader
+        title="Compare"
+        subtitle={
+          <>
+            Two players side by side, and — the part a league table can never show
           — how they get on with each other.
-        </p>
-      </div>
+          </>
+        }
+      />
 
       <div className="mb-4">
         <Label htmlFor="compare-scope">Over</Label>

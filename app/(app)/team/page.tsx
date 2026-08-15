@@ -12,6 +12,7 @@ import TeamSwitcher from "@/components/team/TeamSwitcher";
 import JoinTeamForm from "@/components/team/JoinTeamForm";
 import TeamShareCard from "@/components/team/TeamShareCard";
 import SideNamesCard from "@/components/team/SideNamesCard";
+import PageHeader from "@/components/PageHeader";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -182,7 +183,10 @@ const TeamManagement = () => {
   if (!currentTeam) {
     return (
       <div className="page-container animate-fade-in">
-        <h1 className="page-title mb-6 md:mb-8">Team</h1>
+        <PageHeader
+          title="Team"
+          subtitle={<>Create a team to start recording players and matches</>}
+        />
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <Card>
@@ -246,8 +250,10 @@ const TeamManagement = () => {
 
   return (
     <div className="page-container animate-fade-in">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="page-title">Team</h1>
+      <PageHeader
+        title="Team"
+        subtitle={<>Who is in the squad, and who can change it</>}
+        actions={
         
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
@@ -293,7 +299,8 @@ const TeamManagement = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+        }
+      />
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="col-span-2">

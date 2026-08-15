@@ -10,6 +10,7 @@ import PlayerFormDisplay from '@/components/players/PlayerFormDisplay';
 import { TrendingUp, Trophy, Flag } from "lucide-react";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
+import { useTeam } from "@/contexts/TeamContext";
 
 interface FormationPlayerProps {
   player: Player;
@@ -19,6 +20,7 @@ interface FormationPlayerProps {
 }
 
 const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerProps) => {
+  const { currentTeam } = useTeam();
   const { recordFor } = usePlayerRecords();
   const record = recordFor(player.id, player.name);
 
@@ -29,7 +31,7 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
   
   // Get current season
   const { data: currentSeason } = useQuery({
-    queryKey: ['currentSeason'],
+    queryKey: ['currentSeason', currentTeam?.id],
     queryFn: getCurrentSeason
   });
 

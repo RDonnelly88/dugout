@@ -13,6 +13,7 @@ import PlayerSearchBar from "@/components/players/PlayerSearchBar";
 import PlayersGrid from "@/components/players/PlayersGrid";
 import { useTeam } from "@/contexts/TeamContext";
 import { isActivePlayer, type ActiveScope } from "@/components/players/ActiveFilter";
+import PageHeader from "@/components/PageHeader";
 
 const Players = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -29,7 +30,7 @@ const Players = () => {
   });
 
   const { data: currentSeason, isLoading: isLoadingSeason } = useQuery({
-    queryKey: ['currentSeason'],
+    queryKey: ['currentSeason', currentTeam?.id],
     queryFn: getCurrentSeason
   });
 
@@ -88,12 +89,14 @@ const Players = () => {
 
   return (
     <div className="page-container animate-slide-up">
-      <div className="page-header">
-        <h1 className="page-title">Players</h1>
-        <p className="page-subtitle">
-          The squad, their records and their form
-        </p>
-      </div>
+      <PageHeader
+        title="Players"
+        subtitle={
+          <>
+            The squad, their records and their form
+          </>
+        }
+      />
 
       {currentSeason && (
         <CurrentSeasonCard 
