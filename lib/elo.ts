@@ -15,6 +15,7 @@ interface RatingPoint {
 
 export interface PlayerRating {
   playerId: string;
+  /** Current, after any drift for time away. */
   rating: number;
   /** Games counted. Below `ELO.provisionalGames` the rating is still settling. */
   games: number;
@@ -22,7 +23,28 @@ export interface PlayerRating {
   peak: number;
   /** Rating before the most recent match, for showing a delta. */
   previous: number;
+  /** Whole weeks since their last game. */
+  idleWeeks: number;
+  /** How much the drift has cost them since that game. Never negative. */
+  drift: number;
   history: RatingPoint[];
+}
+
+const WEEK = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * A rating pulled back towards the starting mark for time away.
+ *
+ * Geometric rather than linear, so it approaches `start` and never crosses it
+ * — being away should make a strong player ordinary, not weak, and should not
+ * make a weak player strong by dragging them upwards past everyone.
+ */
+export function decayed(rating: number, weeksIdle: number): number {
+  const beyondGrace = weeksIdle - ELO.decay.graceWeeks;
+  if (beyondGrace <= 0) return rating;
+  return (
+    ELO.start + (rating - ELO.start) * (1 - ELO.decay.perWeek) ** beyondGrace
+  );
 }
 
 /**
@@ -62,8 +84,20 @@ const mean = (xs: number[]) =>
  *
  * Only completed matches with a score on both sides count. Anything else is a
  * fixture, not a result.
+ *
+ * Ratings drift back towards the starting mark while a player is away, so
+ * every week is comparable to the last whether or not somebody turned out.
+ * The drift is applied twice: as each match is replayed, so a returning player
+ * is rated on what they carry in, and once more up to `asOf` for the standing
+ * as it is now.
+ *
+ * `asOf` defaults to the present, which does mean the table moves on a Tuesday
+ * with no new results. That is the point of it. Pass a fixed time to pin it.
  */
-export function computeRatings(matches: Match[]): Map<string, PlayerRating> {
+export function computeRatings(
+  matches: Match[],
+  asOf: number = Date.now()
+): Map<string, PlayerRating> {
   const ratings = new Map<string, PlayerRating>();
 
   const ensure = (playerId: string): PlayerRating => {
@@ -76,6 +110,8 @@ export function computeRatings(matches: Match[]): Map<string, PlayerRating> {
         provisional: true,
         peak: ELO.start,
         previous: ELO.start,
+        idleWeeks: 0,
+        drift: 0,
         history: [],
       };
       ratings.set(playerId, entry);
@@ -95,12 +131,28 @@ export function computeRatings(matches: Match[]): Map<string, PlayerRating> {
     // Oldest first: a rating is the running total of everything before it.
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
+  // When each player last turned out, so the gap before their next game can be
+  // measured. Kept beside the ratings rather than on them: it is scaffolding
+  // for the replay, not something a caller needs.
+  const lastPlayed = new Map<string, number>();
+
   for (const match of played) {
     const scoreA = match.teamA.score as number;
     const scoreB = match.teamB.score as number;
+    const playedAt = new Date(match.date).getTime();
 
     const sideA = match.teamA.players.map(ensure);
     const sideB = match.teamB.players.map(ensure);
+
+    // Drift is settled before the match is rated, so somebody back after two
+    // months is rated on what they walk in with.
+    for (const player of [...sideA, ...sideB]) {
+      const previously = lastPlayed.get(player.playerId);
+      if (previously !== undefined) {
+        player.rating = decayed(player.rating, (playedAt - previously) / WEEK);
+      }
+      lastPlayed.set(player.playerId, playedAt);
+    }
 
     const ratingA = mean(sideA.map((p) => p.rating));
     const ratingB = mean(sideB.map((p) => p.rating));
@@ -144,6 +196,20 @@ export function computeRatings(matches: Match[]): Map<string, PlayerRating> {
     // the first result of the evening influence the second.
     apply(sideA, ratingB, expectedA, actualA);
     apply(sideB, ratingA, 1 - expectedA, 1 - actualA);
+  }
+
+  // Bring everyone up to the present, so two players are comparable whether or
+  // not either of them played this week.
+  for (const player of ratings.values()) {
+    const previously = lastPlayed.get(player.playerId);
+    if (previously === undefined) continue;
+
+    const weeks = (asOf - previously) / WEEK;
+    const current = decayed(player.rating, weeks);
+
+    player.idleWeeks = Math.max(0, Math.floor(weeks));
+    player.drift = player.rating - current;
+    player.rating = current;
   }
 
   return ratings;

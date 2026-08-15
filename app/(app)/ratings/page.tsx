@@ -66,7 +66,9 @@ export default function RatingsPage() {
           players, everyone on it takes the same adjustment, and beating a
           stronger team is worth more than beating a weaker one. Margin counts,
           but a thrashing is capped — it is one team having a night, not
-          {" "}{ELO.maxMarginMultiplier} times the evidence.
+          {" "}{ELO.maxMarginMultiplier} times the evidence. Stay away longer than{" "}
+          {ELO.decay.graceWeeks} weeks and your rating drifts back towards{" "}
+          {ELO.start}, so every week is comparable to the last.
         </p>
       </div>
 

@@ -27,6 +27,24 @@ export const ELO = {
   provisionalGames: 10,
 
   /**
+   * Ratings drift back towards `start` while a player is away.
+   *
+   * The trade-off is real and worth stating: missing a Tuesday is not evidence
+   * that anyone got worse, so a player returning from a break is rated below
+   * their ability and the side they are picked into is stronger than the split
+   * thinks. What it buys is a ladder where every week is comparable and a good
+   * run two years ago does not hold the top of the table for ever.
+   *
+   * `graceWeeks` covers the ordinary gaps — a holiday, an injury, a week off —
+   * so nothing moves for the great majority of absences.
+   */
+  decay: {
+    graceWeeks: 3,
+    /** Of the distance back to `start`, per week away beyond the grace. */
+    perWeek: 0.05,
+  },
+
+  /**
    * A thrashing counts for more than a scrape, but not proportionally — a
    * 9–0 is not nine times the evidence of a 1–0, it is one team having a
    * night. The multiplier steps up per goal and stops.
