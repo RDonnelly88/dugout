@@ -12,9 +12,11 @@ import CurrentSeasonCard from "@/components/players/CurrentSeasonCard";
 import PlayerSearchBar from "@/components/players/PlayerSearchBar";
 import PlayersGrid from "@/components/players/PlayersGrid";
 import { useTeam } from "@/contexts/TeamContext";
+import { isActivePlayer, type ActiveScope } from "@/components/players/ActiveFilter";
 
 const Players = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [scope, setScope] = useState<ActiveScope>("active");
   const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -23,13 +25,7 @@ const Players = () => {
   const { data: players = [], isLoading: isLoadingPlayers } = useQuery({
     queryKey: ['players', currentTeam?.id],
     queryFn: getPlayers,
-    select: (data) => {
-      if (currentTeam) {
-        console.log("Filtering players for team:", currentTeam.id);
-        return data.filter(player => player.teamId === currentTeam.id);
-      }
-      return data;
-    }
+    enabled: !!currentTeam
   });
 
   const { data: currentSeason, isLoading: isLoadingSeason } = useQuery({
@@ -106,9 +102,15 @@ const Players = () => {
         />
       )}
 
-      <PlayerSearchBar 
-        searchTerm={searchTerm} 
-        setSearchTerm={setSearchTerm} 
+      <PlayerSearchBar
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        scope={scope}
+        setScope={setScope}
+        counts={{
+          active: players.filter(isActivePlayer).length,
+          all: players.length,
+        }}
       />
 
       {isLoading ? (
@@ -126,6 +128,7 @@ const Players = () => {
           isLoadingForms={isLoadingForms}
           onDeleteClick={handleDeleteClick}
           searchTerm={searchTerm}
+          scope={scope}
         />
       )}
 

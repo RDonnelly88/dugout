@@ -7,6 +7,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PlayerCard from "./PlayerCard";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
+import { scopeTo, type ActiveScope } from "./ActiveFilter";
 
 interface PlayersGridProps {
   players: Player[];
@@ -16,6 +17,7 @@ interface PlayersGridProps {
   isLoadingForms: boolean;
   onDeleteClick: (player: Player) => void;
   searchTerm: string;
+  scope: ActiveScope;
 }
 
 const PlayersGrid: React.FC<PlayersGridProps> = ({
@@ -26,13 +28,13 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
   isLoadingForms,
   onDeleteClick,
   searchTerm,
+  scope,
 }) => {
   // One query for the whole grid. Asking per card would open a dozen requests
   // for the same answer and let them arrive at different moments.
   const { recordFor } = usePlayerRecords();
 
-  // Filter players based on search term
-  const filteredPlayers = players.filter(player =>
+  const filteredPlayers = scopeTo(players, scope).filter(player =>
     player.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -52,9 +54,13 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
     return (
       <div className="text-center py-12 bg-surface rounded-lg">
         <p className="text-muted-foreground mb-4">
-          {searchTerm ? "No players match your search" : "No players added yet"}
+          {searchTerm
+            ? "No players match your search"
+            : scope === "active"
+              ? "No active players — try Everyone"
+              : "No players added yet"}
         </p>
-        {!searchTerm && (
+        {!searchTerm && players.length === 0 && (
           <Button asChild>
             <Link href="/players/add">
               <Plus className="h-4 w-4 mr-2" />

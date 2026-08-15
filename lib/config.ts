@@ -43,3 +43,6 @@ export const FORM_LENGTH = 5;
  * `season_player_stats` view, which is what the table is actually computed
  * from — a copy in TypeScript would be a second answer to the same question.
  */
+
+/** What the two sides are called on screen. Team A is the one in bibs. */
+export const SIDE_NAMES = { A: "Bibs", B: "No bibs" } as const;

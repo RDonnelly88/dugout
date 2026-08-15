@@ -43,12 +43,18 @@ interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, type, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
+        // A bare <button> inside a <form> submits it. Every control on the
+        // match form — Clear All, the filters, the avatar picker — was doing
+        // exactly that, which is why clearing the selection produced "each
+        // team must have at least one player". Anything that really submits
+        // says so; there are nine and they all do.
+        type={asChild ? type : (type ?? "button")}
         {...props}
       />
     )

@@ -192,7 +192,7 @@ const TeamManagement = () => {
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="flex items-center gap-2 bg-accent hover:bg-accent/90 text-foreground shadow-lg shadow-accent/20" size="lg">
+                  <Button className="flex items-center gap-2" size="lg">
                     <PlusCircle className="h-5 w-5" />
                     Create New Team
                   </Button>
@@ -221,7 +221,6 @@ const TeamManagement = () => {
                       type="button"
                       variant="outline"
                       onClick={() => setIsCreateDialogOpen(false)}
-                      className="border-border hover:bg-surface-2 text-muted-foreground"
                     >
                       Cancel
                     </Button>
@@ -229,7 +228,6 @@ const TeamManagement = () => {
                       type="button" 
                       onClick={handleCreateTeam}
                       disabled={!newTeamName.trim() || isCreatingTeam}
-                      className="bg-accent hover:bg-accent/90 text-foreground"
                     >
                       {isCreatingTeam ? "Creating..." : "Create Team"}
                     </Button>
@@ -252,7 +250,7 @@ const TeamManagement = () => {
         
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2 bg-accent hover:bg-accent/90 text-foreground shadow-lg shadow-accent/10">
+            <Button className="flex items-center gap-2">
               <PlusCircle className="h-4 w-4" />
               Create New Team
             </Button>
@@ -281,7 +279,6 @@ const TeamManagement = () => {
                 type="button"
                 variant="outline"
                 onClick={() => setIsCreateDialogOpen(false)}
-                className="border-border hover:bg-surface-2 text-muted-foreground"
               >
                 Cancel
               </Button>
@@ -289,7 +286,6 @@ const TeamManagement = () => {
                 type="button" 
                 onClick={handleCreateTeam}
                 disabled={!newTeamName.trim() || isCreatingTeam}
-                className="bg-accent hover:bg-accent/90 text-foreground"
               >
                 {isCreatingTeam ? "Creating..." : "Create Team"}
               </Button>
@@ -369,7 +365,7 @@ const TeamManagement = () => {
             <CardContent className="flex flex-col items-center py-6">
               <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="flex items-center gap-2 w-full justify-center bg-accent hover:bg-accent/90 text-foreground shadow-md">
+                  <Button className="flex w-full items-center justify-center gap-2">
                     <PlusCircle className="h-4 w-4" />
                     Create New Team
                   </Button>
@@ -398,7 +394,6 @@ const TeamManagement = () => {
                       type="button"
                       variant="outline"
                       onClick={() => setIsCreateDialogOpen(false)}
-                      className="border-border hover:bg-surface-2 text-muted-foreground"
                     >
                       Cancel
                     </Button>
@@ -406,7 +401,6 @@ const TeamManagement = () => {
                       type="button" 
                       onClick={handleCreateTeam}
                       disabled={!newTeamName.trim() || isCreatingTeam}
-                      className="bg-accent hover:bg-accent/90 text-foreground"
                     >
                       {isCreatingTeam ? "Creating..." : "Create Team"}
                     </Button>

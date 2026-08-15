@@ -3,27 +3,33 @@ import { Player } from "@/types";
 import { supabase } from "@/lib/supabase-browser";
 import { mapSupabasePlayerToPlayer, mapPlayerToSupabase } from "./supabase-utils";
 
-// Get all players from Supabase
+/**
+ * The current team's squad.
+ *
+ * Scoped here rather than by each caller, the way `getMatches` and
+ * `getPlayerRecords` already are. It used to select every player the database
+ * would hand over — which is every team you belong to — while every caller
+ * cached it under a team-scoped query key. Only the players page happened to
+ * filter afterwards, so compare, ratings, export and match creation all showed
+ * other teams' players, and switching team served the previous squad from cache
+ * under the new team's key.
+ */
 export const getPlayers = async (): Promise<Player[]> => {
-  try {
-    const { data, error } = await supabase
-      .from("players")
-      .select("*")
-      .order("created_at", { ascending: false });
-    
-    if (error) {
-      console.error("Error fetching players:", error);
-      return [];
-    }
-    
-    // Map data to ensure it matches the Player type
-    return (data || []).map(mapSupabasePlayerToPlayer);
-  } catch (error) {
+  const currentTeamId = localStorage.getItem("currentTeamId");
+  if (!currentTeamId) return [];
+
+  const { data, error } = await supabase
+    .from("players")
+    .select("*")
+    .eq("team_id", currentTeamId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
     console.error("Error fetching players:", error);
-    // Fallback to localStorage
-    const players = localStorage.getItem("football-tracker-players");
-    return players ? JSON.parse(players) : [];
+    return [];
   }
+
+  return (data ?? []).map(mapSupabasePlayerToPlayer);
 };
 
 // Get a single player by ID

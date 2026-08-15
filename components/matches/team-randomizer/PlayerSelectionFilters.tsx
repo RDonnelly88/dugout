@@ -11,7 +11,10 @@ interface PlayerSelectionFiltersProps {
   setShowActiveOnly: (show: boolean) => void;
   totalCount: number;
   filteredCount: number;
+  /** Everyone picked, not just the ones on screen. */
   selectedCount: number;
+  /** Picked but filtered out of view. */
+  hiddenSelectedCount: number;
 }
 
 const PlayerSelectionFilters = ({
@@ -21,7 +24,8 @@ const PlayerSelectionFilters = ({
   setShowActiveOnly,
   totalCount,
   filteredCount,
-  selectedCount
+  selectedCount,
+  hiddenSelectedCount
 }: PlayerSelectionFiltersProps) => {
   return (
     <div className="space-y-3">
@@ -56,11 +60,16 @@ const PlayerSelectionFilters = ({
       
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <Badge variant="secondary" className="text-xs">
-          {selectedCount}/{filteredCount} selected
+          {selectedCount} of {totalCount} playing
         </Badge>
-        {searchTerm && (
+        {filteredCount !== totalCount && (
           <Badge variant="outline" className="text-xs">
-            Showing {filteredCount} of {totalCount}
+            Showing {filteredCount}
+          </Badge>
+        )}
+        {hiddenSelectedCount > 0 && (
+          <Badge variant="outline" className="text-xs">
+            {hiddenSelectedCount} picked but hidden
           </Badge>
         )}
       </div>

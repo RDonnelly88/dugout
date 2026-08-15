@@ -9,6 +9,7 @@ import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import { usePlayerRank } from "@/hooks/usePlayerRank";
 import { winRate } from "@/lib/player-stats";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
+import { isActivePlayer } from "@/components/players/ActiveFilter";
 
 interface PlayerCardProps {
   player: Player;
@@ -97,6 +98,13 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
                 <h3 className="truncate text-lg font-medium">{player.name}</h3>
                 {seasonId && hasPlayedCurrentSeason && rank && (
                   <Badge className="bg-surface-2 text-foreground">#{rank}</Badge>
+                )}
+                {/* Only the exception is marked. Active is the norm, and
+                    stamping thirty cards with it says nothing. */}
+                {!isActivePlayer(player) && (
+                  <Badge variant="outline" className="shrink-0 text-muted-foreground">
+                    Inactive
+                  </Badge>
                 )}
               </div>
 
