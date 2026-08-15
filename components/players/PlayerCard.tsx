@@ -170,8 +170,8 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
                   <span className={`tabular font-semibold ${ratingTone(standing)}`}>
                     {displayRating(rating.rating)}
                   </span>
-                  {rating.provisional && (
-                    <span className="text-xs text-muted-foreground">settling</span>
+                  {rating.unsettled && (
+                    <span className="text-xs text-muted-foreground">rough</span>
                   )}
                 </>
               ) : (

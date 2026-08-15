@@ -11,11 +11,11 @@
  * A side is rated at the mean of its players, and everyone on it takes the
  * same adjustment — you win as a team.
  *
- * The result is one pot per side, sized off `kEstablished` and however many
- * played, and shared across the side rather than handed to each player
- * whole. That is what keeps a match exactly zero-sum: what a side is due
- * never depends on who is standing in it. `lib/elo.ts` can share a pot out
- * unevenly through a `Weigher`, but nothing does by default.
+ * The result is one pot per side, sized off `k` and however many played, and
+ * split level across the side rather than handed to each player whole. That
+ * is what keeps a match exactly zero-sum: what a side is due never depends
+ * on who is standing in it, and what each of them takes never depends on
+ * anything but how many of them there were.
  */
 export const ELO = {
   /** Everyone starts level. The number is arbitrary; only differences matter. */
@@ -29,15 +29,23 @@ export const ELO = {
    * below: pulling absent ratings back towards `start` faster shrinks the
    * whole table with them, and this is what holds the spread open against
    * that. Moving one without the other flattens the ladder or stiffens it.
+   *
+   * One figure for everybody. A rating built on three games is a shakier
+   * guess than one built on forty, but moving the newcomer further is not
+   * the way to say so — it means two players on the same side, in the same
+   * result, walk off with different numbers, and there is nothing in a team
+   * result that justifies telling them apart. `settledAfter` says it instead,
+   * and says it in words, without touching anybody's rating.
    */
-  kEstablished: 44,
+  k: 44,
+
   /**
-   * A provisional player's weight under `uncertaintyWeigher`, which is not
-   * the default. Nothing reads this unless a caller asks for that weigher.
-   * Only its ratio to `kEstablished` matters, weights being normalised.
+   * Games before a rating stops being flagged as a rough guess.
+   *
+   * A label on the confidence of a number, never a lever on it: everybody's
+   * rating moves by the same amount from their first game to their last.
    */
-  kProvisional: 72,
-  provisionalGames: 10,
+  settledAfter: 10,
 
   /**
    * Ratings drift back towards `start` for matches a player missed.
@@ -60,7 +68,7 @@ export const ELO = {
    * towards `start` also walks off whatever it had got wrong, so a player
    * whose game has moved on is met halfway rather than having to win the
    * whole distance back. That is most of why the table now keeps up with a
-   * player who improves. It costs spread, which `kEstablished` pays back.
+   * player who improves. It costs spread, which `k` pays back.
    */
   decay: {
     graceMatches: 2,

@@ -3,8 +3,6 @@ import {
   computeRatings,
   decayed,
   expectedScore,
-  evenWeigher,
-  uncertaintyWeigher,
   type PlayerRating,
 } from "@/lib/elo";
 import { ELO } from "@/lib/config";
@@ -110,9 +108,10 @@ describe("computeRatings", () => {
     );
   });
 
-  it("settles down once a player is established", () => {
-    // Eleven straight wins: the last is worth less than the first, because the
-    // rating is no longer provisional.
+  it("pays less for a win the more of them you have already had", () => {
+    // Eleven straight wins: the last is worth less than the first, because
+    // each one raises the rating the next is expected from. Nothing about the
+    // player is treated differently — the curve does all of it.
     const fixtures = Array.from({ length: 11 }, (_, i) =>
       match(["a"], [`opp${i}`], 1, 0)
     );
@@ -370,7 +369,7 @@ describe("computeRatings and matches missed", () => {
     // Rated immediately, and flagged as still finding its level rather than
     // withheld — a squad two weeks old had an empty table before.
     expect(a.rating).not.toBe(ELO.start);
-    expect(a.provisional).toBe(true);
+    expect(a.unsettled).toBe(true);
   });
 
   it("gives the same answer whenever it is asked", () => {
@@ -469,34 +468,38 @@ describe("sharing a result out across a side", () => {
     );
   });
 
-  it("is the default weigher", () => {
-    const fixtures = [match(["a", "b"], ["x", "y"], 1, 0)];
-
-    expect(computeRatings(fixtures, evenWeigher)).toEqual(
-      computeRatings(fixtures)
-    );
-  });
-
-  it("lets a squad swap in uncertainty-based sharing instead", () => {
-    // Establish four teammates well past provisionalGames, then send a
-    // brand-new fifth player out alongside them.
+  /**
+   * The rating a newcomer's number moves at is the rating everybody's moves
+   * at. Weighting a debutant's share up settles them faster, but it means
+   * two players on the same side, in the same result, walk off with
+   * different numbers — and a team result carries nothing that tells them
+   * apart. Their first few games are flagged as a rough guess instead.
+   */
+  it("moves a debutant no differently from a ten-season regular", () => {
     const warmUps = ["old1", "old2", "old3", "old4"].flatMap((id) =>
-      Array.from({ length: ELO.provisionalGames }, (_, i) =>
+      Array.from({ length: ELO.settledAfter }, (_, i) =>
         match([id], [`filler-${id}-${i}`], 1, 0)
       )
     );
     const decider = match(
-      ["new", "old1", "old2", "old3", "old4"],
+      ["debutant", "old1", "old2", "old3", "old4"],
       ["b1", "b2", "b3", "b4", "b5"],
       1,
       0
     );
 
-    const ratings = computeRatings([...warmUps, decider], uncertaintyWeigher);
+    const ratings = computeRatings([...warmUps, decider]);
+    const debutant = ratings.get("debutant")!;
+    const regular = ratings.get("old1")!;
 
-    const newChange = ratings.get("new")!.history.at(-1)!.change;
-    const oldChange = ratings.get("old1")!.history.at(-1)!.change;
-
-    expect(newChange).toBeGreaterThan(oldChange);
+    expect(debutant.games).toBe(1);
+    expect(regular.games).toBeGreaterThan(ELO.settledAfter);
+    expect(debutant.history.at(-1)!.change).toBeCloseTo(
+      regular.history.at(-1)!.change,
+      9
+    );
+    // Flagged, not favoured.
+    expect(debutant.unsettled).toBe(true);
+    expect(regular.unsettled).toBe(false);
   });
 });

@@ -56,7 +56,7 @@ export default function RatingsPage() {
       : [];
   });
 
-  const settling = all.filter((r) => r.provisional).length;
+  const rough = all.filter((r) => r.unsettled).length;
 
   return (
     <div className="page-container animate-slide-up">
@@ -68,8 +68,9 @@ export default function RatingsPage() {
             players, everyone on it takes the same adjustment, and beating a
             stronger team is worth more than beating a weaker one. A win is a
             win — a thrashing counts the same as a scrape. Everybody has a
-            rating from their first game; the first {ELO.provisionalGames} move
-            it further while it finds its level. Miss more than{" "}
+            rating from their first game, and one under {ELO.settledAfter} games
+            is marked as a rough guess until there is enough behind it to lean
+            on. Miss more than{" "}
             {ELO.decay.graceMatches} matches the rest of the squad played and it
             drifts back towards {ELO.start}; a break when nobody plays costs
             nothing.
@@ -84,9 +85,9 @@ export default function RatingsPage() {
               <div>
                 <CardTitle>The table</CardTitle>
                 <CardDescription>
-                  {settling > 0
-                    ? `${settling} still settling — those move faster until ${ELO.provisionalGames} games are behind them.`
-                    : "Every rating has settled."}
+                  {rough > 0
+                    ? `${rough} still a rough guess — those have under ${ELO.settledAfter} games behind them.`
+                    : "Every rating has games enough behind it to lean on."}
                 </CardDescription>
               </div>
               <ActiveFilter
