@@ -20,3 +20,8 @@ supabase/.branches/
 # A worktree is a whole second copy of the tree, so anything walking the repo —
 # knip, oxlint, tsc — otherwise sees every file twice.
 .claude/
+
+# Playwright signs in once and caches the session here. A session token
+# is not something to keep in the repository, and it is regenerated on
+# every run anyway.
+.auth/
