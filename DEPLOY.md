@@ -5,7 +5,7 @@ how to operate it once it is.
 
 | | |
 |---|---|
-| **Repo** | `RDonnelly88/scoreboard-shenanigans` |
+| **Repo** | `RDonnelly88/dugout` |
 | **Supabase project** | `5s Tracker`, ref `zeuepyucpafcjibsofec`, region `eu-west-2` |
 | **Auth** | email and password |
 

@@ -4,7 +4,7 @@ import { Providers } from "@/components/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Scoreboard Shenanigans",
+  title: "The Dugout",
   description: "Five-a-side results, player form and season standings.",
 };
 

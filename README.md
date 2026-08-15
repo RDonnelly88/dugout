@@ -1,11 +1,13 @@
 <div align="center">
 
-# Scoreboard Shenanigans
+# The Dugout
 
 **Five-a-side results, player form and season standings for a group of mates.**
 
 Match results scored three points a win · seasons with a champion · per-player
 form and who you actually play well with.
+
+[![CI](https://github.com/RDonnelly88/dugout/actions/workflows/ci.yml/badge.svg)](https://github.com/RDonnelly88/dugout/actions/workflows/ci.yml)
 
 [![Next.js](https://img.shields.io/badge/Next.js_16-000?logo=nextdotjs&logoColor=white)](https://nextjs.org)
 [![React](https://img.shields.io/badge/React_19-087EA4?logo=react&logoColor=white)](https://react.dev)
