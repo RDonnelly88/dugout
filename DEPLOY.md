@@ -1,15 +1,28 @@
 # Deployment
 
-**This project is not deployed yet.** What follows is how to provision it, then
-how to operate it once it is.
+**This project is deployed.** What follows is how to operate it, then how it was
+provisioned in case it ever needs recreating.
 
 | | |
 |---|---|
+| **App** | https://the-dugout-fives.vercel.app |
 | **Repo** | `RDonnelly88/dugout` |
+| **Vercel project** | `dugout`, team *Ross' projects*, functions pinned to `lhr1`, Node 24 |
 | **Supabase project** | `5s Tracker`, ref `zeuepyucpafcjibsofec`, region `eu-west-2` |
-| **Auth** | email and password |
+| **Auth** | password, email magic link, passkeys |
 
+[Vercel dashboard](https://vercel.com/ross-projects-062c1bee/dugout) ·
 [Supabase dashboard](https://supabase.com/dashboard/project/zeuepyucpafcjibsofec)
+
+`the-dugout-fives.vercel.app` is a claimed subdomain rather than the generated
+one. Vercel's own name for the project is `dugout-fawn.vercel.app`, because
+`dugout.vercel.app` was already taken — it still resolves, and so does the
+per-deployment URL, but the claimed name is the one to share.
+
+Deployment protection is on Standard Protection, which is Vercel's default and
+wants no changing: the production alias above is public, and only the generated
+per-deployment URLs ask for a Vercel login. Testing protection against a
+generated URL and concluding the site is private is an easy mistake to make.
 
 ---
 
@@ -61,24 +74,28 @@ Supabase → Authentication → URL Configuration:
 Without the wildcard, sign-in on a preview deployment bounces back to
 localhost.
 
-### 4. Apply the two outstanding migrations first
+### 4. Authentication
 
-`supabase/migrations/` holds two migrations that close data exposure and have
-not been applied to the hosted project. Deploying without them publishes a URL
-where the anon key in the bundle is enough to read and edit every team's data.
+Supabase → Authentication → URL Configuration:
 
-They can't be pushed until the hosted migration history is reconciled with the
-repo — the sequence is in [SETUP.md](SETUP.md#migration-history). After
-pushing, check what actually landed:
+| Field | Value |
+|---|---|
+| Site URL | `https://the-dugout-fives.vercel.app` |
+| Redirect URLs | the same, plus `/auth/callback`, plus `https://dugout-*-ross-projects-062c1bee.vercel.app/**` for previews |
 
-```bash
-supabase migration list
-npm run types:db          # the view changes don't alter the types, but confirm
-```
+Without the wildcard, sign-in on a preview deployment bounces back to
+localhost.
 
-Then sign in and load a season page. The views now filter by team rather than
-returning everything, so an empty leaderboard where there was data means the
-signed-in account isn't a member of the team that owns the season.
+Passkeys are enabled under Authentication as well, and need `rp_id` set to the
+production hostname. The `[auth.webauthn]` block in `supabase/config.toml`
+governs the local Docker stack only — a hosted project never reads that file,
+so a passkey ceremony fails there while the config looks correct locally.
+
+**Settle the hostname before enabling passkeys.** `rp_id` is stamped into every
+credential an authenticator stores, and a credential is only ever offered back
+to the relying party it was created for. Moving to a custom domain later does
+not migrate anything: every passkey already enrolled silently stops being
+offered, and everyone has to enrol again.
 
 ---
 

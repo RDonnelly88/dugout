@@ -8,6 +8,7 @@ Match results scored three points a win · seasons with a champion · per-player
 form and who you actually play well with.
 
 [![CI](https://github.com/RDonnelly88/dugout/actions/workflows/ci.yml/badge.svg)](https://github.com/RDonnelly88/dugout/actions/workflows/ci.yml)
+[![Live](https://img.shields.io/badge/live-the--dugout--fives.vercel.app-000?logo=vercel&logoColor=white)](https://the-dugout-fives.vercel.app)
 
 [![Next.js](https://img.shields.io/badge/Next.js_16-000?logo=nextdotjs&logoColor=white)](https://nextjs.org)
 [![React](https://img.shields.io/badge/React_19-087EA4?logo=react&logoColor=white)](https://react.dev)
@@ -72,35 +73,41 @@ See [SETUP.md](SETUP.md) to run it, [DEPLOY.md](DEPLOY.md) to deploy it, and
 
 ---
 
-## Written but not yet live
+## How the data was opened, and closed
 
-Two migrations sit in `supabase/migrations/` that have **not** been applied to
-the hosted project. Both close data exposure carried over from the Lovable
-build. Applying them needs the migration history reconciled first — see
-[SETUP.md](SETUP.md#migration-history).
+The Lovable build left the database readable and writable by anyone holding the
+anon key — which ships in the browser bundle by design. Four migrations close
+it, all applied to the hosted project and checked from outside with that same
+key.
 
-Until they are applied, the anon key is enough to read and write every team's
-data, and that key is in the browser bundle by design.
+**Permissive policies cancelled the real ones.** `matches`, `players` and
+`teams` each carried a policy of `USING (true)` or `WITH CHECK (true)` sitting
+beside a properly team-scoped one. Policies are OR'd, so the permissive member
+was the only one that counted. Dropping them leaves the scoped policies in
+force.
 
-**`…_scope_matches_and_players_to_teams`** drops a policy of `USING (true)` on
-`matches` and another on `players`. Policies are OR'd, so those two cancelled
-the team-scoped policies beside them. The four team-scoped policies that remain
-already cover everything the app does.
+**The season views ignored policy entirely.** `season_player_stats`,
+`season_champions` and `player_match_results` were created without
+`security_invoker`, so they ran as their owner and returned every team's rows.
+`lib/season/season-retrieval.ts` compensates by checking `team_id` in client
+code first — a check a client can simply not perform.
 
-**`…_enforce_rls_through_season_views`** sets `security_invoker = on` on
-`season_player_stats`, `season_champions` and `player_match_results`. Without
-it a view runs as its owner and ignores the policies on the tables underneath,
-which is why `lib/season/season-retrieval.ts` checks `team_id` in client code
-before querying — a check a client can simply skip. It also marks
-`is_team_member` and `is_team_admin` `STABLE`: they had no volatility marker,
-so Postgres would call them once per row rather than once per query, and
-`season_player_stats` cross-joins seasons against players.
+**Two functions trusted their arguments.** Team creation took the owner as a
+parameter rather than reading `auth.uid()`, and the member list had no
+membership check at all, so any team id returned that team's roster including
+`profiles.username`, which holds the account's email address. Both are
+`SECURITY INVOKER` now, so row-level security does the checking.
 
-Verified on a local stack: after the migrations an anonymous caller reads zero
-rows from all five relations and cannot insert, update or delete; a signed-in
-team member reads their own team's rows; a signed-in non-member reads none.
-Reverting the migrations in a transaction returns every row to the anonymous
-caller, which is what makes the first result mean anything.
+**The RLS helpers gained a fixed `search_path`** and lost `EXECUTE` for `anon`,
+and are marked `STABLE` — without a volatility marker Postgres called them once
+per row rather than once per query, which matters once the views actually
+evaluate policies.
+
+Verified after each step: an anonymous caller reads zero rows from all five
+relations, cannot write, and is refused every function; a team member reads
+their own team's rows; a signed-in non-member reads none. Putting the old
+policies back inside a transaction hands everything to the anonymous caller
+again, which is what makes the first result mean anything.
 
 ## Open items
 
