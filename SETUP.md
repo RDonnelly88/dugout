@@ -5,7 +5,7 @@ Day-to-day notes. For deploying and migrations see **[DEPLOY.md](DEPLOY.md)**.
 ## Getting running
 
 ```bash
-nvm use          # Node 22, per .nvmrc
+nvm use          # Node 24, per .nvmrc
 npm install
 cp .env.local.example .env.local   # then fill in the two Supabase values
 npm run dev      # http://localhost:3000
