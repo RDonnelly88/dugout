@@ -12,13 +12,13 @@ import { usePlayerDetail } from "@/hooks/usePlayerDetail";
 import { usePlayerForm } from "@/hooks/usePlayerForm";
 import { usePlayerRank } from "@/hooks/usePlayerRank";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
-import { winRate } from "@/lib/player-stats";
 import PlayerSeasonStats from "@/components/players/PlayerSeasonStats";
 import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import PlayerRelationships from "@/components/players/PlayerRelationships";
 import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
 import type { PlayerFormResult } from "@/types";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
+import PlayerRatingCard from "@/components/players/PlayerRatingCard";
 
 const PlayerDetail = () => {
   const {
@@ -165,8 +165,8 @@ const PlayerDetail = () => {
         </CardContent>
       </Card>
 
-      {/* Season stats summary card */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <PlayerRatingCard playerId={player.id} />
         {/* Current Season Stats */}
         {currentSeasonStats && currentSeason && (
           <Card>
@@ -223,53 +223,6 @@ const PlayerDetail = () => {
           </Card>
         )}
 
-        {/* All-time Stats */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center">
-              <Users className="h-5 w-5 mr-2 text-info" />
-              All-Time Stats
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-4 gap-4">
-              <div className="bg-info/15 rounded-lg p-4 text-center">
-                <div className="flex justify-center mb-2">
-                  <Users className="h-5 w-5 text-info" />
-                </div>
-                <div className="text-2xl font-bold">{record.played}</div>
-                <div className="text-sm text-info">Played</div>
-              </div>
-              <div className="bg-win/15 rounded-lg p-4 text-center">
-                <div className="flex justify-center mb-2">
-                  <TrendingUp className="h-5 w-5 text-win" />
-                </div>
-                <div className="text-2xl font-bold">{record.wins}</div>
-                <div className="text-sm text-win">Wins</div>
-              </div>
-              <div className="bg-draw/15 rounded-lg p-4 text-center">
-                <div className="flex justify-center mb-2">
-                  <MinusCircle className="h-5 w-5 text-draw" />
-                </div>
-                <div className="text-2xl font-bold">{record.draws}</div>
-                <div className="text-sm text-draw">Draws</div>
-              </div>
-              <div className="bg-loss/15 rounded-lg p-4 text-center">
-                <div className="flex justify-center mb-2">
-                  <TrendingDown className="h-5 w-5 text-loss" />
-                </div>
-                <div className="text-2xl font-bold">{record.losses}</div>
-                <div className="text-sm text-loss">Losses</div>
-              </div>
-            </div>
-            <div className="mt-4 text-muted-foreground text-sm">
-              <p>
-                All-time, {player.name} has played {record.played} matches
-                with a win rate of {Math.round(winRate(record) * 100)}%.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       <Tabs defaultValue="stats" className="mb-8">
