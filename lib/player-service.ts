@@ -1,6 +1,5 @@
 
 import { Player, Match } from "@/types";
-import { v4 as uuidv4 } from "@/lib/uuid";
 import { supabase } from "@/lib/supabase-browser";
 import { mapSupabasePlayerToPlayer, mapPlayerToSupabase } from "./supabase-utils";
 import { Json } from "@/lib/database.types";
@@ -79,7 +78,7 @@ export const addPlayer = async (player: Omit<Player, "id" | "createdAt" | "updat
       // Fallback to localStorage
       const players = await getPlayers();
       const playerWithId = {
-        id: uuidv4(),
+        id: crypto.randomUUID(),
         ...player,
         createdAt: now,
         updatedAt: now
@@ -97,7 +96,7 @@ export const addPlayer = async (player: Omit<Player, "id" | "createdAt" | "updat
     // Fallback to localStorage
     const players = await getPlayers();
     const playerWithId = {
-      id: uuidv4(),
+      id: crypto.randomUUID(),
       ...player,
       createdAt: now,
       updatedAt: now

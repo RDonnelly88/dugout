@@ -1,6 +1,5 @@
 
 import { Match } from "@/types";
-import { v4 as uuidv4 } from "@/lib/uuid";
 import { supabase } from "@/lib/supabase-browser";
 import { mapMatchToSupabase, mapSupabaseMatchToMatch } from "../supabase-utils";
 import { getMatches } from "./match-retrieval";
@@ -60,7 +59,7 @@ export const addMatch = async (match: Omit<Match, "id" | "createdAt" | "updatedA
       // Fallback to localStorage
       const matches = await getMatches();
       const matchWithId = {
-        id: uuidv4(),
+        id: crypto.randomUUID(),
         ...matchWithFormattedTeams,
         createdAt: now,
         updatedAt: now
@@ -77,7 +76,7 @@ export const addMatch = async (match: Omit<Match, "id" | "createdAt" | "updatedA
     // Fallback to localStorage
     const matches = await getMatches();
     const matchWithId = {
-      id: uuidv4(),
+      id: crypto.randomUUID(),
       ...matchWithFormattedTeams,
       createdAt: now,
       updatedAt: now

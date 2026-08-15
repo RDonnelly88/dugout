@@ -50,7 +50,7 @@ export type Database = {
           status: string
           team_a: Json
           team_b: Json
-          team_id: string | null
+          team_id: string
           updated_at: string
         }
         Insert: {
@@ -63,7 +63,7 @@ export type Database = {
           status: string
           team_a: Json
           team_b: Json
-          team_id?: string | null
+          team_id: string
           updated_at?: string
         }
         Update: {
@@ -76,7 +76,7 @@ export type Database = {
           status?: string
           team_a?: Json
           team_b?: Json
-          team_id?: string | null
+          team_id?: string
           updated_at?: string
         }
         Relationships: [
@@ -118,7 +118,7 @@ export type Database = {
           is_active: boolean
           name: string
           stats: Json
-          team_id: string | null
+          team_id: string
           updated_at: string
         }
         Insert: {
@@ -128,7 +128,7 @@ export type Database = {
           is_active?: boolean
           name: string
           stats?: Json
-          team_id?: string | null
+          team_id: string
           updated_at?: string
         }
         Update: {
@@ -138,7 +138,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           stats?: Json
-          team_id?: string | null
+          team_id?: string
           updated_at?: string
         }
         Relationships: [
@@ -184,7 +184,7 @@ export type Database = {
           is_finished: boolean | null
           name: string
           start_date: string
-          team_id: string | null
+          team_id: string
           updated_at: string
         }
         Insert: {
@@ -195,7 +195,7 @@ export type Database = {
           is_finished?: boolean | null
           name: string
           start_date: string
-          team_id?: string | null
+          team_id: string
           updated_at?: string
         }
         Update: {
@@ -206,7 +206,7 @@ export type Database = {
           is_finished?: boolean | null
           name?: string
           start_date?: string
-          team_id?: string | null
+          team_id?: string
           updated_at?: string
         }
         Relationships: [
