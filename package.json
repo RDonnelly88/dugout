@@ -16,7 +16,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "npm run typecheck && npm run lint && npm run knip && npm run test",
-    "types:db": "supabase gen types typescript --linked > lib/database.types.ts"
+    "types:db": "supabase gen types typescript --linked > lib/database.types.ts",
+    "seed:local": "node scripts/seed-local.mjs",
+    "e2e": "playwright test",
+    "e2e:shots": "playwright test screenshots",
+    "e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",
@@ -54,6 +58,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^26.1.2",
     "@types/react": "^19.2.18",
