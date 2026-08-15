@@ -13,6 +13,7 @@ import {
   ChevronRight,
   PanelLeftClose,
   UserCog,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -29,6 +30,7 @@ const menuItems = [
   { path: "/matches", label: "Matches", icon: CalendarDays },
   { path: "/seasons", label: "Seasons", icon: Trophy },
   { path: "/team", label: "Team", icon: UserCog },
+  { path: "/settings", label: "Settings", icon: Settings },
 ];
 
 const quickActions = [

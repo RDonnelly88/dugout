@@ -13,5 +13,12 @@ import type { Database } from "./database.types";
  */
 export const supabase = createBrowserClient<Database>(
   env.NEXT_PUBLIC_SUPABASE_URL,
-  env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  {
+    // Passkeys sit behind an opt-in flag while the API is in beta. Without it
+    // `signInWithPasskey`, `registerPasskey` and every `auth.passkey.*` method
+    // throw at call time rather than failing to typecheck, so the flag and the
+    // calls have to be kept together.
+    auth: { experimental: { passkey: true } },
+  }
 );

@@ -512,65 +512,50 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return { error: "Not authenticated", success: false };
 
     try {
-      console.log("Joining team with ID:", teamId);
-      
-      const { data: teamData, error: teamError } = await supabase
-        .from("teams")
-        .select("id, name")
-        .eq("id", teamId);
-
-      if (teamError) {
-        console.error("Error finding team:", teamError);
-        return { error: teamError, success: false };
-      }
-
-      if (!teamData || teamData.length === 0) {
-        console.error("Team not found with ID:", teamId);
-        return { error: { message: "Team not found" }, success: false };
-      }
-
-      const { data: existingMember, error: memberCheckError } = await supabase
-        .from("team_members")
-        .select("id")
-        .eq("team_id", teamId)
-        .eq("user_id", user.id);
-
-      if (memberCheckError) {
-        console.error("Error checking existing membership:", memberCheckError);
-        return { error: memberCheckError, success: false };
-      }
-      
-      if (existingMember && existingMember.length > 0) {
-        console.log("User is already a member of this team");
-        return { error: { message: "You are already a member of this team" }, success: false };
-      }
-
       const { error: profileError } = await ensureProfileExists();
       if (profileError) {
-        console.error("Error ensuring profile exists:", profileError);
-        return { error: { message: "Unable to verify user profile. Please try again." }, success: false };
+        return {
+          error: { message: "Unable to verify user profile. Please try again." },
+          success: false,
+        };
       }
 
-      const { error: joinError } = await supabase
-        .from("team_members")
-        .insert([{
-          team_id: teamId,
-          user_id: user.id,
-          role: "viewer"
-        }]);
+      // Through the function rather than a select: the policies on `teams`
+      // only show you a team you already belong to, so looking one up in order
+      // to join it always came back empty.
+      const { data, error } = await supabase.rpc("join_team", {
+        team_id_param: teamId,
+      });
 
-      if (joinError) {
-        console.error("Error joining team:", joinError);
-        return { error: joinError, success: false };
+      if (error) {
+        return { error, success: false };
       }
 
-      const newTeam = {
-        id: teamData[0].id,
-        name: teamData[0].name,
-        created_at: new Date().toISOString()
+      const result = data as
+        | { status: "not_found" }
+        | { status: "already_member" }
+        | { status: "joined"; team: Team };
+
+      if (result?.status === "not_found") {
+        return { error: { message: "No team with that code." }, success: false };
+      }
+
+      if (result?.status === "already_member") {
+        return {
+          error: { message: "You are already a member of this team." },
+          success: false,
+        };
+      }
+
+      if (result?.status !== "joined") {
+        return { error: { message: "Could not join that team." }, success: false };
+      }
+
+      const newTeam: Team = {
+        id: result.team.id,
+        name: result.team.name,
+        created_at: result.team.created_at,
       };
-
-      console.log("Successfully joined team:", newTeam);
 
       setUserTeams(prevTeams => [...prevTeams, newTeam]);
       setCurrentTeam(newTeam);
@@ -579,7 +564,7 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       toast({
         title: "Team joined",
-        description: `You have successfully joined the team "${teamData[0].name}".`,
+        description: `You have successfully joined the team "${newTeam.name}".`,
       });
 
       return { error: null, success: true };

@@ -365,6 +365,7 @@ export type Database = {
         Args: { team_uuid: string; user_uuid: string }
         Returns: boolean
       }
+      join_team: { Args: { team_id_param: string }; Returns: Json }
     }
     Enums: {
       team_role: "admin" | "viewer"
