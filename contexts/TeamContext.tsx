@@ -65,30 +65,44 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (membershipError) throw membershipError;
 
-        const teams = memberships.map((m: any) => ({
-          id: m.team.id,
-          name: m.team.name,
-          created_at: m.team.created_at,
-          role: m.role
+        // The whole team row, not a hand-picked three columns of it. Copying
+        // fields across by name meant the side names were dropped on every
+        // load, so a team that had set them reverted to Bibs and No bibs the
+        // moment the page was refreshed.
+        const teams: (Team & { role?: TeamRole })[] = memberships.map((m: any) => ({
+          ...m.team,
+          role: m.role,
         }));
 
-        setUserTeams(teams.map(t => ({ id: t.id, name: t.name, created_at: t.created_at })));
+        // Readable by anyone signed in, and a member of it nobody is. Offered
+        // alongside your own teams so there is something to look at before you
+        // have entered a single result.
+        const { data: demo } = await supabase
+          .from("teams")
+          .select("*")
+          .eq("is_demo", true)
+          .maybeSingle();
 
-        if (teams.length > 0 && !currentTeamRef.current) {
+        const all = demo && !teams.some((t) => t.id === demo.id)
+          ? [...teams, demo as Team]
+          : teams;
+
+        setUserTeams(all);
+
+        if (all.length > 0 && !currentTeamRef.current) {
           const savedTeamId = localStorage.getItem("currentTeamId");
-          const teamToSet = savedTeamId 
-            ? teams.find(t => t.id === savedTeamId) || teams[0] 
-            : teams[0];
-          
-          setCurrentTeam({
-            id: teamToSet.id,
-            name: teamToSet.name,
-            created_at: teamToSet.created_at
-          });
-          
-          setUserRole(teamToSet.role);
+          // Somebody's own team in preference to the demo, which is only ever
+          // a default when they have none.
+          const fallback = teams[0] ?? all[0];
+          const teamToSet = savedTeamId
+            ? all.find((t) => t.id === savedTeamId) || fallback
+            : fallback;
+
+          setCurrentTeam(teamToSet);
+          // The demo team has no membership row, so no role with it.
+          setUserRole((teamToSet as { role?: TeamRole }).role ?? null);
           localStorage.setItem("currentTeamId", teamToSet.id);
-        } else if (teams.length === 0) {
+        } else if (all.length === 0) {
           setCurrentTeam(null);
           setUserRole(null);
           localStorage.removeItem("currentTeamId");
@@ -118,15 +132,18 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!userId || !currentTeamId) return;
 
       try {
+        // `maybeSingle`, because there is one team nobody is a member of. No
+        // row is an answer — no role — rather than an error to be logged on
+        // every render of the demo team.
         const { data, error } = await supabase
           .from("team_members")
           .select("role")
           .eq("team_id", currentTeamId)
           .eq("user_id", userId)
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
-        setUserRole(data.role);
+        setUserRole(data?.role ?? null);
       } catch (error) {
         console.error("Error fetching user role:", error);
       }
@@ -301,10 +318,10 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .select("role")
             .eq("team_id", teamId)
             .eq("user_id", user.id)
-            .single();
+            .maybeSingle();
 
           if (error) throw error;
-          setUserRole(data.role);
+          setUserRole(data?.role ?? null);
         } catch (error) {
           console.error("Error fetching user role:", error);
         }

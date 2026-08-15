@@ -49,6 +49,15 @@ are independent gates.
 **A permissive policy of `USING (true)` cancels every other policy on that
 table.** Policies are OR'd. Three tables had one.
 
+**The demo team is readable by everyone and writable by no one.** One team
+carries `is_demo`. Each of `teams`, `players`, `matches` and `seasons` has a
+SELECT policy scoped to it — scoped, because a policy saying true for anybody
+says true for every row of every team. It has no owner and no members, so the
+existing admin-only write policies already refuse every write; there is no
+demo write policy to relax by accident. `team_members` gains nothing, so who
+is in it stays as private as any other team. `e2e/demo-team.spec.ts` holds
+that line.
+
 **Views bypass RLS unless they set `security_invoker = on`.** A view runs as
 its owner by default. All of ours set it; a new one must too.
 

@@ -10,6 +10,12 @@ export interface Team {
   /** What this team calls its two sides. Defaults to Bibs and No bibs. */
   side_a_name?: string;
   side_b_name?: string;
+  /**
+   * The one team every signed-in user can read and nobody can write. It has no
+   * owner and no members, which is what makes it unmodifiable rather than
+   * merely hidden behind a disabled button.
+   */
+  is_demo?: boolean;
 }
 
 export interface TeamMember {
