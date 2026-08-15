@@ -6,6 +6,7 @@ import { updateMatch, getMatch } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { Player, Match, MatchStatus } from "@/types";
 import { useTeam } from "@/contexts/TeamContext";
+import { useSideNames } from "@/hooks/useSideNames";
 
 export const useEditMatch = (matchId: string) => {
   const [teamA, setTeamA] = useState<string[]>([]);
@@ -20,6 +21,7 @@ export const useEditMatch = (matchId: string) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { currentTeam } = useTeam();
+  const sides = useSideNames();
 
   // Fetch the match data
   const { data: match, isLoading } = useQuery({
@@ -139,12 +141,12 @@ export const useEditMatch = (matchId: string) => {
 
     const matchData = {
       teamA: {
-        name: "Team A",
+        name: sides.A,
         players: teamA,
         score: teamAScore
       },
       teamB: {
-        name: "Team B",
+        name: sides.B,
         players: teamB,
         score: teamBScore
       },

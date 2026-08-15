@@ -11,6 +11,7 @@ import InviteMemberForm from "@/components/team/InviteMemberForm";
 import TeamSwitcher from "@/components/team/TeamSwitcher";
 import JoinTeamForm from "@/components/team/JoinTeamForm";
 import TeamShareCard from "@/components/team/TeamShareCard";
+import SideNamesCard from "@/components/team/SideNamesCard";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -184,10 +185,10 @@ const TeamManagement = () => {
         <h1 className="page-title mb-6 md:mb-8">Team</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Card className="bg-surface/80 border-border shadow-xl hover:shadow-accent/5 transition-shadow duration-300">
+          <Card>
             <CardHeader>
               <CardTitle>Create Your First Team</CardTitle>
-              <CardDescription className="text-muted-foreground">Get started by creating a team to manage players and matches</CardDescription>
+              <CardDescription>Get started by creating a team to manage players and matches</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -296,13 +297,13 @@ const TeamManagement = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="col-span-2">
-          <Card className="bg-surface/80 border-border shadow-xl hover:shadow-accent/5 transition-shadow duration-300">
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-accent" />
                 Team Members
               </CardTitle>
-              <CardDescription className="text-muted-foreground">Manage members of {currentTeam.name}</CardDescription>
+              <CardDescription>Manage members of {currentTeam.name}</CardDescription>
             </CardHeader>
             <CardContent>
               <TeamMembersTable 
@@ -321,26 +322,28 @@ const TeamManagement = () => {
           
           {userRole === "admin" && (
             <>
-              <Card className="bg-surface/80 border-border shadow-xl hover:shadow-accent/5 transition-shadow duration-300">
+              <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Share2 className="h-5 w-5 text-accent" />
-                    Share Team
+                    Share team
                   </CardTitle>
-                  <CardDescription className="text-muted-foreground">Share your team with others</CardDescription>
+                  <CardDescription>Share your team with others</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <TeamShareCard />
                 </CardContent>
               </Card>
+
+              <SideNamesCard />
               
-              <Card className="bg-surface/80 border-border shadow-xl hover:shadow-accent/5 transition-shadow duration-300">
+              <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <UserPlus className="h-5 w-5 text-accent" />
-                    Invite Member
+                    Invite member
                   </CardTitle>
-                  <CardDescription className="text-muted-foreground">Add new members to your team</CardDescription>
+                  <CardDescription>Add new members to your team</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <InviteMemberForm 
@@ -354,13 +357,13 @@ const TeamManagement = () => {
           )}
           
           {/* Always show these options regardless of user role */}
-          <Card className="bg-surface/80 border-border shadow-xl hover:shadow-accent/5 transition-shadow duration-300">
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <PlusCircle className="h-5 w-5 text-accent" />
                 Create New Team
               </CardTitle>
-              <CardDescription className="text-muted-foreground">Start a fresh team for your players and matches</CardDescription>
+              <CardDescription>Start a fresh team for your players and matches</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center py-6">
               <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>

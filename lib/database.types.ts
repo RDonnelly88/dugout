@@ -252,6 +252,8 @@ export type Database = {
           created_by: string
           id: string
           name: string
+          side_a_name: string
+          side_b_name: string
           updated_at: string
         }
         Insert: {
@@ -259,6 +261,8 @@ export type Database = {
           created_by: string
           id?: string
           name: string
+          side_a_name?: string
+          side_b_name?: string
           updated_at?: string
         }
         Update: {
@@ -266,6 +270,8 @@ export type Database = {
           created_by?: string
           id?: string
           name?: string
+          side_a_name?: string
+          side_b_name?: string
           updated_at?: string
         }
         Relationships: []

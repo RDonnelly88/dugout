@@ -3,6 +3,7 @@ import Link from "next/link";
 import { format, parseISO } from "date-fns";
 import { ChevronRight, Trash2 } from "lucide-react";
 import { Match } from "@/types";
+import { useSideNames } from "@/hooks/useSideNames";
 
 interface MatchListItemProps {
   match: Match;
@@ -23,6 +24,7 @@ function matchDate(value: string): Date {
  * the detail is a tap away.
  */
 const MatchListItem = ({ match, onDeleteClick }: MatchListItemProps) => {
+  const sides = useSideNames();
   const played =
     match.status === "completed" &&
     typeof match.teamA?.score === "number" &&
@@ -57,7 +59,7 @@ const MatchListItem = ({ match, onDeleteClick }: MatchListItemProps) => {
               winner === "a" ? "font-semibold" : "text-muted-foreground"
             }`}
           >
-            {match.teamA?.name || "Team A"}
+            {match.teamA?.name || sides.A}
           </span>
 
           {played ? (
@@ -77,7 +79,7 @@ const MatchListItem = ({ match, onDeleteClick }: MatchListItemProps) => {
               winner === "b" ? "font-semibold" : "text-muted-foreground"
             }`}
           >
-            {match.teamB?.name || "Team B"}
+            {match.teamB?.name || sides.B}
           </span>
         </span>
 

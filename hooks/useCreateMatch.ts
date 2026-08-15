@@ -7,6 +7,7 @@ import { addMatch } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { Player } from "@/types";
 import { useTeam } from "@/contexts/TeamContext";
+import { useSideNames } from "@/hooks/useSideNames";
 
 export const useCreateMatch = () => {
   const [teamA, setTeamA] = useState<string[]>([]);
@@ -17,6 +18,7 @@ export const useCreateMatch = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { currentTeam } = useTeam();
+  const sides = useSideNames();
 
   const togglePlayer = (team: 'A' | 'B', playerId: string) => {
     if (team === 'A') {
@@ -120,12 +122,12 @@ export const useCreateMatch = () => {
     
     const matchData = {
       teamA: {
-        name: "Team A",
+        name: sides.A,
         players: teamA,
         score: 0
       },
       teamB: {
-        name: "Team B",
+        name: sides.B,
         players: teamB,
         score: 0
       },

@@ -1,6 +1,9 @@
 
+"use client";
+
 import React from 'react';
 import { Player } from "@/types";
+import { useSideNames } from "@/hooks/useSideNames";
 import FormationPlayer from './FormationPlayer';
 import { formationConfigs } from './constants';
 
@@ -12,10 +15,9 @@ interface FormationProps {
 }
 
 const Formation = ({ teamA, teamB, teamSize, onRemovePlayer }: FormationProps) => {
-  console.log("Formation rendering with teamSize:", teamSize);
+  const sides = useSideNames();
   
   const formationConfig = formationConfigs[teamSize] || formationConfigs["5"];
-  console.log("Using formation config:", formationConfig);
 
   const handleRemovePlayer = (team: 'A' | 'B', playerId: string) => {
     if (onRemovePlayer) {
@@ -23,9 +25,8 @@ const Formation = ({ teamA, teamB, teamSize, onRemovePlayer }: FormationProps) =
     }
   };
 
-  const renderTeam = (players: Player[], teamName: string, teamColor: 'red' | 'green') => {
+  const renderTeam = (players: Player[], side: "A" | "B", teamColor: 'red' | 'green') => {
     if (!players.length) {
-      console.log(`No players to render for ${teamName}`);
       return (
         <div className="empty-team-pitch flex flex-col items-center justify-center h-full text-foreground/70">
           <p>No players selected</p>
@@ -34,7 +35,6 @@ const Formation = ({ teamA, teamB, teamSize, onRemovePlayer }: FormationProps) =
     }
     
     const { rows } = formationConfig;
-    console.log(`Rendering formation rows for ${teamName}:`, rows);
     
     let playerIndex = 0;
     
@@ -51,22 +51,16 @@ const Formation = ({ teamA, teamB, teamSize, onRemovePlayer }: FormationProps) =
         </div>
         
         {rows.map((playersInRow, rowIndex) => {
-          console.log(`Rendering row ${rowIndex} with ${playersInRow} players for ${teamName}`);
           
           return (
             <div 
-              key={`${teamName}-row-${rowIndex}`} 
+              key={`${side}-row-${rowIndex}`} 
               className="formation-row flex justify-center items-center gap-6"
             >
               {Array(playersInRow).fill(0).map((_, posIndex) => {
-                if (playerIndex >= players.length) {
-                  console.log(`No player available for ${teamName} at row ${rowIndex}, position ${posIndex}`);
-                  return null;
-                }
-                
+                if (playerIndex >= players.length) return null;
+
                 const player = players[playerIndex++];
-                const team = teamName === "Team A" ? "A" : "B";
-                console.log(`Adding ${player.name} to ${teamName} at row ${rowIndex}, position ${posIndex}`);
                 
                 return (
                   <FormationPlayer 
@@ -74,7 +68,7 @@ const Formation = ({ teamA, teamB, teamSize, onRemovePlayer }: FormationProps) =
                     player={player}
                     index={playerIndex - 1}
                     teamColor={teamColor}
-                    onClick={() => handleRemovePlayer(team, player.id)}
+                    onClick={() => handleRemovePlayer(side, player.id)}
                   />
                 );
               })}
@@ -89,18 +83,18 @@ const Formation = ({ teamA, teamB, teamSize, onRemovePlayer }: FormationProps) =
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
       <div className="team-pitch-container" data-testid="formation-team-a">
         <div className="team-pitch bg-win/15 rounded-t-lg overflow-hidden h-[320px] relative">
-          {renderTeam(teamA, "Team A", "red")}
+          {renderTeam(teamA, "A", "red")}
         </div>
-        <div className="team-name-banner bg-destructive/80 text-foreground py-2 text-center font-semibold rounded-b-lg">
-          Team A
+        <div className="team-name-banner rounded-b-lg bg-info py-2 text-center font-semibold text-white">
+          {sides.A}
         </div>
       </div>
       <div className="team-pitch-container" data-testid="formation-team-b">
         <div className="team-pitch bg-win/15 rounded-t-lg overflow-hidden h-[320px] relative">
-          {renderTeam(teamB, "Team B", "green")}
+          {renderTeam(teamB, "B", "green")}
         </div>
-        <div className="team-name-banner bg-win/80 text-foreground py-2 text-center font-semibold rounded-b-lg">
-          Team B
+        <div className="team-name-banner rounded-b-lg bg-win py-2 text-center font-semibold text-win-foreground">
+          {sides.B}
         </div>
       </div>
     </div>
