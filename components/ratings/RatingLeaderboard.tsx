@@ -102,16 +102,16 @@ export default function RatingLeaderboard({
                 {rating.games} games
               </span>
               {/* Shown from the first game rather than held back for ten, so a
-                  new squad has a table. Marked, because it is still moving
-                  several times faster than everyone else's. */}
-              {rating.provisional && (
+                  new squad has a table. Marked, because a number resting on
+                  three results is a rougher guess than one resting on forty —
+                  it moves at the same rate as everyone else's, it is just
+                  built on less. */}
+              {rating.unsettled && (
                 <span
                   className="relative hidden shrink-0 rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-muted-foreground sm:block"
-                  title={`Settles after ${ELO.provisionalGames} games — ${
-                    ELO.provisionalGames - rating.games
-                  } to go`}
+                  title={`Rests on ${rating.games} games — a rough guess until ${ELO.settledAfter}`}
                 >
-                  settling
+                  rough
                 </span>
               )}
               {/* Said in words, not just an icon and a number. "−59" beside an

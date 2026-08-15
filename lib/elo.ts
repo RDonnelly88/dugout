@@ -18,9 +18,13 @@ export interface PlayerRating {
   playerId: string;
   /** Current, after any drift for time away. */
   rating: number;
-  /** Games counted. Below `ELO.provisionalGames` the rating is still settling. */
+  /** Games counted. Below `ELO.settledAfter` the rating is still a rough guess. */
   games: number;
-  provisional: boolean;
+  /**
+   * Whether the rating rests on too few games to lean on yet. A caveat on
+   * the number, not a change to it — it moves the same either way.
+   */
+  unsettled: boolean;
   peak: number;
   /** Rating before the most recent match, for showing a delta. */
   previous: number;
@@ -81,47 +85,6 @@ const mean = (xs: number[]) =>
   xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : ELO.start;
 
 /**
- * How much of a side's pot a player takes, before normalising across the
- * side. Only the ratio between teammates' weights matters — the pot itself
- * is fixed by the match, not by the weights, so nothing here can create or
- * destroy rating.
- *
- * A weight must not depend on which way the result went. Sharing a defeat
- * out differently from a win correlates a player's share with the sign of
- * the pot, and that correlation is a one-way ratchet: teams are picked to
- * be level, so the strongest man on a side is nearly always above its mean,
- * and anything that pays him less for a win than it charges him for a
- * defeat bleeds him towards the middle every week. Weighting a defeat
- * towards the favourite reads well on a single match card and flattens the
- * ladder to almost nothing over a season.
- */
-export type Weigher = (player: PlayerRating) => number;
-
-/**
- * The default. You win as a team, so everyone on the side takes the same
- * share of what the result was worth.
- *
- * A five-a-side result says what the five of them did between them and
- * nothing about which of them did it. Splitting the pot by any measure of
- * the players themselves is inventing that missing detail, and inventing it
- * costs more than it gives: the spread of the ladder is the one thing the
- * table is for.
- */
-export const evenWeigher: Weigher = () => 1;
-
-/**
- * Weight by how unsettled a rating still is, so a new player's finds its
- * level in a few weeks rather than a season. Not the default — it buys
- * faster settling at the cost of two players on the same side, in the same
- * result, being moved by different amounts.
- *
- * Safe for the ladder in a way a strength-based weight is not: games played
- * has nothing to do with which way a result went, so it adds no drift.
- */
-export const uncertaintyWeigher: Weigher = (player) =>
-  player.games < ELO.provisionalGames ? ELO.kProvisional : ELO.kEstablished;
-
-/**
  * Ratings for every player, replayed from the match history in order.
  *
  * Derived rather than stored, for the same reason the win/loss record is:
@@ -142,10 +105,7 @@ export const uncertaintyWeigher: Weigher = (player) =>
  * same table. It used to read the clock, which meant every rating aged
  * overnight and a screenshot taken twice never matched.
  */
-export function computeRatings(
-  matches: Match[],
-  weigh: Weigher = evenWeigher
-): Map<string, PlayerRating> {
+export function computeRatings(matches: Match[]): Map<string, PlayerRating> {
   const ratings = new Map<string, PlayerRating>();
 
   const ensure = (playerId: string): PlayerRating => {
@@ -155,7 +115,7 @@ export function computeRatings(
         playerId,
         rating: ELO.start,
         games: 0,
-        provisional: true,
+        unsettled: true,
         peak: ELO.start,
         previous: ELO.start,
         missed: 0,
@@ -216,7 +176,7 @@ export function computeRatings(
     // out. `potB` is `potA` negated rather than computed afresh from its own
     // expectation, so the two are equal and opposite to the bit, not just to
     // a tolerance: nothing here can leak or mint rating.
-    const potSize = Math.max(sideA.length, sideB.length) * ELO.kEstablished;
+    const potSize = Math.max(sideA.length, sideB.length) * ELO.k;
     const potA = potSize * (actualA - expectedA);
     const potB = -potA;
 
@@ -226,17 +186,20 @@ export function computeRatings(
       opponentRating: number,
       result: "win" | "draw" | "loss"
     ) => {
-      const weights = side.map((player) => weigh(player));
-      const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+      // You win as a team, so the pot is split level. A result says what the
+      // five of them did between them and nothing about which of them did
+      // it; sharing it out by any measure of the players themselves invents
+      // that missing detail, and every way of inventing it that was tried
+      // cost more of the ladder's spread than it gave back.
+      const change = pot / side.length;
 
-      side.forEach((player, i) => {
-        const change = (weights[i] / totalWeight) * pot;
+      for (const player of side) {
         const next = player.rating + change;
 
         player.previous = player.rating;
         player.rating = next;
         player.games += 1;
-        player.provisional = player.games < ELO.provisionalGames;
+        player.unsettled = player.games < ELO.settledAfter;
         player.peak = Math.max(player.peak, next);
         player.history.push({
           matchId: match.id,
@@ -246,7 +209,7 @@ export function computeRatings(
           opponentRating,
           result,
         });
-      });
+      }
     };
 
     const resultA = actualA === 1 ? "win" : actualA === 0.5 ? "draw" : "loss";

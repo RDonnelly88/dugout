@@ -110,8 +110,8 @@ export default function PlayerRatingCard({ playerId }: { playerId: string }) {
           Rating
         </CardTitle>
         <CardDescription>
-          {rating.provisional
-            ? `Still settling — ${ELO.provisionalGames - rating.games} more games to go.`
+          {rating.unsettled
+            ? `A rough guess so far — ${rating.games} of ${ELO.settledAfter} games behind it.`
             : `Peak ${displayRating(rating.peak)} · ${rating.games} games`}
         </CardDescription>
       </CardHeader>
