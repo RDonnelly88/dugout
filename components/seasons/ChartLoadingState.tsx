@@ -6,7 +6,7 @@ interface ChartLoadingStateProps {
   seasonName?: string;
 }
 
-const ChartLoadingState: React.FC<ChartLoadingStateProps> = ({ seasonName }) => {
+const ChartLoadingState: React.FC<ChartLoadingStateProps> = () => {
   return (
     <Card>
       <CardHeader>

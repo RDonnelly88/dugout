@@ -10,8 +10,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
-import { Users, Target, Heart, Zap, Trophy, TrendingUp, TrendingDown, Swords, Shield, Crown, Flame, Snowflake, Star } from "lucide-react";
+
+import { Users, Heart, Zap, Swords, Shield, Crown, Flame, Snowflake } from "lucide-react";
 import { usePlayerRelationships, PlayerRelationshipsStats } from "@/hooks/usePlayerRelationships";
 import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
 
@@ -22,7 +22,7 @@ interface PlayerRelationshipsProps {
 
 const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, playerName }) => {
   const [selectedSeasonId, setSelectedSeasonId] = useState<string | "overall">("overall");
-  const { stats, isLoading, enhancedStats, relationships } = usePlayerRelationships(playerId);
+  const { stats, isLoading, enhancedStats } = usePlayerRelationships(playerId);
   
   // Get seasons for dropdown
   const { data: seasons = [] } = useQuery({
@@ -69,8 +69,7 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
     title: string, 
     description: string, 
     relationship?: PlayerRelationshipsStats["bestTeammate"],
-    type: string = "",
-    showExtendedStats: boolean = false
+    type: string = ""
   ) => {
     if (!relationship) {
       return (

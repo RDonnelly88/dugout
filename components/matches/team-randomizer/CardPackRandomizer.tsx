@@ -21,7 +21,6 @@ const CardPackRandomizer = ({
   onComplete,
   onCancel,
 }: CardPackRandomizerProps) => {
-  const [shuffledPlayers, setShuffledPlayers] = useState<Player[]>([]);
   const [teamA, setTeamA] = useState<Player[]>([]);
   const [teamB, setTeamB] = useState<Player[]>([]);
   const [currentCard, setCurrentCard] = useState<Player | null>(null);
@@ -44,7 +43,6 @@ const CardPackRandomizer = ({
 
     // Shuffle players
     const shuffled = [...players].sort(() => Math.random() - 0.5);
-    setShuffledPlayers(shuffled);
     setRemainingCards(shuffled);
   }, [players, toast, onCancel]);
 

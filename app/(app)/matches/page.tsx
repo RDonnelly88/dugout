@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getMatches, getPlayers, deleteMatch } from "@/lib/db";
+import { getMatches, deleteMatch } from "@/lib/db";
 import { Match } from "@/types";
 import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,11 +23,6 @@ const Matches = () => {
   const { data: matches = [], isLoading: isLoadingMatches } = useQuery({
     queryKey: ['matches'],
     queryFn: getMatches
-  });
-
-  const { data: players = [] } = useQuery({
-    queryKey: ['players'],
-    queryFn: getPlayers
   });
 
   const { searchTerm, setSearchTerm, filteredMatches } = useMatchFiltering(matches);

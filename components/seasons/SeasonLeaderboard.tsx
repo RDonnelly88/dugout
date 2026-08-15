@@ -178,7 +178,7 @@ const SeasonLeaderboard = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {displayStats.map((stat, index) => (
+            {displayStats.map((stat) => (
               <TableRow key={stat.playerId}>
                 <TableCell className="font-medium">{playerRanks[stat.playerId]}</TableCell>
                 <TableCell>

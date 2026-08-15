@@ -31,7 +31,7 @@ const Dashboard = () => {
   });
   
   // Get matches with improved team filtering
-  const { data: matches = [], isLoading: isLoadingMatches } = useQuery({
+  const { data: matches = [] } = useQuery({
     queryKey: ["matches", currentTeam?.id],
     queryFn: () => currentTeam ? getMatches() : Promise.resolve([]),
     enabled: !!currentTeam,

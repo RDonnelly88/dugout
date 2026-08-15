@@ -43,7 +43,7 @@ export const getMatches = async (): Promise<Match[]> => {
       
       // Filter matches by team ID
       return parsedMatches.filter((match: any) => match.team_id === currentTeamId);
-    } catch (err) {
+    } catch {
       return [];
     }
   }
@@ -92,7 +92,7 @@ export const getMatch = async (id: string): Promise<Match | undefined> => {
       // Find match by ID and verify it belongs to current team
       const match = parsedMatches.find((m: any) => m.id === id);
       return match && match.team_id === currentTeamId ? match : undefined;
-    } catch (err) {
+    } catch {
       return undefined;
     }
   }

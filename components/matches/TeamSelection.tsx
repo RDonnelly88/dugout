@@ -3,13 +3,13 @@ import React, { useMemo, useState } from 'react';
 import { Player } from "@/types";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+
 import { Shield, Users, Flag } from "lucide-react";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
 import Formation from './team-randomizer/Formation';
-import { PlayerHoverContent } from './team-randomizer/PlayerSelection';
+
 import { calculatePlayerRanks } from "@/lib/ranking-utils";
 import { Card, CardContent } from "@/components/ui/card";
 import PlayerSelectionFilters from './team-randomizer/PlayerSelectionFilters';
@@ -194,7 +194,7 @@ interface PlayerCardProps {
   playerRanks?: Record<string, number>;
 }
 
-const PlayerCard = ({ player, currentSeason, seasonStats, onClick, playerRanks = {} }: PlayerCardProps) => {
+const PlayerCard = ({ player, seasonStats, onClick, playerRanks = {} }: PlayerCardProps) => {
   // Get player rank from the pre-calculated ranks
   const playerSeasonStat = seasonStats.find(stat => stat.playerId === player.id);
   

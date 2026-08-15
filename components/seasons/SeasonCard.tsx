@@ -1,7 +1,7 @@
 import Link from "next/link";
 import React from "react";
 
-import { Calendar, Trophy, Users, LayoutGrid, Medal } from "lucide-react";
+import { Calendar, Trophy, Medal } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -161,7 +161,7 @@ const SeasonCard = ({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {top5Players.map((player, index) => (
+                    {top5Players.map((player) => (
                       <TableRow key={player.playerId}>
                         <TableCell className="py-1">
                           {playerRanks[player.playerId] === 1 ? (

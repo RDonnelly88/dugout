@@ -112,11 +112,9 @@ const CreateMatch = () => {
               <h3 className="text-xl font-semibold mb-4 text-center">Match Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Match Date</label>
-                  <DatePicker date={date} setDate={setDate} />
+                  <DatePicker date={date} setDate={setDate} label="Match Date" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Season</label>
                   <SeasonSelect value={seasonId} onChange={setSeasonId} />
                 </div>
               </div>

@@ -1,5 +1,5 @@
 
-import { Season, SeasonPlayerStats, SeasonChampion, PlayerForm, PlayerFormResult } from "@/types";
+import { Season, SeasonPlayerStats, SeasonChampion } from "@/types";
 import { supabase } from "@/lib/supabase-browser";
 import { mapSupabaseToSeason } from "../supabase-utils";
 

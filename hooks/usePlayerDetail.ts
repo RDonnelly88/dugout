@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 import { getPlayer, getMatches, getSeasons, getSeasonPlayerStats } from "@/lib/db";
-import { Match, Season, SeasonPlayerStats } from "@/types";
+import { Match, SeasonPlayerStats } from "@/types";
 
 export const usePlayerDetail = () => {
   const { id } = useParams<{ id: string }>();

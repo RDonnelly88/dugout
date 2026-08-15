@@ -2,7 +2,6 @@
 
 
 import { useTeam } from "@/contexts/TeamContext";
-import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase-browser";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
@@ -22,13 +21,12 @@ import { PlusCircle, Users, Share2, UserPlus } from "lucide-react";
 
 const TeamManagement = () => {
   const { currentTeam, userRole, inviteToTeam, createTeam } = useTeam();
-  const { user } = useAuth();
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newTeamName, setNewTeamName] = useState("");
   const [isCreatingTeam, setIsCreatingTeam] = useState(false);
 
-  const { data: teamMembers = [], isLoading, error, refetch } = useQuery({
+  const { data: teamMembers = [], isLoading, refetch } = useQuery({
     queryKey: ["teamMembers", currentTeam?.id],
     queryFn: async () => {
       if (!currentTeam) return [];

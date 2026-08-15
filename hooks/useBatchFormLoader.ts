@@ -1,6 +1,6 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { PlayerFormResult } from "@/types";
+
 import { getPlayerFormBatch } from "@/lib/player-form-service";
 import { useEffect } from "react";
 

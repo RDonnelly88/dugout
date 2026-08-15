@@ -156,7 +156,7 @@ export const usePlayerPositionHistory = (seasonId: string | null) => {
           // Sort players by points to determine positions
           const sortedPlayers = Array.from(playerStats.entries())
             .filter(([_, stats]) => stats.played > 0) // Only include players who have played
-            .sort(([id1, statsA], [id2, statsB]) => {
+            .sort(([, statsA], [, statsB]) => {
               // Sort by points (descending), then games played (descending if points are equal), then wins (descending)
               if (statsB.points !== statsA.points) {
                 return statsB.points - statsA.points;

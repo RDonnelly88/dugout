@@ -1,4 +1,4 @@
-
+import { useId } from "react";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,15 +10,22 @@ import { cn } from "@/lib/utils";
 interface DatePickerProps {
   date: Date | undefined;
   setDate: (date: Date | undefined) => void;
+  label?: string;
 }
 
-const DatePicker = ({ date, setDate }: DatePickerProps) => {
+const DatePicker = ({ date, setDate, label = "Date" }: DatePickerProps) => {
+  // The control owns its label so the two can be associated. A caller that
+  // wrote its own <label> alongside would have nothing to point it at, and
+  // would stack a second caption above this one.
+  const id = useId();
+
   return (
     <div>
-      <Label>Date</Label>
+      <Label htmlFor={id}>{label}</Label>
       <Popover>
         <PopoverTrigger asChild>
           <Button
+            id={id}
             variant={"outline"}
             className={cn(
               "w-[240px] justify-start text-left font-normal",
@@ -32,6 +39,9 @@ const DatePicker = ({ date, setDate }: DatePickerProps) => {
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
             mode="single"
+            // Moving focus into the calendar is the point of opening it — a
+            // keyboard user would otherwise be left behind on the trigger.
+            // eslint-disable-next-line jsx-a11y/no-autofocus
             autoFocus
             selected={date}
             onSelect={setDate}

@@ -36,7 +36,9 @@ export const useCreateMatch = () => {
     }
   };
 
-  const randomizeTeams = (players: Player[], teamSize: number = 5) => {
+  // `teamSize` is part of the caller's contract but not consulted: the split
+  // is always down the middle of whoever was selected.
+  const randomizeTeams = (players: Player[], _teamSize: number = 5) => {
     setTeamA([]);
     setTeamB([]);
     

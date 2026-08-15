@@ -6,7 +6,7 @@ import React, { useState, useEffect } from "react";
 import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getSeasons, getSeasonChampions } from "@/lib/db";
 import SeasonCard from "@/components/seasons/SeasonCard";
@@ -64,7 +64,7 @@ const Seasons = () => {
   const currentSeasonPlayerIds = currentSeasonChampions.map(p => p.playerId);
   
   // Use the batch form loader for the current season's top players
-  const { formData: currentSeasonForms, isLoading: isLoadingCurrentSeasonForms } = useBatchFormLoader(
+  const { formData: currentSeasonForms } = useBatchFormLoader(
     currentSeason?.id || null,
     currentSeasonPlayerIds
   );

@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase-browser";
 import { useAuth } from "./AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Team, TeamMember, TeamRole } from "@/types/team";
+import { Team, TeamRole } from "@/types/team";
 
 type TeamContextType = {
   currentTeam: Team | null;
@@ -122,7 +122,7 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return { error: "Not authenticated" };
     
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("profiles")
         .select("id")
         .eq("id", user.id)

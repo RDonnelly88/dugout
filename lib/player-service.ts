@@ -1,5 +1,5 @@
 
-import { Player, PlayerStats, Match } from "@/types";
+import { Player, Match } from "@/types";
 import { v4 as uuidv4 } from "@/lib/uuid";
 import { supabase } from "@/lib/supabase-browser";
 import { mapSupabasePlayerToPlayer, mapPlayerToSupabase } from "./supabase-utils";

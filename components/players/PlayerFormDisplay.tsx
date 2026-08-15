@@ -2,7 +2,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { PlayerFormResult } from "@/types";
-import { Skeleton } from "@/components/ui/skeleton";
+
 import { Loader2, UserX } from "lucide-react";
 
 interface PlayerFormDisplayProps {

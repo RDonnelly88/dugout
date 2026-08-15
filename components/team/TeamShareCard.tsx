@@ -24,7 +24,7 @@ const TeamShareCard = () => {
       });
       
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
+    } catch {
       toast({
         title: "Failed to copy",
         description: "Please copy the team ID manually",

@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getMatches, getPlayer } from "@/lib/db";
-import { Match, Player } from "@/types";
 
 interface PlayerRelationship {
   playerId: string;
@@ -77,7 +76,7 @@ export const usePlayerRelationships = (playerId: string) => {
   });
 
   // Get the player
-  const { data: player, isLoading: isLoadingPlayer } = useQuery({
+  const { isLoading: isLoadingPlayer } = useQuery({
     queryKey: ['player', playerId],
     queryFn: () => getPlayer(playerId),
     enabled: !!playerId

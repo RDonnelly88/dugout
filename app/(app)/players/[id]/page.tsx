@@ -24,10 +24,8 @@ const PlayerDetail = () => {
     playerMatches,
     seasons,
     seasonStats,
-    selectedSeasonId,
     setSelectedSeasonId,
     selectedSeason,
-    selectedSeasonStats,
     getPlayerMatchResult,
     isLoading,
     router
@@ -42,7 +40,7 @@ const PlayerDetail = () => {
     : null;
 
   // Use the shared hook for consistent rank calculation
-  const { rank: playerRank, hasPlayedCurrentSeason, isLoading: isLoadingRank } = usePlayerRank(
+  const { rank: playerRank, hasPlayedCurrentSeason } = usePlayerRank(
     currentSeason?.id || null,
     player?.id || null
   );

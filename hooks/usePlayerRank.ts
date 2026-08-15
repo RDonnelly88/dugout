@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { getSeasonPlayerStats } from "@/lib/db";
-import { SeasonPlayerStats } from "@/types";
+
 import { calculatePlayerRanks } from "@/lib/ranking-utils";
 
 interface PlayerRankResult {

@@ -116,6 +116,8 @@ const SeasonForm = ({ onSubmit, initialData, isSubmitting }: SeasonFormProps) =>
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
+                      // Focus belongs in the calendar once it opens.
+                      // eslint-disable-next-line jsx-a11y/no-autofocus
                       autoFocus
                       selected={field.value}
                       onSelect={field.onChange}
@@ -155,6 +157,8 @@ const SeasonForm = ({ onSubmit, initialData, isSubmitting }: SeasonFormProps) =>
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
+                      // Focus belongs in the calendar once it opens.
+                      // eslint-disable-next-line jsx-a11y/no-autofocus
                       autoFocus
                       selected={field.value || undefined}
                       onSelect={field.onChange}

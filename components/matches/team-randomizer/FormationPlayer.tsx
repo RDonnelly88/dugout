@@ -8,7 +8,7 @@ import { usePlayerForm } from "@/hooks/usePlayerForm";
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
 import PlayerFormDisplay from '@/components/players/PlayerFormDisplay';
-import { TrendingUp, TrendingDown, Trophy, Flag, MinusCircle } from "lucide-react";
+import { TrendingUp, Trophy, Flag } from "lucide-react";
 
 interface FormationPlayerProps {
   player: Player;
@@ -59,8 +59,9 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
     <div className="player-formation-card">
       <HoverCard>
         <HoverCardTrigger asChild>
-          <div 
-            className="flex flex-col items-center cursor-pointer" 
+          <button
+            type="button"
+            className="flex flex-col items-center cursor-pointer"
             onClick={onClick}
           >
             <div className="relative">
@@ -80,7 +81,7 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
             <span className="mt-1 text-xs font-medium text-white truncate max-w-[60px] text-center">
               {player.name}
             </span>
-          </div>
+          </button>
         </HoverCardTrigger>
         <HoverCardContent className="w-72 p-3 bg-blue-950 border border-blue-500/30 text-white">
           <div className="flex space-x-3">
