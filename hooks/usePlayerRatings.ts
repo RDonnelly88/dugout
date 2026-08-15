@@ -24,13 +24,17 @@ export const usePlayerRatings = () => {
 
   const ratings = useMemo(() => computeRatings(matches), [matches]);
 
+  /**
+   * Everyone who has played, strongest first.
+   *
+   * Including the ones still settling. Holding a rating back until somebody
+   * had ten games meant a new squad saw an empty table for their first two
+   * months, which is precisely when a table is most interesting. They are
+   * marked instead: the number is real, it is simply moving faster than the
+   * rest and will keep moving for a while.
+   */
   const ranked = useMemo(
-    () =>
-      [...ratings.values()]
-        // A provisional rating is still finding its level, so it doesn't
-        // belong in a table beside settled ones.
-        .filter((r) => !r.provisional)
-        .sort((a, b) => b.rating - a.rating),
+    () => [...ratings.values()].sort((a, b) => b.rating - a.rating),
     [ratings]
   );
 

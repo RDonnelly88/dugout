@@ -28,6 +28,17 @@ export interface PlayerRating {
   missed: number;
   /** What the drift for those has cost them. Never negative. */
   drift: number;
+  /**
+   * How the rating moved over the squad's most recent match, whether or not
+   * this player was in it.
+   *
+   * Not the same as the last entry in `history`, which is the last match they
+   * played — possibly months ago. Showing that as "the latest change" put a
+   * confident +14 beside somebody who had not turned out since March. For
+   * anyone who missed the game this is the drift that missing it cost, which
+   * is nought while they are still inside the grace.
+   */
+  lastChange: number;
   history: RatingPoint[];
 }
 
@@ -94,6 +105,7 @@ export function computeRatings(matches: Match[]): Map<string, PlayerRating> {
         previous: ELO.start,
         missed: 0,
         drift: 0,
+        lastChange: 0,
         history: [],
       };
       ratings.set(playerId, entry);
@@ -188,8 +200,17 @@ export function computeRatings(matches: Match[]): Map<string, PlayerRating> {
     const missed = played.length - 1 - previous;
     const current = decayed(player.rating, missed);
 
+    // What the rating was before the squad's most recent match: for somebody
+    // who played in it, back out that result; for somebody who did not, the
+    // same rating carrying one fewer missed game.
+    const before =
+      missed === 0
+        ? player.rating - (player.history.at(-1)?.change ?? 0)
+        : decayed(player.rating, missed - 1);
+
     player.missed = missed;
     player.drift = player.rating - current;
+    player.lastChange = current - before;
     player.rating = current;
   }
 

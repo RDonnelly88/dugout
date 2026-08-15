@@ -157,28 +157,36 @@ const DAY = 86_400_000;
 // drift and the screenshots stay comparable.
 const anchor = new Date("2026-08-13T19:00:00Z").getTime();
 
-const [finished, current] = await rest("seasons", {
+/**
+ * Five, because a squad that has run for a couple of years has about that many
+ * and one that has run for two months tells you nothing about how the app
+ * behaves. A player's season tabs used to be seeded with two, which is why
+ * they were never seen spilling out of the bar that holds them.
+ *
+ * Days are counted back from the anchor, so the fixture list never drifts.
+ */
+const SEASONS = [
+  { name: "Autumn 2024", from: 700, to: 620 },
+  { name: "Spring 2025", from: 612, to: 530 },
+  { name: "Autumn 2025", from: 522, to: 440 },
+  { name: "Spring 2026", from: 210, to: 120 },
+  { name: "Summer 2026", from: 112, to: null },
+];
+
+const seasons = await rest("seasons", {
   method: "POST",
-  body: JSON.stringify([
-    {
-      name: "Spring 2026",
+  body: JSON.stringify(
+    SEASONS.map(({ name, from, to }) => ({
+      name,
       team_id: team.id,
-      start_date: new Date(anchor - 210 * DAY).toISOString(),
-      end_date: new Date(anchor - 120 * DAY).toISOString(),
-      is_current: false,
-      is_finished: true,
-    },
-    {
-      name: "Summer 2026",
-      team_id: team.id,
-      start_date: new Date(anchor - 112 * DAY).toISOString(),
+      start_date: new Date(anchor - from * DAY).toISOString(),
       // Explicitly null rather than omitted: PostgREST rejects a bulk insert
       // whose objects don't all carry the same keys.
-      end_date: null,
-      is_current: true,
-      is_finished: false,
-    },
-  ]),
+      end_date: to === null ? null : new Date(anchor - to * DAY).toISOString(),
+      is_current: to === null,
+      is_finished: to !== null,
+    }))
+  ),
 });
 
 // ── results ───────────────────────────────────────────────────────────────
@@ -229,19 +237,19 @@ function fixture(seasonId, date) {
   };
 }
 
+// One game a week through each season, up to its end or to the anchor for the
+// one still running.
 const fixtures = [];
-// Spring: a completed season, one game a week.
-for (let w = 0; w < 13; w++) {
-  fixtures.push(fixture(finished.id, anchor - (203 - w * 7) * DAY));
-}
-// Summer: in progress, up to the anchor.
-for (let w = 0; w < 16; w++) {
-  fixtures.push(fixture(current.id, anchor - (112 - w * 7) * DAY));
-}
+SEASONS.forEach(({ from, to }, i) => {
+  const last = to ?? 0;
+  for (let day = from - 7; day > last; day -= 7) {
+    fixtures.push(fixture(seasons[i].id, anchor - day * DAY));
+  }
+});
 
 await rest("matches", { method: "POST", body: JSON.stringify(fixtures) });
 
 console.log(
-  `Seeded ${players.length} players, 2 seasons and ${fixtures.length} matches.\n` +
+  `Seeded ${players.length} players, ${seasons.length} seasons and ${fixtures.length} matches.\n` +
     `Sign in at http://localhost:3000/login as ${EMAIL} / ${PASSWORD}`
 );

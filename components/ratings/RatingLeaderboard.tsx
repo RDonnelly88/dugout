@@ -50,8 +50,7 @@ export default function RatingLeaderboard({
   if (ratings.length === 0) {
     return (
       <p className="py-10 text-center text-sm text-muted-foreground">
-        Nobody has played {ELO.provisionalGames} games yet, so no rating has
-        settled. Keep going.
+        Nobody has played yet. A rating appears after somebody&apos;s first game.
       </p>
     );
   }
@@ -68,7 +67,10 @@ export default function RatingLeaderboard({
         if (!player) return null;
 
         const share = (rating.rating - low) / span;
-        const last = rating.history.at(-1);
+        // What the last match did to them, whether or not they were in it —
+        // rather than what their own last match did, which may have been in
+        // March and reads as though they had just moved.
+        const played = rating.missed === 0;
 
         return (
           <li key={rating.playerId}>
@@ -99,6 +101,19 @@ export default function RatingLeaderboard({
               <span className="relative hidden text-xs text-muted-foreground sm:block">
                 {rating.games} games
               </span>
+              {/* Shown from the first game rather than held back for ten, so a
+                  new squad has a table. Marked, because it is still moving
+                  several times faster than everyone else's. */}
+              {rating.provisional && (
+                <span
+                  className="relative hidden shrink-0 rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-muted-foreground sm:block"
+                  title={`Settles after ${ELO.provisionalGames} games — ${
+                    ELO.provisionalGames - rating.games
+                  } to go`}
+                >
+                  settling
+                </span>
+              )}
               {/* Said in words, not just an icon and a number. "−59" beside an
                   hourglass told you nothing about what had happened. */}
               {rating.drift >= 1 && (
@@ -110,11 +125,22 @@ export default function RatingLeaderboard({
                   missed {rating.missed}, −{Math.round(rating.drift)}
                 </span>
               )}
-              {last && (
-                <span className="relative w-12 text-right text-xs">
-                  <Delta change={last.change} />
-                </span>
-              )}
+              <span
+                // Wide enough for an arrow and two digits. At w-12 a swing of
+                // twelve points rendered as "1".
+                className="relative w-14 shrink-0 text-right text-xs"
+                title={
+                  played
+                    ? "Change from the last match"
+                    : `Missed the last match. ${
+                        rating.lastChange === 0
+                          ? "Still inside the grace, so nothing moved."
+                          : "Drifting back towards " + ELO.start + "."
+                      }`
+                }
+              >
+                <Delta change={rating.lastChange} />
+              </span>
               <span className="relative w-14 text-right text-base font-bold tabular">
                 {displayRating(rating.rating)}
               </span>
