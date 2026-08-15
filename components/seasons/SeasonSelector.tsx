@@ -45,7 +45,7 @@ const SeasonSelector = ({ seasons, currentSeasonId }: SeasonSelectorProps) => {
           >
             {season.name}
             {season.isCurrent && (
-              <span className="ml-2 rounded-full bg-green-500 h-2 w-2"></span>
+              <span className="ml-2 rounded-full bg-win h-2 w-2"></span>
             )}
           </DropdownMenuItem>
         ))}

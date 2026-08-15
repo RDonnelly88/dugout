@@ -34,14 +34,14 @@ const PlayerSeasonStars = ({ playerId, size = "sm", className = "" }: PlayerSeas
   // Add gold stars
   for (let i = 0; i < Math.min(awards.gold, 3); i++) {
     stars.push(
-      <Star key={`gold-${i}`} className={`${iconSize} text-amber-400 fill-amber-400`} />
+      <Star key={`gold-${i}`} className={`${iconSize} text-draw fill-amber-400`} />
     );
   }
   
   // Add silver stars
   for (let i = 0; i < Math.min(awards.silver, 3 - stars.length); i++) {
     stars.push(
-      <Star key={`silver-${i}`} className={`${iconSize} text-gray-400 fill-gray-400`} />
+      <Star key={`silver-${i}`} className={`${iconSize} text-muted-foreground fill-gray-400`} />
     );
   }
   
@@ -58,7 +58,7 @@ const PlayerSeasonStars = ({ playerId, size = "sm", className = "" }: PlayerSeas
     <div className={`inline-flex items-center gap-0.5 ${className}`}>
       {stars}
       {remainingAwards > 0 && (
-        <span className="text-xs text-gray-500 font-medium ml-1">+{remainingAwards}</span>
+        <span className="text-xs text-muted-foreground font-medium ml-1">+{remainingAwards}</span>
       )}
     </div>
   );

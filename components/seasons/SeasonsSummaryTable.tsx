@@ -5,9 +5,9 @@ import React from "react";
 import { Trophy, Medal } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { SeasonChampion } from "@/types";
+import PlayerAvatar from "@/components/players/PlayerAvatar";
 
 interface SeasonsSummaryTableProps {
   seasonsData: {
@@ -21,7 +21,7 @@ interface SeasonsSummaryTableProps {
 
 const SeasonsSummaryTable: React.FC<SeasonsSummaryTableProps> = ({ seasonsData }) => {
   return (
-    <Card className="bg-gray-900 border-gray-800">
+    <Card className="bg-surface border-border">
       <CardHeader>
         <CardTitle>Seasons Summary</CardTitle>
         <CardDescription>
@@ -51,7 +51,7 @@ const SeasonsSummaryTable: React.FC<SeasonsSummaryTableProps> = ({ seasonsData }
                       <div className="font-medium">{season.name}</div>
                       <div className="flex items-center mt-1">
                         {season.isCurrent && (
-                          <Badge className="mr-2 bg-green-500 text-xs">Current</Badge>
+                          <Badge className="mr-2 bg-win text-xs">Current</Badge>
                         )}
                         {season.isFinished && (
                           <Badge variant="outline" className="text-xs">Finished</Badge>
@@ -63,13 +63,10 @@ const SeasonsSummaryTable: React.FC<SeasonsSummaryTableProps> = ({ seasonsData }
                   <TableCell>
                     {first ? (
                       <Link href={`/players/${first.playerId}`} className="flex items-center space-x-2 hover:underline">
-                        <Avatar className="h-6 w-6 bg-gray-800">
-                          <AvatarImage src={first.playerImage ?? undefined} alt={first.playerName} />
-                          <AvatarFallback>{first.playerName.charAt(0)}</AvatarFallback>
-                        </Avatar>
+                        <PlayerAvatar name={first.playerName} image={first.playerImage} size="xs" className="bg-surface-2" />
                         <div className="flex items-center">
                           <span>{first.playerName}</span>
-                          <Trophy className="h-4 w-4 ml-1 text-amber-400" />
+                          <Trophy className="h-4 w-4 ml-1 text-draw" />
                         </div>
                       </Link>
                     ) : (
@@ -82,10 +79,7 @@ const SeasonsSummaryTable: React.FC<SeasonsSummaryTableProps> = ({ seasonsData }
                   <TableCell>
                     {second ? (
                       <Link href={`/players/${second.playerId}`} className="flex items-center space-x-2 hover:underline">
-                        <Avatar className="h-6 w-6 bg-gray-800">
-                          <AvatarImage src={second.playerImage ?? undefined} alt={second.playerName} />
-                          <AvatarFallback>{second.playerName.charAt(0)}</AvatarFallback>
-                        </Avatar>
+                        <PlayerAvatar name={second.playerName} image={second.playerImage} size="xs" className="bg-surface-2" />
                         <div className="flex items-center">
                           <span>{second.playerName}</span>
                           <Medal className="h-4 w-4 ml-1 text-slate-400" />
@@ -99,10 +93,7 @@ const SeasonsSummaryTable: React.FC<SeasonsSummaryTableProps> = ({ seasonsData }
                   <TableCell>
                     {third ? (
                       <Link href={`/players/${third.playerId}`} className="flex items-center space-x-2 hover:underline">
-                        <Avatar className="h-6 w-6 bg-gray-800">
-                          <AvatarImage src={third.playerImage ?? undefined} alt={third.playerName} />
-                          <AvatarFallback>{third.playerName.charAt(0)}</AvatarFallback>
-                        </Avatar>
+                        <PlayerAvatar name={third.playerName} image={third.playerImage} size="xs" className="bg-surface-2" />
                         <div className="flex items-center">
                           <span>{third.playerName}</span>
                           <Medal className="h-4 w-4 ml-1 text-amber-700" />

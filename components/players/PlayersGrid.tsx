@@ -6,6 +6,7 @@ import { Player, PlayerFormResult, SeasonPlayerStats } from "@/types";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PlayerCard from "./PlayerCard";
+import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 
 interface PlayersGridProps {
   players: Player[];
@@ -26,6 +27,10 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
   onDeleteClick,
   searchTerm,
 }) => {
+  // One query for the whole grid. Asking per card would open a dozen requests
+  // for the same answer and let them arrive at different moments.
+  const { recordFor } = usePlayerRecords();
+
   // Filter players based on search term
   const filteredPlayers = players.filter(player =>
     player.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -36,7 +41,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="shimmer h-[200px] bg-gray-900 border-gray-800 rounded-lg" />
+          <div key={i} className="shimmer h-[200px] bg-surface border-border rounded-lg" />
         ))}
       </div>
     );
@@ -45,7 +50,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
   // No players found
   if (filteredPlayers.length === 0) {
     return (
-      <div className="text-center py-12 bg-gray-900 rounded-lg">
+      <div className="text-center py-12 bg-surface rounded-lg">
         <p className="text-muted-foreground mb-4">
           {searchTerm ? "No players match your search" : "No players added yet"}
         </p>
@@ -83,6 +88,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
             player={player}
             seasonId={currentSeasonId}
             seasonStats={seasonStats}
+            record={recordFor(player.id, player.name)}
             formResults={formResults}
             isLoadingForms={isLoadingForms}
             onDeleteClick={onDeleteClick}

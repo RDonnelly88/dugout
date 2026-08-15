@@ -1,112 +1,84 @@
-
 import { useState } from "react";
+import { ImagePlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { ImagePlus, X } from "lucide-react";
-import * as LucideIcons from "lucide-react";
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-// Avatar icons from Lucide React
-const avatarIcons = [
-  "User", "UserRound", "UserCircle", "Ghost", "Smile", "Robot", 
-  "PersonStanding", "UserCheck", "UserCog", "UserPlus", "Medal", 
-  "Trophy", "Crown", "Star", "Heart", "CircleUser"
-];
+import PlayerAvatar from "@/components/players/PlayerAvatar";
+import { AVATAR_ICON_NAMES, AVATAR_ICONS, toIconValue } from "@/lib/avatars";
 
 interface PlayerImageUploadProps {
   imageUrl: string | null;
   onImageChange: (imageUrl: string | null) => void;
+  /** Shown in the preview when nothing is chosen. */
+  playerName?: string;
 }
 
-const PlayerImageUpload = ({ imageUrl, onImageChange }: PlayerImageUploadProps) => {
+/**
+ * Avatar picker.
+ *
+ * The preview is the same component every other page renders a player with, so
+ * what you choose here is exactly what you will see on the card, in the table
+ * and in the randomiser — rather than the picker being the one place a choice
+ * looked right.
+ */
+const PlayerImageUpload = ({
+  imageUrl,
+  onImageChange,
+  playerName = "",
+}: PlayerImageUploadProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  // Check if imageUrl is a data URL (old uploaded image) or an icon name
-  const isDataUrl = imageUrl?.startsWith('data:');
-  const selectedIcon = !isDataUrl && imageUrl ? imageUrl : null;
-
-  const handleSelectAvatar = (iconName: string) => {
-    onImageChange(`icon:${iconName}`);
-    setIsMenuOpen(false);
-  };
-
-  const handleRemoveAvatar = () => {
-    onImageChange(null);
-  };
-
-  // Render the selected avatar or uploaded image
-  const renderSelectedAvatar = () => {
-    if (!imageUrl) return null;
-
-    if (isDataUrl) {
-      // Render uploaded image
-      return (
-        <div className="relative h-16 w-16 rounded-full overflow-hidden border border-border">
-          <img src={imageUrl} alt="Player avatar" className="object-cover w-full h-full" />
-          <Button 
-            size="icon" 
-            variant="destructive" 
-            className="absolute top-0 right-0 h-6 w-6 rounded-full" 
-            onClick={handleRemoveAvatar}
-          >
-            <X className="h-3 w-3" />
-          </Button>
-        </div>
-      );
-    }
-
-    if (selectedIcon) {
-      // Extract icon name from the format "icon:IconName"
-      const iconName = selectedIcon.replace('icon:', '');
-      const IconComponent = (LucideIcons as any)[iconName];
-      
-      return (
-        <div className="relative h-16 w-16 rounded-full overflow-hidden bg-secondary flex items-center justify-center border border-border">
-          {IconComponent && <IconComponent className="h-8 w-8" />}
-          <Button 
-            size="icon" 
-            variant="destructive" 
-            className="absolute top-0 right-0 h-6 w-6 rounded-full" 
-            onClick={handleRemoveAvatar}
-          >
-            <X className="h-3 w-3" />
-          </Button>
-        </div>
-      );
-    }
-
-    return null;
-  };
 
   return (
     <div>
-      <Label htmlFor="avatar">Avatar</Label>
-      <div className="flex items-center gap-4 mt-2">
-        {renderSelectedAvatar()}
-        
+      <Label>Avatar</Label>
+      <div className="mt-2 flex items-center gap-4">
+        <div className="relative">
+          <PlayerAvatar name={playerName} image={imageUrl} size="lg" />
+          {imageUrl && (
+            <Button
+              type="button"
+              size="icon"
+              variant="destructive"
+              aria-label="Remove avatar"
+              className="absolute -right-1 -top-1 h-6 w-6 rounded-full"
+              onClick={() => onImageChange(null)}
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+
         <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button type="button" variant="outline" className="gap-2">
               <ImagePlus className="h-4 w-4" />
-              {imageUrl ? "Change Avatar" : "Select Avatar"}
+              {imageUrl ? "Change avatar" : "Choose avatar"}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-64 p-2">
-            <div className="grid grid-cols-4 gap-2">
-              {avatarIcons.map((iconName) => {
-                const IconComponent = (LucideIcons as any)[iconName];
+          <DropdownMenuContent align="start" className="w-72 p-2">
+            <div className="grid grid-cols-5 gap-1">
+              {AVATAR_ICON_NAMES.map((iconName) => {
+                const Icon = AVATAR_ICONS[iconName];
+                const value = toIconValue(iconName);
+                const selected = imageUrl === value;
                 return (
                   <Button
                     key={iconName}
-                    variant={selectedIcon === `icon:${iconName}` ? "secondary" : "ghost"}
-                    className="h-12 w-12 p-0 rounded-full flex items-center justify-center"
-                    onClick={() => handleSelectAvatar(iconName)}
+                    type="button"
+                    variant={selected ? "secondary" : "ghost"}
+                    aria-label={iconName}
+                    aria-pressed={selected}
+                    className="flex h-11 w-11 items-center justify-center rounded-full p-0"
+                    onClick={() => {
+                      onImageChange(value);
+                      setIsMenuOpen(false);
+                    }}
                   >
-                    {IconComponent && <IconComponent className="h-6 w-6" />}
+                    <Icon className="h-5 w-5" />
                   </Button>
                 );
               })}

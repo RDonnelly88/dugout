@@ -14,15 +14,22 @@ npm run dev      # http://localhost:3000
 The two values come from the Supabase dashboard under **Project Settings → API
 Keys**, or from `vercel env pull .env.local` once the project is linked.
 
-To run against a local database instead of the real one:
+To work against a local database with a squad already in it:
 
 ```bash
-supabase start   # needs Docker; applies every migration to a fresh Postgres
+supabase start       # needs Docker; applies every migration to a fresh Postgres
+npm run seed:local   # twelve players, two seasons, a season and a half of results
 ```
 
 Then point `.env.local` at the stack it prints — the API URL and the anon key
-from `supabase status`. `supabase stop` when you're done; the containers are
-several GB.
+from `supabase status` — and sign in as `demo@example.test` with the password
+the seed prints. `supabase stop` when you're done; the containers are several
+GB.
+
+The seed comes from a fixed generator, so a second run produces the same squad.
+Each player carries a hidden strength that only weights the scorelines, so the
+table settles into an order rather than everyone converging on half their
+games. Nothing stores it and the app never sees it.
 
 | Service | URL |
 |---|---|
@@ -44,9 +51,12 @@ Never put the service-role key in this file.
 fails with a readable message rather than surfacing later as `undefined`.
 
 **`.env.local` points at production unless you change it.** Out of the box
-`npm run dev` reads and writes the real database — there is no seed script, so
-a local stack starts empty and the quickest way to see real data is still to
-point at the hosted project. Be careful what you click.
+`npm run dev` reads and writes the real database. Be careful what you click.
+
+The end-to-end specs never touch it: they run their own dev server on port 3100
+with the local stack's keys, because they write data and inheriting whichever
+database a running server was started against is how a test suite ends up
+editing real matches.
 
 ## Before you push
 
@@ -74,18 +84,38 @@ sweep.
 
 ## Testing
 
-`npm run test` covers the pure logic in `lib/` — currently the ranking rules.
+`npm run test` covers the pure logic in `lib/` — the ranking rules, the Elo
+model, team balancing, recent form, head-to-head records and CSV escaping.
 Tests import as `@/lib/…`, the same path the app uses, via the alias in
 `vitest.config.ts`.
 
-Anything touching Supabase isn't covered, and neither is any page. If you
-change a page, run it and look at it.
+```bash
+npm run e2e         # sign in and drive the app
+npm run e2e:shots   # photograph every page, both themes, desktop and mobile
+```
+
+Both need `supabase start` and `npm run seed:local` first.
+
+The screenshots are not assertions — they are a folder to open. Reviewing a
+visual change means looking at them, which is the only way to catch something
+that renders correctly and looks wrong. They also catch what a person scrolling
+past would not: the matches list was found to be over thirty-two thousand
+pixels tall on a phone because Playwright refused to photograph it.
+
+The specs force `prefers-reduced-motion`. Playwright will not click an element
+whose bounding box is still moving, so anything that animates indefinitely
+would time out — and it stops the record catching a chart mid-draw.
+
+Nothing touching Supabase has unit coverage. If you change a page, run it and
+look at it.
 
 ## Database
 
-The schema lives in `supabase/migrations/`, starting from a single snapshot
-captured from the hosted project — Lovable applied its changes directly to the
-database, so nothing before that point was ever written down.
+The schema lives in `supabase/migrations/`, starting from a snapshot captured
+from the hosted project, since nothing before that point was ever written down.
+
+`supabase db reset` rebuilds the local database from those migrations and drops
+whatever was in it, so re-run `npm run seed:local` afterwards.
 
 After any migration, regenerate the types:
 

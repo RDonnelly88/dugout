@@ -6,17 +6,19 @@ import React from "react";
 import { ArrowLeft, Edit, CalendarDays, Clock, Users, MapPin, Trophy, TrendingUp, TrendingDown, MinusCircle, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { usePlayerDetail } from "@/hooks/usePlayerDetail";
 import { usePlayerForm } from "@/hooks/usePlayerForm";
 import { usePlayerRank } from "@/hooks/usePlayerRank";
+import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import PlayerSeasonStats from "@/components/players/PlayerSeasonStats";
 import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import PlayerRelationships from "@/components/players/PlayerRelationships";
 import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
 import type { PlayerFormResult } from "@/types";
+import PlayerAvatar from "@/components/players/PlayerAvatar";
+import PlayerRatingCard from "@/components/players/PlayerRatingCard";
 
 const PlayerDetail = () => {
   const {
@@ -30,6 +32,12 @@ const PlayerDetail = () => {
     isLoading,
     router
   } = usePlayerDetail();
+
+  // The same all-time record every other surface reads. Resolved before the
+  // early returns below, because hooks cannot run conditionally; an unknown id
+  // yields a record of zeroes rather than undefined.
+  const { recordFor } = usePlayerRecords();
+  const record = recordFor(player?.id ?? "", player?.name ?? "");
 
   // Get current season
   const currentSeason = seasons.find(s => s.isCurrent);
@@ -116,10 +124,7 @@ const PlayerDetail = () => {
       <Card className="mb-8 overflow-hidden">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row items-center gap-6">
-            <Avatar className="h-28 w-28">
-              <AvatarImage src={player.image ?? undefined} alt={player.name} />
-              <AvatarFallback className="text-4xl">{player.name.charAt(0)}</AvatarFallback>
-            </Avatar>
+            <PlayerAvatar name={player.name} image={player.image} size="xl" />
             
             <div className="flex-1 text-center md:text-left">
               <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
@@ -128,16 +133,16 @@ const PlayerDetail = () => {
               </div>
               
               <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
-                <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200">
+                <Badge variant="outline" className="bg-info/10 text-info border-info/30">
                   <Users className="h-3 w-3 mr-1" />
-                  {player.stats.played} Matches
+                  {record.played} Matches
                 </Badge>
-                <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
+                <Badge variant="outline" className="bg-draw/10 text-draw border-draw/30">
                   <CalendarDays className="h-3 w-3 mr-1" />
                   {seasons.length} Seasons
                 </Badge>
                 {currentSeason && (
-                  <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200">
+                  <Badge variant="outline" className="bg-win/10 text-win border-win/30">
                     <Trophy className="h-3 w-3 mr-1" />
                     {hasPlayedCurrentSeason && playerRank 
                       ? `Rank: #${playerRank}` 
@@ -160,14 +165,14 @@ const PlayerDetail = () => {
         </CardContent>
       </Card>
 
-      {/* Season stats summary card */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <PlayerRatingCard playerId={player.id} />
         {/* Current Season Stats */}
         {currentSeasonStats && currentSeason && (
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center">
-                <Trophy className="h-5 w-5 mr-2 text-amber-400" />
+                <Trophy className="h-5 w-5 mr-2 text-draw" />
                 Current Season Stats ({currentSeason.name})
                 <Badge className="ml-2" variant="outline">
                   <Flag className="h-3 w-3 mr-1" />
@@ -179,33 +184,33 @@ const PlayerDetail = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-4 gap-4">
-                <div className="bg-blue-900/20 rounded-lg p-4 text-center">
+                <div className="bg-info/15 rounded-lg p-4 text-center">
                   <div className="flex justify-center mb-2">
-                    <Users className="h-5 w-5 text-blue-400" />
+                    <Users className="h-5 w-5 text-info" />
                   </div>
                   <div className="text-2xl font-bold">{currentSeasonStats.played}</div>
-                  <div className="text-sm text-blue-400">Played</div>
+                  <div className="text-sm text-info">Played</div>
                 </div>
-                <div className="bg-green-900/20 rounded-lg p-4 text-center">
+                <div className="bg-win/15 rounded-lg p-4 text-center">
                   <div className="flex justify-center mb-2">
-                    <TrendingUp className="h-5 w-5 text-green-400" />
+                    <TrendingUp className="h-5 w-5 text-win" />
                   </div>
                   <div className="text-2xl font-bold">{currentSeasonStats.wins}</div>
-                  <div className="text-sm text-green-400">Wins</div>
+                  <div className="text-sm text-win">Wins</div>
                 </div>
-                <div className="bg-amber-900/20 rounded-lg p-4 text-center">
+                <div className="bg-draw/15 rounded-lg p-4 text-center">
                   <div className="flex justify-center mb-2">
-                    <MinusCircle className="h-5 w-5 text-amber-400" />
+                    <MinusCircle className="h-5 w-5 text-draw" />
                   </div>
                   <div className="text-2xl font-bold">{currentSeasonStats.draws}</div>
-                  <div className="text-sm text-amber-400">Draws</div>
+                  <div className="text-sm text-draw">Draws</div>
                 </div>
-                <div className="bg-red-900/20 rounded-lg p-4 text-center">
+                <div className="bg-loss/15 rounded-lg p-4 text-center">
                   <div className="flex justify-center mb-2">
-                    <TrendingDown className="h-5 w-5 text-red-400" />
+                    <TrendingDown className="h-5 w-5 text-loss" />
                   </div>
                   <div className="text-2xl font-bold">{currentSeasonStats.losses}</div>
-                  <div className="text-sm text-red-400">Losses</div>
+                  <div className="text-sm text-loss">Losses</div>
                 </div>
               </div>
               <div className="mt-4 text-muted-foreground text-sm">
@@ -218,53 +223,6 @@ const PlayerDetail = () => {
           </Card>
         )}
 
-        {/* All-time Stats */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center">
-              <Users className="h-5 w-5 mr-2 text-blue-400" />
-              All-Time Stats
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-4 gap-4">
-              <div className="bg-blue-900/20 rounded-lg p-4 text-center">
-                <div className="flex justify-center mb-2">
-                  <Users className="h-5 w-5 text-blue-400" />
-                </div>
-                <div className="text-2xl font-bold">{player.stats.played}</div>
-                <div className="text-sm text-blue-400">Played</div>
-              </div>
-              <div className="bg-green-900/20 rounded-lg p-4 text-center">
-                <div className="flex justify-center mb-2">
-                  <TrendingUp className="h-5 w-5 text-green-400" />
-                </div>
-                <div className="text-2xl font-bold">{player.stats.won}</div>
-                <div className="text-sm text-green-400">Wins</div>
-              </div>
-              <div className="bg-amber-900/20 rounded-lg p-4 text-center">
-                <div className="flex justify-center mb-2">
-                  <MinusCircle className="h-5 w-5 text-amber-400" />
-                </div>
-                <div className="text-2xl font-bold">{player.stats.drawn}</div>
-                <div className="text-sm text-amber-400">Draws</div>
-              </div>
-              <div className="bg-red-900/20 rounded-lg p-4 text-center">
-                <div className="flex justify-center mb-2">
-                  <TrendingDown className="h-5 w-5 text-red-400" />
-                </div>
-                <div className="text-2xl font-bold">{player.stats.lost}</div>
-                <div className="text-sm text-red-400">Losses</div>
-              </div>
-            </div>
-            <div className="mt-4 text-muted-foreground text-sm">
-              <p>
-                All-time, {player.name} has played {player.stats.played} matches
-                with a win rate of {Math.round((player.stats.won / Math.max(1, player.stats.played)) * 100)}%.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       <Tabs defaultValue="stats" className="mb-8">
@@ -276,7 +234,7 @@ const PlayerDetail = () => {
         <TabsContent value="stats">
           <PlayerSeasonStats 
             playerName={player.name}
-            overallStats={player.stats}
+            overallStats={record}
             seasonStats={seasonStats}
             onSeasonSelect={setSelectedSeasonId}
           />

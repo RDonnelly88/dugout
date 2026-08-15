@@ -3,16 +3,13 @@ import React from "react";
 import { Trophy, TrendingUp, TrendingDown, MinusCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { SeasonPlayerStats } from "@/types";
+import { PlayerRecord, SeasonPlayerStats } from "@/types";
+import { winRate } from "@/lib/player-stats";
 
 interface PlayerSeasonStatsProps {
   playerName: string;
-  overallStats: {
-    played: number;
-    won: number;
-    lost: number;
-    drawn: number;
-  };
+  /** All-time, from the shared `player_stats` view. */
+  overallStats: PlayerRecord;
   seasonStats: SeasonPlayerStats[];
   onSeasonSelect: (seasonId: string | null) => void;
 }
@@ -41,28 +38,28 @@ const PlayerSeasonStats = ({
               <StatCard 
                 label="Matches Played" 
                 value={overallStats.played}
-                icon={<Trophy className="h-5 w-5 text-blue-500" />}
+                icon={<Trophy className="h-5 w-5 text-info" />}
                 bgColor="bg-blue-50"
                 textColor="text-blue-800"
               />
               <StatCard 
                 label="Victories" 
-                value={overallStats.won}
-                icon={<TrendingUp className="h-5 w-5 text-green-500" />}
+                value={overallStats.wins}
+                icon={<TrendingUp className="h-5 w-5 text-win" />}
                 bgColor="bg-green-50"
                 textColor="text-green-800"
               />
               <StatCard 
                 label="Draws" 
-                value={overallStats.drawn}
-                icon={<MinusCircle className="h-5 w-5 text-amber-500" />}
+                value={overallStats.draws}
+                icon={<MinusCircle className="h-5 w-5 text-draw" />}
                 bgColor="bg-amber-50"
                 textColor="text-amber-800"
               />
               <StatCard 
                 label="Defeats" 
-                value={overallStats.lost}
-                icon={<TrendingDown className="h-5 w-5 text-red-500" />}
+                value={overallStats.losses}
+                icon={<TrendingDown className="h-5 w-5 text-loss" />}
                 bgColor="bg-red-50"
                 textColor="text-red-800"
               />
@@ -71,10 +68,9 @@ const PlayerSeasonStats = ({
             <div className="mt-6">
               <h3 className="text-lg font-medium mb-3">Stats Summary</h3>
               <p className="text-muted-foreground">
-                {playerName} has played a total of {overallStats.played} matches, 
-                winning {overallStats.won} ({Math.round((overallStats.won / overallStats.played) * 100) || 0}%), 
-                drawing {overallStats.drawn} ({Math.round((overallStats.drawn / overallStats.played) * 100) || 0}%), 
-                and losing {overallStats.lost} ({Math.round((overallStats.lost / overallStats.played) * 100) || 0}%).
+                {playerName} has played a total of {overallStats.played} matches,
+                winning {overallStats.wins} ({Math.round(winRate(overallStats) * 100)}%),
+                drawing {overallStats.draws}, and losing {overallStats.losses}.
               </p>
             </div>
           </TabsContent>
@@ -85,28 +81,28 @@ const PlayerSeasonStats = ({
                 <StatCard 
                   label="Matches Played" 
                   value={stat.played}
-                  icon={<Trophy className="h-5 w-5 text-blue-500" />}
+                  icon={<Trophy className="h-5 w-5 text-info" />}
                   bgColor="bg-blue-50"
                   textColor="text-blue-800"
                 />
                 <StatCard 
                   label="Victories" 
                   value={stat.wins}
-                  icon={<TrendingUp className="h-5 w-5 text-green-500" />}
+                  icon={<TrendingUp className="h-5 w-5 text-win" />}
                   bgColor="bg-green-50"
                   textColor="text-green-800"
                 />
                 <StatCard 
                   label="Draws" 
                   value={stat.draws}
-                  icon={<MinusCircle className="h-5 w-5 text-amber-500" />}
+                  icon={<MinusCircle className="h-5 w-5 text-draw" />}
                   bgColor="bg-amber-50"
                   textColor="text-amber-800"
                 />
                 <StatCard 
                   label="Defeats" 
                   value={stat.losses}
-                  icon={<TrendingDown className="h-5 w-5 text-red-500" />}
+                  icon={<TrendingDown className="h-5 w-5 text-loss" />}
                   bgColor="bg-red-50"
                   textColor="text-red-800"
                 />

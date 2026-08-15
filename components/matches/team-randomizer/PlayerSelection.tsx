@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
@@ -13,6 +12,8 @@ import PlayerFormDisplay from '@/components/players/PlayerFormDisplay';
 import { TrendingUp, Trophy, Flag, Zap } from "lucide-react";
 import { calculatePlayerRanks } from "@/lib/ranking-utils";
 import PlayerSelectionFilters from './PlayerSelectionFilters';
+import { usePlayerRecords } from "@/hooks/usePlayerRecords";
+import PlayerAvatar from "@/components/players/PlayerAvatar";
 
 interface PlayerSelectionProps {
   players: Player[];
@@ -29,7 +30,8 @@ const PlayerSelection = ({
 }: PlayerSelectionProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showActiveOnly, setShowActiveOnly] = useState(true);
-  
+  const { recordFor } = usePlayerRecords();
+
   const { data: currentSeason } = useQuery({
     queryKey: ['currentSeason'],
     queryFn: getCurrentSeason
@@ -62,37 +64,21 @@ const PlayerSelection = ({
       );
     }
     
-    // Debug logging
-    console.log('PlayerSelection: Sorting data available:');
-    console.log('- seasonPlayerStats count:', seasonPlayerStats.length);
-    console.log('- players count:', filtered.length);
-    if (seasonPlayerStats.length > 0) {
-      console.log('- sample season stat:', seasonPlayerStats[0]);
-    }
-    if (filtered.length > 0) {
-      const samplePlayer = filtered[0];
-      const sampleSeasonStat = seasonPlayerStats.find(stat => stat.playerId === samplePlayer.id);
-      console.log('- sample player:', samplePlayer.name, 'overall played:', samplePlayer.stats?.played);
-      console.log('- sample season stat for player:', sampleSeasonStat);
-    }
-    
     // Sort by frequency (games played) descending, then by name
     return filtered.sort((a, b) => {
       const aSeasonStats = seasonPlayerStats.find(stat => stat.playerId === a.id);
       const bSeasonStats = seasonPlayerStats.find(stat => stat.playerId === b.id);
       
       // Prioritize current season stats, fallback to overall stats
-      const aPlayed = aSeasonStats?.played || a.stats?.played || 0;
-      const bPlayed = bSeasonStats?.played || b.stats?.played || 0;
-      
-      console.log(`Comparing ${a.name} (${aPlayed}) vs ${b.name} (${bPlayed})`);
-      
+      const aPlayed = aSeasonStats?.played ?? recordFor(a.id, a.name).played;
+      const bPlayed = bSeasonStats?.played ?? recordFor(b.id, b.name).played;
+
       if (aPlayed !== bPlayed) {
         return bPlayed - aPlayed; // Most frequent first
       }
       return a.name.localeCompare(b.name); // Then alphabetically
     });
-  }, [players, searchTerm, showActiveOnly, seasonPlayerStats]);
+  }, [players, searchTerm, showActiveOnly, seasonPlayerStats, recordFor]);
 
   const filteredSelectedPlayers = filteredAndSortedPlayers.filter(player => 
     selectedPlayers.includes(player.id)
@@ -141,7 +127,7 @@ const PlayerSelection = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
         {filteredAndSortedPlayers.map(player => {
           const seasonStats = seasonPlayerStats.find(stat => stat.playerId === player.id);
-          const gamesPlayed = seasonStats?.played || player.stats?.played || 0;
+          const gamesPlayed = seasonStats?.played ?? recordFor(player.id, player.name).played;
           const isFrequentPlayer = gamesPlayed >= 5; // Consider frequent if played 5+ games
           
           return (
@@ -180,7 +166,7 @@ const PlayerSelection = ({
                         </div>
                       </div>
                     </HoverCardTrigger>
-                    <HoverCardContent className="w-72 p-3 bg-blue-950 border border-blue-500/30 text-white">
+                    <HoverCardContent className="w-72 p-3 bg-popover border border-border text-foreground">
                       <PlayerHoverContent 
                         player={player} 
                         currentSeasonId={currentSeason?.id || null}
@@ -235,7 +221,9 @@ const PlayerHoverContent = ({
     currentSeasonId,
     player.id
   );
-  
+  const { recordFor } = usePlayerRecords();
+  const record = recordFor(player.id, player.name);
+
   const playerSeasonStats = seasonPlayerStats.find(stat => stat.playerId === player.id);
   
   const hasPlayedGames = playerSeasonStats && playerSeasonStats.played > 0;
@@ -247,20 +235,12 @@ const PlayerHoverContent = ({
   return (
     <>
       <div className="flex space-x-3">
-        <Avatar className="h-12 w-12">
-          {player.image ? (
-            <AvatarImage src={player.image} alt={player.name} />
-          ) : (
-            <AvatarFallback className="bg-blue-700">
-              {player.name.charAt(0)}
-            </AvatarFallback>
-          )}
-        </Avatar>
+        <PlayerAvatar name={player.name} image={player.image} size="md" />
         <div>
           <h4 className="font-bold">{player.name}</h4>
           <div className="flex items-center text-xs">
-            <Flag className="h-3 w-3 text-yellow-500 mr-1" />
-            <span className="text-yellow-300">
+            <Flag className="h-3 w-3 text-draw mr-1" />
+            <span className="text-draw">
               {playerRank ? `Season rank: #${playerRank}` : hasPlayedGames ? 'Not ranked' : 'No games played'}
             </span>
           </div>
@@ -268,10 +248,10 @@ const PlayerHoverContent = ({
       </div>
       
       {playerSeasonStats && (
-        <div className="mt-3 p-2 bg-blue-900/50 rounded-md">
+        <div className="mt-3 p-2 bg-info/15 rounded-md">
           <div className="flex items-center mb-1">
-            <Trophy className="h-3 w-3 text-blue-300 mr-1" />
-            <h5 className="text-xs font-medium text-blue-300">Season Stats</h5>
+            <Trophy className="h-3 w-3 text-info mr-1" />
+            <h5 className="text-xs font-medium text-info">Season Stats</h5>
           </div>
           <div className="grid grid-cols-4 gap-1 text-center">
             <div>
@@ -280,43 +260,43 @@ const PlayerHoverContent = ({
             </div>
             <div>
               <span className="text-sm font-bold">{playerSeasonStats.wins}</span>
-              <span className="text-xs block text-green-300">Won</span>
+              <span className="text-xs block text-win">Won</span>
             </div>
             <div>
               <span className="text-sm font-bold">{playerSeasonStats.losses}</span>
-              <span className="text-xs block text-red-300">Lost</span>
+              <span className="text-xs block text-loss">Lost</span>
             </div>
             <div>
               <span className="text-sm font-bold">{playerSeasonStats.draws}</span>
-              <span className="text-xs block text-amber-300">Draw</span>
+              <span className="text-xs block text-draw">Draw</span>
             </div>
           </div>
         </div>
       )}
       
       <div className="mt-3 grid grid-cols-4 gap-2">
-        <div className="bg-blue-900/50 p-2 rounded-md text-center">
-          <div className="text-sm font-bold">{player.stats?.played || 0}</div>
-          <div className="text-xs text-blue-300">Played</div>
+        <div className="bg-info/15 p-2 rounded-md text-center">
+          <div className="text-sm font-bold">{record.played}</div>
+          <div className="text-xs text-info">Played</div>
         </div>
-        <div className="bg-green-900/50 p-2 rounded-md text-center">
-          <div className="text-sm font-bold">{player.stats?.won || 0}</div>
-          <div className="text-xs text-green-300">Won</div>
+        <div className="bg-win/15 p-2 rounded-md text-center">
+          <div className="text-sm font-bold">{record.wins}</div>
+          <div className="text-xs text-win">Won</div>
         </div>
-        <div className="bg-amber-900/50 p-2 rounded-md text-center">
-          <div className="text-sm font-bold">{player.stats?.drawn || 0}</div>
-          <div className="text-xs text-amber-300">Draw</div>
+        <div className="bg-draw/15 p-2 rounded-md text-center">
+          <div className="text-sm font-bold">{record.draws}</div>
+          <div className="text-xs text-draw">Draw</div>
         </div>
-        <div className="bg-red-900/50 p-2 rounded-md text-center">
-          <div className="text-sm font-bold">{player.stats?.lost || 0}</div>
-          <div className="text-xs text-red-300">Lost</div>
+        <div className="bg-loss/15 p-2 rounded-md text-center">
+          <div className="text-sm font-bold">{record.losses}</div>
+          <div className="text-xs text-loss">Lost</div>
         </div>
       </div>
       
-      <div className="mt-2 p-2 rounded-md bg-blue-900/30 border border-blue-500/20">
+      <div className="mt-2 p-2 rounded-md bg-info/15 border border-border">
         <div className="flex items-center mb-1">
-          <TrendingUp className="h-3 w-3 text-blue-300 mr-1" />
-          <h5 className="text-xs font-medium text-blue-300">Recent Form</h5>
+          <TrendingUp className="h-3 w-3 text-info mr-1" />
+          <h5 className="text-xs font-medium text-info">Recent Form</h5>
         </div>
         <div className="flex space-x-1">
           {isLoading ? (

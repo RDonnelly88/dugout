@@ -19,11 +19,11 @@ export function usePlayerMutation() {
         throw new Error("No team selected");
       }
       
-      console.log("Adding player with teamId:", currentTeam.id);
-      return addPlayer({ 
-        ...player, 
+      // No opening tally to seed: a record is counted from matches, so a new
+      // player already reads as nought played without anything being stored.
+      return addPlayer({
+        ...player,
         teamId: currentTeam.id,
-        stats: { played: 0, won: 0, lost: 0, drawn: 0 },
         image: player.imageUrl || null
       });
     },

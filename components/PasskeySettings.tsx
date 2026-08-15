@@ -130,7 +130,7 @@ export default function PasskeySettings() {
 
       <CardContent className="space-y-4">
         {error && (
-          <p role="alert" className="text-sm text-red-500">
+          <p role="alert" className="text-sm text-loss">
             {error}
           </p>
         )}
@@ -149,7 +149,7 @@ export default function PasskeySettings() {
             {passkeys.map((passkey) => (
               <li
                 key={passkey.id}
-                className="flex items-center justify-between gap-3 rounded-md border border-gray-800 p-3"
+                className="flex items-center justify-between gap-3 rounded-md border border-border p-3"
               >
                 {editing === passkey.id ? (
                   <>
@@ -209,7 +209,7 @@ export default function PasskeySettings() {
                         disabled={busy}
                         aria-label={`Remove ${passkey.friendly_name || "passkey"}`}
                       >
-                        <Trash2 className="h-4 w-4 text-red-400" />
+                        <Trash2 className="h-4 w-4 text-loss" />
                       </Button>
                     </div>
                   </>
@@ -220,7 +220,7 @@ export default function PasskeySettings() {
         )}
 
         {hasWebAuthn ? (
-          <Button onClick={register} disabled={busy} className="w-full">
+          <Button onClick={register} disabled={busy} className="w-full sm:w-auto">
             {busy ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" aria-hidden />

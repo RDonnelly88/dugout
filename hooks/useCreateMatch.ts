@@ -36,48 +36,30 @@ export const useCreateMatch = () => {
     }
   };
 
-  // `teamSize` is part of the caller's contract but not consulted: the split
-  // is always down the middle of whoever was selected.
-  const randomizeTeams = (players: Player[], _teamSize: number = 5) => {
-    setTeamA([]);
-    setTeamB([]);
-    
-    if (players.length === 0) {
-      toast({
-        title: "No players selected",
-        description: "Please select players to randomize teams.",
-        variant: "destructive"
-      });
-      return [];
-    }
-    
-    if (players.length < 2) {
+  /**
+   * Take the two sides as decided and record them.
+   *
+   * Deliberately does no splitting of its own. It used to be handed a flat
+   * list and reshuffle it, which quietly discarded whichever balance the
+   * randomiser had just worked out and dealt out on screen.
+   */
+  const randomizeTeams = (nextTeamA: Player[], nextTeamB: Player[]) => {
+    if (nextTeamA.length + nextTeamB.length < 2) {
       toast({
         title: "Not enough players",
         description: "You need at least 2 players to create teams.",
         variant: "destructive"
       });
-      return [];
+      return;
     }
-    
-    const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
-    
-    const halfIndex = Math.ceil(shuffledPlayers.length / 2);
-    const teamAPlayers = shuffledPlayers.slice(0, halfIndex);
-    const teamBPlayers = shuffledPlayers.slice(halfIndex);
-    
-    const teamAIds = teamAPlayers.map(player => player.id);
-    const teamBIds = teamBPlayers.map(player => player.id);
-    
-    setTeamA(teamAIds);
-    setTeamB(teamBIds);
-    
+
+    setTeamA(nextTeamA.map((player) => player.id));
+    setTeamB(nextTeamB.map((player) => player.id));
+
     toast({
-      title: "Teams created",
-      description: `Team A: ${teamAPlayers.length} players, Team B: ${teamBPlayers.length} players`
+      title: "Teams picked",
+      description: `${nextTeamA.length} against ${nextTeamB.length}.`
     });
-    
-    return players;
   };
 
   const createMatchMutation = useMutation({

@@ -50,19 +50,19 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
 
   const getRelationshipIcon = (type: string) => {
     switch (type) {
-      case "best": return <Crown className="h-4 w-4 text-amber-400" />;
-      case "worst": return <Snowflake className="h-4 w-4 text-blue-400" />;
+      case "best": return <Crown className="h-4 w-4 text-draw" />;
+      case "worst": return <Snowflake className="h-4 w-4 text-info" />;
       case "frequent": return <Heart className="h-4 w-4 text-pink-400" />;
-      case "tough": return <Swords className="h-4 w-4 text-red-400" />;
-      case "easy": return <Shield className="h-4 w-4 text-green-400" />;
+      case "tough": return <Swords className="h-4 w-4 text-loss" />;
+      case "easy": return <Shield className="h-4 w-4 text-win" />;
       default: return <Users className="h-4 w-4" />;
     }
   };
 
   const getWinRateColor = (winRate: number) => {
-    if (winRate >= 0.7) return "text-green-400";
-    if (winRate >= 0.5) return "text-amber-400";
-    return "text-red-400";
+    if (winRate >= 0.7) return "text-win";
+    if (winRate >= 0.5) return "text-draw";
+    return "text-loss";
   };
 
   const renderPlayerCard = (
@@ -73,13 +73,13 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
   ) => {
     if (!relationship) {
       return (
-        <Card className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 border-gray-700 hover:border-gray-600 transition-all duration-300">
+        <Card className="bg-gradient-to-br from-surface to-surface-2 border-border hover:border-gray-600 transition-all duration-300">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               {getRelationshipIcon(type)}
               <CardTitle className="text-lg">{title}</CardTitle>
             </div>
-            <CardDescription className="text-gray-400">{description}</CardDescription>
+            <CardDescription className="text-muted-foreground">{description}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-center py-6 text-muted-foreground">
@@ -97,7 +97,7 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
     const wins = isTeammate ? relationship.winsWithSameTeam : relationship.winsAgainst;
 
     return (
-      <Card className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 border-gray-700 hover:border-gray-600 transition-all duration-300 group">
+      <Card className="bg-gradient-to-br from-surface to-surface-2 border-border hover:border-gray-600 transition-all duration-300 group">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -108,18 +108,18 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
               {matches} matches
             </Badge>
           </div>
-          <CardDescription className="text-gray-400">{description}</CardDescription>
+          <CardDescription className="text-muted-foreground">{description}</CardDescription>
         </CardHeader>
         <CardContent>
           <Link 
             href={`/players/${relationship.playerId}`} 
-            className="block hover:bg-gray-800/50 p-3 rounded-lg transition-all duration-300 group-hover:bg-gray-800/30"
+            className="block hover:bg-surface-2/50 p-3 rounded-lg transition-all duration-300 group-hover:bg-surface-2/30"
           >
             <div className="flex items-start gap-4">
               <div className="relative">
                 <Avatar className="h-16 w-16 ring-2 ring-gray-600 group-hover:ring-gray-500 transition-all">
                   <AvatarImage src={relationship.playerImage} alt={relationship.playerName} />
-                  <AvatarFallback className="text-xl font-bold bg-gradient-to-br from-blue-600 to-purple-600 text-white">
+                  <AvatarFallback className="text-xl font-bold bg-gradient-to-br from-blue-600 to-purple-600 text-foreground">
                     {relationship.playerName.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
@@ -135,14 +135,14 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
                 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-400">Win Rate</span>
+                    <span className="text-sm text-muted-foreground">Win Rate</span>
                     <span className={`text-sm font-bold ${getWinRateColor(winRate)}`}>
                       {Math.round(winRate * 100)}%
                     </span>
                   </div>
                   <Progress 
                     value={winRate * 100} 
-                    className="h-2 bg-gray-800" 
+                    className="h-2 bg-surface-2" 
                     indicatorClassName={`transition-all ${
                       winRate >= 0.7 ? 'bg-gradient-to-r from-green-500 to-green-400' :
                       winRate >= 0.5 ? 'bg-gradient-to-r from-amber-500 to-amber-400' :
@@ -152,12 +152,12 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
                   
                   <div className="grid grid-cols-2 gap-4 pt-2">
                     <div className="text-center">
-                      <div className="text-xl font-bold text-green-400">{wins}</div>
-                      <div className="text-xs text-gray-500">Wins</div>
+                      <div className="text-xl font-bold text-win">{wins}</div>
+                      <div className="text-xs text-muted-foreground">Wins</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-xl font-bold text-blue-400">{matches}</div>
-                      <div className="text-xs text-gray-500">Total</div>
+                      <div className="text-xl font-bold text-info">{matches}</div>
+                      <div className="text-xs text-muted-foreground">Total</div>
                     </div>
                   </div>
                 </div>
@@ -182,11 +182,11 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card className="bg-gradient-to-br from-green-900/20 to-green-800/20 border-green-700/50">
           <CardContent className="p-4 text-center">
-            <Flame className="h-8 w-8 mx-auto mb-2 text-green-400" />
-            <div className="text-2xl font-bold text-green-400">
+            <Flame className="h-8 w-8 mx-auto mb-2 text-win" />
+            <div className="text-2xl font-bold text-win">
               {currentEnhancedStats.bestWinStreak?.count || 0}
             </div>
-            <div className="text-sm text-green-300">Best Win Streak</div>
+            <div className="text-sm text-win">Best Win Streak</div>
             {currentEnhancedStats.bestWinStreak && (
               <div className="text-xs text-green-200/60 mt-1">
                 {formatStreakDates(currentEnhancedStats.bestWinStreak.startDate, currentEnhancedStats.bestWinStreak.endDate)}
@@ -197,11 +197,11 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
         
         <Card className="bg-gradient-to-br from-red-900/20 to-red-800/20 border-red-700/50">
           <CardContent className="p-4 text-center">
-            <Snowflake className="h-8 w-8 mx-auto mb-2 text-red-400" />
-            <div className="text-2xl font-bold text-red-400">
+            <Snowflake className="h-8 w-8 mx-auto mb-2 text-loss" />
+            <div className="text-2xl font-bold text-loss">
               {currentEnhancedStats.worstLossStreak?.count || 0}
             </div>
-            <div className="text-sm text-red-300">Worst Loss Streak</div>
+            <div className="text-sm text-loss">Worst Loss Streak</div>
             {currentEnhancedStats.worstLossStreak && (
               <div className="text-xs text-red-200/60 mt-1">
                 {formatStreakDates(currentEnhancedStats.worstLossStreak.startDate, currentEnhancedStats.worstLossStreak.endDate)}
@@ -212,11 +212,11 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
         
         <Card className="bg-gradient-to-br from-blue-900/20 to-blue-800/20 border-blue-700/50">
           <CardContent className="p-4 text-center">
-            <Zap className="h-8 w-8 mx-auto mb-2 text-blue-400" />
-            <div className="text-2xl font-bold text-blue-400">
+            <Zap className="h-8 w-8 mx-auto mb-2 text-info" />
+            <div className="text-2xl font-bold text-info">
               {currentEnhancedStats.currentStreak?.count || 0}
             </div>
-            <div className="text-sm text-blue-300">Current Streak</div>
+            <div className="text-sm text-info">Current Streak</div>
             {currentEnhancedStats.currentStreak && (
               <div className="text-xs text-blue-200/60 mt-1">
                 {currentEnhancedStats.currentStreak.count} {currentEnhancedStats.currentStreak.type}
@@ -247,26 +247,26 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <Card className="bg-gradient-to-br from-green-900/10 to-green-800/10 border-green-700/30">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-400">
+            <CardTitle className="flex items-center gap-2 text-win">
               <Flame className="h-5 w-5" />
               Strengths
             </CardTitle>
-            <CardDescription className="text-green-300/80">
+            <CardDescription className="text-win/80">
               Opponents you dominate (70%+ win rate against)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {currentEnhancedStats.dominantOpponents.slice(0, 3).map((opponent, index) => (
-              <div key={opponent.playerId} className="flex items-center justify-between p-2 bg-green-900/20 rounded-lg">
+              <div key={opponent.playerId} className="flex items-center justify-between p-2 bg-win/15 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className="text-lg font-bold text-green-400">#{index + 1}</div>
+                  <div className="text-lg font-bold text-win">#{index + 1}</div>
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={opponent.playerImage} />
                     <AvatarFallback className="text-xs">{opponent.playerName.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <span className="text-sm font-medium">{opponent.playerName}</span>
                 </div>
-                <Badge variant="outline" className="text-green-400 border-green-400">
+                <Badge variant="outline" className="text-win border-green-400">
                   {Math.round(opponent.winRateAgainst * 100)}%
                 </Badge>
               </div>
@@ -276,26 +276,26 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
 
         <Card className="bg-gradient-to-br from-red-900/10 to-red-800/10 border-red-700/30">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-400">
+            <CardTitle className="flex items-center gap-2 text-loss">
               <Snowflake className="h-5 w-5" />
               Challenges
             </CardTitle>
-            <CardDescription className="text-red-300/80">
+            <CardDescription className="text-loss/80">
               Opponents that give you trouble (40% or lower win rate against)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {currentEnhancedStats.strugglingAgainst.slice(0, 3).map((opponent, index) => (
-              <div key={opponent.playerId} className="flex items-center justify-between p-2 bg-red-900/20 rounded-lg">
+              <div key={opponent.playerId} className="flex items-center justify-between p-2 bg-loss/15 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className="text-lg font-bold text-red-400">#{index + 1}</div>
+                  <div className="text-lg font-bold text-loss">#{index + 1}</div>
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={opponent.playerImage} />
                     <AvatarFallback className="text-xs">{opponent.playerName.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <span className="text-sm font-medium">{opponent.playerName}</span>
                 </div>
-                <Badge variant="outline" className="text-red-400 border-red-400">
+                <Badge variant="outline" className="text-loss border-red-400">
                   {Math.round(opponent.winRateAgainst * 100)}%
                 </Badge>
               </div>
@@ -335,7 +335,7 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Users className="h-6 w-6 text-blue-400" />
+              <Users className="h-6 w-6 text-info" />
               Player Relationships
             </CardTitle>
             <CardDescription>
@@ -361,7 +361,7 @@ const PlayerRelationships: React.FC<PlayerRelationshipsProps> = ({ playerId, pla
       <CardContent>
         {!hasData ? (
           <div className="text-center py-8">
-            <Users className="h-16 w-16 mx-auto mb-4 text-gray-500" />
+            <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
             <p className="text-muted-foreground text-lg">
               Not enough match data to display relationships for {selectedSeasonId === "overall" ? "all seasons" : seasons.find(s => s.id === selectedSeasonId)?.name}
             </p>

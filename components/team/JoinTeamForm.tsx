@@ -66,7 +66,7 @@ const JoinTeamForm = () => {
   };
 
   return (
-    <Card className="bg-gray-900 border-gray-800">
+    <Card className="bg-surface border-border">
       <CardHeader>
         <CardTitle>Join Existing Team</CardTitle>
         <CardDescription>Enter a team ID to join as a member</CardDescription>
@@ -85,7 +85,7 @@ const JoinTeamForm = () => {
               placeholder="Enter team ID"
               value={teamId}
               onChange={(e) => setTeamId(e.target.value)}
-              className="bg-gray-800 border-gray-700"
+              className="bg-surface-2 border-border"
             />
           </div>
           <Button 

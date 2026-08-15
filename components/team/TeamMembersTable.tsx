@@ -82,7 +82,7 @@ const TeamMembersTable = ({
 
   if (teamMembers.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-400">
+      <div className="text-center py-8 text-muted-foreground">
         <p>No members found. This is unusual - try refreshing the page.</p>
         <Button 
           variant="outline" 
@@ -108,10 +108,10 @@ const TeamMembersTable = ({
       </TableHeader>
       <TableBody>
         {teamMembers.map((member) => (
-          <TableRow key={member.id} className={member.user_id === user?.id ? "bg-gray-800/30" : ""}>
+          <TableRow key={member.id} className={member.user_id === user?.id ? "bg-surface-2/30" : ""}>
             <TableCell className="font-medium">
               {member.profile?.username || member.username || 'Unknown User'}
-              {member.user_id === user?.id && <span className="ml-2 text-xs text-gray-400">(You)</span>}
+              {member.user_id === user?.id && <span className="ml-2 text-xs text-muted-foreground">(You)</span>}
             </TableCell>
             <TableCell>
               {userRole === "admin" && member.user_id !== user?.id ? (
@@ -130,7 +130,7 @@ const TeamMembersTable = ({
                   </SelectContent>
                 </Select>
               ) : (
-                <span className={member.role === "admin" ? "text-blue-400" : ""}>
+                <span className={member.role === "admin" ? "text-info" : ""}>
                   {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
                 </span>
               )}

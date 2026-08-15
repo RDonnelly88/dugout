@@ -8,7 +8,7 @@ const SelectTeam = () => {
   
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
-      <Card className="w-full max-w-md bg-gray-900 border-gray-800">
+      <Card className="w-full max-w-md bg-surface border-border">
         <CardHeader>
           <CardTitle>Select a Team</CardTitle>
           <CardDescription>

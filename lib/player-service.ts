@@ -1,8 +1,7 @@
 
-import { Player, Match } from "@/types";
+import { Player } from "@/types";
 import { supabase } from "@/lib/supabase-browser";
 import { mapSupabasePlayerToPlayer, mapPlayerToSupabase } from "./supabase-utils";
-import { Json } from "@/lib/database.types";
 
 // Get all players from Supabase
 export const getPlayers = async (): Promise<Player[]> => {
@@ -120,7 +119,6 @@ export const updatePlayer = async (id: string, updates: Partial<Omit<Player, "id
   if (updates.image !== undefined) formattedUpdates.image = updates.image;
   if (updates.imageUrl !== undefined) formattedUpdates.image = updates.imageUrl;
   if (updates.isActive !== undefined) formattedUpdates.is_active = updates.isActive;
-  if (updates.stats) formattedUpdates.stats = updates.stats as unknown as Json;
   
   try {
     const { data, error } = await supabase
@@ -207,118 +205,4 @@ export const deletePlayer = async (id: string): Promise<boolean> => {
     
     return false;
   }
-};
-
-// Update player stats based on match results
-export const updatePlayerStats = async (match: Match): Promise<void> => {
-  if (match.status !== "completed" || match.teamA.score === undefined || match.teamB.score === undefined) {
-    return;
-  }
-  
-  const teamAWon = match.teamA.score > match.teamB.score;
-  const teamBWon = match.teamB.score > match.teamA.score;
-  const draw = match.teamA.score === match.teamB.score;
-  
-  // Determine result for each team
-  const teamAResult = teamAWon ? 'won' : draw ? 'drawn' : 'lost';
-  const teamBResult = teamBWon ? 'won' : draw ? 'drawn' : 'lost';
-  
-  // Update each player's stats and insert match results
-  const updatePromises = [
-    ...match.teamA.players.map(async (playerId) => {
-      const player = await getPlayer(playerId);
-      if (player) {
-        const stats = {
-          ...player.stats,
-          played: player.stats.played + 1,
-          won: player.stats.won + (teamAWon ? 1 : 0),
-          lost: player.stats.lost + (teamBWon ? 1 : 0),
-          drawn: player.stats.drawn + (draw ? 1 : 0)
-        };
-        await updatePlayer(playerId, { stats });
-        
-        // Insert into player_match_results
-        await supabase.from('player_match_results').insert({
-          player_id: playerId,
-          match_id: match.id,
-          season_id: match.seasonId,
-          date: match.date,
-          result: teamAResult
-        } as any);
-      }
-    }),
-    ...match.teamB.players.map(async (playerId) => {
-      const player = await getPlayer(playerId);
-      if (player) {
-        const stats = {
-          ...player.stats,
-          played: player.stats.played + 1,
-          won: player.stats.won + (teamBWon ? 1 : 0),
-          lost: player.stats.lost + (teamAWon ? 1 : 0),
-          drawn: player.stats.drawn + (draw ? 1 : 0)
-        };
-        await updatePlayer(playerId, { stats });
-        
-        // Insert into player_match_results
-        await supabase.from('player_match_results').insert({
-          player_id: playerId,
-          match_id: match.id,
-          season_id: match.seasonId,
-          date: match.date,
-          result: teamBResult
-        } as any);
-      }
-    })
-  ];
-  
-  await Promise.all(updatePromises);
-};
-
-// Revert player stats when a match is deleted or edited
-export const revertPlayerStats = async (match: Match): Promise<void> => {
-  if (match.status !== "completed" || match.teamA.score === undefined || match.teamB.score === undefined) {
-    return;
-  }
-  
-  const teamAWon = match.teamA.score > match.teamB.score;
-  const teamBWon = match.teamB.score > match.teamA.score;
-  const draw = match.teamA.score === match.teamB.score;
-  
-  // Delete player_match_results entries for this match
-  await supabase
-    .from('player_match_results')
-    .delete()
-    .eq('match_id', match.id);
-  
-  // Update each player's stats
-  const updatePromises = [
-    ...match.teamA.players.map(async (playerId) => {
-      const player = await getPlayer(playerId);
-      if (player) {
-        const stats = {
-          ...player.stats,
-          played: Math.max(0, player.stats.played - 1),
-          won: Math.max(0, player.stats.won - (teamAWon ? 1 : 0)),
-          lost: Math.max(0, player.stats.lost - (teamBWon ? 1 : 0)),
-          drawn: Math.max(0, player.stats.drawn - (draw ? 1 : 0))
-        };
-        await updatePlayer(playerId, { stats });
-      }
-    }),
-    ...match.teamB.players.map(async (playerId) => {
-      const player = await getPlayer(playerId);
-      if (player) {
-        const stats = {
-          ...player.stats,
-          played: Math.max(0, player.stats.played - 1),
-          won: Math.max(0, player.stats.won - (teamBWon ? 1 : 0)),
-          lost: Math.max(0, player.stats.lost - (teamAWon ? 1 : 0)),
-          drawn: Math.max(0, player.stats.drawn - (draw ? 1 : 0))
-        };
-        await updatePlayer(playerId, { stats });
-      }
-    })
-  ];
-  
-  await Promise.all(updatePromises);
 };

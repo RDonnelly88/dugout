@@ -1,29 +1,24 @@
-
 import { useTeam } from "@/contexts/TeamContext";
 
-// Helper functions to check permission
+/**
+ * What the signed-in member is allowed to do in the current team.
+ *
+ * `ready` is the important one. Teams are fetched after the first paint, so
+ * until they arrive there is no current team and every permission answers
+ * false — which is indistinguishable from "not allowed". A page that redirects
+ * on `!canManage()` without waiting therefore bounced everyone away from
+ * /matches/create before the answer was known.
+ */
 export const usePermission = () => {
-  const { userRole, isTeamAdmin, currentTeam } = useTeam();
-  
-  // Check if user can manage players, matches, seasons
-  const canManage = () => {
-    return userRole === "admin" && !!currentTeam;
-  };
-  
-  // Check if user can view players, matches, seasons
-  const canView = () => {
-    return (userRole === "admin" || userRole === "viewer") && !!currentTeam;
-  };
-  
-  // Check if there's a team selected
-  const hasTeam = () => {
-    return !!currentTeam;
-  };
-  
+  const { userRole, isTeamAdmin, currentTeam, loading } = useTeam();
+
   return {
-    canManage,
-    canView,
-    hasTeam,
-    isAdmin: isTeamAdmin()
+    /** False until the team has loaded. Guard redirects on this. */
+    ready: !loading,
+    canManage: () => userRole === "admin" && !!currentTeam,
+    canView: () =>
+      (userRole === "admin" || userRole === "viewer") && !!currentTeam,
+    hasTeam: () => !!currentTeam,
+    isAdmin: isTeamAdmin(),
   };
 };

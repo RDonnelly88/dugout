@@ -2,7 +2,6 @@
 import React, { useMemo, useState } from 'react';
 import { Player } from "@/types";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { Shield, Users, Flag } from "lucide-react";
 
@@ -13,6 +12,7 @@ import Formation from './team-randomizer/Formation';
 import { calculatePlayerRanks } from "@/lib/ranking-utils";
 import { Card, CardContent } from "@/components/ui/card";
 import PlayerSelectionFilters from './team-randomizer/PlayerSelectionFilters';
+import PlayerAvatar from "@/components/players/PlayerAvatar";
 
 interface TeamSelectionProps {
   teamA: string[];
@@ -29,8 +29,6 @@ const TeamSelection = ({
   selectedPlayers,
   togglePlayer 
 }: TeamSelectionProps) => {
-  console.log("TeamSelection render - Team A:", teamA.length, "players");
-  console.log("TeamSelection render - Team B:", teamB.length, "players");
   
   // Filter state
   const [searchTerm, setSearchTerm] = useState('');
@@ -119,8 +117,6 @@ const TeamSelection = ({
     return players.filter(player => teamB.includes(player.id));
   }, [players, teamB]);
   
-  console.log("Team A Players:", teamAPlayers.map(p => p.name));
-  console.log("Team B Players:", teamBPlayers.map(p => p.name));
 
   // Handle removing a player from a team
   const handleRemovePlayer = (team: 'A' | 'B', playerId: string) => {
@@ -211,27 +207,19 @@ const PlayerCard = ({ player, seasonStats, onClick, playerRanks = {} }: PlayerCa
     >
       <CardContent className="p-0">
         <div className="p-4 flex items-center space-x-3">
-          <Avatar className="h-12 w-12 border-2 border-accent/30">
-            {player.image ? (
-              <AvatarImage src={player.image} alt={player.name} className="object-cover" />
-            ) : (
-              <AvatarFallback className="bg-accent/30 text-white">
-                {player.name.charAt(0)}
-              </AvatarFallback>
-            )}
-          </Avatar>
+          <PlayerAvatar name={player.name} image={player.image} size="md" className="border-2 border-accent/30" />
           <div>
             <div className="font-medium text-foreground">{player.name}</div>
             {playerRank && (
               <div className="flex items-center text-xs">
-                <Flag className="h-3 w-3 text-yellow-500 mr-1" />
-                <span className="text-yellow-300">#{playerRank}</span>
+                <Flag className="h-3 w-3 text-draw mr-1" />
+                <span className="text-draw">#{playerRank}</span>
               </div>
             )}
             {!playerRank && hasPlayedGames && (
               <div className="flex items-center text-xs">
-                <Flag className="h-3 w-3 text-yellow-500 mr-1" />
-                <span className="text-yellow-300">Not ranked</span>
+                <Flag className="h-3 w-3 text-draw mr-1" />
+                <span className="text-draw">Not ranked</span>
               </div>
             )}
           </div>
@@ -250,7 +238,7 @@ const PlayerCard = ({ player, seasonStats, onClick, playerRanks = {} }: PlayerCa
           </div>
           <div className="stat-item flex flex-col items-center justify-center p-1">
             <span className="text-xs text-muted-foreground">Won</span>
-            <span className="font-semibold text-green-400">{
+            <span className="font-semibold text-win">{
               (() => {
                 const seasonStat = seasonStats.find(stat => stat.playerId === player.id);
                 return seasonStat?.wins || 0;
@@ -259,7 +247,7 @@ const PlayerCard = ({ player, seasonStats, onClick, playerRanks = {} }: PlayerCa
           </div>
           <div className="stat-item flex flex-col items-center justify-center p-1">
             <span className="text-xs text-muted-foreground">Lost</span>
-            <span className="font-semibold text-red-400">{
+            <span className="font-semibold text-loss">{
               (() => {
                 const seasonStat = seasonStats.find(stat => stat.playerId === player.id);
                 return seasonStat?.losses || 0;
