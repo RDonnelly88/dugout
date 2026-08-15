@@ -81,6 +81,33 @@ const mean = (xs: number[]) =>
   xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : ELO.start;
 
 /**
+ * How much of a side's pot a player takes, before normalising across the
+ * side. Only the ratio between teammates' weights matters — the pot itself
+ * is fixed by the match, not by the weights, so nothing here can create or
+ * destroy rating.
+ */
+export type Weigher = (player: PlayerRating, teamMeanRating: number) => number;
+
+/**
+ * The default. A player rated below their own side's mean is the underdog
+ * within their own team, so they take a bigger share of a win — and a
+ * smaller share of a defeat — than a teammate rated above it. Reuses
+ * `expectedScore` rather than a second curve: at the mean it is 0.5, exactly
+ * even, same as everyone else on a side of equals.
+ */
+export const spreadWeigher: Weigher = (player, teamMeanRating) =>
+  expectedScore(teamMeanRating, player.rating);
+
+/**
+ * Weight by how unsettled a rating still is, ignoring where it sits
+ * relative to teammates. Not the default — a squad that would rather a new
+ * player's rating settle quickly than have results shared out by strength
+ * can pass this to `computeRatings` instead.
+ */
+export const uncertaintyWeigher: Weigher = (player) =>
+  player.games < ELO.provisionalGames ? ELO.kProvisional : ELO.kEstablished;
+
+/**
  * Ratings for every player, replayed from the match history in order.
  *
  * Derived rather than stored, for the same reason the win/loss record is:
@@ -101,7 +128,10 @@ const mean = (xs: number[]) =>
  * same table. It used to read the clock, which meant every rating aged
  * overnight and a screenshot taken twice never matched.
  */
-export function computeRatings(matches: Match[]): Map<string, PlayerRating> {
+export function computeRatings(
+  matches: Match[],
+  weigh: Weigher = spreadWeigher
+): Map<string, PlayerRating> {
   const ratings = new Map<string, PlayerRating>();
 
   const ensure = (playerId: string): PlayerRating => {
@@ -166,18 +196,28 @@ export function computeRatings(matches: Match[]): Map<string, PlayerRating> {
     // optional, that was weighting the least reliable thing on the record.
     const actualA = outcome === "a" ? 1 : outcome === "draw" ? 0.5 : 0;
 
+    // One pot per side, sized off however many played on the fuller one —
+    // not the side actually being paid out — so a team a player short still
+    // moves as much as a full one would have, spread across whoever turned
+    // out. `potB` is `potA` negated rather than computed afresh from its own
+    // expectation, so the two are equal and opposite to the bit, not just to
+    // a tolerance: nothing here can leak or mint rating.
+    const potSize = Math.max(sideA.length, sideB.length) * ELO.kEstablished;
+    const potA = potSize * (actualA - expectedA);
+    const potB = -potA;
+
     const apply = (
       side: PlayerRating[],
+      pot: number,
+      teamMeanRating: number,
       opponentRating: number,
-      expected: number,
-      actual: number
+      result: "win" | "draw" | "loss"
     ) => {
-      for (const player of side) {
-        const k =
-          player.games < ELO.provisionalGames
-            ? ELO.kProvisional
-            : ELO.kEstablished;
-        const change = k * (actual - expected);
+      const weights = side.map((player) => weigh(player, teamMeanRating));
+      const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+
+      side.forEach((player, i) => {
+        const change = (weights[i] / totalWeight) * pot;
         const next = player.rating + change;
 
         player.previous = player.rating;
@@ -191,16 +231,19 @@ export function computeRatings(matches: Match[]): Map<string, PlayerRating> {
           rating: next,
           change,
           opponentRating,
-          result: actual === 1 ? "win" : actual === 0.5 ? "draw" : "loss",
+          result,
         });
-      }
+      });
     };
+
+    const resultA = actualA === 1 ? "win" : actualA === 0.5 ? "draw" : "loss";
+    const resultB = actualA === 1 ? "loss" : actualA === 0.5 ? "draw" : "win";
 
     // Both sides are adjusted from the ratings they carried into the match,
     // captured above — updating A first and then reading it for B would let
     // the first result of the evening influence the second.
-    apply(sideA, ratingB, expectedA, actualA);
-    apply(sideB, ratingA, 1 - expectedA, 1 - actualA);
+    apply(sideA, potA, ratingA, ratingB, resultA);
+    apply(sideB, potB, ratingB, ratingA, resultB);
   });
 
   // Bring everyone up to the last match played, so two players are comparable

@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { computeRatings, decayed, expectedScore } from "@/lib/elo";
+import {
+  computeRatings,
+  decayed,
+  expectedScore,
+  spreadWeigher,
+  uncertaintyWeigher,
+  type PlayerRating,
+} from "@/lib/elo";
 import { ELO } from "@/lib/config";
 import type { Match } from "@/types";
 
@@ -375,5 +382,99 @@ describe("computeRatings and matches missed", () => {
     expect(computeRatings(fixtures).get("a")!.rating).toBe(
       computeRatings(fixtures).get("a")!.rating
     );
+  });
+});
+
+describe("a match's pot is conserved", () => {
+  const sumChanges = (ratings: Map<string, PlayerRating>, ids: string[]) =>
+    ids.reduce((total, id) => total + ratings.get(id)!.history.at(-1)!.change, 0);
+
+  it("sums to zero across all ten deltas in an even match", () => {
+    const teamA = ["a1", "a2", "a3", "a4", "a5"];
+    const teamB = ["b1", "b2", "b3", "b4", "b5"];
+    const ratings = computeRatings([match(teamA, teamB, 3, 1)]);
+
+    expect(sumChanges(ratings, [...teamA, ...teamB])).toBeCloseTo(0, 9);
+  });
+
+  it("still sums to zero with a wide rating spread on one side", () => {
+    // Spread team A out well before the decider: two pulled up, two pulled
+    // down, one left level. This is the shape that breaks a scheme built on
+    // ten separate per-player expectations, since those don't sum to five.
+    const warmUps = [
+      ...Array.from({ length: 8 }, (_, i) => match(["a1"], [`u${i}`], 1, 0)),
+      ...Array.from({ length: 8 }, (_, i) => match(["a2"], [`v${i}`], 1, 0)),
+      ...Array.from({ length: 8 }, (_, i) => match([`w${i}`], ["a4"], 1, 0)),
+      ...Array.from({ length: 8 }, (_, i) => match([`z${i}`], ["a5"], 1, 0)),
+    ];
+    const teamA = ["a1", "a2", "a3", "a4", "a5"];
+    const teamB = ["b1", "b2", "b3", "b4", "b5"];
+
+    const ratings = computeRatings([...warmUps, match(teamA, teamB, 2, 1)]);
+
+    expect(sumChanges(ratings, [...teamA, ...teamB])).toBeCloseTo(0, 9);
+  });
+
+  it("still sums to zero when the sides are uneven", () => {
+    const teamA = ["a1", "a2", "a3", "a4"];
+    const teamB = ["b1", "b2", "b3", "b4", "b5"];
+    const ratings = computeRatings([match(teamA, teamB, 2, 1)]);
+
+    expect(sumChanges(ratings, [...teamA, ...teamB])).toBeCloseTo(0, 9);
+  });
+});
+
+describe("weighing by strength within a side", () => {
+  it("gives a weaker teammate more of a win than a stronger one", () => {
+    // Pull "strong" well above the start and "weak" well below it against
+    // fresh opponents that play no further part, then have them share a
+    // side for the match that actually gets asserted on.
+    const warmUps = [
+      ...Array.from({ length: 6 }, (_, i) => match(["strong"], [`up${i}`], 1, 0)),
+      ...Array.from({ length: 6 }, (_, i) => match([`down${i}`], ["weak"], 1, 0)),
+    ];
+    const decider = match(["strong", "weak"], ["x", "y"], 1, 0);
+
+    const ratings = computeRatings([...warmUps, decider]);
+
+    const strong = ratings.get("strong")!;
+    const weak = ratings.get("weak")!;
+    const strongChange = strong.history.at(-1)!.change;
+    const weakChange = weak.history.at(-1)!.change;
+
+    expect(strong.rating).toBeGreaterThan(weak.rating);
+    expect(strongChange).toBeGreaterThan(0);
+    expect(weakChange).toBeGreaterThan(strongChange);
+  });
+
+  it("is the default weigher", () => {
+    const fixtures = [match(["strong", "weak"], ["x", "y"], 1, 0)];
+
+    expect(computeRatings(fixtures, spreadWeigher)).toEqual(
+      computeRatings(fixtures)
+    );
+  });
+
+  it("lets a squad swap in uncertainty-based sharing instead", () => {
+    // Establish four teammates well past provisionalGames, then send a
+    // brand-new fifth player out alongside them.
+    const warmUps = ["old1", "old2", "old3", "old4"].flatMap((id) =>
+      Array.from({ length: ELO.provisionalGames }, (_, i) =>
+        match([id], [`filler-${id}-${i}`], 1, 0)
+      )
+    );
+    const decider = match(
+      ["new", "old1", "old2", "old3", "old4"],
+      ["b1", "b2", "b3", "b4", "b5"],
+      1,
+      0
+    );
+
+    const ratings = computeRatings([...warmUps, decider], uncertaintyWeigher);
+
+    const newChange = ratings.get("new")!.history.at(-1)!.change;
+    const oldChange = ratings.get("old1")!.history.at(-1)!.change;
+
+    expect(newChange).toBeGreaterThan(oldChange);
   });
 });

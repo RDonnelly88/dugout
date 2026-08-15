@@ -8,22 +8,25 @@
  *
  * Elo was built for one-on-one chess, so a five-a-side needs two decisions
  * made explicitly: what a team's rating is, and how a result is shared out.
- * A side is rated at the mean of its players, and everyone on it takes the
- * same adjustment — you win as a team.
+ * A side is rated at the mean of its players. The match has one pot, sized
+ * off `kEstablished` and however many played, and it is split across the
+ * side rather than handed to each player whole — see the `Weigher` types in
+ * `lib/elo.ts` for how that split is decided. This is what keeps a match
+ * exactly zero-sum: the pot a side is due never depends on who is on it.
  */
 export const ELO = {
   /** Everyone starts level. The number is arbitrary; only differences matter. */
   start: 1200,
 
   /**
-   * How far a single result can move a rating.
+   * The size of a match's pot, per player on the fuller side.
    *
-   * Higher while a player is new, so a squad's order sorts itself out over a
-   * few weeks rather than a season. After `provisionalGames` the rating is
-   * treated as established and settles down.
+   * Also the default weight for a player past `provisionalGames`, when
+   * `uncertaintyWeigher` is in use instead of the default `spreadWeigher`.
    */
-  kProvisional: 40,
   kEstablished: 24,
+  /** A provisional player's weight under `uncertaintyWeigher` only. */
+  kProvisional: 40,
   provisionalGames: 10,
 
   /**
