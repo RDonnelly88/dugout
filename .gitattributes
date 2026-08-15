@@ -1,0 +1,20 @@
+# Normalise to LF in the repository. Developed on Windows, built on Linux CI
+# and Vercel — without this, checkouts differ by platform and every file shows
+# as modified when someone clones on the other OS.
+* text=auto eol=lf
+
+# Binary: never touch these.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.avif binary
+*.ico binary
+*.mp3 binary
+*.woff binary
+*.woff2 binary
+
+# Generated — collapse in diffs and don't count toward language stats.
+package-lock.json linguist-generated=true -diff
+lib/database.types.ts linguist-generated=true -diff
