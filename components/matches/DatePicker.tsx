@@ -20,15 +20,17 @@ const DatePicker = ({ date, setDate, label = "Date" }: DatePickerProps) => {
   const id = useId();
 
   return (
-    <div>
-      <Label htmlFor={id}>{label}</Label>
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="block">
+        {label}
+      </Label>
       <Popover>
         <PopoverTrigger asChild>
           <Button
             id={id}
             variant={"outline"}
             className={cn(
-              "w-[240px] justify-start text-left font-normal",
+              "w-full justify-start text-left font-normal",
               !date && "text-muted-foreground"
             )}
           >

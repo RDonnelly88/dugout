@@ -135,7 +135,7 @@ const EditMatch = () => {
 
       <div className="page-header">
         <h1 className="page-title">Edit Match</h1>
-        <p className="page-subtitle mx-auto text-center">
+        <p className="page-subtitle">
           Update match details and team compositions
         </p>
       </div>

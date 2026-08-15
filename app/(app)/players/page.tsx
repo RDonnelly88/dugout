@@ -91,7 +91,7 @@ const Players = () => {
       <div className="page-header">
         <h1 className="page-title">Players</h1>
         <p className="page-subtitle">
-          Manage Players
+          The squad, their records and their form
         </p>
       </div>
 

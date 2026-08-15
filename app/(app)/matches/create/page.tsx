@@ -84,8 +84,8 @@ const CreateMatch = () => {
     <div className="page-container animate-slide-up">
       <div className="page-header">
         <h1 className="page-title">Create Match</h1>
-        <p className="page-subtitle mx-auto text-center">
-          Set up your next match with customizable team formations
+        <p className="page-subtitle">
+          Pick who is playing, then how to split them
         </p>
       </div>
 
@@ -112,10 +112,10 @@ const CreateMatch = () => {
             </div>
             
             <div className="glass-card p-6 rounded-xl border border-accent/20 shadow-lg">
-              <h3 className="text-xl font-semibold mb-4 text-center">Match Details</h3>
+              <h3 className="section-title mb-4">Match details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <DatePicker date={date} setDate={setDate} label="Match Date" />
+                  <DatePicker date={date} setDate={setDate} label="Match date" />
                 </div>
                 <div>
                   <SeasonSelect value={seasonId} onChange={setSeasonId} />
@@ -125,10 +125,10 @@ const CreateMatch = () => {
 
             <Button 
               type="submit" 
-              className="w-full h-12 text-lg font-medium shadow-lg bg-gradient-to-r from-accent/80 to-accent/90 hover:from-accent/90 hover:to-accent transition-all duration-300" 
+              size="lg" className="w-full" 
               disabled={createMatchMutation.isPending}
             >
-              {createMatchMutation.isPending ? "Creating..." : "Create Match"}
+              {createMatchMutation.isPending ? "Creating…" : "Create match"}
             </Button>
           </form>
         </CardContent>

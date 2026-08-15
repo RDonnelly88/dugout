@@ -60,7 +60,7 @@ const Matches = () => {
     <div className="page-container animate-slide-up">
       <div className="page-header">
         <h1 className="page-title">Matches</h1>
-        <p className="page-subtitle text-center">
+        <p className="page-subtitle">
           Create and manage your football matches
         </p>
       </div>

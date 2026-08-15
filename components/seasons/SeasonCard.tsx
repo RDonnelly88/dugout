@@ -120,14 +120,13 @@ const SeasonCard = ({
           {top.length > 0 && (
             <div className="mt-4">
               <p className="eyebrow mb-2">Top {top.length}</p>
-              <Table>
+              <Table className="[&_td]:px-2 [&_th]:px-2 [&_td:first-child]:pl-0 [&_th:first-child]:pl-0 [&_td:last-child]:pr-0 [&_th:last-child]:pr-0">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-10">#</TableHead>
                     <TableHead>Player</TableHead>
                     <TableHead className="text-right">Form</TableHead>
-                    <TableHead className="w-10 text-right">P</TableHead>
-                    <TableHead className="w-10 text-right">Pts</TableHead>
+                    <TableHead className="w-12 text-right">Pts</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -136,14 +135,16 @@ const SeasonCard = ({
                       <TableCell className="py-1.5">
                         <Place rank={player.rank} />
                       </TableCell>
-                      <TableCell className="py-1.5">
-                        <div className="flex items-center gap-2">
+                      <TableCell className="min-w-0 py-1.5">
+                        <div className="flex min-w-0 items-center gap-2">
                           <PlayerAvatar
                             name={player.playerName}
                             image={player.playerImage}
                             size="xs"
                           />
-                          <span className="truncate">{player.playerName}</span>
+                          <span className="min-w-0 flex-1 truncate">
+                            {player.playerName}
+                          </span>
                           <PlayerSeasonStars playerId={player.playerId} size="sm" />
                         </div>
                       </TableCell>
@@ -155,10 +156,7 @@ const SeasonCard = ({
                           />
                         </div>
                       </TableCell>
-                      <TableCell className="tabular py-1.5 text-right">
-                        {player.played}
-                      </TableCell>
-                      <TableCell className="tabular py-1.5 text-right font-medium">
+                      <TableCell className="tabular w-12 py-1.5 text-right font-medium">
                         {player.points}
                       </TableCell>
                     </TableRow>
