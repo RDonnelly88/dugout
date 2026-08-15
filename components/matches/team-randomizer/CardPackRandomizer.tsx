@@ -80,7 +80,9 @@ export default function CardPackRandomizer({
                     className="flex items-center gap-2 rounded-lg bg-surface px-2 py-1.5"
                   >
                     <PlayerAvatar name={player.name} image={player.image} size="xs" />
-                    <span className="truncate text-sm">{player.name}</span>
+                    <span className="truncate text-sm" data-testid="dealt-name">
+                      {player.name}
+                    </span>
                   </motion.li>
                 ))}
               </AnimatePresence>

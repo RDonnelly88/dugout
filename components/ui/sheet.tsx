@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils"
 
 const Sheet = SheetPrimitive.Root
 
-const SheetTrigger = SheetPrimitive.Trigger
 
 
 const SheetPortal = SheetPrimitive.Portal
@@ -126,6 +125,5 @@ SheetDescription.displayName = SheetPrimitive.Description.displayName
 export {
   Sheet,
   SheetContent,
-  SheetTrigger,
 }
 

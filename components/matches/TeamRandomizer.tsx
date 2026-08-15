@@ -23,7 +23,8 @@ import { ELO } from "@/lib/config";
 
 interface TeamRandomizerProps {
   players: Player[];
-  onRandomize: (players: Player[], teamSize: number) => void;
+  /** The two sides, already decided. Not a flat list to be split again. */
+  onRandomize: (teamA: Player[], teamB: Player[]) => void;
   onSelectionChange?: (selectedPlayerIds: string[]) => void;
   disabled?: boolean;
 }
@@ -102,7 +103,7 @@ const TeamRandomizer = ({
 
   const finish = (teamA: Player[], teamB: Player[]) => {
     setDealing(false);
-    onRandomize([...teamA, ...teamB], teamA.length);
+    onRandomize(teamA, teamB);
   };
 
   const togglePlayerSelection = (playerId: string) =>

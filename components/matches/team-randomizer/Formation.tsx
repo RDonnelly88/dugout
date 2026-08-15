@@ -13,8 +13,6 @@ interface FormationProps {
 
 const Formation = ({ teamA, teamB, teamSize, onRemovePlayer }: FormationProps) => {
   console.log("Formation rendering with teamSize:", teamSize);
-  console.log("Team A players:", teamA.map(p => p.name));
-  console.log("Team B players:", teamB.map(p => p.name));
   
   const formationConfig = formationConfigs[teamSize] || formationConfigs["5"];
   console.log("Using formation config:", formationConfig);
@@ -89,7 +87,7 @@ const Formation = ({ teamA, teamB, teamSize, onRemovePlayer }: FormationProps) =
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-      <div className="team-pitch-container">
+      <div className="team-pitch-container" data-testid="formation-team-a">
         <div className="team-pitch bg-win/15 rounded-t-lg overflow-hidden h-[320px] relative">
           {renderTeam(teamA, "Team A", "red")}
         </div>
@@ -97,7 +95,7 @@ const Formation = ({ teamA, teamB, teamSize, onRemovePlayer }: FormationProps) =
           Team A
         </div>
       </div>
-      <div className="team-pitch-container">
+      <div className="team-pitch-container" data-testid="formation-team-b">
         <div className="team-pitch bg-win/15 rounded-t-lg overflow-hidden h-[320px] relative">
           {renderTeam(teamB, "Team B", "green")}
         </div>

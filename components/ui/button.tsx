@@ -6,24 +6,26 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "focus-ring inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-gradient-to-r from-accent to-accent/90 text-primary-foreground hover:shadow-lg hover:shadow-accent/20 shadow-md shadow-accent/10 neon-border glow-hover",
+        default: "bg-accent text-accent-foreground hover:brightness-110",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+          "bg-destructive text-destructive-foreground hover:brightness-110",
         outline:
-          "border border-accent/40 bg-background hover:bg-accent/10 hover:text-accent hover:border-accent/60 glow-hover",
+          "border border-border bg-surface hover:border-border-strong hover:bg-surface-2",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent/10 hover:text-accent",
+          "bg-secondary text-secondary-foreground hover:brightness-105",
+        ghost: "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
         link: "text-accent underline-offset-4 hover:underline",
       },
+      // Heights match the inputs and selects, so a button beside a date picker
+      // lines up with it. Set here and never at a use site.
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
+        default: "h-10 px-4",
+        sm: "h-8 px-3 text-xs",
+        lg: "h-11 px-6",
         icon: "h-10 w-10",
       },
     },

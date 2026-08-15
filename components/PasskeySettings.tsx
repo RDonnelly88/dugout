@@ -220,7 +220,7 @@ export default function PasskeySettings() {
         )}
 
         {hasWebAuthn ? (
-          <Button onClick={register} disabled={busy} className="w-full">
+          <Button onClick={register} disabled={busy} className="w-full sm:w-auto">
             {busy ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" aria-hidden />

@@ -29,8 +29,6 @@ const TeamSelection = ({
   selectedPlayers,
   togglePlayer 
 }: TeamSelectionProps) => {
-  console.log("TeamSelection render - Team A:", teamA.length, "players");
-  console.log("TeamSelection render - Team B:", teamB.length, "players");
   
   // Filter state
   const [searchTerm, setSearchTerm] = useState('');
@@ -119,8 +117,6 @@ const TeamSelection = ({
     return players.filter(player => teamB.includes(player.id));
   }, [players, teamB]);
   
-  console.log("Team A Players:", teamAPlayers.map(p => p.name));
-  console.log("Team B Players:", teamBPlayers.map(p => p.name));
 
   // Handle removing a player from a team
   const handleRemovePlayer = (team: 'A' | 'B', playerId: string) => {

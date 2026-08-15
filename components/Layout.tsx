@@ -11,14 +11,14 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
-  PanelLeftClose,
+  Menu,
   UserCog,
   Settings,
   TrendingUp,
   ArrowLeftRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useTeam } from "@/contexts/TeamContext";
@@ -99,16 +99,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] min-h-screen bg-background text-foreground">
       {/* Mobile drawer */}
       <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-        <SheetTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden absolute top-4 left-4 z-10"
-            aria-label="Open navigation"
-          >
-            <PanelLeftClose className="h-5 w-5" />
-          </Button>
-        </SheetTrigger>
         <SheetContent
           side="left"
           className="p-0 bg-surface/95 border-border backdrop-blur-xl shadow-2xl shadow-black/50"
@@ -200,8 +190,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </ScrollArea>
       </aside>
 
-      <main className="flex flex-col h-full bg-background text-foreground">
-        <div className="bg-surface/90 backdrop-blur-md p-4 border-b border-border/70 shadow-md md:hidden">
+      <main className="flex h-full flex-col bg-background text-foreground">
+        {/* One bar, one row: the menu button and the team sit together with the
+            same gap as everything else, rather than the button floating over
+            the bar at a fixed offset. */}
+        <div className="sticky top-0 z-20 flex items-center gap-2 border-b border-border bg-surface/90 px-3 py-2 backdrop-blur-md md:hidden">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Open navigation"
+            onClick={() => setIsMenuOpen(true)}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
           <TeamSwitcher variant="minimal" />
         </div>
 
