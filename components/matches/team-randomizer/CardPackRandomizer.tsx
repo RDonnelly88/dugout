@@ -8,6 +8,7 @@ import { DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import type { Split } from "@/lib/team-balance";
 import type { Player } from "@/types";
+import { SIDE_NAMES } from "@/lib/config";
 
 /**
  * Dealing the sides out, one card at a time.
@@ -67,7 +68,7 @@ export default function CardPackRandomizer({
                   : "bg-accent/15 text-accent"
               }`}
             >
-              {side === "A" ? "Bibs" : "Skins"}
+              {SIDE_NAMES[side]}
             </div>
             <ul className="min-h-[180px] space-y-1 p-2">
               <AnimatePresence initial={false}>
@@ -115,7 +116,7 @@ export default function CardPackRandomizer({
                 <div>
                   <p className="font-semibold">{current.player.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    to {current.side === "A" ? "Bibs" : "Skins"}
+                    to {SIDE_NAMES[current.side]}
                   </p>
                 </div>
               </motion.div>

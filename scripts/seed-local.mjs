@@ -139,7 +139,14 @@ const NAMES = [
 const players = await rest("players", {
   method: "POST",
   body: JSON.stringify(
-    NAMES.map((name) => ({ name, team_id: team.id, is_active: true }))
+    NAMES.map((name, i) => ({
+      name,
+      team_id: team.id,
+      // Two of them retired, so the active filter has something to hide.
+      is_active: i < NAMES.length - 2,
+      // Spread across the scale so "even by skill" has work to do.
+      skill_level: 1 + (i % 5),
+    }))
   ),
 });
 
@@ -207,7 +214,7 @@ function fixture(seasonId, date) {
   return {
     date: new Date(date).toISOString().slice(0, 10),
     team_a: { name: "Bibs", players: a.map((p) => p.id), score: scoreA },
-    team_b: { name: "Skins", players: b.map((p) => p.id), score: scoreB },
+    team_b: { name: "No bibs", players: b.map((p) => p.id), score: scoreB },
     status: "completed",
     season_id: seasonId,
     team_id: team.id,

@@ -80,9 +80,14 @@ const PlayerSelection = ({
     });
   }, [players, searchTerm, showActiveOnly, seasonPlayerStats, recordFor]);
 
-  const filteredSelectedPlayers = filteredAndSortedPlayers.filter(player => 
+  const filteredSelectedPlayers = filteredAndSortedPlayers.filter(player =>
     selectedPlayers.includes(player.id)
   );
+
+  // Selected but filtered out of view. Without this the header could read
+  // "12 selected" while twenty-three players were actually going to be split,
+  // the difference being inactive players picked before the filter hid them.
+  const hiddenSelectedCount = selectedPlayers.length - filteredSelectedPlayers.length;
   
   return (
     <div className="border rounded-md p-4 bg-card">
@@ -100,15 +105,15 @@ const PlayerSelection = ({
               })}
               disabled={disabled}
             >
-              Select All
+              Select shown
             </Button>
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => filteredSelectedPlayers.forEach(p => togglePlayerSelection(p.id))}
+              onClick={() => selectedPlayers.forEach(id => togglePlayerSelection(id))}
               disabled={disabled}
             >
-              Clear All
+              Clear
             </Button>
           </div>
         </div>
@@ -120,7 +125,8 @@ const PlayerSelection = ({
           setShowActiveOnly={setShowActiveOnly}
           totalCount={players.length}
           filteredCount={filteredAndSortedPlayers.length}
-          selectedCount={filteredSelectedPlayers.length}
+          selectedCount={selectedPlayers.length}
+          hiddenSelectedCount={hiddenSelectedCount}
         />
       </div>
       

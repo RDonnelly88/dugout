@@ -43,3 +43,26 @@ export const FORM_LENGTH = 5;
  * `season_player_stats` view, which is what the table is actually computed
  * from — a copy in TypeScript would be a second answer to the same question.
  */
+
+/**
+ * The hand-set ability scale.
+ *
+ * Five steps because people can tell "decent" from "good" and cannot reliably
+ * tell 68 from 71. The labels are shown next to the number so two people
+ * setting it mean roughly the same thing.
+ */
+export const SKILL = {
+  min: 1,
+  max: 5,
+  default: 3,
+  labels: {
+    1: "Getting there",
+    2: "Steady",
+    3: "Decent",
+    4: "Good",
+    5: "Ringer",
+  } as Record<number, string>,
+} as const;
+
+/** What the two sides are called on screen. Team A is the one in bibs. */
+export const SIDE_NAMES = { A: "Bibs", B: "No bibs" } as const;

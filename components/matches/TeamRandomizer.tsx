@@ -7,19 +7,21 @@ import { Player } from "@/types";
 import PlayerSelection from "./team-randomizer/PlayerSelection";
 import MethodPicker from "./team-randomizer/MethodPicker";
 import CardPackRandomizer from "./team-randomizer/CardPackRandomizer";
+import ManualPicker from "./team-randomizer/ManualPicker";
+import { isBalanceMethod, type PickMethod } from "./team-randomizer/pick-method";
 import {
   Dialog,
   DialogContent,
   DialogOverlay,
   DialogPortal,
 } from "@/components/ui/dialog";
-import { splitTeams, type BalanceMethod, type Split } from "@/lib/team-balance";
+import { splitTeams, type Split } from "@/lib/team-balance";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
 import { recentForm } from "@/lib/form";
 import { getMatches } from "@/lib/db";
 import { useQuery } from "@tanstack/react-query";
 import { useTeam } from "@/contexts/TeamContext";
-import { ELO } from "@/lib/config";
+import { ELO, SKILL } from "@/lib/config";
 
 interface TeamRandomizerProps {
   players: Player[];
@@ -44,7 +46,7 @@ const TeamRandomizer = ({
 }: TeamRandomizerProps) => {
   const { currentTeam } = useTeam();
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-  const [method, setMethod] = useState<BalanceMethod>("random");
+  const [method, setMethod] = useState<PickMethod>("random");
   const [dealing, setDealing] = useState(false);
 
   const { ratingFor } = usePlayerRatings();
@@ -55,8 +57,13 @@ const TeamRandomizer = ({
   });
   const form = useMemo(() => recentForm(matches), [matches]);
 
+  // Active players only, matching what the list shows by default. Selecting
+  // everyone meant retired players were picked, hidden, and quietly dealt into
+  // the teams — the button read "23 playing" above a list showing twelve.
   useEffect(() => {
-    setSelectedPlayers(players.map((p) => p.id));
+    setSelectedPlayers(
+      players.filter((p) => p.isActive !== false).map((p) => p.id)
+    );
   }, [players]);
 
   useEffect(() => {
@@ -66,13 +73,15 @@ const TeamRandomizer = ({
   const availablePlayers = players.filter((p) => selectedPlayers.includes(p.id));
   const canRandomize = availablePlayers.length >= 2;
 
-  // Scaled to sit in the same range as a rating, so the gap readout under each
-  // option means something comparable whichever is chosen.
+  // Each in its own unit. They used to be scaled onto a common range to make
+  // the gap readouts comparable, which they are not — the readout names its
+  // unit instead, and the search only ever compares within one method.
   const weightFor = useMemo(
     () => ({
       random: () => 0,
       rating: (p: Player) => ratingFor(p.id)?.rating ?? ELO.start,
-      form: (p: Player) => (form.get(p.id)?.pointsPerGame ?? 1) * 100,
+      form: (p: Player) => form.get(p.id)?.pointsPerGame ?? 1,
+      skill: (p: Player) => p.skillLevel ?? SKILL.default,
     }),
     [ratingFor, form]
   );
@@ -81,13 +90,17 @@ const TeamRandomizer = ({
     () =>
       ({
         random: null,
+        manual: null,
         rating: canRandomize
           ? splitTeams(availablePlayers, "rating", weightFor.rating)
           : null,
         form: canRandomize
           ? splitTeams(availablePlayers, "form", weightFor.form)
           : null,
-      }) as Record<BalanceMethod, Split<Player> | null>,
+        skill: canRandomize
+          ? splitTeams(availablePlayers, "skill", weightFor.skill)
+          : null,
+      }) as Record<PickMethod, Split<Player> | null>,
     [availablePlayers, canRandomize, weightFor]
   );
 
@@ -97,7 +110,13 @@ const TeamRandomizer = ({
 
   const startDealing = () => {
     if (!canRandomize) return;
-    setDealt(splitTeams(availablePlayers, method, weightFor[method]));
+    // Manual opens on a shuffle, so there is something to adjust rather than an
+    // empty board.
+    setDealt(
+      isBalanceMethod(method)
+        ? splitTeams(availablePlayers, method, weightFor[method])
+        : splitTeams(availablePlayers, "random", weightFor.random)
+    );
     setDealing(true);
   };
 
@@ -141,7 +160,7 @@ const TeamRandomizer = ({
         className="w-full gap-2 sm:w-auto"
       >
         <Shuffle className="h-4 w-4" />
-        Pick the teams
+        {method === "manual" ? "Sort them out" : "Pick the teams"}
         <span className="text-xs opacity-70">
           ({availablePlayers.length} playing)
         </span>
@@ -151,13 +170,21 @@ const TeamRandomizer = ({
         <DialogPortal>
           <DialogOverlay className="bg-black/80 backdrop-blur-sm" />
           <DialogContent className="max-h-[90vh] overflow-y-auto border-border bg-surface p-6 sm:max-w-[95%] md:max-w-3xl">
-            {dealt && (
-              <CardPackRandomizer
-                split={dealt}
-                onComplete={finish}
-                onCancel={() => setDealing(false)}
-              />
-            )}
+            {dealt &&
+              (method === "manual" ? (
+                <ManualPicker
+                  players={availablePlayers}
+                  start={dealt}
+                  onComplete={finish}
+                  onCancel={() => setDealing(false)}
+                />
+              ) : (
+                <CardPackRandomizer
+                  split={dealt}
+                  onComplete={finish}
+                  onCancel={() => setDealing(false)}
+                />
+              ))}
           </DialogContent>
         </DialogPortal>
       </Dialog>

@@ -7,7 +7,7 @@
  * the two totals meet in the middle.
  */
 
-export type BalanceMethod = "random" | "rating" | "form";
+export type BalanceMethod = "random" | "rating" | "form" | "skill";
 
 export interface Split<T> {
   teamA: T[];

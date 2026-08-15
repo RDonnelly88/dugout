@@ -14,7 +14,7 @@ import { usePlayerRank } from "@/hooks/usePlayerRank";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import PlayerSeasonStats from "@/components/players/PlayerSeasonStats";
 import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
-import PlayerRelationships from "@/components/players/PlayerRelationships";
+import PlayerChemistry from "@/components/players/PlayerChemistry";
 import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
 import type { PlayerFormResult } from "@/types";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
@@ -227,8 +227,8 @@ const PlayerDetail = () => {
 
       <Tabs defaultValue="stats" className="mb-8">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="stats">All Stats</TabsTrigger>
-          <TabsTrigger value="relationships">Relationships</TabsTrigger>
+          <TabsTrigger value="stats">All stats</TabsTrigger>
+          <TabsTrigger value="chemistry">Chemistry</TabsTrigger>
         </TabsList>
         
         <TabsContent value="stats">
@@ -240,11 +240,8 @@ const PlayerDetail = () => {
           />
         </TabsContent>
         
-        <TabsContent value="relationships">
-          <PlayerRelationships 
-            playerId={player.id}
-            playerName={player.name}
-          />
+        <TabsContent value="chemistry">
+          <PlayerChemistry playerId={player.id} playerName={player.name} />
         </TabsContent>
       </Tabs>
 

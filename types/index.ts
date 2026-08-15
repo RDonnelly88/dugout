@@ -19,6 +19,14 @@ export interface Player {
   updatedAt: string;
   teamId?: string;
   isActive?: boolean;
+  /**
+   * Hand-set ability, 1 to 5, defaulting to 3.
+   *
+   * The one figure on a player that a person sets rather than the results
+   * deciding. Elo and form both need games behind them; this needs none, which
+   * is what makes it useful for somebody's first Tuesday.
+   */
+  skillLevel?: number;
 }
 
 /** A player's all-time record, from the `player_stats` view. */

@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import PlayerEditForm from "@/components/players/PlayerEditForm";
 import { getPlayer } from "@/lib/db";
 import { usePlayerMutation } from "@/hooks/usePlayerMutation";
+import { SKILL } from "@/lib/config";
 
 const AddEditPlayer = () => {
   const { canManage, ready } = usePermission();
@@ -53,7 +54,8 @@ const AddEditPlayer = () => {
       setInitialValues({
         name: player.name,
         imageUrl: player.imageUrl || player.image,
-        isActive: player.isActive ?? true
+        isActive: player.isActive ?? true,
+        skillLevel: player.skillLevel ?? SKILL.default
       });
     }
   }, [player]);
@@ -94,7 +96,8 @@ const AddEditPlayer = () => {
               initialValues={initialValues || {
                 name: '',
                 imageUrl: null,
-                isActive: true
+                isActive: true,
+                skillLevel: SKILL.default
               }}
               onSubmit={onSubmit}
               isSubmitting={addPlayerMutation.isPending || updatePlayerMutation.isPending}
