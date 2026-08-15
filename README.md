@@ -70,27 +70,44 @@ See [SETUP.md](SETUP.md) to run it, [DEPLOY.md](DEPLOY.md) to deploy it, and
 
 ---
 
+## Written but not yet live
+
+Two migrations sit in `supabase/migrations/` that have **not** been applied to
+the hosted project. Both close data exposure carried over from the Lovable
+build. Applying them needs the migration history reconciled first — see
+[SETUP.md](SETUP.md#migration-history).
+
+Until they are applied, the anon key is enough to read and write every team's
+data, and that key is in the browser bundle by design.
+
+**`…_scope_matches_and_players_to_teams`** drops a policy of `USING (true)` on
+`matches` and another on `players`. Policies are OR'd, so those two cancelled
+the team-scoped policies beside them. The four team-scoped policies that remain
+already cover everything the app does.
+
+**`…_enforce_rls_through_season_views`** sets `security_invoker = on` on
+`season_player_stats`, `season_champions` and `player_match_results`. Without
+it a view runs as its owner and ignores the policies on the tables underneath,
+which is why `lib/season/season-retrieval.ts` checks `team_id` in client code
+before querying — a check a client can simply skip. It also marks
+`is_team_member` and `is_team_admin` `STABLE`: they had no volatility marker,
+so Postgres would call them once per row rather than once per query, and
+`season_player_stats` cross-joins seasons against players.
+
+Verified on a local stack: after the migrations an anonymous caller reads zero
+rows from all five relations and cannot insert, update or delete; a signed-in
+team member reads their own team's rows; a signed-in non-member reads none.
+Reverting the migrations in a transaction returns every row to the anonymous
+caller, which is what makes the first result mean anything.
+
 ## Open items
 
-Carried over from the Lovable build, not introduced by the move to Next. Each
-is a decision to make rather than a task already agreed.
+Carried over from the Lovable build. Each is a decision rather than an agreed
+task.
 
-**Two policies leave `matches` and `players` open to anyone.**
-`CREATE POLICY "Allow public access to matches" ON matches USING (true)` — and
-the same for `players` — have no role restriction, and `anon` holds `GRANT ALL`
-on both tables. RLS policies are OR'd, so these cancel the team-scoped policies
-sitting beside them. Anyone with the anon key, which ships in the browser
-bundle by design, can read and write every team's matches and players without
-signing in. Dropping both policies is the fix; the team-scoped ones already
-cover the app's own access.
-
-**The three views bypass RLS.** `season_player_stats`, `season_champions` and
-`player_match_results` were created without `security_invoker`, so they run as
-their owner and return every team's rows regardless of the policies on the
-underlying tables. `lib/season/season-retrieval.ts` compensates by checking the
-season's `team_id` in client code first, which a client can simply not do.
-`ALTER VIEW … SET (security_invoker = on)` moves the check to where it can't be
-skipped.
+**Both remaining policy pairs start `team_id IS NULL OR …`**, so any row
+predating teams is visible to every signed-in account. Tightening that would
+hide existing data, so it wants checking against the real table first.
 
 **Two ranking rules disagree.** `calculatePlayerRanks` orders on points, then
 games played, then wins. The `season_champions` view orders on points then wins

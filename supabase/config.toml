@@ -1,1 +1,23 @@
 project_id = "zeuepyucpafcjibsofec"
+
+# Ports are shifted off the CLI defaults (5432x) so this stack can run at the
+# same time as another local Supabase project. The defaults collide, and the
+# failure is a container that won't bind rather than anything obvious.
+
+[api]
+port = 54331
+
+[db]
+port = 54332
+shadow_port = 54330
+# Match the hosted project, so a migration that works locally works there.
+major_version = 15
+
+[studio]
+port = 54333
+
+[local_smtp]
+port = 54334
+
+[analytics]
+port = 54337

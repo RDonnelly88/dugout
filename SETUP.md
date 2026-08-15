@@ -14,6 +14,27 @@ npm run dev      # http://localhost:3000
 The two values come from the Supabase dashboard under **Project Settings → API
 Keys**, or from `vercel env pull .env.local` once the project is linked.
 
+To run against a local database instead of the real one:
+
+```bash
+supabase start   # needs Docker; applies every migration to a fresh Postgres
+```
+
+Then point `.env.local` at the stack it prints — the API URL and the anon key
+from `supabase status`. `supabase stop` when you're done; the containers are
+several GB.
+
+| Service | URL |
+|---|---|
+| API | http://127.0.0.1:54331 |
+| Postgres | `postgresql://postgres:postgres@127.0.0.1:54332/postgres` |
+| Studio | http://127.0.0.1:54333 |
+| Mail catcher | http://127.0.0.1:54334 |
+
+Those are shifted off the CLI's defaults in `supabase/config.toml` so this
+stack can run alongside another local Supabase project. On the defaults the
+second one to start fails to bind and the error doesn't say why.
+
 Both are `NEXT_PUBLIC_*`, which means Next inlines them into the bundle served
 to the browser. They are not secrets and cannot be — the browser has to hold
 them to talk to Supabase at all. Row-level security is what protects the data.
@@ -22,11 +43,10 @@ Never put the service-role key in this file.
 `lib/env.ts` validates both at import time, so a missing or malformed value
 fails with a readable message rather than surfacing later as `undefined`.
 
-**`.env.local` points at production.** There is no local Supabase stack wired
-up yet, so `npm run dev` reads and writes the real database. Be careful what
-you click. Setting one up is the natural next step — the schema is captured in
-`supabase/migrations/`, so `supabase start` followed by `supabase db reset`
-would reproduce it.
+**`.env.local` points at production unless you change it.** Out of the box
+`npm run dev` reads and writes the real database — there is no seed script, so
+a local stack starts empty and the quickest way to see real data is still to
+point at the hosted project. Be careful what you click.
 
 ## Before you push
 
@@ -78,12 +98,26 @@ Never edit it by hand, and never edit a migration that has been applied.
 
 ### Migration history
 
-The hosted project's migration history table doesn't match what's in the repo —
-it still lists the two Lovable migrations that the snapshot replaced. Until
-that's reconciled, `supabase db pull` and `supabase db push` will refuse to
-run. The Supabase CLI prints the exact repair commands when it fails; running
-them writes only to the migration bookkeeping table, not to any data. Read what
-it suggests before running it.
+The hosted project's history table still lists the three Lovable-era entries
+that the captured snapshot replaced, so `supabase db push` and `db pull` refuse
+to run until it's reconciled. Marking the old entries reverted and the snapshot
+applied lines the two up:
+
+```bash
+supabase migration repair --status reverted 20250812020152
+supabase migration repair --status reverted 20251001030424
+supabase migration repair --status reverted 20251001150425
+supabase migration repair --status applied  20250322000000
+supabase db push
+```
+
+`repair` writes only to `supabase_migrations.schema_migrations`, the
+bookkeeping table — it doesn't touch the schema or any data. Marking the
+snapshot applied is the accurate statement: that schema is already there, which
+is where the snapshot came from. `db push` then applies only what's genuinely
+outstanding.
+
+Check `supabase migration list` before and after.
 
 ## Things that will surprise you
 

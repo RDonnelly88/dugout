@@ -61,13 +61,24 @@ Supabase → Authentication → URL Configuration:
 Without the wildcard, sign-in on a preview deployment bounces back to
 localhost.
 
-### 4. Before the first public deploy
+### 4. Apply the two outstanding migrations first
 
-Read the open items in [README](README.md#open-items). Two of them are data
-exposure, not tidiness: `matches` and `players` currently carry a policy that
-grants everyone read and write access, and the three views return every team's
-rows regardless of policy. Deploying as-is publishes a URL where the anon key
-in the bundle is enough to read and edit the lot.
+`supabase/migrations/` holds two migrations that close data exposure and have
+not been applied to the hosted project. Deploying without them publishes a URL
+where the anon key in the bundle is enough to read and edit every team's data.
+
+They can't be pushed until the hosted migration history is reconciled with the
+repo — the sequence is in [SETUP.md](SETUP.md#migration-history). After
+pushing, check what actually landed:
+
+```bash
+supabase migration list
+npm run types:db          # the view changes don't alter the types, but confirm
+```
+
+Then sign in and load a season page. The views now filter by team rather than
+returning everything, so an empty leaderboard where there was data means the
+signed-in account isn't a member of the team that owns the season.
 
 ---
 
