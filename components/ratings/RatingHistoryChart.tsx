@@ -48,7 +48,10 @@ export default function RatingHistoryChart({
     const byDate = new Map<string, Record<string, number | string>>();
 
     for (const { playerId, rating } of players) {
-      for (const point of rating.history) {
+      // The matches they played, then the ones they missed. Without the second
+      // half a line stopped at whenever somebody last turned out, which read
+      // as a rating holding steady when it had been drifting for weeks.
+      for (const point of [...rating.history, ...rating.drifted]) {
         const row = byDate.get(point.date) ?? { date: point.date };
         row[playerId] = displayRating(point.rating);
         byDate.set(point.date, row);

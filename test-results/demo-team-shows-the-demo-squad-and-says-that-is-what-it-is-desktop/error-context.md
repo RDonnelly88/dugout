@@ -58,9 +58,9 @@ Call log:
   - paragraph: The squad, their records and their form
   - heading "Summer 2026" [level=3]
   - paragraph: Current season · 23/04/2026 – ongoing
-  - text: 12 have featured
+  - text: 10 have featured
   - link "View the league table":
-    - /url: /seasons/5b91a6b6-5a6e-4f6b-af95-59ec795ff9f0
+    - /url: /seasons/25c7ade6-ca02-45e6-8d88-b63d83e54b88
   - textbox "Search players..."
   - group "Which players to show":
     - text: Which players to show
@@ -69,115 +69,115 @@ Call log:
   - link "Add player":
     - /url: /players/add
   - link "Edit Baz":
-    - /url: /players/edit/374e83eb-e755-412b-9091-2484fcaec94c
+    - /url: /players/edit/6d372593-e530-4405-931c-5bfcbae92abc
   - button "Delete Baz"
-  - 'link "Baz #9 11 of 48 all time · 23% L W W D Elo 1107 Skill Skill 1 of 5 This season 10 P 3 W 5 D 2 L 14 Pts"':
-    - /url: /players/374e83eb-e755-412b-9091-2484fcaec94c
+  - 'link "Baz #8 12 of 54 all time · 22% D L L D D Elo 1053 Skill Skill 1 of 5 This season 15 P 3 W 7 D 5 L 16 Pts"':
+    - /url: /players/6d372593-e530-4405-931c-5bfcbae92abc
     - heading "Baz" [level=3]
-    - text: "#9"
-    - paragraph: 11 of 48 all time · 23%
-    - text: L W W D Elo 1107 Skill Skill 1 of 5
-    - paragraph: This season
-    - text: 10 P 3 W 5 D 2 L 14 Pts
-  - link "Edit Deano":
-    - /url: /players/edit/b97dba2e-a8b2-4245-82d9-38768c5ce35a
-  - button "Delete Deano"
-  - 'link "Deano #11 14 of 50 all time · 28% L L L L Elo 1182 Skill Skill 2 of 5 This season 14 P 2 W 5 D 7 L 11 Pts"':
-    - /url: /players/b97dba2e-a8b2-4245-82d9-38768c5ce35a
-    - heading "Deano" [level=3]
-    - text: "#11"
-    - paragraph: 14 of 50 all time · 28%
-    - text: L L L L Elo 1182 Skill Skill 2 of 5
-    - paragraph: This season
-    - text: 14 P 2 W 5 D 7 L 11 Pts
-  - link "Edit Keeper":
-    - /url: /players/edit/9a3f246c-c0c6-414e-9a16-3f260f88192a
-  - button "Delete Keeper"
-  - 'link "Keeper #1 22 of 52 all time · 42% W W W L D Elo 1287 Skill Skill 3 of 5 This season 14 P 6 W 5 D 3 L 23 Pts"':
-    - /url: /players/9a3f246c-c0c6-414e-9a16-3f260f88192a
-    - heading "Keeper" [level=3]
-    - text: "#1"
-    - paragraph: 22 of 52 all time · 42%
-    - text: W W W L D Elo 1287 Skill Skill 3 of 5
-    - paragraph: This season
-    - text: 14 P 6 W 5 D 3 L 23 Pts
-  - link "Edit Macca":
-    - /url: /players/edit/a7d08d89-695c-45af-8142-e5a4c01887e0
-  - button "Delete Macca"
-  - 'link "Macca #8 13 of 49 all time · 27% L W L D Elo 1142 Skill Skill 4 of 5 This season 14 P 3 W 6 D 5 L 15 Pts"':
-    - /url: /players/a7d08d89-695c-45af-8142-e5a4c01887e0
-    - heading "Macca" [level=3]
     - text: "#8"
-    - paragraph: 13 of 49 all time · 27%
-    - text: L W L D Elo 1142 Skill Skill 4 of 5
+    - paragraph: 12 of 54 all time · 22%
+    - text: D L L D D Elo 1053 Skill Skill 1 of 5
     - paragraph: This season
-    - text: 14 P 3 W 6 D 5 L 15 Pts
+    - text: 15 P 3 W 7 D 5 L 16 Pts
+  - link "Edit Deano":
+    - /url: /players/edit/144b7561-7954-4647-b81e-c14f90147b33
+  - button "Delete Deano"
+  - 'link "Deano #10 16 of 52 all time · 31% D L W D D Elo 1164 Skill Skill 2 of 5 This season 15 P 1 W 7 D 7 L 10 Pts"':
+    - /url: /players/144b7561-7954-4647-b81e-c14f90147b33
+    - heading "Deano" [level=3]
+    - text: "#10"
+    - paragraph: 16 of 52 all time · 31%
+    - text: D L W D D Elo 1164 Skill Skill 2 of 5
+    - paragraph: This season
+    - text: 15 P 1 W 7 D 7 L 10 Pts
+  - link "Edit Keeper":
+    - /url: /players/edit/52bc43e7-1c8e-4aee-bd0a-ced4bcf53fe1
+  - button "Delete Keeper"
+  - 'link "Keeper #5 25 of 57 all time · 44% D L L D D Elo 1298 Skill Skill 3 of 5 This season 15 P 4 W 7 D 4 L 19 Pts"':
+    - /url: /players/52bc43e7-1c8e-4aee-bd0a-ced4bcf53fe1
+    - heading "Keeper" [level=3]
+    - text: "#5"
+    - paragraph: 25 of 57 all time · 44%
+    - text: D L L D D Elo 1298 Skill Skill 3 of 5
+    - paragraph: This season
+    - text: 15 P 4 W 7 D 4 L 19 Pts
+  - link "Edit Macca":
+    - /url: /players/edit/0e4ee9b2-51c6-4c50-830d-082cb9b24aaa
+  - button "Delete Macca"
+  - 'link "Macca #2 17 of 52 all time · 33% D W L D D Elo 1205 Skill Skill 4 of 5 This season 15 P 5 W 7 D 3 L 22 Pts"':
+    - /url: /players/0e4ee9b2-51c6-4c50-830d-082cb9b24aaa
+    - heading "Macca" [level=3]
+    - text: "#2"
+    - paragraph: 17 of 52 all time · 33%
+    - text: D W L D D Elo 1205 Skill Skill 4 of 5
+    - paragraph: This season
+    - text: 15 P 5 W 7 D 3 L 22 Pts
   - link "Edit Nobby":
-    - /url: /players/edit/3bf995fb-4c06-47a9-a01e-fd5a946280e5
+    - /url: /players/edit/156f2997-9fbb-4ace-bae9-8112bd9d66e5
   - button "Delete Nobby"
-  - 'link "Nobby #5 15 of 55 all time · 27% W L W L D Elo 1121 Skill Skill 5 of 5 This season 14 P 4 W 5 D 5 L 17 Pts"':
-    - /url: /players/3bf995fb-4c06-47a9-a01e-fd5a946280e5
+  - 'link "Nobby #5 19 of 57 all time · 33% D L W D D Elo 1160 Skill Skill 5 of 5 This season 15 P 4 W 7 D 4 L 19 Pts"':
+    - /url: /players/156f2997-9fbb-4ace-bae9-8112bd9d66e5
     - heading "Nobby" [level=3]
     - text: "#5"
-    - paragraph: 15 of 55 all time · 27%
-    - text: W L W L D Elo 1121 Skill Skill 5 of 5
+    - paragraph: 19 of 57 all time · 33%
+    - text: D L W D D Elo 1160 Skill Skill 5 of 5
     - paragraph: This season
-    - text: 14 P 4 W 5 D 5 L 17 Pts
+    - text: 15 P 4 W 7 D 4 L 19 Pts
   - link "Edit Ollie":
-    - /url: /players/edit/a7eb11de-6cdf-4fc9-b5f0-fc6483689df6
+    - /url: /players/edit/a8d72639-208d-4e2c-a566-47b7a6f72bb3
   - button "Delete Ollie"
-  - 'link "Ollie #10 18 of 48 all time · 38% W L D Elo 1280 Skill Skill 1 of 5 This season 10 P 3 W 4 D 3 L 13 Pts"':
-    - /url: /players/a7eb11de-6cdf-4fc9-b5f0-fc6483689df6
+  - 'link "Ollie #2 23 of 57 all time · 40% D W W D D Elo 1282 Skill Skill 1 of 5 This season 15 P 5 W 7 D 3 L 22 Pts"':
+    - /url: /players/a8d72639-208d-4e2c-a566-47b7a6f72bb3
     - heading "Ollie" [level=3]
-    - text: "#10"
-    - paragraph: 18 of 48 all time · 38%
-    - text: W L D Elo 1280 Skill Skill 1 of 5
+    - text: "#2"
+    - paragraph: 23 of 57 all time · 40%
+    - text: D W W D D Elo 1282 Skill Skill 1 of 5
     - paragraph: This season
-    - text: 10 P 3 W 4 D 3 L 13 Pts
+    - text: 15 P 5 W 7 D 3 L 22 Pts
   - link "Edit Pikey":
-    - /url: /players/edit/73086dd7-ceea-4607-9071-3dbf0296f1bb
+    - /url: /players/edit/c9c0abe4-379f-4f8c-bd6c-18b921250905
   - button "Delete Pikey"
-  - 'link "Pikey #3 21 of 45 all time · 47% W W L W D Elo 1351 Skill Skill 2 of 5 This season 11 P 5 W 5 D 1 L 20 Pts"':
-    - /url: /players/73086dd7-ceea-4607-9071-3dbf0296f1bb
+  - 'link "Pikey #5 26 of 53 all time · 49% D W W D D Elo 1368 Skill Skill 2 of 5 This season 15 P 4 W 7 D 4 L 19 Pts"':
+    - /url: /players/c9c0abe4-379f-4f8c-bd6c-18b921250905
     - heading "Pikey" [level=3]
-    - text: "#3"
-    - paragraph: 21 of 45 all time · 47%
-    - text: W W L W D Elo 1351 Skill Skill 2 of 5
+    - text: "#5"
+    - paragraph: 26 of 53 all time · 49%
+    - text: D W W D D Elo 1368 Skill Skill 2 of 5
     - paragraph: This season
-    - text: 11 P 5 W 5 D 1 L 20 Pts
+    - text: 15 P 4 W 7 D 4 L 19 Pts
   - link "Edit Ritchie":
-    - /url: /players/edit/a18c31af-166b-43ba-8bf3-db8bc9bc2e66
+    - /url: /players/edit/79e45b55-4e94-4e2f-b94a-912fae1eb57a
   - button "Delete Ritchie"
-  - 'link "Ritchie #12 7 of 45 all time · 16% L L Elo 1030 Skill Skill 3 of 5 This season 8 P 2 W 3 D 3 L 9 Pts"':
-    - /url: /players/a18c31af-166b-43ba-8bf3-db8bc9bc2e66
+  - 'link "Ritchie #8 8 of 54 all time · 15% D W L D D Elo 973 Skill Skill 3 of 5 This season 15 P 3 W 7 D 5 L 16 Pts"':
+    - /url: /players/79e45b55-4e94-4e2f-b94a-912fae1eb57a
     - heading "Ritchie" [level=3]
-    - text: "#12"
-    - paragraph: 7 of 45 all time · 16%
-    - text: L L Elo 1030 Skill Skill 3 of 5
+    - text: "#8"
+    - paragraph: 8 of 54 all time · 15%
+    - text: D W L D D Elo 973 Skill Skill 3 of 5
     - paragraph: This season
-    - text: 8 P 2 W 3 D 3 L 9 Pts
+    - text: 15 P 3 W 7 D 5 L 16 Pts
   - link "Edit Scouse":
-    - /url: /players/edit/4c2891be-10f4-4fe5-97a0-3b30bc6fb582
+    - /url: /players/edit/01bd5ada-d818-4bf6-9847-87a800cd7c09
   - button "Delete Scouse"
-  - 'link "Scouse #4 17 of 54 all time · 31% L W W W D Elo 1171 Skill Skill 4 of 5 This season 15 P 4 W 6 D 5 L 18 Pts"':
-    - /url: /players/4c2891be-10f4-4fe5-97a0-3b30bc6fb582
+  - 'link "Scouse #1 21 of 55 all time · 38% D W L D D Elo 1218 Skill Skill 4 of 5 This season 15 P 6 W 7 D 2 L 25 Pts"':
+    - /url: /players/01bd5ada-d818-4bf6-9847-87a800cd7c09
     - heading "Scouse" [level=3]
-    - text: "#4"
-    - paragraph: 17 of 54 all time · 31%
-    - text: L W W W D Elo 1171 Skill Skill 4 of 5
+    - text: "#1"
+    - paragraph: 21 of 55 all time · 38%
+    - text: D W L D D Elo 1218 Skill Skill 4 of 5
     - paragraph: This season
-    - text: 15 P 4 W 6 D 5 L 18 Pts
+    - text: 15 P 6 W 7 D 2 L 25 Pts
   - link "Edit Tosh":
-    - /url: /players/edit/4797c47e-f158-4d54-ac45-d9a061669871
+    - /url: /players/edit/a054dabe-7a0a-4991-9ee6-9a72d41d99aa
   - button "Delete Tosh"
-  - 'link "Tosh #2 14 of 51 all time · 27% W W L D Elo 1166 Skill Skill 5 of 5 This season 14 P 5 W 6 D 3 L 21 Pts"':
-    - /url: /players/4797c47e-f158-4d54-ac45-d9a061669871
+  - 'link "Tosh #2 14 of 53 all time · 26% D L W D D Elo 1128 Skill Skill 5 of 5 This season 15 P 5 W 7 D 3 L 22 Pts"':
+    - /url: /players/a054dabe-7a0a-4991-9ee6-9a72d41d99aa
     - heading "Tosh" [level=3]
     - text: "#2"
-    - paragraph: 14 of 51 all time · 27%
-    - text: W W L D Elo 1166 Skill Skill 5 of 5
+    - paragraph: 14 of 53 all time · 26%
+    - text: D L W D D Elo 1128 Skill Skill 5 of 5
     - paragraph: This season
-    - text: 14 P 5 W 6 D 3 L 21 Pts
+    - text: 15 P 5 W 7 D 3 L 22 Pts
 - region "Notifications (F8)":
   - list
 - alert
