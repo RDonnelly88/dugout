@@ -25,6 +25,7 @@ import { useTeam } from "@/contexts/TeamContext";
 import { usePermission } from "@/lib/permission-utils";
 import TeamSelector from "@/components/TeamSelector";
 import TeamSwitcher from "@/components/team/TeamSwitcher";
+import DemoBanner from "@/components/team/DemoBanner";
 
 const menuItems = [
   { path: "/", label: "Home", icon: Home },
@@ -205,6 +206,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </Button>
           <TeamSwitcher variant="minimal" />
         </div>
+
+        <DemoBanner />
 
         {children}
       </main>

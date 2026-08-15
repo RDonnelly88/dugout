@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import { usePlayerRank } from "@/hooks/usePlayerRank";
+import { usePermission } from "@/lib/permission-utils";
 import { winRate } from "@/lib/player-stats";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import { isActivePlayer } from "@/components/players/ActiveFilter";
@@ -85,6 +86,8 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
   onDeleteClick,
 }) => {
   const { rank, hasPlayedCurrentSeason } = usePlayerRank(seasonId, player.id);
+  const { canManage, ready } = usePermission();
+  const editable = ready && canManage();
 
   // The season is the headline when one is selected, because that is what the
   // table on every other page is showing. All-time sits underneath it as
@@ -96,8 +99,9 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
     <Card className="player-card relative overflow-hidden bg-surface border-border">
       {/* Outside the link: a button nested in an anchor is invalid, and the
           whole card being the link is what makes a player reachable from
-          anywhere they are named. */}
-      <div className="absolute right-2 top-2 z-10 flex gap-1">
+          anywhere they are named. Hidden for anyone who cannot act on them —
+          a viewer, or anybody looking round the demo team. */}
+      <div className={`absolute right-2 top-2 z-10 flex gap-1 ${editable ? "" : "hidden"}`}>
         <Link
           href={`/players/edit/${player.id}`}
           aria-label={`Edit ${player.name}`}

@@ -65,9 +65,19 @@ const MatchListItem = ({
   // A result is a result whether or not anyone wrote the score down.
   const winner = outcomeOf(match);
   const played = winner !== null;
-  const hasScore =
-    typeof match.teamA?.score === "number" &&
-    typeof match.teamB?.score === "number";
+
+  // The winner reads first, so the row is a sentence: "Bibs beat No bibs". A
+  // fixed left-hand side would have it saying the opposite half the time.
+  const flipped = winner === "b";
+  const left = {
+    name: flipped ? sides.B : sides.A,
+    swing: flipped ? swing?.B : swing?.A,
+    won: played && winner !== "draw",
+  };
+  const right = {
+    name: flipped ? sides.A : sides.B,
+    swing: flipped ? swing?.A : swing?.B,
+  };
 
   return (
     <li className="relative">
@@ -90,39 +100,26 @@ const MatchListItem = ({
           <span className="flex min-w-0 flex-1 flex-col items-end">
             <span
               className={`w-full truncate text-right text-sm sm:text-base ${
-                winner === "a" ? "font-semibold" : "text-muted-foreground"
+                left.won ? "font-semibold" : "text-muted-foreground"
               }`}
             >
-              {sides.A}
+              {left.name}
             </span>
-            {swing && <Swing side={swing.A} />}
+            {left.swing && <Swing side={left.swing} />}
           </span>
 
-          {hasScore ? (
-            <span className="shrink-0 rounded-md bg-surface-2 px-2 py-0.5 text-sm font-bold tabular sm:text-base">
-              {match.teamA.score}
-              <span className="mx-0.5 text-muted-foreground">–</span>
-              {match.teamB.score}
-            </span>
-          ) : played ? (
-            <span className="shrink-0 rounded-md bg-surface-2 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {winner === "draw" ? "draw" : "won"}
-            </span>
-          ) : (
-            <span className="shrink-0 text-xs uppercase tracking-wider text-muted-foreground">
-              vs
-            </span>
-          )}
+          {/* Who won, not what it finished. Most results carry no score at
+              all, and the ones that do were rarely the point — the list is for
+              scanning who beat whom. The score is on the match itself. */}
+          <span className="shrink-0 text-xs uppercase tracking-wider text-muted-foreground">
+            {winner === "draw" ? "drew" : played ? "beat" : "v"}
+          </span>
 
           <span className="flex min-w-0 flex-1 flex-col items-start">
-            <span
-              className={`w-full truncate text-sm sm:text-base ${
-                winner === "b" ? "font-semibold" : "text-muted-foreground"
-              }`}
-            >
-              {sides.B}
+            <span className="w-full truncate text-sm text-muted-foreground sm:text-base">
+              {right.name}
             </span>
-            {swing && <Swing side={swing.B} />}
+            {right.swing && <Swing side={right.swing} />}
           </span>
         </span>
 

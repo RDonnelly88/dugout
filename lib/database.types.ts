@@ -252,8 +252,9 @@ export type Database = {
       teams: {
         Row: {
           created_at: string
-          created_by: string
+          created_by: string | null
           id: string
+          is_demo: boolean
           name: string
           side_a_name: string
           side_b_name: string
@@ -261,8 +262,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          created_by: string
+          created_by?: string | null
           id?: string
+          is_demo?: boolean
           name: string
           side_a_name?: string
           side_b_name?: string
@@ -270,8 +272,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           id?: string
+          is_demo?: boolean
           name?: string
           side_a_name?: string
           side_b_name?: string
@@ -403,6 +406,7 @@ export type Database = {
           username: string
         }[]
       }
+      is_demo_team: { Args: { check_team_id: string }; Returns: boolean }
       is_team_admin: { Args: { team_uuid: string }; Returns: boolean }
       is_team_admin_no_recursion: {
         Args: { team_uuid: string; user_uuid: string }
@@ -414,6 +418,10 @@ export type Database = {
         Returns: boolean
       }
       join_team: { Args: { team_id_param: string }; Returns: Json }
+      match_outcome: {
+        Args: { outcome: string; team_a: Json; team_b: Json }
+        Returns: string
+      }
     }
     Enums: {
       team_role: "admin" | "viewer"

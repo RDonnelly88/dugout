@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import PlayerCard from "./PlayerCard";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
+import { usePermission } from "@/lib/permission-utils";
 import { scopeTo, type ActiveScope } from "./ActiveFilter";
 
 interface PlayersGridProps {
@@ -37,6 +38,8 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
   // Likewise the ratings: the hook replays the entire match history, so a card
   // calling it for itself would replay it once per player on screen.
   const { ratingFor, all } = usePlayerRatings();
+  const { canManage, ready } = usePermission();
+  const editable = ready && canManage();
 
   // Where each rating sits within the squad's own spread. Elo has no absolute
   // meaning — 1250 is strong in one group and ordinary in another — so a card
@@ -79,11 +82,11 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
               ? "No active players — try Everyone"
               : "No players added yet"}
         </p>
-        {!searchTerm && players.length === 0 && (
+        {!searchTerm && players.length === 0 && editable && (
           <Button asChild>
             <Link href="/players/add">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Player
+              <Plus className="mr-2 h-4 w-4" />
+              Add player
             </Link>
           </Button>
         )}

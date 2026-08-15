@@ -37,6 +37,8 @@ const EditMatch = () => {
     teamB, 
     date, 
     seasonId,
+    setOutcome,
+    effectiveOutcome,
     teamAScore,
     teamBScore,
     status,
@@ -175,8 +177,35 @@ const EditMatch = () => {
               </div>
 
               {status === "completed" && (
-                <div className="space-y-4 pt-4 border-t border-accent/20">
-                  <h3 className="text-lg font-semibold">Match Result</h3>
+                <div className="space-y-4 border-t border-border pt-4">
+                  <h3 className="section-title">The result</h3>
+
+                  {/* Who won is the result. The score is optional detail, and
+                      forcing it here meant a match could only be recorded by
+                      somebody who remembered it 6–4. */}
+                  <fieldset className="grid gap-2 sm:grid-cols-3">
+                    <legend className="sr-only">Who won</legend>
+                    {([
+                      { key: "a" as const, label: `${sides.A} won` },
+                      { key: "draw" as const, label: "Draw" },
+                      { key: "b" as const, label: `${sides.B} won` },
+                    ]).map(({ key, label }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setOutcome(key)}
+                        aria-pressed={effectiveOutcome === key}
+                        className={`focus-ring rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
+                          effectiveOutcome === key
+                            ? "border-accent bg-accent/10 text-accent"
+                            : "border-border bg-surface hover:border-border-strong"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </fieldset>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="team-a-score">{sides.A} score</Label>
@@ -184,9 +213,14 @@ const EditMatch = () => {
                         id="team-a-score"
                         type="number"
                         min="0"
-                        value={teamAScore}
-                        onChange={(e) => setTeamAScore(parseInt(e.target.value) || 0)}
-                        className="mt-1"
+                        inputMode="numeric"
+                        value={teamAScore ?? ""}
+                        onChange={(e) =>
+                          setTeamAScore(
+                            e.target.value === "" ? undefined : parseInt(e.target.value, 10)
+                          )
+                        }
+                        className="tabular mt-1"
                       />
                     </div>
                     <div>
@@ -195,12 +229,21 @@ const EditMatch = () => {
                         id="team-b-score"
                         type="number"
                         min="0"
-                        value={teamBScore}
-                        onChange={(e) => setTeamBScore(parseInt(e.target.value) || 0)}
-                        className="mt-1"
+                        inputMode="numeric"
+                        value={teamBScore ?? ""}
+                        onChange={(e) =>
+                          setTeamBScore(
+                            e.target.value === "" ? undefined : parseInt(e.target.value, 10)
+                          )
+                        }
+                        className="tabular mt-1"
                       />
                     </div>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    Leave the score blank and the result still counts. Fill both
+                    in and the score decides it.
+                  </p>
                 </div>
               )}
             </div>
