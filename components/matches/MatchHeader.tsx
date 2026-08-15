@@ -37,8 +37,8 @@ const MatchHeader = ({ match, isCompleted, onEditClick }: MatchHeaderProps) => {
               <span className={cn(
                 "px-2 py-0.5 rounded-full text-xs font-medium",
                 isCompleted 
-                  ? "bg-green-100 text-green-800" 
-                  : "bg-blue-100 text-blue-800"
+                  ? "bg-win/15 text-win" 
+                  : "bg-info/15 text-info"
               )}>
                 {isCompleted ? "Completed" : "Scheduled"}
               </span>

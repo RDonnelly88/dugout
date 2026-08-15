@@ -20,8 +20,10 @@ import { useEditMatch } from "@/hooks/useEditMatch";
 import { usePermission } from "@/lib/permission-utils";
 import { useToast } from "@/hooks/use-toast";
 import { useTeam } from "@/contexts/TeamContext";
+import { useSideNames } from "@/hooks/useSideNames";
 
 const EditMatch = () => {
+  const sides = useSideNames();
   const { id } = useParams<{ id: string }>();
   const { canManage, ready } = usePermission();
   const router = useRouter();
@@ -132,14 +134,14 @@ const EditMatch = () => {
       </div>
 
       <div className="page-header">
-        <h1 className="page-title text-gradient">Edit Match</h1>
-        <p className="mt-2 text-muted-foreground text-center max-w-xl mx-auto">
+        <h1 className="page-title">Edit Match</h1>
+        <p className="page-subtitle">
           Update match details and team compositions
         </p>
       </div>
 
       <Card className="neo-glassmorphism border-accent/30 shadow-accent/10">
-        <CardContent className="p-6">
+        <CardContent>
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="bg-card/50 rounded-xl overflow-hidden shadow-lg border border-accent/30 p-4">
               <TeamRandomizer 
@@ -177,7 +179,7 @@ const EditMatch = () => {
                   <h3 className="text-lg font-semibold">Match Result</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="team-a-score">Team A Score</Label>
+                      <Label htmlFor="team-a-score">{sides.A} score</Label>
                       <Input
                         id="team-a-score"
                         type="number"
@@ -188,7 +190,7 @@ const EditMatch = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="team-b-score">Team B Score</Label>
+                      <Label htmlFor="team-b-score">{sides.B} score</Label>
                       <Input
                         id="team-b-score"
                         type="number"

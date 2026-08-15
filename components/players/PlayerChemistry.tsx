@@ -124,7 +124,7 @@ function Lineup({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
+        <CardTitle className="flex items-center gap-2">
           <Icon className={`h-4 w-4 ${tone === "win" ? "text-win" : "text-loss"}`} />
           {title}
         </CardTitle>

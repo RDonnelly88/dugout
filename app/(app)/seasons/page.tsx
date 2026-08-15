@@ -175,8 +175,8 @@ const Seasons = () => {
     <div className="page-container animate-slide-up">
       <div className="page-header">
         <h1 className="page-title">Seasons</h1>
-        <p className="mt-2 text-muted-foreground">
-          Create and manage your football seasons
+        <p className="page-subtitle">
+          Every season, and who came out on top
         </p>
       </div>
 

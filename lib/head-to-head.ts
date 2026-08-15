@@ -1,4 +1,5 @@
 import type { Match } from "@/types";
+import { outcomeOf } from "./match-result";
 
 export interface Tally {
   played: number;
@@ -44,13 +45,8 @@ export function headToHead(
   const against = empty();
 
   for (const match of matches) {
-    if (
-      match.status !== "completed" ||
-      typeof match.teamA.score !== "number" ||
-      typeof match.teamB.score !== "number"
-    ) {
-      continue;
-    }
+    const outcome = outcomeOf(match);
+    if (!outcome) continue;
 
     const aInA = match.teamA.players.includes(playerA);
     const aInB = match.teamB.players.includes(playerA);
@@ -61,12 +57,9 @@ export function headToHead(
     const bPlayed = bInA || bInB;
     if (!aPlayed || !bPlayed) continue;
 
-    const scoreA = match.teamA.score;
-    const scoreB = match.teamB.score;
-    const drawn = scoreA === scoreB;
-
     // From the first player's side of the pitch.
-    const aWon = drawn ? false : aInA ? scoreA > scoreB : scoreB > scoreA;
+    const drawn = outcome === "draw";
+    const aWon = drawn ? false : aInA ? outcome === "a" : outcome === "b";
     const result = drawn ? "draw" : aWon ? "win" : "loss";
 
     if (aInA === bInA) {

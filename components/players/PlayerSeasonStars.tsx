@@ -48,7 +48,7 @@ const PlayerSeasonStars = ({ playerId, size = "sm", className = "" }: PlayerSeas
   // Add bronze stars
   for (let i = 0; i < Math.min(awards.bronze, 3 - stars.length); i++) {
     stars.push(
-      <Star key={`bronze-${i}`} className={`${iconSize} text-amber-600 fill-amber-600`} />
+      <Star key={`bronze-${i}`} className={`${iconSize} text-draw fill-amber-600`} />
     );
   }
   

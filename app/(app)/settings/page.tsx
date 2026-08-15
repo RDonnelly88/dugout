@@ -31,7 +31,7 @@ export default async function SettingsPage() {
     <div className="page-container animate-slide-up">
       <div className="page-header">
         <h1 className="page-title">Settings</h1>
-        <p className="mt-2 text-muted-foreground">
+        <p className="page-subtitle">
           How the app looks, and how you get into it.
         </p>
       </div>
@@ -39,7 +39,7 @@ export default async function SettingsPage() {
       <div className="grid max-w-3xl gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Appearance</CardTitle>
+            <CardTitle>Appearance</CardTitle>
             <CardDescription>
               Follows your device unless you pick one. Saved to your account, so
               it comes with you.
@@ -56,7 +56,7 @@ export default async function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Account</CardTitle>
+            <CardTitle>Account</CardTitle>
             <CardDescription>{user?.email}</CardDescription>
           </CardHeader>
           <CardContent>

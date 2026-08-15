@@ -49,8 +49,10 @@ const SeasonSelect = ({ value, onChange, label = "Season" }: SeasonSelectProps) 
   // undefined and the effect above fills it in a tick later, which React reads
   // as an uncontrolled input turning into a controlled one.
   return (
-    <div>
-      <Label htmlFor={id}>{label}</Label>
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="block">
+        {label}
+      </Label>
       <Select
         value={value ?? ""}
         onValueChange={onChange}

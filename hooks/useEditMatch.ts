@@ -6,6 +6,8 @@ import { updateMatch, getMatch } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { Player, Match, MatchStatus } from "@/types";
 import { useTeam } from "@/contexts/TeamContext";
+import { useSideNames } from "@/hooks/useSideNames";
+import type { Outcome } from "@/lib/match-result";
 
 export const useEditMatch = (matchId: string) => {
   const [teamA, setTeamA] = useState<string[]>([]);
@@ -20,6 +22,7 @@ export const useEditMatch = (matchId: string) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { currentTeam } = useTeam();
+  const sides = useSideNames();
 
   // Fetch the match data
   const { data: match, isLoading } = useQuery({
@@ -137,19 +140,32 @@ export const useEditMatch = (matchId: string) => {
       return;
     }
 
+    // The outcome has to follow the scores being saved. Leaving the old one in
+    // place while the score changed would put the two in contradiction, and
+    // the database rejects that outright.
+    const outcome: Outcome | null =
+      status === "completed"
+        ? teamAScore > teamBScore
+          ? "a"
+          : teamAScore < teamBScore
+            ? "b"
+            : "draw"
+        : null;
+
     const matchData = {
       teamA: {
-        name: "Team A",
+        name: sides.A,
         players: teamA,
         score: teamAScore
       },
       teamB: {
-        name: "Team B",
+        name: sides.B,
         players: teamB,
         score: teamBScore
       },
       date: date.toISOString(),
       status: status,
+      outcome,
       seasonId: seasonId === "none" ? undefined : seasonId,
       teamId: currentTeam.id,
       notes: notes || undefined

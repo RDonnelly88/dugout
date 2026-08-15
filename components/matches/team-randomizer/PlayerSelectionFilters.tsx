@@ -1,8 +1,8 @@
 import React from 'react';
-import { Search, Users, UserCheck } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import ActiveFilter from "@/components/players/ActiveFilter";
 
 interface PlayerSelectionFiltersProps {
   searchTerm: string;
@@ -40,22 +40,10 @@ const PlayerSelectionFilters = ({
           />
         </div>
         
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant={showActiveOnly ? "default" : "outline"}
-            size="sm"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setShowActiveOnly(!showActiveOnly);
-            }}
-            className="gap-2"
-          >
-            {showActiveOnly ? <UserCheck className="h-3 w-3" /> : <Users className="h-3 w-3" />}
-            {showActiveOnly ? "Active Only" : "All Players"}
-          </Button>
-        </div>
+        <ActiveFilter
+          value={showActiveOnly ? "active" : "all"}
+          onChange={(scope) => setShowActiveOnly(scope === "active")}
+        />
       </div>
       
       <div className="flex items-center gap-2 text-xs text-muted-foreground">

@@ -58,6 +58,11 @@ export interface Match {
   teamA: TeamInfo;
   teamB: TeamInfo;
   status: MatchStatus;
+  /**
+   * Who won: the first side, the second, or neither. The truth about the
+   * result — the score is optional detail that must agree with it.
+   */
+  outcome?: "a" | "b" | "draw" | null;
   createdAt: string;
   updatedAt: string;
   seasonId?: string;

@@ -1,15 +1,21 @@
 import Link from "next/link";
-import React from "react";
 
-import { Calendar, Trophy, Medal } from "lucide-react";
-import * as LucideIcons from "lucide-react";
+import { Calendar, Medal, Trophy } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import PlayerForm from "@/components/players/PlayerForm";
-import { Season, SeasonChampion, PlayerFormResult } from "@/types";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import PlayerAvatar from "@/components/players/PlayerAvatar";
+import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
+import { winners } from "@/lib/podium";
+import { Season, SeasonChampion, PlayerFormResult } from "@/types";
 
 interface SeasonCardProps {
   season: Season;
@@ -19,191 +25,146 @@ interface SeasonCardProps {
   playerForms?: Record<string, PlayerFormResult[]>;
 }
 
-const SeasonCard = ({ 
-  season, 
-  champions = [], 
-  totalPlayers, 
-  totalMatches,
-  playerForms = {}
-}: SeasonCardProps) => {
-  const topPlayer = champions.length > 0 ? champions[0] : null;
-  const startDate = new Date(season.startDate).toLocaleDateString();
-  const endDate = season.endDate ? new Date(season.endDate).toLocaleDateString() : "Ongoing";
-  
-  // Calculate consistent golf-style rankings
-  const playerRanks: Record<string, number> = {};
-  let currentRank = 1;
-  
-  // Sort champions by points, games played, and wins
-  const sortedChampions = [...champions].sort((a, b) => {
-    if (b.points !== a.points) {
-      return b.points - a.points;
-    }
-    // Prioritize MORE games played when points are equal
-    if (a.played !== b.played) {
-      return b.played - a.played;
-    }
-    return b.wins - a.wins;
-  });
-  
-  // Calculate golf-style ranks (players with identical stats share the same rank)
-  if (sortedChampions.length > 0) {
-    playerRanks[sortedChampions[0].playerId] = currentRank;
-  }
-  
-  for (let i = 1; i < sortedChampions.length; i++) {
-    const prevPlayer = sortedChampions[i - 1];
-    const currentPlayer = sortedChampions[i];
-    
-    // If current player has same stats as previous, they get the same rank
-    if (
-      prevPlayer.points === currentPlayer.points && 
-      prevPlayer.played === currentPlayer.played && 
-      prevPlayer.wins === currentPlayer.wins
-    ) {
-      playerRanks[currentPlayer.playerId] = playerRanks[prevPlayer.playerId];
-    } else {
-      // Otherwise, current rank is i+1 (position in the sorted array)
-      currentRank = i + 1;
-      playerRanks[currentPlayer.playerId] = currentRank;
-    }
-  }
-  
-  // Take top 5 for mini leaderboard
-  const top5Players = sortedChampions.slice(0, 5);
+/** The trophy or medal for a place, or the number when it is outside the top three. */
+function Place({ rank }: { rank: number }) {
+  if (rank === 1) return <Trophy className="h-4 w-4 text-draw" />;
+  if (rank === 2) return <Medal className="h-4 w-4 text-muted-foreground" />;
+  if (rank === 3) return <Medal className="h-4 w-4 text-draw" />;
+  return <span className="tabular text-sm">{rank}</span>;
+}
 
-  // Helper to render avatar with icon support
-  const renderAvatar = (playerImage: string | null, playerName: string) => {
-    // Check if it's an icon format
-    if (playerImage && playerImage.startsWith('icon:')) {
-      const iconName = playerImage.replace('icon:', '');
-      const IconComponent = (LucideIcons as any)[iconName];
-      
-      return (
-        <Avatar className="h-5 w-5 mr-2">
-          <AvatarFallback className="bg-secondary text-secondary-foreground">
-            {IconComponent ? <IconComponent className="h-3 w-3" /> : playerName.charAt(0)}
-          </AvatarFallback>
-        </Avatar>
-      );
-    }
-    
-    // Regular image avatar
-    return (
-      <Avatar className="h-5 w-5 mr-2">
-        <AvatarImage src={playerImage || undefined} alt={playerName} />
-        <AvatarFallback>{playerName.charAt(0)}</AvatarFallback>
-      </Avatar>
-    );
-  };
+/**
+ * A season at a glance.
+ *
+ * The ranks come from `season_champions`, which already works them out
+ * golf-style. This used to sort the rows and derive the ranks a second time in
+ * the browser, by a slightly different rule — so the card and the season's own
+ * league table could disagree about who came second.
+ *
+ * It also drew its own avatars out of the lucide namespace and had its own copy
+ * of the form squares. Both have one component apiece for a reason: the
+ * hand-rolled avatar was how `icon:Ghost` ended up rendering as a broken image
+ * in eight of the nine places that showed it.
+ */
+const SeasonCard = ({
+  season,
+  champions = [],
+  totalPlayers,
+  totalMatches,
+  playerForms = {},
+}: SeasonCardProps) => {
+  const startDate = new Date(season.startDate).toLocaleDateString();
+  const endDate = season.endDate
+    ? new Date(season.endDate).toLocaleDateString()
+    : "Ongoing";
+
+  const leaders = winners(champions);
+  const top = [...champions].sort((a, b) => a.rank - b.rank).slice(0, 5);
 
   return (
-    <Link href={`/seasons/${season.id}`}>
-      <Card className="overflow-hidden hover:bg-muted/20 transition-colors h-full bg-surface border-border">
-        <CardContent className="p-0">
-          <div className="p-6">
-            <div className="flex justify-between items-start">
-              <h3 className="text-xl font-semibold mb-2">{season.name}</h3>
-              {season.isCurrent && (
-                <Badge className="bg-win hover:bg-green-600">Current Season</Badge>
-              )}
-              {season.isFinished && (
-                <Badge variant="outline">Finished</Badge>
-              )}
-            </div>
-            
-            <div className="flex items-center text-muted-foreground mb-4">
-              <Calendar className="h-4 w-4 mr-1" />
-              <span>{startDate} - {endDate}</span>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              <div className="p-2 bg-muted/20 rounded text-center">
-                <div className="text-xs text-muted-foreground">Matches</div>
-                <div className="font-semibold">{totalMatches}</div>
-              </div>
-              <div className="p-2 bg-muted/20 rounded text-center">
-                <div className="text-xs text-muted-foreground">Players</div>
-                <div className="font-semibold">{totalPlayers}</div>
-              </div>
-            </div>
-            
-            {topPlayer && (
-              <div className="flex items-center p-3 bg-muted/20 rounded">
-                <Trophy className="h-5 w-5 text-draw mr-2" />
-                <div>
-                  <div className="text-xs text-muted-foreground">
-                    {season.isFinished ? "Champion" : "Leader"}
-                  </div>
-                  <div className="font-medium flex items-center gap-2">
-                    {topPlayer.playerName}
-                    <PlayerSeasonStars playerId={topPlayer.playerId} size="sm" />
-                  </div>
-                </div>
-                <div className="ml-auto">
-                  <div className="text-xs text-muted-foreground">Points</div>
-                  <div className="font-semibold text-right">{topPlayer.points}</div>
-                </div>
-              </div>
+    <Link href={`/seasons/${season.id}`} className="block h-full">
+      <Card className="h-full overflow-hidden border-border bg-surface transition-colors hover:border-border-strong">
+        <CardContent className="p-5 md:p-6">
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="section-title">{season.name}</h3>
+            {season.isCurrent && !season.isFinished && (
+              <Badge className="shrink-0 bg-win text-win-foreground">Ongoing</Badge>
             )}
-            
-            {top5Players.length > 0 && (
-              <div className="mt-4">
-                <div className="text-sm font-medium mb-2">Top {Math.min(5, top5Players.length)} Players</div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]">Rank</TableHead>
-                      <TableHead>Player</TableHead>
-                      <TableHead className="text-right">Form</TableHead>
-                      <TableHead className="text-right">P</TableHead>
-                      <TableHead className="text-right">Pts</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {top5Players.map((player) => (
-                      <TableRow key={player.playerId}>
-                        <TableCell className="py-1">
-                          {playerRanks[player.playerId] === 1 ? (
-                            <Trophy className="h-4 w-4 text-draw" />
-                          ) : playerRanks[player.playerId] === 2 ? (
-                            <Medal className="h-4 w-4 text-slate-400" />
-                          ) : playerRanks[player.playerId] === 3 ? (
-                            <Medal className="h-4 w-4 text-amber-700" />
-                          ) : (
-                            <span>{playerRanks[player.playerId]}</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="py-1">
-                          <div className="flex items-center">
-                            {renderAvatar(player.playerImage, player.playerName)}
-                            <div className="flex flex-col">
-                              <div className="flex items-center gap-1">
-                                <span className="truncate">{player.playerName}</span>
-                                <PlayerSeasonStars playerId={player.playerId} size="sm" />
-                              </div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right py-1">
-                          <PlayerForm 
-                            form={playerForms[player.playerId] || []} 
-                            size="xs" 
-                          />
-                        </TableCell>
-                        <TableCell className="text-right py-1">
-                          {player.played}
-                        </TableCell>
-                        <TableCell className="text-right py-1 font-medium">
-                          {player.points}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+            {season.isFinished && (
+              <Badge variant="outline" className="shrink-0">
+                Finished
+              </Badge>
             )}
           </div>
+
+          <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Calendar className="h-4 w-4" />
+            {startDate} – {endDate}
+          </p>
+
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="rounded-lg bg-surface-2/60 p-2 text-center">
+              <p className="eyebrow">Matches</p>
+              <p className="tabular mt-0.5 font-semibold">{totalMatches}</p>
+            </div>
+            <div className="rounded-lg bg-surface-2/60 p-2 text-center">
+              <p className="eyebrow">Players</p>
+              <p className="tabular mt-0.5 font-semibold">{totalPlayers}</p>
+            </div>
+          </div>
+
+          {leaders.length > 0 && (
+            <div className="mt-4 flex items-center gap-3 rounded-lg bg-surface-2/60 p-3">
+              <Trophy className="h-5 w-5 shrink-0 text-draw" />
+              <div className="min-w-0 flex-1">
+                <p className="eyebrow">
+                  {leaders.length > 1
+                    ? season.isFinished
+                      ? "Joint champions"
+                      : "Joint leaders"
+                    : season.isFinished
+                      ? "Champion"
+                      : "Leader"}
+                </p>
+                <p className="truncate font-medium">
+                  {leaders.map((leader) => leader.playerName).join(" & ")}
+                </p>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="eyebrow">Points</p>
+                <p className="tabular font-semibold">{leaders[0].points}</p>
+              </div>
+            </div>
+          )}
+
+          {top.length > 0 && (
+            <div className="mt-4">
+              <p className="eyebrow mb-2">Top {top.length}</p>
+              <Table className="[&_td]:px-2 [&_th]:px-2 [&_td:first-child]:pl-0 [&_th:first-child]:pl-0 [&_td:last-child]:pr-0 [&_th:last-child]:pr-0">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10">#</TableHead>
+                    <TableHead>Player</TableHead>
+                    <TableHead className="text-right">Form</TableHead>
+                    <TableHead className="w-12 text-right">Pts</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {top.map((player) => (
+                    <TableRow key={player.playerId}>
+                      <TableCell className="py-1.5">
+                        <Place rank={player.rank} />
+                      </TableCell>
+                      <TableCell className="min-w-0 py-1.5">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <PlayerAvatar
+                            name={player.playerName}
+                            image={player.playerImage}
+                            size="xs"
+                          />
+                          <span className="min-w-0 flex-1 truncate">
+                            {player.playerName}
+                          </span>
+                          <PlayerSeasonStars playerId={player.playerId} size="sm" />
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-1.5">
+                        <div className="flex justify-end">
+                          <PlayerFormDisplay
+                            results={playerForms[player.playerId] || []}
+                            size="xs"
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell className="tabular w-12 py-1.5 text-right font-medium">
+                        {player.points}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </Link>

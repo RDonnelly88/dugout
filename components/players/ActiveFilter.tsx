@@ -42,7 +42,7 @@ export default function ActiveFilter({
   return (
     <fieldset
       disabled={disabled}
-      className="flex w-fit items-center gap-0.5 rounded-full border border-border bg-surface p-0.5"
+      className="flex h-10 w-fit items-center gap-0.5 rounded-full border border-border bg-surface p-1"
     >
       <legend className="sr-only">Which players to show</legend>
       {OPTIONS.map(({ value: option, label, Icon }) => {
@@ -53,7 +53,7 @@ export default function ActiveFilter({
             type="button"
             onClick={() => onChange(option)}
             aria-pressed={selected}
-            className={`focus-ring flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors disabled:opacity-50 ${
+            className={`focus-ring flex h-full items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors disabled:opacity-50 ${
               selected
                 ? "bg-accent text-accent-foreground"
                 : "text-muted-foreground hover:text-foreground"

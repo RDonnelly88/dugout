@@ -54,29 +54,29 @@ const PlayerFormDisplay = ({
   const recentResults = results.slice(0, 5).reverse();
   
   const getFormSquare = (result: PlayerFormResult, index: number) => {
-    let bgColor = "bg-gray-400";
-    let textColor = "text-foreground";
+    let bgColor = "bg-surface-2";
+    let textColor = "text-muted-foreground";
     let letter = "-";
-    
+
     switch (result) {
       case 'win':
         bgColor = "bg-win";
-        textColor = "text-foreground";
+        textColor = "text-win-foreground";
         letter = "W";
         break;
       case 'loss':
         bgColor = "bg-loss";
-        textColor = "text-foreground";
+        textColor = "text-loss-foreground";
         letter = "L";
         break;
       case 'draw':
-        bgColor = "bg-amber-400";
-        textColor = "text-foreground";
+        bgColor = "bg-draw";
+        textColor = "text-draw-foreground";
         letter = "D";
         break;
       case 'dnp':
-        bgColor = "bg-gray-600/50";
-        textColor = "text-gray-200";
+        bgColor = "bg-surface-2";
+        textColor = "text-muted-foreground";
         letter = "DNP";
         break;
     }

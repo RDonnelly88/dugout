@@ -98,7 +98,7 @@ export default function DataExport() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
+        <CardTitle className="flex items-center gap-2">
           <Download className="h-5 w-5 text-accent" />
           Export
         </CardTitle>

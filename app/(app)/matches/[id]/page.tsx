@@ -9,6 +9,7 @@ import { useMatchDetail } from "@/hooks/useMatchDetail";
 import MatchHeader from "@/components/matches/MatchHeader";
 import MatchScore from "@/components/matches/MatchScore";
 import TeamsList from "@/components/matches/TeamsList";
+import MatchImpact from "@/components/matches/MatchImpact";
 import MatchNotFound from "@/components/matches/MatchNotFound";
 import Confetti from "@/components/Confetti";
 
@@ -19,6 +20,8 @@ const MatchDetail = () => {
     isLoadingMatch,
     isEditing,
     setIsEditing,
+    setOutcome,
+    effectiveOutcome,
     teamAScore,
     setTeamAScore,
     teamBScore,
@@ -96,6 +99,8 @@ const MatchDetail = () => {
             match={match}
             isCompleted={isCompleted}
             isEditing={isEditing}
+            setOutcome={setOutcome}
+            effectiveOutcome={effectiveOutcome}
             teamAScore={teamAScore}
             teamBScore={teamBScore}
             onScoreChange={{
@@ -120,10 +125,12 @@ const MatchDetail = () => {
         getPlayerName={getPlayerName} 
       />
 
+      {isCompleted && <MatchImpact match={match} players={players} />}
+
       {/* Match Notes */}
       {match.notes && (
         <Card className="shadow-lg mt-8">
-          <CardContent className="p-6">
+          <CardContent>
             <h3 className="text-lg font-semibold mb-3">Match Notes</h3>
             <p className="text-muted-foreground whitespace-pre-wrap">{match.notes}</p>
           </CardContent>

@@ -213,6 +213,8 @@ function fixture(seasonId, date) {
 
   return {
     date: new Date(date).toISOString().slice(0, 10),
+    // Who won is the result; the score is detail on top of it.
+    outcome: scoreA > scoreB ? "a" : scoreA < scoreB ? "b" : "draw",
     team_a: { name: "Bibs", players: a.map((p) => p.id), score: scoreA },
     team_b: { name: "No bibs", players: b.map((p) => p.id), score: scoreB },
     status: "completed",

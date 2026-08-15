@@ -1,9 +1,17 @@
+"use client";
+
 import Link from "next/link";
 
-import React from "react";
-
 import { Users } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import PlayerAvatar from "@/components/players/PlayerAvatar";
+import { useSideNames } from "@/hooks/useSideNames";
 import { Match, Player } from "@/types";
 
 interface TeamsListProps {
@@ -12,105 +20,78 @@ interface TeamsListProps {
   getPlayerName: (id: string) => string;
 }
 
+/**
+ * Who lined up on each side.
+ *
+ * The faces come from `PlayerAvatar`, like everywhere else. This drew its own
+ * `<img src={player.image}>`, and `image` also holds the avatar registry's
+ * `icon:Ghost` form — which is not a URL, so every player who had picked an
+ * icon rather than uploading a photo showed a broken image here and nowhere
+ * else.
+ */
 const TeamsList = ({ match, players, getPlayerName }: TeamsListProps) => {
-  // Early return with null if match teams aren't defined
-  if (!match || !match.teamA || !match.teamB) {
-    return null;
-  }
+  const sides = useSideNames();
 
-  // Ensure players arrays exist
-  const teamAPlayers = match.teamA.players || [];
-  const teamBPlayers = match.teamB.players || [];
+  if (!match?.teamA || !match?.teamB) return null;
+
+  const byId = new Map(players.map((player) => [player.id, player]));
+
+  const side = (
+    key: "A" | "B",
+    playerIds: string[],
+    tone: { border: string; hover: string }
+  ) => (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2">
+          <Users className="h-5 w-5 shrink-0 text-muted-foreground" />
+          {sides[key]}
+        </CardTitle>
+        <CardDescription>
+          {playerIds.length} {playerIds.length === 1 ? "player" : "players"}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {playerIds.length === 0 ? (
+          <p className="py-4 text-center text-sm text-muted-foreground">
+            Nobody on this side.
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {playerIds.map((playerId) => {
+              const name = getPlayerName(playerId);
+              return (
+                <li key={playerId}>
+                  <Link
+                    href={`/players/${playerId}`}
+                    className={`focus-ring flex items-center gap-3 rounded-lg border p-3 transition-colors ${tone.border} ${tone.hover}`}
+                  >
+                    <PlayerAvatar
+                      name={name}
+                      image={byId.get(playerId)?.image}
+                      size="sm"
+                    />
+                    <span className="truncate font-medium">{name}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-      {/* Team A */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            {match.teamA.name || "Team A"}
-          </CardTitle>
-          <CardDescription>
-            {teamAPlayers.length} players
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {teamAPlayers.map(playerId => {
-              const playerName = getPlayerName(playerId);
-              const playerObj = players.find(p => p.id === playerId);
-              
-              return (
-                <Link 
-                  key={playerId}
-                  href={`/players/${playerId}`}
-                  className="flex items-center p-3 rounded-lg hover:bg-blue-50 border border-blue-100 transition-colors"
-                >
-                  <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden mr-3">
-                    {playerObj?.image ? (
-                      <img
-                        src={playerObj.image}
-                        alt={playerName}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-sm font-medium text-blue-600">
-                        {playerName.charAt(0)}
-                      </span>
-                    )}
-                  </div>
-                  <span className="font-medium">{playerName}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* Team B */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            {match.teamB.name || "Team B"}
-          </CardTitle>
-          <CardDescription>
-            {teamBPlayers.length} players
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {teamBPlayers.map(playerId => {
-              const playerName = getPlayerName(playerId);
-              const playerObj = players.find(p => p.id === playerId);
-              
-              return (
-                <Link 
-                  key={playerId}
-                  href={`/players/${playerId}`}
-                  className="flex items-center p-3 rounded-lg hover:bg-red-50 border border-red-100 transition-colors"
-                >
-                  <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center overflow-hidden mr-3">
-                    {playerObj?.image ? (
-                      <img
-                        src={playerObj.image}
-                        alt={playerName}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-sm font-medium text-red-600">
-                        {playerName.charAt(0)}
-                      </span>
-                    )}
-                  </div>
-                  <span className="font-medium">{playerName}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+    <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+      {side("A", match.teamA.players ?? [], {
+        border: "border-info/20",
+        hover: "hover:bg-info/10",
+      })}
+      {side("B", match.teamB.players ?? [], {
+        border: "border-accent/20",
+        hover: "hover:bg-accent/10",
+      })}
     </div>
   );
 };

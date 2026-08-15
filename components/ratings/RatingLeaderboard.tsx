@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
-import { ChevronDown, ChevronUp, Minus } from "lucide-react";
+import { ChevronDown, ChevronUp, Hourglass, Minus } from "lucide-react";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import { displayRating, type PlayerRating } from "@/lib/elo";
 import { ELO } from "@/lib/config";
@@ -99,6 +99,17 @@ export default function RatingLeaderboard({
               <span className="relative hidden text-xs text-muted-foreground sm:block">
                 {rating.games} games
               </span>
+              {/* Otherwise a rating that fell without anybody playing looks
+                  like a bug rather than the drift doing its job. */}
+              {rating.drift >= 1 && (
+                <span
+                  className="relative hidden items-center gap-1 text-xs text-muted-foreground sm:inline-flex"
+                  title={`Away ${rating.idleWeeks} weeks — drifted ${Math.round(rating.drift)} back towards ${ELO.start}`}
+                >
+                  <Hourglass className="h-3 w-3" />
+                  −{Math.round(rating.drift)}
+                </span>
+              )}
               {last && (
                 <span className="relative w-12 text-right text-xs">
                   <Delta change={last.change} />

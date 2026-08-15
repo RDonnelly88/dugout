@@ -29,21 +29,21 @@ const METHODS: {
     label: "Even by rating",
     blurb: "Uses Elo, so the two sides should be as close as they can be.",
     Icon: Scale,
-    gap: (d) => (d < 1 ? "dead even" : `${Math.round(d)} Elo apart`),
+    gap: (d) => (d < 0.05 ? "dead even" : `${d < 10 ? d.toFixed(1) : Math.round(d)} Elo apart`),
   },
   {
     value: "form",
     label: "Even by form",
     blurb: "Uses the last few results, so tonight's shape counts more than history.",
     Icon: TrendingUp,
-    gap: (d) => (d < 0.05 ? "dead even" : `${d.toFixed(2)} pts a game apart`),
+    gap: (d) => (d < 0.005 ? "dead even" : `${d.toFixed(2)} pts a game apart`),
   },
   {
     value: "skill",
     label: "Even by skill",
     blurb: "Uses the level you set on each player, so a debutant still counts.",
     Icon: Star,
-    gap: (d) => (d < 0.1 ? "dead even" : `${d.toFixed(1)} levels apart`),
+    gap: (d) => (d < 0.005 ? "dead even" : `${d.toFixed(2)} levels apart`),
   },
   {
     value: "manual",
@@ -65,12 +65,15 @@ export default function MethodPicker({
   value,
   onChange,
   preview,
+  notes,
   disabled,
 }: {
   value: PickMethod;
   onChange: (method: PickMethod) => void;
   /** The split each method would produce, for the gap readout. */
   preview: Record<PickMethod, Split<Player> | null>;
+  /** Why a method can't tell anyone apart, when that is worth explaining. */
+  notes?: Partial<Record<PickMethod, string>>;
   disabled?: boolean;
 }) {
   const reduced = useReducedMotion();
@@ -106,6 +109,11 @@ export default function MethodPicker({
             </span>
             {split && gap && (
               <span className="eyebrow mt-2 block">{gap(split.difference)}</span>
+            )}
+            {notes?.[method] && (
+              <span className="mt-1 block text-xs text-muted-foreground">
+                {notes[method]}
+              </span>
             )}
           </motion.button>
         );

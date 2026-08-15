@@ -262,7 +262,7 @@ const PlayerHoverContent = ({
           <div className="grid grid-cols-4 gap-1 text-center">
             <div>
               <span className="text-sm font-bold">{playerSeasonStats.played}</span>
-              <span className="text-xs block text-blue-200">Played</span>
+              <span className="text-xs block text-info">Played</span>
             </div>
             <div>
               <span className="text-sm font-bold">{playerSeasonStats.wins}</span>

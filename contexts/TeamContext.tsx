@@ -6,6 +6,9 @@ import { useAuth } from "./AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Team, TeamRole } from "@/types/team";
 
+/** The fields a team's admins can change. */
+type TeamUpdate = Partial<Pick<Team, "name" | "side_a_name" | "side_b_name">>;
+
 type TeamContextType = {
   currentTeam: Team | null;
   userTeams: Team[];
@@ -16,7 +19,7 @@ type TeamContextType = {
   inviteToTeam: (teamId: string, email: string, role: TeamRole) => Promise<{ error: any | null }>;
   joinTeamById: (teamId: string) => Promise<{ error: any | null, success: boolean }>;
   leaveTeam: (teamId: string) => Promise<{ error: any | null }>;
-  updateTeam: (teamId: string, updates: { name: string }) => Promise<{ error: any | null }>;
+  updateTeam: (teamId: string, updates: TeamUpdate) => Promise<{ error: any | null }>;
   deleteTeam: (teamId: string) => Promise<{ error: any | null }>;
   isTeamAdmin: () => boolean;
   updateMemberRole: (memberId: string, newRole: TeamRole) => Promise<{ error: any | null }>;
@@ -429,7 +432,7 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const updateTeam = async (teamId: string, updates: { name: string }) => {
+  const updateTeam = async (teamId: string, updates: TeamUpdate) => {
     try {
       const { error } = await supabase
         .from("teams")

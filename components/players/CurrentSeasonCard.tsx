@@ -24,30 +24,29 @@ const CurrentSeasonCard: React.FC<CurrentSeasonCardProps> = ({
   return (
     <Card className="mb-6 bg-surface border-border">
       <CardHeader className="pb-2">
-        <CardTitle className="text-xl flex items-center">
-          <Trophy className="h-5 w-5 mr-2 text-draw" />
-          Current Season: {currentSeason.name}
+        <CardTitle className="flex items-center gap-2">
+          <Trophy className="h-5 w-5 shrink-0 text-draw" />
+          <span className="truncate">{currentSeason.name}</span>
+          {currentSeason.isFinished && (
+            <Badge className="bg-loss text-loss-foreground">Finished</Badge>
+          )}
         </CardTitle>
         <CardDescription>
-          {new Date(currentSeason.startDate).toLocaleDateString()} - 
-          {currentSeason.endDate ? new Date(currentSeason.endDate).toLocaleDateString() : " Ongoing"}
-          {currentSeason.isFinished && <Badge className="ml-2 bg-loss">Finished</Badge>}
-          {currentSeason.isCurrent && !currentSeason.isFinished && <Badge className="ml-2 bg-win">Active</Badge>}
+          Current season · {new Date(currentSeason.startDate).toLocaleDateString()}
+          {currentSeason.endDate
+            ? ` – ${new Date(currentSeason.endDate).toLocaleDateString()}`
+            : " – ongoing"}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <span className="flex items-center gap-2 text-sm text-muted-foreground">
             <CalendarDays className="h-4 w-4 text-info" />
-            <span className="text-sm text-muted-foreground">
-              {seasonPlayerStats.length} Active Players
-            </span>
-          </div>
-          <div>
-            <Button variant="link" size="sm" asChild className="text-info p-0">
-              <Link href={`/seasons/${currentSeason.id}`}>View League Table</Link>
-            </Button>
-          </div>
+            {seasonPlayerStats.length} have featured
+          </span>
+          <Button variant="link" size="sm" asChild className="h-auto p-0">
+            <Link href={`/seasons/${currentSeason.id}`}>View the league table</Link>
+          </Button>
         </div>
       </CardContent>
     </Card>

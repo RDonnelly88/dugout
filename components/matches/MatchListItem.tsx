@@ -3,6 +3,8 @@ import Link from "next/link";
 import { format, parseISO } from "date-fns";
 import { ChevronRight, Trash2 } from "lucide-react";
 import { Match } from "@/types";
+import { useSideNames } from "@/hooks/useSideNames";
+import { outcomeOf } from "@/lib/match-result";
 
 interface MatchListItemProps {
   match: Match;
@@ -23,20 +25,13 @@ function matchDate(value: string): Date {
  * the detail is a tap away.
  */
 const MatchListItem = ({ match, onDeleteClick }: MatchListItemProps) => {
-  const played =
-    match.status === "completed" &&
+  const sides = useSideNames();
+  // A result is a result whether or not anyone wrote the score down.
+  const winner = outcomeOf(match);
+  const played = winner !== null;
+  const hasScore =
     typeof match.teamA?.score === "number" &&
     typeof match.teamB?.score === "number";
-
-  const scoreA = match.teamA?.score ?? 0;
-  const scoreB = match.teamB?.score ?? 0;
-  const winner = !played
-    ? null
-    : scoreA === scoreB
-      ? "draw"
-      : scoreA > scoreB
-        ? "a"
-        : "b";
 
   return (
     <li className="relative">
@@ -57,14 +52,18 @@ const MatchListItem = ({ match, onDeleteClick }: MatchListItemProps) => {
               winner === "a" ? "font-semibold" : "text-muted-foreground"
             }`}
           >
-            {match.teamA?.name || "Team A"}
+            {match.teamA?.name || sides.A}
           </span>
 
-          {played ? (
+          {hasScore ? (
             <span className="shrink-0 rounded-md bg-surface-2 px-2 py-0.5 text-sm font-bold tabular sm:text-base">
-              {scoreA}
+              {match.teamA.score}
               <span className="mx-0.5 text-muted-foreground">–</span>
-              {scoreB}
+              {match.teamB.score}
+            </span>
+          ) : played ? (
+            <span className="shrink-0 rounded-md bg-surface-2 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {winner === "draw" ? "draw" : "won"}
             </span>
           ) : (
             <span className="shrink-0 text-xs uppercase tracking-wider text-muted-foreground">
@@ -77,7 +76,7 @@ const MatchListItem = ({ match, onDeleteClick }: MatchListItemProps) => {
               winner === "b" ? "font-semibold" : "text-muted-foreground"
             }`}
           >
-            {match.teamB?.name || "Team B"}
+            {match.teamB?.name || sides.B}
           </span>
         </span>
 

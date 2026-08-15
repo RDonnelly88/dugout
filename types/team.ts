@@ -7,6 +7,9 @@ export interface Team {
   created_at: string;
   updated_at?: string;
   created_by?: string;
+  /** What this team calls its two sides. Defaults to Bibs and No bibs. */
+  side_a_name?: string;
+  side_b_name?: string;
 }
 
 export interface TeamMember {

@@ -59,8 +59,8 @@ const Matches = () => {
   return (
     <div className="page-container animate-slide-up">
       <div className="page-header">
-        <h1 className="page-title text-gradient">Matches</h1>
-        <p className="mt-2 text-muted-foreground text-center">
+        <h1 className="page-title">Matches</h1>
+        <p className="page-subtitle">
           Create and manage your football matches
         </p>
       </div>

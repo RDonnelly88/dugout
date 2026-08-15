@@ -1,5 +1,6 @@
 import type { Match } from "@/types";
 import type { Tally } from "./head-to-head";
+import { outcomeOf, sideOf } from "./match-result";
 
 /**
  * Who you actually play well with.
@@ -74,12 +75,6 @@ const entry = (playerId: string, tally: Tally, baseline: number): ChemistryEntry
   return { playerId, tally, observed, adjusted, lift: adjusted - baseline, confidence };
 };
 
-/** A completed match with both scores in. Anything else tells us nothing. */
-const isPlayable = (match: Match): boolean =>
-  match.status === "completed" &&
-  typeof match.teamA.score === "number" &&
-  typeof match.teamB.score === "number";
-
 /**
  * Every pairing the subject has, in one pass.
  *
@@ -101,17 +96,15 @@ export function chemistryFor(matches: Match[], playerId: string): ChemistryRepor
   };
 
   for (const match of matches) {
-    if (!isPlayable(match)) continue;
+    const outcome = outcomeOf(match);
+    if (!outcome) continue;
 
-    const inA = match.teamA.players.includes(playerId);
-    const inB = match.teamB.players.includes(playerId);
-    if (!inA && !inB) continue;
+    const side = sideOf(match, playerId);
+    if (!side) continue;
 
-    const scoreA = match.teamA.score as number;
-    const scoreB = match.teamB.score as number;
-    const drawn = scoreA === scoreB;
-    const won = drawn ? false : inA ? scoreA > scoreB : scoreB > scoreA;
-    const result = drawn ? "draw" : won ? "win" : "loss";
+    const inA = side === "a";
+    const result =
+      outcome === "draw" ? "draw" : outcome === side ? "win" : "loss";
 
     add(own, result);
 
