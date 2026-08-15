@@ -3,13 +3,6 @@ import { computeRatings, decayed, expectedScore } from "@/lib/elo";
 import { ELO } from "@/lib/config";
 import type { Match } from "@/types";
 
-/**
- * Ratings drift towards the starting mark with time away, so every one of
- * these has to say when "now" is. Left to the real clock they would pass today
- * and fail next month, drifting a little further from the fixtures each week.
- */
-const NOW = new Date("2026-02-01").getTime();
-
 let counter = 0;
 function match(
   a: string[],
@@ -50,8 +43,8 @@ describe("the size of a win", () => {
    * record — and the score is optional now, so most results have none.
    */
   it("moves a rating the same however heavy the win", () => {
-    const narrow = computeRatings([match(["a"], ["b"], 1, 0, "2026-01-01")], NOW);
-    const heavy = computeRatings([match(["c"], ["d"], 9, 0, "2026-01-01")], NOW);
+    const narrow = computeRatings([match(["a"], ["b"], 1, 0, "2026-01-01")]);
+    const heavy = computeRatings([match(["c"], ["d"], 9, 0, "2026-01-01")]);
 
     expect(narrow.get("a")!.rating).toBeCloseTo(heavy.get("c")!.rating);
   });
@@ -63,7 +56,7 @@ describe("the size of a win", () => {
       teamB: { name: "No bibs", players: ["b"] },
       outcome: "a",
     };
-    const ratings = computeRatings([scoreless], NOW);
+    const ratings = computeRatings([scoreless]);
 
     expect(ratings.get("a")!.rating).toBeGreaterThan(ELO.start);
     expect(ratings.get("b")!.rating).toBeLessThan(ELO.start);
@@ -72,11 +65,11 @@ describe("the size of a win", () => {
 
 describe("computeRatings", () => {
   it("gives an unplayed squad nothing to rate", () => {
-    expect(computeRatings([], NOW).size).toBe(0);
+    expect(computeRatings([]).size).toBe(0);
   });
 
   it("moves the winner up and the loser down by the same amount", () => {
-    const ratings = computeRatings([match(["a"], ["b"], 3, 1)], NOW);
+    const ratings = computeRatings([match(["a"], ["b"], 3, 1)]);
 
     const a = ratings.get("a")!;
     const b = ratings.get("b")!;
@@ -89,7 +82,7 @@ describe("computeRatings", () => {
   });
 
   it("leaves a draw between equals where it found them", () => {
-    const ratings = computeRatings([match(["a"], ["b"], 2, 2)], NOW);
+    const ratings = computeRatings([match(["a"], ["b"], 2, 2)]);
 
     expect(ratings.get("a")!.rating).toBeCloseTo(ELO.start);
     expect(ratings.get("b")!.rating).toBeCloseTo(ELO.start);
@@ -102,19 +95,12 @@ describe("computeRatings", () => {
       match(["strong"], ["filler2"], 9, 0),
     ];
 
-    const upset = computeRatings([...setup, match(["challenger"], ["strong"], 1, 0)], NOW);
-    const routine = computeRatings([...setup, match(["challenger"], ["filler3"], 1, 0)], NOW);
+    const upset = computeRatings([...setup, match(["challenger"], ["strong"], 1, 0)]);
+    const routine = computeRatings([...setup, match(["challenger"], ["filler3"], 1, 0)]);
 
     expect(upset.get("challenger")!.rating).toBeGreaterThan(
       routine.get("challenger")!.rating
     );
-  });
-
-  it("counts a thrashing for more than a scrape", () => {
-    const narrow = computeRatings([match(["a"], ["b"], 1, 0)], NOW);
-    const rout = computeRatings([match(["c"], ["d"], 7, 0)], NOW);
-
-    expect(rout.get("c")!.rating).toBeGreaterThan(narrow.get("a")!.rating);
   });
 
   it("settles down once a player is established", () => {
@@ -123,7 +109,7 @@ describe("computeRatings", () => {
     const fixtures = Array.from({ length: 11 }, (_, i) =>
       match(["a"], [`opp${i}`], 1, 0)
     );
-    const { history } = computeRatings(fixtures, NOW).get("a")!;
+    const { history } = computeRatings(fixtures).get("a")!;
 
     expect(history).toHaveLength(11);
     expect(Math.abs(history[10].change)).toBeLessThan(
@@ -134,7 +120,7 @@ describe("computeRatings", () => {
   it("shares a team result across everyone who played", () => {
     const ratings = computeRatings([
       match(["a", "b", "c"], ["x", "y", "z"], 4, 2),
-    ], NOW);
+    ]);
 
     for (const id of ["a", "b", "c"]) {
       expect(ratings.get(id)!.rating).toBeGreaterThan(ELO.start);
@@ -148,8 +134,8 @@ describe("computeRatings", () => {
     const first = match(["a"], ["b"], 5, 0, "2026-01-01");
     const second = match(["a"], ["b"], 0, 5, "2026-02-01");
 
-    const forwards = computeRatings([first, second], NOW).get("a")!;
-    const backwards = computeRatings([second, first], NOW).get("a")!;
+    const forwards = computeRatings([first, second]).get("a")!;
+    const backwards = computeRatings([second, first]).get("a")!;
 
     expect(forwards.rating).toBeCloseTo(backwards.rating, 6);
     expect(backwards.history.map((h) => h.date)).toEqual([
@@ -165,7 +151,7 @@ describe("computeRatings", () => {
     const ratings = computeRatings([
       match(["a"], ["b"], 1, 0, "2026-03-01"),
       match(["a"], ["b"], 0, 1, "2026-03-01"),
-    ], NOW);
+    ]);
 
     expect(ratings.get("a")!.rating + ratings.get("b")!.rating).toBeCloseTo(
       ELO.start * 2,
@@ -188,7 +174,7 @@ describe("computeRatings", () => {
       updatedAt: "2026-04-01",
     };
 
-    expect(computeRatings([pending, noScore], NOW).size).toBe(0);
+    expect(computeRatings([pending, noScore]).size).toBe(0);
   });
 
   it("records a peak that a later slump does not erase", () => {
@@ -196,7 +182,7 @@ describe("computeRatings", () => {
       match(["a"], ["b"], 9, 0, "2026-05-01"),
       match(["a"], ["b"], 0, 9, "2026-05-02"),
       match(["a"], ["b"], 0, 9, "2026-05-03"),
-    ], NOW);
+    ]);
 
     const a = ratings.get("a")!;
     expect(a.peak).toBeGreaterThan(a.rating);
@@ -204,74 +190,98 @@ describe("computeRatings", () => {
 });
 
 describe("decayed", () => {
-  it("leaves a rating alone inside the grace period", () => {
-    expect(decayed(1400, ELO.decay.graceWeeks)).toBe(1400);
+  it("leaves a rating alone inside the grace", () => {
+    expect(decayed(1400, ELO.decay.graceMatches)).toBe(1400);
     expect(decayed(1400, 0)).toBe(1400);
   });
 
   it("pulls a strong rating down towards the start", () => {
-    const after = decayed(1400, ELO.decay.graceWeeks + 4);
+    const after = decayed(1400, ELO.decay.graceMatches + 4);
     expect(after).toBeLessThan(1400);
     expect(after).toBeGreaterThan(ELO.start);
   });
 
   it("lifts a weak rating up towards the start", () => {
-    const after = decayed(1000, ELO.decay.graceWeeks + 4);
+    const after = decayed(1000, ELO.decay.graceMatches + 4);
     expect(after).toBeGreaterThan(1000);
     expect(after).toBeLessThan(ELO.start);
   });
 
-  /** Time away should make you ordinary, never turn you into the opposite. */
-  it("never crosses the starting mark, however long the absence", () => {
+  /** Missing games should make you ordinary, never the opposite of what you were. */
+  it("never crosses the starting mark, however many are missed", () => {
     expect(decayed(1400, 5000)).toBeGreaterThanOrEqual(ELO.start);
     expect(decayed(1000, 5000)).toBeLessThanOrEqual(ELO.start);
   });
 });
 
-describe("computeRatings with time away", () => {
-  it("drifts a player who has stopped turning up", () => {
-    const fixtures = [
-      match(["a", "b"], ["c", "d"], 5, 0, "2026-01-01"),
-      match(["a", "b"], ["c", "d"], 5, 0, "2026-01-08"),
-    ];
-
-    const fresh = computeRatings(fixtures, new Date("2026-01-09").getTime());
-    const stale = computeRatings(fixtures, new Date("2026-06-01").getTime());
-
-    expect(fresh.get("a")!.rating).toBeGreaterThan(stale.get("a")!.rating);
-    expect(stale.get("a")!.drift).toBeGreaterThan(0);
-    expect(stale.get("a")!.idleWeeks).toBeGreaterThan(ELO.decay.graceWeeks);
-  });
-
-  it("counts no drift for somebody who played this week", () => {
-    const ratings = computeRatings(
-      [match(["a"], ["b"], 3, 1, "2026-01-01")],
-      new Date("2026-01-03").getTime()
+describe("computeRatings and matches missed", () => {
+  /** Games the squad played without you, not weeks on the calendar. */
+  const withoutThem = (count: number) =>
+    Array.from({ length: count }, (_, i) =>
+      match(["x"], ["y"], 1, 0, `2026-02-${String(i + 1).padStart(2, "0")}`)
     );
 
+  it("drifts a player the squad kept playing without", () => {
+    const opener = match(["a"], ["b"], 5, 0, "2026-01-01");
+    const ratings = computeRatings([
+      opener,
+      ...withoutThem(ELO.decay.graceMatches + 6),
+    ]);
+
+    const a = ratings.get("a")!;
+    expect(a.drift).toBeGreaterThan(0);
+    expect(a.missed).toBe(ELO.decay.graceMatches + 6);
+    expect(a.rating).toBeLessThan(a.history.at(-1)!.rating);
+  });
+
+  /**
+   * The whole reason this counts matches rather than weeks. A league that stops
+   * for the summer used to age every rating in it, which is nothing anybody did.
+   */
+  it("costs nothing when the whole league stops", () => {
+    const fixtures = [
+      match(["a"], ["b"], 5, 0, "2026-01-01"),
+      match(["a"], ["b"], 5, 0, "2026-01-08"),
+    ];
+    const ratings = computeRatings(fixtures);
+
     expect(ratings.get("a")!.drift).toBe(0);
-    expect(ratings.get("a")!.idleWeeks).toBe(0);
+    expect(ratings.get("a")!.missed).toBe(0);
+  });
+
+  it("does not drift somebody who played the last game", () => {
+    const ratings = computeRatings([match(["a"], ["b"], 3, 1, "2026-01-01")]);
+
+    expect(ratings.get("a")!.drift).toBe(0);
+    expect(ratings.get("a")!.missed).toBe(0);
   });
 
   it("rates a returning player on what they walk in with", () => {
-    // Same two results, but the second pair are months apart rather than days.
-    const together = computeRatings(
-      [
-        match(["a"], ["b"], 5, 0, "2026-01-01"),
-        match(["a"], ["b"], 5, 0, "2026-01-08"),
-      ],
-      new Date("2026-01-09").getTime()
-    );
-    const apart = computeRatings(
-      [
-        match(["a"], ["b"], 5, 0, "2026-01-01"),
-        match(["a"], ["b"], 5, 0, "2026-06-01"),
-      ],
-      new Date("2026-06-02").getTime()
-    );
+    const opener = match(["a"], ["b"], 5, 0, "2026-01-01");
+    const comeback = match(["a"], ["b"], 5, 0, "2026-03-01");
 
-    // Having drifted back towards level, the second win is worth more, so the
-    // gap it opens is smaller than the uninterrupted run's.
-    expect(apart.get("a")!.rating).toBeLessThan(together.get("a")!.rating);
+    const straight = computeRatings([opener, comeback]);
+    const afterABreak = computeRatings([
+      opener,
+      ...withoutThem(ELO.decay.graceMatches + 8),
+      comeback,
+    ]);
+
+    // Having drifted back towards level while away, the comeback win opens a
+    // smaller gap than the same win in an uninterrupted run.
+    expect(afterABreak.get("a")!.rating).toBeLessThan(
+      straight.get("a")!.rating
+    );
+  });
+
+  it("gives the same answer whenever it is asked", () => {
+    const fixtures = [
+      match(["a"], ["b"], 5, 0, "2026-01-01"),
+      ...withoutThem(9),
+    ];
+
+    expect(computeRatings(fixtures).get("a")!.rating).toBe(
+      computeRatings(fixtures).get("a")!.rating
+    );
   });
 });

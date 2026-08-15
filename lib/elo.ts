@@ -24,27 +24,25 @@ export interface PlayerRating {
   peak: number;
   /** Rating before the most recent match, for showing a delta. */
   previous: number;
-  /** Whole weeks since their last game. */
-  idleWeeks: number;
-  /** How much the drift has cost them since that game. Never negative. */
+  /** Matches the squad has played since this player last turned out. */
+  missed: number;
+  /** What the drift for those has cost them. Never negative. */
   drift: number;
   history: RatingPoint[];
 }
 
-const WEEK = 7 * 24 * 60 * 60 * 1000;
-
 /**
- * A rating pulled back towards the starting mark for time away.
+ * A rating pulled back towards the starting mark for matches missed.
  *
  * Geometric rather than linear, so it approaches `start` and never crosses it
  * — being away should make a strong player ordinary, not weak, and should not
  * make a weak player strong by dragging them upwards past everyone.
  */
-export function decayed(rating: number, weeksIdle: number): number {
-  const beyondGrace = weeksIdle - ELO.decay.graceWeeks;
+export function decayed(rating: number, missed: number): number {
+  const beyondGrace = missed - ELO.decay.graceMatches;
   if (beyondGrace <= 0) return rating;
   return (
-    ELO.start + (rating - ELO.start) * (1 - ELO.decay.perWeek) ** beyondGrace
+    ELO.start + (rating - ELO.start) * (1 - ELO.decay.perMatch) ** beyondGrace
   );
 }
 
@@ -71,19 +69,17 @@ const mean = (xs: number[]) =>
  * Only completed matches with a score on both sides count. Anything else is a
  * fixture, not a result.
  *
- * Ratings drift back towards the starting mark while a player is away, so
- * every week is comparable to the last whether or not somebody turned out.
- * The drift is applied twice: as each match is replayed, so a returning player
- * is rated on what they carry in, and once more up to `asOf` for the standing
- * as it is now.
+ * Ratings drift back towards the starting mark for matches a player missed,
+ * counted in games the squad played without them rather than weeks on the
+ * calendar — an off-season is not evidence about anybody. The drift is applied
+ * twice: as each match is replayed, so a returning player is rated on what they
+ * carry in, and once more at the end for the standing as it is now.
  *
- * `asOf` defaults to the present, which does mean the table moves on a Tuesday
- * with no new results. That is the point of it. Pass a fixed time to pin it.
+ * Depends on nothing outside the matches, so the same history always gives the
+ * same table. It used to read the clock, which meant every rating aged
+ * overnight and a screenshot taken twice never matched.
  */
-export function computeRatings(
-  matches: Match[],
-  asOf: number = Date.now()
-): Map<string, PlayerRating> {
+export function computeRatings(matches: Match[]): Map<string, PlayerRating> {
   const ratings = new Map<string, PlayerRating>();
 
   const ensure = (playerId: string): PlayerRating => {
@@ -96,7 +92,7 @@ export function computeRatings(
         provisional: true,
         peak: ELO.start,
         previous: ELO.start,
-        idleWeeks: 0,
+        missed: 0,
         drift: 0,
         history: [],
       };
@@ -115,26 +111,25 @@ export function computeRatings(
     // Oldest first: a rating is the running total of everything before it.
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  // When each player last turned out, so the gap before their next game can be
-  // measured. Kept beside the ratings rather than on them: it is scaffolding
-  // for the replay, not something a caller needs.
-  const lastPlayed = new Map<string, number>();
+  // Which match each player last turned out in, by position in the history, so
+  // the number they sat out is the difference. Scaffolding for the replay
+  // rather than something a caller needs.
+  const lastPlayedIndex = new Map<string, number>();
 
-  for (const match of played) {
+  played.forEach((match, index) => {
     const outcome = outcomeOf(match)!;
-    const playedAt = new Date(match.date).getTime();
 
     const sideA = match.teamA.players.map(ensure);
     const sideB = match.teamB.players.map(ensure);
 
-    // Drift is settled before the match is rated, so somebody back after two
-    // months is rated on what they walk in with.
+    // Drift is settled before the match is rated, so somebody back after a
+    // dozen missed games is rated on what they walk in with.
     for (const player of [...sideA, ...sideB]) {
-      const previously = lastPlayed.get(player.playerId);
-      if (previously !== undefined) {
-        player.rating = decayed(player.rating, (playedAt - previously) / WEEK);
+      const previous = lastPlayedIndex.get(player.playerId);
+      if (previous !== undefined) {
+        player.rating = decayed(player.rating, index - previous - 1);
       }
-      lastPlayed.set(player.playerId, playedAt);
+      lastPlayedIndex.set(player.playerId, index);
     }
 
     const ratingA = mean(sideA.map((p) => p.rating));
@@ -182,18 +177,18 @@ export function computeRatings(
     // the first result of the evening influence the second.
     apply(sideA, ratingB, expectedA, actualA);
     apply(sideB, ratingA, 1 - expectedA, 1 - actualA);
-  }
+  });
 
-  // Bring everyone up to the present, so two players are comparable whether or
-  // not either of them played this week.
+  // Bring everyone up to the last match played, so two players are comparable
+  // whether or not either was in it.
   for (const player of ratings.values()) {
-    const previously = lastPlayed.get(player.playerId);
-    if (previously === undefined) continue;
+    const previous = lastPlayedIndex.get(player.playerId);
+    if (previous === undefined) continue;
 
-    const weeks = (asOf - previously) / WEEK;
-    const current = decayed(player.rating, weeks);
+    const missed = played.length - 1 - previous;
+    const current = decayed(player.rating, missed);
 
-    player.idleWeeks = Math.max(0, Math.floor(weeks));
+    player.missed = missed;
     player.drift = player.rating - current;
     player.rating = current;
   }

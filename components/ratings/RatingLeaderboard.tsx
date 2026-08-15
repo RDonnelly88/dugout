@@ -99,15 +99,15 @@ export default function RatingLeaderboard({
               <span className="relative hidden text-xs text-muted-foreground sm:block">
                 {rating.games} games
               </span>
-              {/* Otherwise a rating that fell without anybody playing looks
-                  like a bug rather than the drift doing its job. */}
+              {/* Said in words, not just an icon and a number. "−59" beside an
+                  hourglass told you nothing about what had happened. */}
               {rating.drift >= 1 && (
                 <span
-                  className="relative hidden items-center gap-1 text-xs text-muted-foreground sm:inline-flex"
-                  title={`Away ${rating.idleWeeks} weeks — drifted ${Math.round(rating.drift)} back towards ${ELO.start}`}
+                  className="relative hidden items-center gap-1 whitespace-nowrap text-xs text-muted-foreground sm:inline-flex"
+                  title={`Missed ${rating.missed} matches, drifting ${Math.round(rating.drift)} back towards ${ELO.start}`}
                 >
-                  <Hourglass className="h-3 w-3" />
-                  −{Math.round(rating.drift)}
+                  <Hourglass className="h-3 w-3 shrink-0" />
+                  missed {rating.missed}, −{Math.round(rating.drift)}
                 </span>
               )}
               {last && (
