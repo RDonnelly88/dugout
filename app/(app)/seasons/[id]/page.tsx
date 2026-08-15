@@ -154,7 +154,7 @@ const SeasonDetail = () => {
                     {season.name}
                     <div className="flex gap-2 ml-2">
                       {season.isCurrent && (
-                        <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                        <Badge variant="default" className="bg-win hover:bg-green-600">
                           <Check className="h-3 w-3 mr-1" />
                           Current Season
                         </Badge>
@@ -180,7 +180,7 @@ const SeasonDetail = () => {
                   </div>
                   
                   <div className="bg-amber-50 text-amber-800 p-2 rounded-md flex items-center">
-                    <Trophy className="h-4 w-4 mr-1 text-amber-500" />
+                    <Trophy className="h-4 w-4 mr-1 text-draw" />
                     <span className="font-medium">{playerStats[0]?.playerName || "No champion yet"}</span>
                   </div>
                 </div>

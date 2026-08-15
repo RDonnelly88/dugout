@@ -142,7 +142,7 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-950 p-4">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-bg p-4">
       <div className="w-full max-w-md">
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -163,7 +163,7 @@ const LoginForm = () => {
                   {error && (
                     <p
                       role="alert"
-                      className="p-3 bg-red-500/10 border border-red-500/20 rounded-md text-red-500 text-sm"
+                      className="p-3 bg-loss/10 border border-red-500/20 rounded-md text-loss text-sm"
                     >
                       {error}
                     </p>
@@ -273,7 +273,7 @@ const LoginForm = () => {
                   {error && (
                     <p
                       role="alert"
-                      className="p-3 bg-red-500/10 border border-red-500/20 rounded-md text-red-500 text-sm"
+                      className="p-3 bg-loss/10 border border-red-500/20 rounded-md text-loss text-sm"
                     >
                       {error}
                     </p>

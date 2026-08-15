@@ -23,7 +23,7 @@ const PlayerSearchBar: React.FC<PlayerSearchBarProps> = ({
           placeholder="Search players..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-9 w-full sm:w-[300px] bg-gray-900 border-gray-800"
+          className="pl-9 w-full sm:w-[300px] bg-surface border-border"
         />
       </div>
       <Button asChild>

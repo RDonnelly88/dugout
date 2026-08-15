@@ -29,7 +29,7 @@ const Formation = ({ teamA, teamB, teamSize, onRemovePlayer }: FormationProps) =
     if (!players.length) {
       console.log(`No players to render for ${teamName}`);
       return (
-        <div className="empty-team-pitch flex flex-col items-center justify-center h-full text-white/70">
+        <div className="empty-team-pitch flex flex-col items-center justify-center h-full text-foreground/70">
           <p>No players selected</p>
         </div>
       );
@@ -90,18 +90,18 @@ const Formation = ({ teamA, teamB, teamSize, onRemovePlayer }: FormationProps) =
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
       <div className="team-pitch-container">
-        <div className="team-pitch bg-green-900/70 rounded-t-lg overflow-hidden h-[320px] relative">
+        <div className="team-pitch bg-win/15 rounded-t-lg overflow-hidden h-[320px] relative">
           {renderTeam(teamA, "Team A", "red")}
         </div>
-        <div className="team-name-banner bg-red-700/80 text-white py-2 text-center font-semibold rounded-b-lg">
+        <div className="team-name-banner bg-red-700/80 text-foreground py-2 text-center font-semibold rounded-b-lg">
           Team A
         </div>
       </div>
       <div className="team-pitch-container">
-        <div className="team-pitch bg-green-900/70 rounded-t-lg overflow-hidden h-[320px] relative">
+        <div className="team-pitch bg-win/15 rounded-t-lg overflow-hidden h-[320px] relative">
           {renderTeam(teamB, "Team B", "green")}
         </div>
-        <div className="team-name-banner bg-green-700/80 text-white py-2 text-center font-semibold rounded-b-lg">
+        <div className="team-name-banner bg-green-700/80 text-foreground py-2 text-center font-semibold rounded-b-lg">
           Team B
         </div>
       </div>

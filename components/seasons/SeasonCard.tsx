@@ -99,13 +99,13 @@ const SeasonCard = ({
 
   return (
     <Link href={`/seasons/${season.id}`}>
-      <Card className="overflow-hidden hover:bg-muted/20 transition-colors h-full bg-gray-900 border-gray-800">
+      <Card className="overflow-hidden hover:bg-muted/20 transition-colors h-full bg-surface border-border">
         <CardContent className="p-0">
           <div className="p-6">
             <div className="flex justify-between items-start">
               <h3 className="text-xl font-semibold mb-2">{season.name}</h3>
               {season.isCurrent && (
-                <Badge className="bg-green-500 hover:bg-green-600">Current Season</Badge>
+                <Badge className="bg-win hover:bg-green-600">Current Season</Badge>
               )}
               {season.isFinished && (
                 <Badge variant="outline">Finished</Badge>
@@ -130,7 +130,7 @@ const SeasonCard = ({
             
             {topPlayer && (
               <div className="flex items-center p-3 bg-muted/20 rounded">
-                <Trophy className="h-5 w-5 text-amber-400 mr-2" />
+                <Trophy className="h-5 w-5 text-draw mr-2" />
                 <div>
                   <div className="text-xs text-muted-foreground">
                     {season.isFinished ? "Champion" : "Leader"}
@@ -165,7 +165,7 @@ const SeasonCard = ({
                       <TableRow key={player.playerId}>
                         <TableCell className="py-1">
                           {playerRanks[player.playerId] === 1 ? (
-                            <Trophy className="h-4 w-4 text-amber-400" />
+                            <Trophy className="h-4 w-4 text-draw" />
                           ) : playerRanks[player.playerId] === 2 ? (
                             <Medal className="h-4 w-4 text-slate-400" />
                           ) : playerRanks[player.playerId] === 3 ? (

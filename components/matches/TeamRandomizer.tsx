@@ -144,7 +144,7 @@ const TeamRandomizer = ({
       >
         <DialogPortal>
           <DialogOverlay className="bg-black/95 backdrop-blur-sm" />
-          <DialogContent className="sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%] border-blue-500/30 neo-glassmorphism bg-black/90 p-6 overflow-hidden">
+          <DialogContent className="sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%] border-border neo-glassmorphism bg-black/90 p-6 overflow-hidden">
             <CardPackRandomizer 
               players={availablePlayers}
               onComplete={handleRandomizerComplete}

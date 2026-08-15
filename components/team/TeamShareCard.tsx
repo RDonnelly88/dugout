@@ -59,7 +59,7 @@ const TeamShareCard = () => {
   if (!currentTeam) return null;
 
   return (
-    <Card className="bg-gray-900 border-gray-800">
+    <Card className="bg-surface border-border">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Share2 className="h-5 w-5 text-primary" />
@@ -72,15 +72,15 @@ const TeamShareCard = () => {
           <Input
             value={currentTeam.id}
             readOnly
-            className="bg-gray-800 border-gray-700 font-mono text-xs"
+            className="bg-surface-2 border-border font-mono text-xs"
           />
           <Button
             variant="outline"
             size="icon"
             onClick={handleCopyTeamId}
-            className="flex-shrink-0 border-gray-700 hover:bg-gray-700"
+            className="flex-shrink-0 border-border hover:bg-gray-700"
           >
-            {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+            {copied ? <Check className="h-4 w-4 text-win" /> : <Copy className="h-4 w-4" />}
           </Button>
         </div>
         <Button 

@@ -25,7 +25,7 @@ const TeamSwitcher = ({ variant = "default" }: { variant?: "default" | "minimal"
   if (userTeams.length <= 1) {
     return variant === "minimal" ? (
       <div className="flex items-center">
-        <Users className="h-4 w-4 mr-2 text-gray-400" />
+        <Users className="h-4 w-4 mr-2 text-muted-foreground" />
         <span className="text-sm font-medium">{currentTeam?.name || "No team"}</span>
       </div>
     ) : null;
@@ -37,13 +37,13 @@ const TeamSwitcher = ({ variant = "default" }: { variant?: "default" | "minimal"
         value={currentTeam?.id || ""}
         onValueChange={handleTeamChange}
       >
-        <SelectTrigger className="bg-transparent border-0 h-8 p-0 text-sm font-medium hover:bg-gray-800 hover:px-2 transition-all">
+        <SelectTrigger className="bg-transparent border-0 h-8 p-0 text-sm font-medium hover:bg-surface-2 hover:px-2 transition-all">
           <div className="flex items-center">
-            <Users className="h-4 w-4 mr-2 text-gray-400" />
+            <Users className="h-4 w-4 mr-2 text-muted-foreground" />
             <SelectValue placeholder="Select a team" />
           </div>
         </SelectTrigger>
-        <SelectContent className="bg-gray-800 border-gray-700">
+        <SelectContent className="bg-surface-2 border-border">
           {userTeams.map(team => (
             <SelectItem key={team.id} value={team.id} className="hover:bg-gray-700">
               <div className="flex items-center justify-between w-full">
@@ -61,7 +61,7 @@ const TeamSwitcher = ({ variant = "default" }: { variant?: "default" | "minimal"
 
   if (variant === "card") {
     return (
-      <Card className="bg-gray-900 border-gray-800">
+      <Card className="bg-surface border-border">
         <CardHeader>
           <CardTitle>Current Team</CardTitle>
           <CardDescription>You are currently managing</CardDescription>
@@ -76,10 +76,10 @@ const TeamSwitcher = ({ variant = "default" }: { variant?: "default" | "minimal"
               value={currentTeam?.id || ""}
               onValueChange={handleTeamChange}
             >
-              <SelectTrigger className="w-40 bg-gray-800 border-gray-700">
+              <SelectTrigger className="w-40 bg-surface-2 border-border">
                 <SelectValue placeholder="Switch team" />
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-700">
+              <SelectContent className="bg-surface-2 border-border">
                 {userTeams.map(team => (
                   <SelectItem key={team.id} value={team.id} className="hover:bg-gray-700">
                     <div className="flex items-center justify-between w-full">
@@ -100,7 +100,7 @@ const TeamSwitcher = ({ variant = "default" }: { variant?: "default" | "minimal"
 
   // Default variant
   return (
-    <Card className="bg-gray-900 border-gray-800">
+    <Card className="bg-surface border-border">
       <CardHeader>
         <CardTitle>Switch Team</CardTitle>
         <CardDescription>Change which team you're managing</CardDescription>
@@ -110,10 +110,10 @@ const TeamSwitcher = ({ variant = "default" }: { variant?: "default" | "minimal"
           value={currentTeam?.id || ""}
           onValueChange={handleTeamChange}
         >
-          <SelectTrigger className="w-full bg-gray-800 border-gray-700">
+          <SelectTrigger className="w-full bg-surface-2 border-border">
             <SelectValue placeholder="Select a team" />
           </SelectTrigger>
-          <SelectContent className="bg-gray-800 border-gray-700">
+          <SelectContent className="bg-surface-2 border-border">
             {userTeams.map(team => (
               <SelectItem key={team.id} value={team.id} className="hover:bg-gray-700">
                 <div className="flex items-center justify-between w-full">

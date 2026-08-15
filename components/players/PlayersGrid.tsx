@@ -41,7 +41,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="shimmer h-[200px] bg-gray-900 border-gray-800 rounded-lg" />
+          <div key={i} className="shimmer h-[200px] bg-surface border-border rounded-lg" />
         ))}
       </div>
     );
@@ -50,7 +50,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
   // No players found
   if (filteredPlayers.length === 0) {
     return (
-      <div className="text-center py-12 bg-gray-900 rounded-lg">
+      <div className="text-center py-12 bg-surface rounded-lg">
         <p className="text-muted-foreground mb-4">
           {searchTerm ? "No players match your search" : "No players added yet"}
         </p>

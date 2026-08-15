@@ -98,17 +98,17 @@ const TeamSelector = () => {
         <PopoverTrigger asChild>
           <Button 
             variant="outline" 
-            className="flex items-center justify-between w-56 text-left font-normal border-gray-700 bg-gray-800 hover:bg-gray-700"
+            className="flex items-center justify-between w-56 text-left font-normal border-border bg-surface-2 hover:bg-gray-700"
           >
             <div className="flex items-center">
-              <Users className="h-4 w-4 mr-2 text-gray-400" />
+              <Users className="h-4 w-4 mr-2 text-muted-foreground" />
               <span className="truncate">{currentTeam?.name || "Select a team"}</span>
             </div>
             <ChevronDown className="h-4 w-4 ml-2 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-56 p-0 bg-gray-800 border-gray-700 z-50">
-          <div className="px-2 py-1.5 text-xs font-medium text-gray-400">
+        <PopoverContent className="w-56 p-0 bg-surface-2 border-border z-50">
+          <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
             Your teams
           </div>
           <div className="max-h-60 overflow-y-auto">
@@ -142,7 +142,7 @@ const TeamSelector = () => {
                   Create New Team
                 </button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md bg-gray-900 border-gray-800 z-50">
+              <DialogContent className="sm:max-w-md bg-surface border-border z-50">
                 <DialogHeader>
                   <DialogTitle>Create New Team</DialogTitle>
                   <DialogDescription>
@@ -186,7 +186,7 @@ const TeamSelector = () => {
               </DialogContent>
             </Dialog>
           </div>
-          <div className="border-t border-gray-700 px-2 py-1.5">
+          <div className="border-t border-border px-2 py-1.5">
             <button
               className="flex items-center w-full px-2.5 py-2 text-sm hover:bg-gray-700 cursor-pointer"
               onClick={handleSignOut}
@@ -202,7 +202,7 @@ const TeamSelector = () => {
         <Button
           variant="ghost"
           size="icon"
-          className="ml-2 text-gray-400 hover:text-white hover:bg-gray-800"
+          className="ml-2 text-muted-foreground hover:text-foreground hover:bg-surface-2"
           onClick={() => alert("Team settings will be implemented soon")}
         >
           <Settings className="h-4 w-4" />

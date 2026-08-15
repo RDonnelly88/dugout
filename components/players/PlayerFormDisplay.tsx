@@ -33,7 +33,7 @@ const PlayerFormDisplay = ({
               size === 'xs' ? 'w-4 h-4' : 
               size === 'sm' ? 'w-5 h-5' : 
               size === 'md' ? 'w-6 h-6' : 'w-8 h-8',
-              "text-blue-400 animate-spin"
+              "text-info animate-spin"
             )}
           />
           <span className="text-xs text-muted-foreground ml-2">Loading form data...</span>
@@ -45,7 +45,7 @@ const PlayerFormDisplay = ({
   // Don't render anything if there's no form data or it's empty
   if (!results || results.length === 0) {
     return (
-      <div className="text-xs text-gray-400">No match data</div>
+      <div className="text-xs text-muted-foreground">No match data</div>
     );
   }
   
@@ -55,23 +55,23 @@ const PlayerFormDisplay = ({
   
   const getFormSquare = (result: PlayerFormResult, index: number) => {
     let bgColor = "bg-gray-400";
-    let textColor = "text-white";
+    let textColor = "text-foreground";
     let letter = "-";
     
     switch (result) {
       case 'win':
-        bgColor = "bg-green-500";
-        textColor = "text-white";
+        bgColor = "bg-win";
+        textColor = "text-foreground";
         letter = "W";
         break;
       case 'loss':
-        bgColor = "bg-red-500";
-        textColor = "text-white";
+        bgColor = "bg-loss";
+        textColor = "text-foreground";
         letter = "L";
         break;
       case 'draw':
         bgColor = "bg-amber-400";
-        textColor = "text-white";
+        textColor = "text-foreground";
         letter = "D";
         break;
       case 'dnp':

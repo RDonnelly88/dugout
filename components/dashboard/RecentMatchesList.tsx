@@ -38,14 +38,14 @@ const RecentMatchesList = ({ matches }: RecentMatchesListProps) => {
   };
 
   return (
-    <Card className="bg-gray-900 border-gray-800">
+    <Card className="bg-surface border-border">
       <CardHeader>
         <CardTitle>Recent Matches</CardTitle>
         <CardDescription>Latest 5 football matches</CardDescription>
       </CardHeader>
       <CardContent>
         {matches.length === 0 ? (
-          <p className="text-center py-8 text-gray-400">No matches found</p>
+          <p className="text-center py-8 text-muted-foreground">No matches found</p>
         ) : (
           <div className="space-y-4">
             {matches.map(match => (

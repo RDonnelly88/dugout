@@ -2,12 +2,13 @@ import Link from "next/link";
 import React from "react";
 
 import { Player, PlayerFormResult, PlayerRecord, SeasonPlayerStats } from "@/types";
-import { Edit, Ghost, Trash2 } from "lucide-react";
+import { Edit, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import { usePlayerRank } from "@/hooks/usePlayerRank";
 import { winRate } from "@/lib/player-stats";
+import PlayerAvatar from "@/components/players/PlayerAvatar";
 
 interface PlayerCardProps {
   player: Player;
@@ -32,11 +33,11 @@ function Tally({
 }) {
   const colour =
     tone === "win"
-      ? "text-green-400"
+      ? "text-win"
       : tone === "draw"
-        ? "text-amber-400"
+        ? "text-draw"
         : tone === "loss"
-          ? "text-red-400"
+          ? "text-loss"
           : "text-foreground";
   return (
     <div className="flex flex-col items-center">
@@ -64,7 +65,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
   const headlineLabel = seasonId && seasonStats ? "This season" : "All time";
 
   return (
-    <Card className="player-card relative overflow-hidden bg-gray-900 border-gray-800">
+    <Card className="player-card relative overflow-hidden bg-surface border-border">
       {/* Outside the link: a button nested in an anchor is invalid, and the
           whole card being the link is what makes a player reachable from
           anywhere they are named. */}
@@ -72,7 +73,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
         <Link
           href={`/players/edit/${player.id}`}
           aria-label={`Edit ${player.name}`}
-          className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-gray-800 hover:text-foreground"
+          className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
         >
           <Edit className="h-4 w-4" />
         </Link>
@@ -80,7 +81,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
           type="button"
           onClick={() => onDeleteClick(player)}
           aria-label={`Delete ${player.name}`}
-          className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-red-900/30 hover:text-red-400"
+          className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-loss/15 hover:text-loss"
         >
           <Trash2 className="h-4 w-4" />
         </button>
@@ -89,23 +90,13 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
       <Link href={`/players/${player.id}`} className="block focus:outline-none">
         <CardContent className="flex h-full flex-col p-0">
           <div className="flex items-center gap-4 p-5 pr-20">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-800">
-              {player.image ? (
-                <img
-                  src={player.image}
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <Ghost className="h-7 w-7 text-blue-400" />
-              )}
-            </div>
+            <PlayerAvatar name={player.name} image={player.image} size="lg" />
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <h3 className="truncate text-lg font-medium">{player.name}</h3>
                 {seasonId && hasPlayedCurrentSeason && rank && (
-                  <Badge className="bg-gray-800 text-white">#{rank}</Badge>
+                  <Badge className="bg-surface-2 text-foreground">#{rank}</Badge>
                 )}
               </div>
 
@@ -127,7 +118,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
             </div>
           </div>
 
-          <div className="mt-auto border-t border-gray-800 bg-gray-800/40 px-5 py-3">
+          <div className="mt-auto border-t border-border bg-surface-2/40 px-5 py-3">
             <p className="mb-2 text-[11px] uppercase tracking-wider text-muted-foreground">
               {headlineLabel}
             </p>

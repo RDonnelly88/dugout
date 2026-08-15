@@ -38,28 +38,28 @@ const PlayerSeasonStats = ({
               <StatCard 
                 label="Matches Played" 
                 value={overallStats.played}
-                icon={<Trophy className="h-5 w-5 text-blue-500" />}
+                icon={<Trophy className="h-5 w-5 text-info" />}
                 bgColor="bg-blue-50"
                 textColor="text-blue-800"
               />
               <StatCard 
                 label="Victories" 
                 value={overallStats.wins}
-                icon={<TrendingUp className="h-5 w-5 text-green-500" />}
+                icon={<TrendingUp className="h-5 w-5 text-win" />}
                 bgColor="bg-green-50"
                 textColor="text-green-800"
               />
               <StatCard 
                 label="Draws" 
                 value={overallStats.draws}
-                icon={<MinusCircle className="h-5 w-5 text-amber-500" />}
+                icon={<MinusCircle className="h-5 w-5 text-draw" />}
                 bgColor="bg-amber-50"
                 textColor="text-amber-800"
               />
               <StatCard 
                 label="Defeats" 
                 value={overallStats.losses}
-                icon={<TrendingDown className="h-5 w-5 text-red-500" />}
+                icon={<TrendingDown className="h-5 w-5 text-loss" />}
                 bgColor="bg-red-50"
                 textColor="text-red-800"
               />
@@ -81,28 +81,28 @@ const PlayerSeasonStats = ({
                 <StatCard 
                   label="Matches Played" 
                   value={stat.played}
-                  icon={<Trophy className="h-5 w-5 text-blue-500" />}
+                  icon={<Trophy className="h-5 w-5 text-info" />}
                   bgColor="bg-blue-50"
                   textColor="text-blue-800"
                 />
                 <StatCard 
                   label="Victories" 
                   value={stat.wins}
-                  icon={<TrendingUp className="h-5 w-5 text-green-500" />}
+                  icon={<TrendingUp className="h-5 w-5 text-win" />}
                   bgColor="bg-green-50"
                   textColor="text-green-800"
                 />
                 <StatCard 
                   label="Draws" 
                   value={stat.draws}
-                  icon={<MinusCircle className="h-5 w-5 text-amber-500" />}
+                  icon={<MinusCircle className="h-5 w-5 text-draw" />}
                   bgColor="bg-amber-50"
                   textColor="text-amber-800"
                 />
                 <StatCard 
                   label="Defeats" 
                   value={stat.losses}
-                  icon={<TrendingDown className="h-5 w-5 text-red-500" />}
+                  icon={<TrendingDown className="h-5 w-5 text-loss" />}
                   bgColor="bg-red-50"
                   textColor="text-red-800"
                 />

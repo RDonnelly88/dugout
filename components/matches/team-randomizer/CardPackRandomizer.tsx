@@ -3,9 +3,9 @@ import React, { useState, useEffect } from "react";
 import { Player } from "@/types";
 import { Button } from "@/components/ui/button";
 import { PackageOpen, Check, X } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { 
+import PlayerAvatar from "@/components/players/PlayerAvatar";
+import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
@@ -96,7 +96,7 @@ const CardPackRandomizer = ({
         <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">
           {isComplete ? "Teams Created!" : "Open Card Pack"}
         </h2>
-        <p className="text-blue-300/70 mt-2">
+        <p className="text-info/70 mt-2">
           {isComplete
             ? "All cards have been revealed"
             : `Click on the card pack to reveal players (${remainingCards.length} remaining)`}
@@ -106,12 +106,12 @@ const CardPackRandomizer = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Team A */}
         <div className="team-column">
-          <div className="team-header bg-gradient-to-r from-red-600 to-red-700 text-white py-3 px-4 rounded-t-lg text-center">
+          <div className="team-header bg-gradient-to-r from-red-600 to-red-700 text-foreground py-3 px-4 rounded-t-lg text-center">
             <h3 className="text-xl font-bold">TEAM A</h3>
           </div>
           <div className="team-list-container bg-gradient-to-b from-red-900/40 to-red-950/60 rounded-b-lg p-1 min-h-[300px] border border-red-500/30">
             {teamA.length === 0 ? (
-              <div className="empty-state text-center py-8 text-red-300/50">
+              <div className="empty-state text-center py-8 text-loss/50">
                 No players yet
               </div>
             ) : (
@@ -131,12 +131,12 @@ const CardPackRandomizer = ({
 
         {/* Team B */}
         <div className="team-column">
-          <div className="team-header bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-4 rounded-t-lg text-center">
+          <div className="team-header bg-gradient-to-r from-green-600 to-green-700 text-foreground py-3 px-4 rounded-t-lg text-center">
             <h3 className="text-xl font-bold">TEAM B</h3>
           </div>
           <div className="team-list-container bg-gradient-to-b from-green-900/40 to-green-950/60 rounded-b-lg p-1 min-h-[300px] border border-green-500/30">
             {teamB.length === 0 ? (
-              <div className="empty-state text-center py-8 text-green-300/50">
+              <div className="empty-state text-center py-8 text-win/50">
                 No players yet
               </div>
             ) : (
@@ -163,16 +163,8 @@ const CardPackRandomizer = ({
               <div className="revealed-card animate-pop-in">
                 <div className="player-card-panel bg-blue-600 p-4 rounded-lg shadow-lg border-2 border-yellow-400">
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10 border-2 border-white">
-                      {currentCard.image ? (
-                        <AvatarImage src={currentCard.image} alt={currentCard.name} />
-                      ) : (
-                        <AvatarFallback className="bg-blue-800 text-white">
-                          {currentCard.name.charAt(0)}
-                        </AvatarFallback>
-                      )}
-                    </Avatar>
-                    <span className="text-lg font-bold text-white">{currentCard.name}</span>
+                    <PlayerAvatar name={currentCard.name} image={currentCard.image} size="md" className="border-2 border-white" />
+                    <span className="text-lg font-bold text-foreground">{currentCard.name}</span>
                   </div>
                 </div>
               </div>
@@ -194,7 +186,7 @@ const CardPackRandomizer = ({
         ) : (
           <Button
             onClick={handleComplete}
-            className="complete-button py-4 px-6 h-auto bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg border border-green-500/50 transition-all duration-300"
+            className="complete-button py-4 px-6 h-auto bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-foreground shadow-lg border border-green-500/50 transition-all duration-300"
           >
             <Check className="mr-2 h-5 w-5" />
             <span className="text-lg font-medium">Confirm Teams</span>
@@ -237,16 +229,8 @@ const PlayerListItem = ({ player, index, teamColor }: PlayerListItemProps) => {
       <div className="player-number w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
         {index + 1}
       </div>
-      <Avatar className="h-8 w-8 border border-white/30">
-        {player.image ? (
-          <AvatarImage src={player.image} alt={player.name} />
-        ) : (
-          <AvatarFallback className="bg-blue-800 text-white">
-            {player.name.charAt(0)}
-          </AvatarFallback>
-        )}
-      </Avatar>
-      <span className="text-white font-medium">{player.name}</span>
+      <PlayerAvatar name={player.name} image={player.image} size="sm" className="border border-white/30" />
+      <span className="text-foreground font-medium">{player.name}</span>
     </div>
   );
 };

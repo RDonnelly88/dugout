@@ -25,18 +25,18 @@ const PlayerForm = ({ form = [], size = 'md', showLabel = false }: PlayerFormPro
     
     switch (result) {
       case 'win':
-        bgColor = "bg-green-500";
-        textColor = "text-white";
+        bgColor = "bg-win";
+        textColor = "text-foreground";
         letter = "W";
         break;
       case 'loss':
-        bgColor = "bg-red-500";
-        textColor = "text-white";
+        bgColor = "bg-loss";
+        textColor = "text-foreground";
         letter = "L";
         break;
       case 'draw':
         bgColor = "bg-amber-400";
-        textColor = "text-white";
+        textColor = "text-foreground";
         letter = "D";
         break;
       case 'dnp':

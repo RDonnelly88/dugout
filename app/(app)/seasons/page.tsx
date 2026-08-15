@@ -187,7 +187,7 @@ const Seasons = () => {
             placeholder="Search seasons..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 w-full sm:w-[300px] bg-gray-900 border-gray-800"
+            className="pl-9 w-full sm:w-[300px] bg-surface border-border"
           />
         </div>
         <div className="flex gap-2 w-full sm:w-auto">

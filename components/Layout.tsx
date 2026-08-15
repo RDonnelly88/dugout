@@ -49,10 +49,10 @@ function isActive(pathname: string, path: string) {
 
 const navLinkClass = (active: boolean, collapsed = false) =>
   cn(
-    "flex items-center space-x-2 py-3 font-medium transition-colors hover:bg-gray-800/50 focus:outline-none",
+    "flex items-center space-x-2 py-3 font-medium transition-colors hover:bg-surface-2/50 focus:outline-none",
     active
-      ? "bg-gradient-to-r from-accent/20 to-transparent border-l-2 border-accent text-white"
-      : "text-gray-300 border-l-2 border-transparent",
+      ? "bg-gradient-to-r from-accent/20 to-transparent border-l-2 border-accent text-foreground"
+      : "text-muted-foreground border-l-2 border-transparent",
     collapsed ? "justify-center px-0" : "px-4"
   );
 
@@ -64,7 +64,7 @@ function QuickActions({ onNavigate }: { onNavigate?: () => void }) {
           key={action.path}
           asChild
           variant="ghost"
-          className="w-full justify-start font-normal text-gray-300 hover:bg-gray-800/50 hover:text-white group"
+          className="w-full justify-start font-normal text-muted-foreground hover:bg-surface-2/50 hover:text-foreground group"
         >
           <Link
             href={action.path}
@@ -107,7 +107,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </SheetTrigger>
         <SheetContent
           side="left"
-          className="p-0 bg-gray-900/95 border-gray-800 backdrop-blur-xl shadow-2xl shadow-black/50"
+          className="p-0 bg-surface/95 border-border backdrop-blur-xl shadow-2xl shadow-black/50"
         >
           <ScrollArea className="h-screen">
             <div className="py-4">
@@ -129,9 +129,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
               {currentTeam && showActions && (
                 <>
-                  <div className="border-t border-gray-800 my-4" />
+                  <div className="border-t border-border my-4" />
                   <div className="px-4 py-2">
-                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                       Actions
                     </h3>
                   </div>
@@ -146,16 +146,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "hidden md:flex flex-col border-r border-gray-800/70 bg-gray-900/95 backdrop-blur-md transition-all duration-300 overflow-hidden shadow-xl shadow-black/20",
+          "hidden md:flex flex-col border-r border-border/70 bg-surface/95 backdrop-blur-md transition-all duration-300 overflow-hidden shadow-xl shadow-black/20",
           isSidebarCollapsed ? "w-16" : "w-64"
         )}
       >
-        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-800/70 bg-gray-900/80">
+        <div className="flex items-center justify-between h-16 px-4 border-b border-border/70 bg-surface/80">
           {isSidebarCollapsed ? <TeamSwitcher variant="minimal" /> : <TeamSelector />}
           <Button
             variant="ghost"
             size="icon"
-            className="text-gray-400 hover:text-white hover:bg-gray-800/70"
+            className="text-muted-foreground hover:text-foreground hover:bg-surface-2/70"
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
             aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
@@ -183,8 +183,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             {hasTeam() && showActions && !isSidebarCollapsed && (
               <>
                 <div className="px-4 mt-6 mb-2">
-                  <div className="border-t border-gray-800/70 pt-4">
-                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  <div className="border-t border-border/70 pt-4">
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                       Actions
                     </h3>
                   </div>
@@ -197,7 +197,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       <main className="flex flex-col h-full bg-background text-foreground">
-        <div className="bg-gray-900/90 backdrop-blur-md p-4 border-b border-gray-800/70 shadow-md md:hidden">
+        <div className="bg-surface/90 backdrop-blur-md p-4 border-b border-border/70 shadow-md md:hidden">
           <TeamSwitcher variant="minimal" />
         </div>
 

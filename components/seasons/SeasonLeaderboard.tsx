@@ -1,8 +1,7 @@
 import Link from "next/link";
 import React from "react";
 
-import { Trophy, Medal, Ghost } from "lucide-react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Trophy, Medal } from "lucide-react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +10,7 @@ import { SeasonPlayerStats, PlayerFormResult } from "@/types";
 import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
 import { calculatePlayerRanks, sortPlayersByRank } from "@/lib/ranking-utils";
 import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
+import PlayerAvatar from "@/components/players/PlayerAvatar";
 
 interface SeasonLeaderboardProps {
   stats: SeasonPlayerStats[];
@@ -59,8 +59,8 @@ const SeasonLeaderboard = ({
   const getRankBadge = (rank: number) => {
     if (rank === 1) {
       return (
-        <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
-          <Trophy className="h-3 w-3 mr-1 text-amber-500" />
+        <Badge variant="outline" className="bg-draw/10 text-draw border-draw/30">
+          <Trophy className="h-3 w-3 mr-1 text-draw" />
           {isFinished ? "Champion" : "Leader"}
         </Badge>
       );
@@ -75,7 +75,7 @@ const SeasonLeaderboard = ({
     }
     if (rank === 3) {
       return (
-        <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
+        <Badge variant="outline" className="bg-draw/10 text-draw border-draw/30">
           <Medal className="h-3 w-3 mr-1 text-amber-700" />
           3rd Place
         </Badge>
@@ -100,7 +100,7 @@ const SeasonLeaderboard = ({
   }
   
   return (
-    <Card className="bg-gray-900 border-gray-800">
+    <Card className="bg-surface border-border">
       {showTitle && (
         <CardHeader>
           <CardTitle>{seasonName ? `${seasonName} League Table` : "League Table"}</CardTitle>
@@ -129,12 +129,7 @@ const SeasonLeaderboard = ({
                 <TableCell className="font-medium">{playerRanks[stat.playerId]}</TableCell>
                 <TableCell>
                   <Link href={`/players/${stat.playerId}`} className="flex items-center space-x-2 hover:underline">
-                    <Avatar className="h-8 w-8 bg-gray-800">
-                      <AvatarImage src={stat.playerImage ?? undefined} alt={stat.playerName} />
-                      <AvatarFallback>
-                        {stat.playerImage ? stat.playerName.charAt(0) : <Ghost className="h-4 w-4" />}
-                      </AvatarFallback>
-                    </Avatar>
+                    <PlayerAvatar name={stat.playerName} image={stat.playerImage} size="sm" className="bg-surface-2" />
                     <div>
                       <div className="font-medium flex items-center gap-2">
                         {stat.playerName}
