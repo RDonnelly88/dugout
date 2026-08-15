@@ -40,6 +40,17 @@ export interface PlayerRating {
    */
   lastChange: number;
   history: RatingPoint[];
+  /**
+   * Where the rating went after their last game — one point per match the
+   * squad played without them, carrying the date of each.
+   *
+   * `history` only holds matches they were in, so a chart drawn from it alone
+   * stops dead at whenever they last turned out and shows a rating that has
+   * since drifted thirty points as though it were still standing. This is the
+   * tail: flat while they are inside the grace, then curving back towards the
+   * starting mark.
+   */
+  drifted: { date: string; rating: number }[];
 }
 
 /**
@@ -106,6 +117,7 @@ export function computeRatings(matches: Match[]): Map<string, PlayerRating> {
         missed: 0,
         drift: 0,
         lastChange: 0,
+        drifted: [],
         history: [],
       };
       ratings.set(playerId, entry);
@@ -207,6 +219,13 @@ export function computeRatings(matches: Match[]): Map<string, PlayerRating> {
       missed === 0
         ? player.rating - (player.history.at(-1)?.change ?? 0)
         : decayed(player.rating, missed - 1);
+
+    // One point per match they were not in, so a chart carries on to the
+    // present rather than stopping at whenever they last played.
+    player.drifted = Array.from({ length: missed }, (_, i) => ({
+      date: played[previous + i + 1].date,
+      rating: decayed(player.rating, i + 1),
+    }));
 
     player.missed = missed;
     player.drift = player.rating - current;

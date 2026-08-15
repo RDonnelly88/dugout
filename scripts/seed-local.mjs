@@ -199,8 +199,22 @@ const seasons = await rest("seasons", {
  */
 const strength = new Map(players.map((p, i) => [p.id, 0.35 + (i % 7) * 0.06]));
 
-function fixture(seasonId, date) {
-  const playing = shuffled(players).slice(0, 10);
+/**
+ * The two marked inactive stopped turning up two-thirds of the way through,
+ * rather than playing to the end and being flagged retired anyway. Somebody
+ * with a real gap behind them is the only way to see a rating drift, or a
+ * chart carry on past their last game.
+ */
+const RETIRED_AFTER = 0.66;
+const retired = new Set(players.slice(-2).map((p) => p.id));
+
+function fixture(seasonId, date, progress) {
+  const available =
+    progress > RETIRED_AFTER
+      ? players.filter((p) => !retired.has(p.id))
+      : players;
+
+  const playing = shuffled(available).slice(0, 10);
   const a = playing.slice(0, 5);
   const b = playing.slice(5);
 
@@ -240,10 +254,13 @@ function fixture(seasonId, date) {
 // One game a week through each season, up to its end or to the anchor for the
 // one still running.
 const fixtures = [];
+const FIRST_DAY = SEASONS[0].from;
 SEASONS.forEach(({ from, to }, i) => {
   const last = to ?? 0;
   for (let day = from - 7; day > last; day -= 7) {
-    fixtures.push(fixture(seasons[i].id, anchor - day * DAY));
+    // How far through the whole run this match falls, nought to one.
+    const progress = (FIRST_DAY - day) / FIRST_DAY;
+    fixtures.push(fixture(seasons[i].id, anchor - day * DAY, progress));
   }
 });
 

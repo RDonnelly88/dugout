@@ -51,7 +51,7 @@ Call log:
   - paragraph: Share your team with others
   - heading "Share Team" [level=3]
   - paragraph: Share this ID to invite others to join your team
-  - textbox: 849f70a5-7ccd-4f1d-818a-4505cdac2bf0
+  - textbox: c1303e16-989f-48fa-9657-e9fdcebc71f8
   - button
   - button "Share Team"
   - paragraph: Users can join your team by entering this ID in their Join Team form.

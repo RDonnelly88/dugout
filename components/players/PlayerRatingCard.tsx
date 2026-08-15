@@ -93,7 +93,14 @@ export default function PlayerRatingCard({ playerId }: { playerId: string }) {
   // question, and answering that one here made a rating look freshly earned
   // months after it was.
   const change = Math.round(rating.lastChange);
-  const values = rating.history.map((h) => h.rating);
+  // Carries on past their last game for every match the squad played without
+  // them, so the line finishes where the rating actually is. Without the tail
+  // it stopped at whenever they last turned out, showing a figure that had
+  // since drifted as though it were still standing.
+  const values = [
+    ...rating.history.map((h) => h.rating),
+    ...rating.drifted.map((d) => d.rating),
+  ];
 
   return (
     <Card>

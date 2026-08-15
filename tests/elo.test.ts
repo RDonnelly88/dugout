@@ -326,6 +326,35 @@ describe("computeRatings and matches missed", () => {
     expect(a.lastChange).toBeGreaterThan(0);
   });
 
+  /**
+   * A chart drawn from `history` alone stops at whenever somebody last played,
+   * so a rating that has drifted thirty points looks like one holding steady.
+   */
+  it("carries the line on for every match missed", () => {
+    const ratings = computeRatings([
+      match(["a"], ["b"], 5, 0, "2026-01-01"),
+      ...withoutThem(ELO.decay.graceMatches + 5),
+    ]);
+
+    const a = ratings.get("a")!;
+    expect(a.drifted).toHaveLength(ELO.decay.graceMatches + 5);
+    // Ends exactly where the rating now stands.
+    expect(a.drifted.at(-1)!.rating).toBeCloseTo(a.rating);
+    // Flat through the grace — the first missed match costs nothing — and
+    // falling after it.
+    const beforeAnyDrift = a.rating + a.drift;
+    expect(a.drifted[0].rating).toBeCloseTo(beforeAnyDrift);
+    expect(a.drifted[ELO.decay.graceMatches - 1].rating).toBeCloseTo(beforeAnyDrift);
+    expect(a.drifted.at(-1)!.rating).toBeLessThan(beforeAnyDrift);
+    // Each point carries the date of the match it sat out.
+    expect(a.drifted[0].date).toBe("2026-02-01");
+  });
+
+  it("leaves no tail on somebody who played the last match", () => {
+    const ratings = computeRatings([match(["a"], ["b"], 3, 1, "2026-01-01")]);
+    expect(ratings.get("a")!.drifted).toEqual([]);
+  });
+
   it("rates somebody from their very first game", () => {
     const ratings = computeRatings([match(["a"], ["b"], 3, 1, "2026-01-01")]);
 
