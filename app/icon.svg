@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- A dugout: the arched shelter, with the bench cut out of it. Solid shapes
+       rather than strokes so it still reads at 16px in a browser tab. Colours
+       are the app's own background and accent, hardcoded because a favicon is
+       rendered outside the page and can't see the CSS variables. -->
+  <rect width="32" height="32" rx="7" fill="#050b1a" />
+  <path d="M16 5a12 12 0 0 0-12 12v7h24v-7A12 12 0 0 0 16 5Z" fill="#1ae6d5" />
+  <rect x="9" y="17.6" width="14" height="2.8" rx="1.4" fill="#050b1a" />
+</svg>

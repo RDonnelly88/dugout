@@ -1,1 +1,56 @@
 project_id = "zeuepyucpafcjibsofec"
+
+# Ports are shifted off the CLI defaults (5432x) so this stack can run at the
+# same time as another local Supabase project. The defaults collide, and the
+# failure is a container that won't bind rather than anything obvious.
+
+[api]
+port = 54331
+
+[db]
+port = 54332
+shadow_port = 54330
+# Match the hosted project, so a migration that works locally works there.
+major_version = 15
+
+[studio]
+port = 54333
+
+[local_smtp]
+port = 54334
+
+[analytics]
+port = 54337
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = [
+  "http://localhost:3000/auth/callback",
+  "http://localhost:3001/auth/callback",
+]
+
+[auth.email]
+# Magic links, alongside the password sign-in the app already had.
+enable_signup = true
+enable_confirmations = false
+
+[auth.passkey]
+# Passkey sign-in, offered alongside the password rather than instead of it.
+# The client opts in separately — see lib/supabase-browser.ts.
+enabled = true
+
+[auth.webauthn]
+# These govern the local Docker stack only. A hosted project never reads this
+# file: set the same values under Authentication in its dashboard, or the
+# ceremony fails there with the config looking correct here.
+#
+# rp_id is stamped into every credential the authenticator stores, and a
+# credential is only offered back to the relying party it was created for.
+# Changing it migrates nothing — every passkey already registered silently
+# stops being offered, and each user has to enrol again.
+rp_display_name = "The Dugout"
+rp_id = "localhost"
+# The browser refuses the ceremony outright if the page's origin is absent, and
+# the port counts: http://localhost:3000 does not cover a dev server on 3001.
+rp_origins = ["http://localhost:3000", "http://localhost:3001"]
