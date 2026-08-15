@@ -1,6 +1,7 @@
 "use client";
 
 import { SKILL } from "@/lib/config";
+import SkillScale from "./SkillScale";
 
 const LEVELS = Array.from(
   { length: SKILL.max - SKILL.min + 1 },
@@ -35,7 +36,7 @@ export default function SkillLevelPicker({
             disabled={disabled}
             onClick={() => onChange(option)}
             aria-pressed={option === level}
-            aria-label={`Level ${option}: ${SKILL.labels[option]}`}
+            aria-label={`Level ${option} of ${SKILL.max}`}
             className={`focus-ring tabular h-10 flex-1 rounded-lg border text-sm font-semibold transition-colors disabled:opacity-50 ${
               option <= level
                 ? "border-accent bg-accent/15 text-accent"
@@ -46,8 +47,9 @@ export default function SkillLevelPicker({
           </button>
         ))}
       </div>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {level} · {SKILL.labels[level]}
+      <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+        <SkillScale level={level} size="md" />
+        {level} of {SKILL.max}
       </p>
     </div>
   );

@@ -5,10 +5,41 @@ import { ChevronRight, Trash2 } from "lucide-react";
 import { Match } from "@/types";
 import { useSideNames } from "@/hooks/useSideNames";
 import { outcomeOf } from "@/lib/match-result";
+import { displayRating } from "@/lib/elo";
+import type { SideSwing } from "@/lib/match-impact";
 
 interface MatchListItemProps {
   match: Match;
-  onDeleteClick: (match: Match) => void;
+  /** Omitted where deleting is not on offer, such as a player's own page. */
+  onDeleteClick?: (match: Match) => void;
+  /** What the two sides were rated going in, and what the result did to them. */
+  swing?: { A: SideSwing; B: SideSwing };
+  /** How it went for the player whose page this is, when that is the question. */
+  result?: "win" | "draw" | "loss" | null;
+}
+
+const RESULT_STYLE = {
+  win: "bg-win/15 text-win",
+  draw: "bg-draw/15 text-draw",
+  loss: "bg-loss/15 text-loss",
+} as const;
+
+/** The side's rating before the game, and what it moved. */
+function Swing({ side }: { side: SideSwing }) {
+  const change = Math.round(side.change);
+  return (
+    <span className="tabular mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+      {displayRating(side.before)}
+      <span
+        className={
+          change > 0 ? "text-win" : change < 0 ? "text-loss" : "text-muted-foreground"
+        }
+      >
+        {change > 0 ? "+" : change < 0 ? "−" : "±"}
+        {Math.abs(change)}
+      </span>
+    </span>
+  );
 }
 
 /** Dates arrive as either a plain day or a full timestamp. */
@@ -24,7 +55,12 @@ function matchDate(value: string): Date {
  * browser could not render the page in one piece — a list is for scanning, and
  * the detail is a tap away.
  */
-const MatchListItem = ({ match, onDeleteClick }: MatchListItemProps) => {
+const MatchListItem = ({
+  match,
+  onDeleteClick,
+  swing,
+  result,
+}: MatchListItemProps) => {
   const sides = useSideNames();
   // A result is a result whether or not anyone wrote the score down.
   const winner = outcomeOf(match);
@@ -37,7 +73,11 @@ const MatchListItem = ({ match, onDeleteClick }: MatchListItemProps) => {
     <li className="relative">
       <Link
         href={`/matches/${match.id}`}
-        className="focus-ring flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 pr-12 transition-colors hover:border-border-strong sm:gap-4 sm:px-4"
+        // The right padding is clearance for the delete button, which is not
+        // always there.
+        className={`focus-ring flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 transition-colors hover:border-border-strong sm:gap-4 sm:px-4 ${
+          onDeleteClick ? "pr-12 sm:pr-12" : ""
+        }`}
       >
         <time
           dateTime={match.date}
@@ -47,12 +87,15 @@ const MatchListItem = ({ match, onDeleteClick }: MatchListItemProps) => {
         </time>
 
         <span className="flex min-w-0 flex-1 items-center justify-center gap-2 sm:gap-3">
-          <span
-            className={`min-w-0 flex-1 truncate text-right text-sm sm:text-base ${
-              winner === "a" ? "font-semibold" : "text-muted-foreground"
-            }`}
-          >
-            {match.teamA?.name || sides.A}
+          <span className="flex min-w-0 flex-1 flex-col items-end">
+            <span
+              className={`w-full truncate text-right text-sm sm:text-base ${
+                winner === "a" ? "font-semibold" : "text-muted-foreground"
+              }`}
+            >
+              {match.teamA?.name || sides.A}
+            </span>
+            {swing && <Swing side={swing.A} />}
           </span>
 
           {hasScore ? (
@@ -71,36 +114,46 @@ const MatchListItem = ({ match, onDeleteClick }: MatchListItemProps) => {
             </span>
           )}
 
-          <span
-            className={`min-w-0 flex-1 truncate text-sm sm:text-base ${
-              winner === "b" ? "font-semibold" : "text-muted-foreground"
-            }`}
-          >
-            {match.teamB?.name || sides.B}
+          <span className="flex min-w-0 flex-1 flex-col items-start">
+            <span
+              className={`w-full truncate text-sm sm:text-base ${
+                winner === "b" ? "font-semibold" : "text-muted-foreground"
+              }`}
+            >
+              {match.teamB?.name || sides.B}
+            </span>
+            {swing && <Swing side={swing.B} />}
           </span>
         </span>
 
-        {winner === "draw" && (
+        {result ? (
+          <span
+            className={`hidden shrink-0 rounded-full px-2 py-0.5 text-xs font-medium capitalize sm:block ${RESULT_STYLE[result]}`}
+          >
+            {result}
+          </span>
+        ) : winner === "draw" ? (
           <span className="hidden shrink-0 text-xs text-draw sm:block">Draw</span>
-        )}
-        {!played && (
+        ) : !played ? (
           <span className="hidden shrink-0 text-xs text-muted-foreground sm:block">
             Not played
           </span>
-        )}
+        ) : null}
 
         <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
       </Link>
 
       {/* Outside the link: a button inside an anchor is invalid markup. */}
-      <button
-        type="button"
-        onClick={() => onDeleteClick(match)}
-        aria-label={`Delete the match on ${format(matchDate(match.date), "d MMMM")}`}
-        className="focus-ring absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-2 text-muted-foreground transition-colors hover:bg-loss/15 hover:text-loss"
-      >
-        <Trash2 className="h-4 w-4" />
-      </button>
+      {onDeleteClick && (
+        <button
+          type="button"
+          onClick={() => onDeleteClick(match)}
+          aria-label={`Delete the match on ${format(matchDate(match.date), "d MMMM")}`}
+          className="focus-ring absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-2 text-muted-foreground transition-colors hover:bg-loss/15 hover:text-loss"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      )}
     </li>
   );
 };

@@ -58,21 +58,15 @@ export const FORM_LENGTH = 5;
 /**
  * The hand-set ability scale.
  *
- * Five steps because people can tell "decent" from "good" and cannot reliably
- * tell 68 from 71. The labels are shown next to the number so two people
- * setting it mean roughly the same thing.
+ * Five steps because people can tell one end from the other and cannot
+ * reliably tell 68 from 71. Deliberately unlabelled: naming the steps invited
+ * an argument about whether "ringer" meant the best player or the worst, which
+ * is not a question a number needs to raise. It is drawn as five pips.
  */
 export const SKILL = {
   min: 1,
   max: 5,
   default: 3,
-  labels: {
-    1: "Getting there",
-    2: "Steady",
-    3: "Decent",
-    4: "Good",
-    5: "Ringer",
-  } as Record<number, string>,
 } as const;
 
 /** What the two sides are called on screen. Team A is the one in bibs. */

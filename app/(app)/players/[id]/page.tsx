@@ -3,7 +3,7 @@
 import Link from "next/link";
 import React from "react";
 
-import { ArrowLeft, Edit, CalendarDays, Clock, Users, MapPin, Trophy, TrendingUp, TrendingDown, MinusCircle, Flag } from "lucide-react";
+import { ArrowLeft, Edit, Trophy, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,11 +19,16 @@ import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
 import type { PlayerFormResult } from "@/types";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import PlayerRatingCard from "@/components/players/PlayerRatingCard";
+import PageHeader from "@/components/PageHeader";
+import MatchListItem from "@/components/matches/MatchListItem";
+import { ratingSwings } from "@/lib/match-impact";
+import { StatTile, StatTiles } from "@/components/StatTile";
 
 const PlayerDetail = () => {
   const {
     player,
     playerMatches,
+    allMatches,
     seasons,
     seasonStats,
     setSelectedSeasonId,
@@ -32,6 +37,10 @@ const PlayerDetail = () => {
     isLoading,
     router
   } = usePlayerDetail();
+
+  // From every match, not just this player's: what a side carried into a game
+  // depends on everything played before it.
+  const swings = React.useMemo(() => ratingSwings(allMatches), [allMatches]);
 
   // The same all-time record every other surface reads. Resolved before the
   // early returns below, because hooks cannot run conditionally; an unknown id
@@ -121,49 +130,34 @@ const PlayerDetail = () => {
         </Button>
       </div>
 
-      <Card className="mb-8 overflow-hidden">
-        <CardContent>
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            <PlayerAvatar name={player.name} image={player.image} size="xl" />
-            
-            <div className="flex-1 text-center md:text-left">
-              <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-                <h1 className="page-title">{player.name}</h1>
-                <PlayerSeasonStars playerId={player.id} size="lg" />
-              </div>
-              
-              <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
-                <Badge variant="outline" className="bg-info/10 text-info border-info/30">
-                  <Users className="h-3 w-3 mr-1" />
-                  {record.played} Matches
-                </Badge>
-                <Badge variant="outline" className="bg-draw/10 text-draw border-draw/30">
-                  <CalendarDays className="h-3 w-3 mr-1" />
-                  {seasons.length} Seasons
-                </Badge>
-                {currentSeason && (
-                  <Badge variant="outline" className="bg-win/10 text-win border-win/30">
-                    <Trophy className="h-3 w-3 mr-1" />
-                    {hasPlayedCurrentSeason && playerRank 
-                      ? `Rank: #${playerRank}` 
-                      : "Rank: N/A"}
-                  </Badge>
-                )}
-              </div>
-              
-              <div className="flex flex-col md:flex-row items-center gap-4">
-                <div className="text-sm text-muted-foreground">
-                  Recent Form:
-                </div>
-                <PlayerFormDisplay 
-                  results={currentSeasonForm.length > 0 ? currentSeasonForm : recentResults} 
-                  isLoading={isLoadingForm && currentSeasonForm.length === 0}
-                />
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <PageHeader
+        title={
+          <span className="flex items-center gap-3">
+            <PlayerAvatar name={player.name} image={player.image} size="lg" />
+            {player.name}
+          </span>
+        }
+        badges={<PlayerSeasonStars playerId={player.id} size="lg" />}
+        subtitle={
+          <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <span>{record.played} matches</span>
+            <span>
+              {seasons.length} {seasons.length === 1 ? "season" : "seasons"}
+            </span>
+            {currentSeason && hasPlayedCurrentSeason && playerRank && (
+              <span>#{playerRank} this season</span>
+            )}
+          </span>
+        }
+      >
+        <div className="flex items-center gap-3">
+          <span className="eyebrow">Recent form</span>
+          <PlayerFormDisplay
+            results={currentSeasonForm.length > 0 ? currentSeasonForm : recentResults}
+            isLoading={isLoadingForm && currentSeasonForm.length === 0}
+          />
+        </div>
+      </PageHeader>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <PlayerRatingCard playerId={player.id} />
@@ -171,54 +165,32 @@ const PlayerDetail = () => {
         {currentSeasonStats && currentSeason && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Trophy className="h-5 w-5 mr-2 text-draw" />
-                Current Season Stats ({currentSeason.name})
-                <Badge className="ml-2" variant="outline">
-                  <Flag className="h-3 w-3 mr-1" />
-                  {hasPlayedCurrentSeason && playerRank 
-                    ? `Rank #${playerRank}` 
-                    : "Rank N/A"}
-                </Badge>
+              <CardTitle className="flex items-center gap-2">
+                <Trophy className="h-5 w-5 shrink-0 text-draw" />
+                {currentSeason.name}
+                {hasPlayedCurrentSeason && playerRank && (
+                  <Badge variant="outline">
+                    <Flag className="mr-1 h-3 w-3" />#{playerRank}
+                  </Badge>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-4 gap-4">
-                <div className="bg-info/15 rounded-lg p-4 text-center">
-                  <div className="flex justify-center mb-2">
-                    <Users className="h-5 w-5 text-info" />
-                  </div>
-                  <div className="text-2xl font-bold">{currentSeasonStats.played}</div>
-                  <div className="text-sm text-info">Played</div>
-                </div>
-                <div className="bg-win/15 rounded-lg p-4 text-center">
-                  <div className="flex justify-center mb-2">
-                    <TrendingUp className="h-5 w-5 text-win" />
-                  </div>
-                  <div className="text-2xl font-bold">{currentSeasonStats.wins}</div>
-                  <div className="text-sm text-win">Wins</div>
-                </div>
-                <div className="bg-draw/15 rounded-lg p-4 text-center">
-                  <div className="flex justify-center mb-2">
-                    <MinusCircle className="h-5 w-5 text-draw" />
-                  </div>
-                  <div className="text-2xl font-bold">{currentSeasonStats.draws}</div>
-                  <div className="text-sm text-draw">Draws</div>
-                </div>
-                <div className="bg-loss/15 rounded-lg p-4 text-center">
-                  <div className="flex justify-center mb-2">
-                    <TrendingDown className="h-5 w-5 text-loss" />
-                  </div>
-                  <div className="text-2xl font-bold">{currentSeasonStats.losses}</div>
-                  <div className="text-sm text-loss">Losses</div>
-                </div>
-              </div>
-              <div className="mt-4 text-muted-foreground text-sm">
-                <p>
-                  In the current season, {player.name} has {currentSeasonStats.points} points
-                  with a win rate of {Math.round((currentSeasonStats.wins / Math.max(1, currentSeasonStats.played)) * 100)}%.
-                </p>
-              </div>
+              {/* The same tiles as everywhere else. These were a fourth style
+                  of the same four numbers. */}
+              <StatTiles>
+                <StatTile label="Played" value={currentSeasonStats.played} />
+                <StatTile label="Won" value={currentSeasonStats.wins} tone="win" />
+                <StatTile label="Drawn" value={currentSeasonStats.draws} tone="draw" />
+                <StatTile label="Lost" value={currentSeasonStats.losses} tone="loss" />
+              </StatTiles>
+              <p className="mt-4 text-sm text-muted-foreground">
+                {currentSeasonStats.points} points, winning{" "}
+                {Math.round(
+                  (currentSeasonStats.wins / Math.max(1, currentSeasonStats.played)) * 100
+                )}
+                % of them.
+              </p>
             </CardContent>
           </Card>
         )}
@@ -251,84 +223,28 @@ const PlayerDetail = () => {
         </h2>
 
         {playerMatches.length === 0 ? (
-          <div className="text-center p-8 bg-muted rounded-lg">
+          <div className="rounded-lg bg-surface-2/40 p-8 text-center">
             <p className="text-muted-foreground">
-              {selectedSeason 
-                ? `No matches found for ${player.name} in the ${selectedSeason.name} season.` 
-                : `No matches found for ${player.name}.`}
+              {selectedSeason
+                ? `${player.name} did not play in ${selectedSeason.name}.`
+                : `${player.name} has not played yet.`}
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {playerMatches
+          /* The same row as the matches page, rather than a second design for
+             the same list — with this player's own result on the end. */
+          <ul className="space-y-2">
+            {[...playerMatches]
               .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-              .map((match) => {
-                const { team, result } = getPlayerMatchResult(match);
-                const playerTeam = team === 'A' ? match.teamA : match.teamB;
-                const opposingTeam = team === 'A' ? match.teamB : match.teamA;
-                const matchSeason = seasons.find(s => s.id === match.seasonId);
-                
-                return (
-                  <Link href={`/matches/${match.id}`} key={match.id}>
-                    <Card className="hover:bg-muted/20 transition-colors">
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="text-lg font-medium">
-                              {playerTeam.name} vs {opposingTeam.name}
-                              {result && (
-                                <Badge 
-                                  className={`ml-2 ${
-                                    result === 'win' 
-                                      ? 'bg-win/15 text-win hover:bg-win/20' 
-                                      : result === 'loss' 
-                                        ? 'bg-loss/15 text-loss hover:bg-loss/20' 
-                                        : 'bg-draw/15 text-draw hover:bg-draw/20'
-                                  }`}
-                                >
-                                  {result === 'win' ? 'Win' : result === 'loss' ? 'Loss' : 'Draw'}
-                                </Badge>
-                              )}
-                            </div>
-                            
-                            <div className="flex flex-wrap gap-2 mt-2 text-sm text-muted-foreground">
-                              <div className="flex items-center">
-                                <CalendarDays className="h-3.5 w-3.5 mr-1" />
-                                {new Date(match.date).toLocaleDateString()}
-                              </div>
-                              
-                              <div className="flex items-center">
-                                <Clock className="h-3.5 w-3.5 mr-1" />
-                                {match.status === 'completed' ? 'Completed' : 'Scheduled'}
-                              </div>
-                              
-                              {match.location && (
-                                <div className="flex items-center">
-                                  <MapPin className="h-3.5 w-3.5 mr-1" />
-                                  {match.location}
-                                </div>
-                              )}
-                              
-                              {matchSeason && (
-                                <Badge variant="outline" className="text-xs">
-                                  {matchSeason.name}
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          
-                          {match.status === 'completed' && match.teamA.score !== undefined && match.teamB.score !== undefined && (
-                            <div className="text-xl font-bold">
-                              {match.teamA.score} - {match.teamB.score}
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                );
-              })}
-          </div>
+              .map((match) => (
+                <MatchListItem
+                  key={match.id}
+                  match={match}
+                  result={getPlayerMatchResult(match).result}
+                  swing={swings.get(match.id)}
+                />
+              ))}
+          </ul>
         )}
       </div>
     </div>

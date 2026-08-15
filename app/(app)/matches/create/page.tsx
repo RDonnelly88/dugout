@@ -89,50 +89,44 @@ const CreateMatch = () => {
         </p>
       </div>
 
-      <Card className="neo-glassmorphism border-accent/30 shadow-accent/10">
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="bg-card/50 rounded-xl overflow-hidden shadow-lg border border-accent/30 p-4">
-              <TeamRandomizer 
-                players={players} 
-                onRandomize={randomizeTeams}
-                onSelectionChange={handlePlayerSelectionChange}
-                disabled={createMatchMutation.isPending}
-              />
-            </div>
-            
-            <div className="match-teams-container">
-              <TeamSelection 
-                teamA={teamA}
-                teamB={teamB}
-                players={players}
-                selectedPlayers={selectedPlayers}
-                togglePlayer={togglePlayer}
-              />
-            </div>
-            
-            <div className="glass-card p-6 rounded-xl border border-accent/20 shadow-lg">
-              <h3 className="section-title mb-4">Match details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <DatePicker date={date} setDate={setDate} label="Match date" />
-                </div>
-                <div>
-                  <SeasonSelect value={seasonId} onChange={setSeasonId} />
-                </div>
-              </div>
-            </div>
+      {/* One box per idea. This was a card inside a card inside a card, two of
+          them drawn with classes that were never defined, so the randomiser's
+          own heading sat flush against a border it had no relationship to. */}
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <TeamRandomizer
+          players={players}
+          onRandomize={randomizeTeams}
+          onSelectionChange={handlePlayerSelectionChange}
+          disabled={createMatchMutation.isPending}
+        />
 
-            <Button 
-              type="submit" 
-              size="lg" className="w-full" 
-              disabled={createMatchMutation.isPending}
-            >
-              {createMatchMutation.isPending ? "Creating…" : "Create match"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+        <TeamSelection
+          teamA={teamA}
+          teamB={teamB}
+          players={players}
+          selectedPlayers={selectedPlayers}
+          togglePlayer={togglePlayer}
+        />
+
+        <Card>
+          <CardContent>
+            <h3 className="section-title mb-4">Match details</h3>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <DatePicker date={date} setDate={setDate} label="Match date" />
+              <SeasonSelect value={seasonId} onChange={setSeasonId} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Button
+          type="submit"
+          size="lg"
+          className="w-full"
+          disabled={createMatchMutation.isPending}
+        >
+          {createMatchMutation.isPending ? "Creating…" : "Create match"}
+        </Button>
+      </form>
     </div>
   );
 };

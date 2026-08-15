@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getMatches, deleteMatch } from "@/lib/db";
@@ -14,18 +14,26 @@ import { useToast } from "@/hooks/use-toast";
 import { useMatchFiltering } from "@/hooks/useMatchFiltering";
 import MatchList from "@/components/matches/MatchList";
 import DeleteMatchDialog from "@/components/matches/DeleteMatchDialog";
+import { useTeam } from "@/contexts/TeamContext";
+import { ratingSwings } from "@/lib/match-impact";
+import PageHeader from "@/components/PageHeader";
 
 const Matches = () => {
+  const { currentTeam } = useTeam();
   const [matchToDelete, setMatchToDelete] = useState<Match | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: matches = [], isLoading: isLoadingMatches } = useQuery({
-    queryKey: ['matches'],
+    queryKey: ['matches', currentTeam?.id],
     queryFn: getMatches
   });
 
   const { searchTerm, setSearchTerm, filteredMatches } = useMatchFiltering(matches);
+
+  // From the whole history, not `filteredMatches`: a side's rating going into
+  // a match depends on everything played before it.
+  const swings = useMemo(() => ratingSwings(matches), [matches]);
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteMatch(id),
@@ -58,12 +66,14 @@ const Matches = () => {
 
   return (
     <div className="page-container animate-slide-up">
-      <div className="page-header">
-        <h1 className="page-title">Matches</h1>
-        <p className="page-subtitle">
-          Create and manage your football matches
-        </p>
-      </div>
+      <PageHeader
+        title="Matches"
+        subtitle={
+          <>
+            Create and manage your football matches
+          </>
+        }
+      />
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div className="relative w-full sm:w-auto">
@@ -85,6 +95,7 @@ const Matches = () => {
 
       <MatchList
         matches={filteredMatches}
+        swings={swings}
         isLoading={isLoadingMatches}
         searchTerm={searchTerm}
         onDeleteClick={handleDeleteClick}

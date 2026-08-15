@@ -19,6 +19,7 @@ import ActiveFilter, {
   isActivePlayer,
   type ActiveScope,
 } from "@/components/players/ActiveFilter";
+import PageHeader from "@/components/PageHeader";
 
 export default function RatingsPage() {
   const { currentTeam } = useTeam();
@@ -59,17 +60,19 @@ export default function RatingsPage() {
 
   return (
     <div className="page-container animate-slide-up">
-      <div className="page-header">
-        <h1 className="page-title">Ratings</h1>
-        <p className="page-subtitle">
-          Elo, adapted for five-a-side. A side is rated at the average of its
+      <PageHeader
+        title="Ratings"
+        subtitle={
+          <>
+            Elo, adapted for five-a-side. A side is rated at the average of its
           players, everyone on it takes the same adjustment, and beating a
           stronger team is worth more than beating a weaker one. A win is a win
           — a thrashing counts the same as a scrape. Stay away longer than{" "}
           {ELO.decay.graceWeeks} weeks and your rating drifts back towards{" "}
           {ELO.start}, so every week is comparable to the last.
-        </p>
-      </div>
+          </>
+        }
+      />
 
       <div className="grid gap-6 lg:grid-cols-5">
         <Card className="lg:col-span-3">

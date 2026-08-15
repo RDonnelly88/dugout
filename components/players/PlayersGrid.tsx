@@ -7,6 +7,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PlayerCard from "./PlayerCard";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
+import { usePlayerRatings } from "@/hooks/usePlayerRatings";
 import { scopeTo, type ActiveScope } from "./ActiveFilter";
 
 interface PlayersGridProps {
@@ -33,6 +34,24 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
   // One query for the whole grid. Asking per card would open a dozen requests
   // for the same answer and let them arrive at different moments.
   const { recordFor } = usePlayerRecords();
+  // Likewise the ratings: the hook replays the entire match history, so a card
+  // calling it for itself would replay it once per player on screen.
+  const { ratingFor, all } = usePlayerRatings();
+
+  // Where each rating sits within the squad's own spread. Elo has no absolute
+  // meaning — 1250 is strong in one group and ordinary in another — so a card
+  // can only be coloured relative to the people it is shown beside.
+  const standingFor = React.useMemo(() => {
+    const values = all.map((r) => r.rating);
+    if (values.length < 2) return () => undefined;
+    const low = Math.min(...values);
+    const span = Math.max(...values) - low;
+    if (span === 0) return () => undefined;
+    return (playerId: string) => {
+      const rating = all.find((r) => r.playerId === playerId);
+      return rating ? (rating.rating - low) / span : undefined;
+    };
+  }, [all]);
 
   const filteredPlayers = scopeTo(players, scope).filter(player =>
     player.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -95,6 +114,8 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
             seasonId={currentSeasonId}
             seasonStats={seasonStats}
             record={recordFor(player.id, player.name)}
+            rating={ratingFor(player.id)}
+            standing={standingFor(player.id)}
             formResults={formResults}
             isLoadingForms={isLoadingForms}
             onDeleteClick={onDeleteClick}

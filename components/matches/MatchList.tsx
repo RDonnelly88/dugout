@@ -7,15 +7,21 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Match } from "@/types";
 import MatchListItem from "./MatchListItem";
+import type { SideSwing } from "@/lib/match-impact";
 
 interface MatchListProps {
   matches: Match[];
   isLoading: boolean;
   searchTerm: string;
   onDeleteClick: (match: Match) => void;
+  /**
+   * Rating movement per match, worked out once for the whole history.
+   * Optional: the season page lists matches without ratings to hand.
+   */
+  swings?: Map<string, { A: SideSwing; B: SideSwing }>;
 }
 
-const MatchList = ({ matches, isLoading, searchTerm, onDeleteClick }: MatchListProps) => {
+const MatchList = ({ matches, isLoading, searchTerm, onDeleteClick, swings }: MatchListProps) => {
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -33,7 +39,7 @@ const MatchList = ({ matches, isLoading, searchTerm, onDeleteClick }: MatchListP
           {searchTerm ? "No matches match your search" : "No matches created yet"}
         </p>
         {!searchTerm && (
-          <Button asChild className="bg-gradient-to-r from-accent/80 to-accent hover:from-accent hover:to-accent/90">
+          <Button asChild>
             <Link href="/matches/create">
               <Plus className="h-4 w-4 mr-2" />
               Create Match
@@ -51,6 +57,7 @@ const MatchList = ({ matches, isLoading, searchTerm, onDeleteClick }: MatchListP
           key={match.id}
           match={match}
           onDeleteClick={onDeleteClick}
+          swing={swings?.get(match.id)}
         />
       ))}
     </ul>

@@ -14,6 +14,7 @@ import SeasonsSummaryTable from "@/components/seasons/SeasonsSummaryTable";
 import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
 import { getPlayerFormBatch } from "@/lib/player-form-service";
 import { useTeam } from "@/contexts/TeamContext";
+import PageHeader from "@/components/PageHeader";
 
 const Seasons = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -173,12 +174,14 @@ const Seasons = () => {
 
   return (
     <div className="page-container animate-slide-up">
-      <div className="page-header">
-        <h1 className="page-title">Seasons</h1>
-        <p className="page-subtitle">
-          Every season, and who came out on top
-        </p>
-      </div>
+      <PageHeader
+        title="Seasons"
+        subtitle={
+          <>
+            Every season, and who came out on top
+          </>
+        }
+      />
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div className="relative w-full sm:w-auto">

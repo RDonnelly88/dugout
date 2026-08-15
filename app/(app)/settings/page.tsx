@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import PageHeader from "@/components/PageHeader";
 
 export const metadata = {
   title: "Settings · The Dugout",
@@ -29,12 +30,14 @@ export default async function SettingsPage() {
 
   return (
     <div className="page-container animate-slide-up">
-      <div className="page-header">
-        <h1 className="page-title">Settings</h1>
-        <p className="page-subtitle">
-          How the app looks, and how you get into it.
-        </p>
-      </div>
+      <PageHeader
+        title="Settings"
+        subtitle={
+          <>
+            How the app looks, and how you get into it.
+          </>
+        }
+      />
 
       <div className="grid max-w-3xl gap-6">
         <Card>

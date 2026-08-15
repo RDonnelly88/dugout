@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import React from "react";
 
-import { ArrowLeft, ChevronRight, Edit, Trash, Calendar, Trophy, Lock, Check } from "lucide-react";
+import { ArrowLeft, ChevronRight, Edit, Trash, Calendar, Lock, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -25,6 +25,9 @@ import SeasonSelector from "@/components/seasons/SeasonSelector";
 import SeasonLeaderboard from "@/components/seasons/SeasonLeaderboard";
 import SeasonPositionChart from "@/components/seasons/SeasonPositionChart";
 import { useSeasonDetail } from "@/hooks/useSeasonDetail";
+import { calculatePlayerRanks } from "@/lib/ranking-utils";
+import PageHeader from "@/components/PageHeader";
+import { StatTile, StatTiles } from "@/components/StatTile";
 
 const SeasonDetail = () => {
   const {
@@ -44,6 +47,9 @@ const SeasonDetail = () => {
     handleDeleteSeason,
     router
   } = useSeasonDetail();
+
+  const ranks = calculatePlayerRanks(playerStats);
+  const leaders = playerStats.filter((p) => ranks[p.playerId] === 1);
 
   if (isLoadingSeason) {
     return (
@@ -83,7 +89,14 @@ const SeasonDetail = () => {
   }
 
   const startDate = new Date(season.startDate).toLocaleDateString();
-  const endDate = season.endDate ? new Date(season.endDate).toLocaleDateString() : "Ongoing";
+  const endDate = season.endDate
+    ? new Date(season.endDate).toLocaleDateString()
+    // A finished season with no end date recorded is over, whatever the
+    // absence of a date implies. It used to read "Finished" and "Ongoing" side
+    // by side.
+    : season.isFinished
+      ? "no end date"
+      : "ongoing";
 
   return (
     <div className="page-container animate-slide-up">
@@ -146,47 +159,61 @@ const SeasonDetail = () => {
         </Card>
       ) : (
         <>
-          <Card className="mb-6">
-            <CardContent>
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-                <div>
-                  <h1 className="page-title flex items-center">
-                    {season.name}
-                    <div className="flex gap-2 ml-2">
-                      {season.isCurrent && (
-                        <Badge variant="default" className="bg-win hover:bg-win">
-                          <Check className="h-3 w-3 mr-1" />
-                          Current Season
-                        </Badge>
-                      )}
-                      {season.isFinished && (
-                        <Badge variant="outline" className="bg-surface-2 text-foreground">
-                          <Lock className="h-3 w-3 mr-1" />
-                          Finished
-                        </Badge>
-                      )}
-                    </div>
-                  </h1>
-                  <div className="flex items-center text-muted-foreground mt-1">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    <span>{startDate} - {endDate}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center mt-4 md:mt-0 gap-4">
-                  <div className="bg-info/10 text-info p-2 rounded-md flex items-center">
-                    <span className="font-medium">{seasonMatches.length}</span>
-                    <span className="ml-1 text-sm">Matches</span>
-                  </div>
-                  
-                  <div className="bg-draw/10 text-draw p-2 rounded-md flex items-center">
-                    <Trophy className="h-4 w-4 mr-1 text-draw" />
-                    <span className="font-medium">{playerStats[0]?.playerName || "No champion yet"}</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <PageHeader
+            title={season.name}
+            subtitle={
+              <span className="flex items-center gap-1.5">
+                <Calendar className="h-4 w-4 shrink-0" />
+                {startDate} – {endDate}
+              </span>
+            }
+            badges={
+              <>
+                {season.isCurrent && !season.isFinished && (
+                  <Badge className="bg-win text-win-foreground">
+                    <Check className="mr-1 h-3 w-3" />
+                    Ongoing
+                  </Badge>
+                )}
+                {season.isFinished && (
+                  <Badge variant="outline">
+                    <Lock className="mr-1 h-3 w-3" />
+                    Finished
+                  </Badge>
+                )}
+              </>
+            }
+          >
+            <StatTiles>
+              <StatTile label="Matches" value={seasonMatches.length} />
+              <StatTile label="Players" value={playerStats.length} />
+              <StatTile
+                label={
+                  season.isFinished
+                    ? leaders.length > 1
+                      ? "Joint champions"
+                      : "Champion"
+                    : leaders.length > 1
+                      ? "Joint leaders"
+                      : "Leader"
+                }
+                tone="draw"
+                value={
+                  leaders.length > 0 ? (
+                    <span className="text-base">
+                      {leaders.map((p) => p.playerName).join(" & ")}
+                    </span>
+                  ) : (
+                    <span className="text-base text-muted-foreground">—</span>
+                  )
+                }
+              />
+              <StatTile
+                label="Top points"
+                value={leaders[0]?.points ?? 0}
+              />
+            </StatTiles>
+          </PageHeader>
 
           <Tabs defaultValue="leaderboard" className="space-y-4">
             <TabsList className="grid w-full grid-cols-3">

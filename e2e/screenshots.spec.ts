@@ -56,38 +56,60 @@ test.describe("screenshots", () => {
     }
   }
 
-  test("player detail", async ({ page }, info) => {
-    await page.goto("/players");
-    await settled(page);
-    // Straight to a player URL rather than hunting for a link by name: the
-    // cards carry several, and which one reads as "the player" is exactly the
-    // kind of thing this redesign is changing.
-    await page
-      .locator('a[href^="/players/"]:not([href*="/edit/"]):not([href$="/add"])')
-      .first()
-      .click();
-    await settled(page);
-    await expect(page).toHaveURL(/\/players\/[0-9a-f-]{36}/);
-    await shot(page, info.project.name, "09-player-detail-dark");
-  });
+  /*
+   * The pages you can only reach by clicking something. These were named
+   * "-dark" and never set a theme, so the dark half of three pages was never
+   * actually photographed — and the season one asserted nothing, so when the
+   * click stopped landing it quietly captured the list instead and passed.
+   */
+  for (const theme of ["light", "dark"] as const) {
+    test(`player detail ${theme}`, async ({ page }, info) => {
+      await setTheme(page, theme);
+      await page.goto("/players");
+      await settled(page);
+      // Straight to a player URL rather than hunting for a link by name: the
+      // cards carry several, and which one reads as "the player" is exactly
+      // the kind of thing this redesign is changing.
+      await page
+        .locator('a[href^="/players/"]:not([href*="/edit/"]):not([href$="/add"])')
+        .first()
+        .click();
+      await settled(page);
+      await expect(page).toHaveURL(/\/players\/[0-9a-f-]{36}/);
+      await shot(page, info.project.name, `09-player-detail-${theme}`);
+    });
 
-  test("season detail", async ({ page }, info) => {
-    await page.goto("/seasons");
-    await settled(page);
-    // Not the "Create Season" action in the nav, which is also a /seasons/ link
-    // and is hidden inside the drawer on a phone.
-    await page
-      .locator('a[href^="/seasons/"]:not([href$="/create"])')
-      .first()
-      .click();
-    await settled(page);
-    await shot(page, info.project.name, "10-season-detail-dark");
-  });
+    test(`season detail ${theme}`, async ({ page }, info) => {
+      await setTheme(page, theme);
+      await page.goto("/seasons");
+      await settled(page);
+      // Not the "Create Season" action in the nav, which is also a /seasons/
+      // link and is hidden inside the drawer on a phone.
+      await page
+        .locator('a[href^="/seasons/"]:not([href$="/create"])')
+        .first()
+        .click();
+      await settled(page);
+      await expect(page).toHaveURL(/\/seasons\/[0-9a-f-]{36}/);
+      await shot(page, info.project.name, `10-season-detail-${theme}`);
+    });
 
-  test("login", async ({ page, context }, info) => {
-    await context.clearCookies();
-    await page.goto("/login");
-    await settled(page);
-    await shot(page, info.project.name, "11-login-dark");
-  });
+    test(`match detail ${theme}`, async ({ page }, info) => {
+      await setTheme(page, theme);
+      await page.goto("/matches");
+      await settled(page);
+      await page.locator('a[href^="/matches/"]:not([href$="/create"])').first().click();
+      await settled(page);
+      await expect(page).toHaveURL(/\/matches\/[0-9a-f-]{36}/);
+      await shot(page, info.project.name, `12-match-detail-${theme}`);
+    });
+
+    test(`login ${theme}`, async ({ page, context }, info) => {
+      await setTheme(page, theme);
+      await context.clearCookies();
+      await page.goto("/login");
+      await settled(page);
+      await shot(page, info.project.name, `11-login-${theme}`);
+    });
+  }
 });
