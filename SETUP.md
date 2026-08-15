@@ -98,26 +98,23 @@ Never edit it by hand, and never edit a migration that has been applied.
 
 ### Migration history
 
-The hosted project's history table still lists the three Lovable-era entries
-that the captured snapshot replaced, so `supabase db push` and `db pull` refuse
-to run until it's reconciled. Marking the old entries reverted and the snapshot
-applied lines the two up:
+Reconciled — `supabase migration list` shows local and remote agreeing, and
+`db push` works normally.
+
+It needed repairing once, because the hosted project's history table listed the
+Lovable-era entries that the captured snapshot replaced. If you ever hit the
+same mismatch (restoring a backup, or pointing at a second project), the shape
+of the fix is to mark the stale entries reverted and the snapshot applied:
 
 ```bash
-supabase migration repair --status reverted 20250812020152
-supabase migration repair --status reverted 20251001030424
-supabase migration repair --status reverted 20251001150425
+supabase migration repair --status reverted <stale-version>
 supabase migration repair --status applied  20250322000000
-supabase db push
 ```
 
 `repair` writes only to `supabase_migrations.schema_migrations`, the
-bookkeeping table — it doesn't touch the schema or any data. Marking the
-snapshot applied is the accurate statement: that schema is already there, which
-is where the snapshot came from. `db push` then applies only what's genuinely
-outstanding.
-
-Check `supabase migration list` before and after.
+bookkeeping table — it doesn't touch the schema or any data. Check `supabase
+migration list` before and after, and take the versions from what that prints
+rather than from here.
 
 ## Things that will surprise you
 

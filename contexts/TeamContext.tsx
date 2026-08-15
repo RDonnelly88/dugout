@@ -176,11 +176,10 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error: profileError };
       }
       
-      console.log("Creating team with name:", name, "for user:", user.id);
-      
+      // No owner argument: the function reads auth.uid() itself, so a caller
+      // cannot create a team belonging to somebody else.
       const { data, error } = await supabase.rpc('create_team_with_admin', {
-        team_name: name,
-        user_id: user.id
+        team_name: name
       });
 
       if (error) {

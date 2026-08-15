@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       matches: {
@@ -317,10 +342,7 @@ export type Database = {
       }
     }
     Functions: {
-      create_team_with_admin: {
-        Args: { team_name: string; user_id: string }
-        Returns: Json
-      }
+      create_team_with_admin: { Args: { team_name: string }; Returns: Json }
       get_team_members: {
         Args: { team_id_param: string }
         Returns: {
@@ -333,18 +355,12 @@ export type Database = {
           username: string
         }[]
       }
-      is_team_admin: {
-        Args: { team_uuid: string }
-        Returns: boolean
-      }
+      is_team_admin: { Args: { team_uuid: string }; Returns: boolean }
       is_team_admin_no_recursion: {
         Args: { team_uuid: string; user_uuid: string }
         Returns: boolean
       }
-      is_team_member: {
-        Args: { team_uuid: string }
-        Returns: boolean
-      }
+      is_team_member: { Args: { team_uuid: string }; Returns: boolean }
       is_team_member_no_recursion: {
         Args: { team_uuid: string; user_uuid: string }
         Returns: boolean
@@ -477,6 +493,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       team_role: ["admin", "viewer"],
