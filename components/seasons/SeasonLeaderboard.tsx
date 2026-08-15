@@ -115,11 +115,11 @@ const SeasonLeaderboard = ({
             <TableRow>
               <TableHead className="w-12">Rank</TableHead>
               <TableHead>Player</TableHead>
-              <TableHead className="text-right">Form</TableHead>
+              <TableHead className="hidden text-right sm:table-cell">Form</TableHead>
               <TableHead className="text-right">P</TableHead>
               <TableHead className="text-right">W</TableHead>
-              <TableHead className="text-right">D</TableHead>
-              <TableHead className="text-right">L</TableHead>
+              <TableHead className="hidden text-right sm:table-cell">D</TableHead>
+              <TableHead className="hidden text-right sm:table-cell">L</TableHead>
               <TableHead className="text-right">Pts</TableHead>
             </TableRow>
           </TableHeader>
@@ -139,7 +139,7 @@ const SeasonLeaderboard = ({
                     </div>
                   </Link>
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="hidden text-right sm:table-cell">
                   <PlayerFormDisplay 
                     results={combinedForms[stat.playerId] || []} 
                     size="sm" 
@@ -148,8 +148,8 @@ const SeasonLeaderboard = ({
                 </TableCell>
                 <TableCell className="text-right">{stat.played}</TableCell>
                 <TableCell className="text-right">{stat.wins}</TableCell>
-                <TableCell className="text-right">{stat.draws}</TableCell>
-                <TableCell className="text-right">{stat.losses}</TableCell>
+                <TableCell className="hidden text-right sm:table-cell">{stat.draws}</TableCell>
+                <TableCell className="hidden text-right sm:table-cell">{stat.losses}</TableCell>
                 <TableCell className="text-right font-bold">{stat.points}</TableCell>
               </TableRow>
             ))}

@@ -74,7 +74,12 @@ test.describe("screenshots", () => {
   test("season detail", async ({ page }, info) => {
     await page.goto("/seasons");
     await settled(page);
-    await page.locator('a[href^="/seasons/"]').first().click();
+    // Not the "Create Season" action in the nav, which is also a /seasons/ link
+    // and is hidden inside the drawer on a phone.
+    await page
+      .locator('a[href^="/seasons/"]:not([href$="/create"])')
+      .first()
+      .click();
     await settled(page);
     await shot(page, info.project.name, "10-season-detail-dark");
   });

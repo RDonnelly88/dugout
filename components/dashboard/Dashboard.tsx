@@ -3,7 +3,6 @@ import { useTeam } from "@/contexts/TeamContext";
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentSeason, getSeasonPlayerStats, getMatches } from "@/lib/db";
 import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
-import TeamSwitcher from "@/components/team/TeamSwitcher";
 import SeasonLeaderboard from "@/components/seasons/SeasonLeaderboard";
 import CurrentSeasonCard from "@/components/players/CurrentSeasonCard";
 import RecentMatchesList from "./RecentMatchesList";
@@ -39,8 +38,6 @@ const Dashboard = () => {
     refetchOnMount: "always"
   });
   
-  console.log(`Dashboard: Team ID: ${currentTeam?.id}, Season: ${currentSeason?.name || 'None'}, Matches: ${matches.length}`);
-  
   // Get top 5 players for current season
   const topPlayerIds = seasonPlayerStats
     .sort((a, b) => b.points - a.points)
@@ -60,11 +57,13 @@ const Dashboard = () => {
   
   return (
     <div className="page-container">
-      <div className="team-header mb-4">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
-          <h1 className="text-2xl font-bold mb-2 md:mb-0">Dashboard</h1>
-          <TeamSwitcher variant="minimal" />
-        </div>
+      <div className="page-header">
+        {/* The team is already named in the bar above on a phone and in the
+            sidebar on a desktop; a third copy here is just noise. */}
+        <h1 className="page-title">Dashboard</h1>
+        {currentSeason && (
+          <p className="mt-2 text-muted-foreground">{currentSeason.name}</p>
+        )}
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

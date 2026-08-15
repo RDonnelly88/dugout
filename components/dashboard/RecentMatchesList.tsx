@@ -47,15 +47,15 @@ const RecentMatchesList = ({ matches }: RecentMatchesListProps) => {
         {matches.length === 0 ? (
           <p className="text-center py-8 text-muted-foreground">No matches found</p>
         ) : (
-          <div className="space-y-4">
+          <ul className="space-y-2">
             {matches.map(match => (
-              <MatchListItem 
-                key={match.id} 
-                match={match} 
-                onDeleteClick={() => handleDeleteClick(match.id)} 
+              <MatchListItem
+                key={match.id}
+                match={match}
+                onDeleteClick={() => handleDeleteClick(match.id)}
               />
             ))}
-          </div>
+          </ul>
         )}
       </CardContent>
     </Card>
