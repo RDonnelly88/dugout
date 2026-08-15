@@ -91,7 +91,10 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     fetchUserTeams();
-  }, [user, toast]);
+    // Keyed on the id, not the object. Only `user.id` is read in here, and an
+    // auth event hands back a fresh `User` every time — depending on the
+    // reference would refetch every team on each token refresh.
+  }, [user?.id, toast]);
 
   useEffect(() => {
     const updateUserRole = async () => {
@@ -113,7 +116,7 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     updateUserRole();
-  }, [currentTeam, user]);
+  }, [currentTeam?.id, user?.id]);
 
   const ensureProfileExists = async () => {
     if (!user) return { error: "Not authenticated" };
