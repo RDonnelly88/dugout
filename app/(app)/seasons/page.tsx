@@ -12,6 +12,7 @@ import { getSeasons, getSeasonChampions } from "@/lib/db";
 import SeasonCard from "@/components/seasons/SeasonCard";
 import SeasonsSummaryTable from "@/components/seasons/SeasonsSummaryTable";
 import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
+import { getPlayerFormBatch } from "@/lib/player-form-service";
 import { useTeam } from "@/contexts/TeamContext";
 
 const Seasons = () => {
@@ -95,17 +96,16 @@ const Seasons = () => {
           }
           
           try {
-            // Use the queryClient directly to fetch data
+            // Straight to the service. A `queryFn` is a plain callback, so
+            // calling the hook here threw on every season and the catch below
+            // turned that into an empty form map — which is why every season
+            // but the current one showed no form at all.
             const data = await queryClient.fetchQuery({
               queryKey: ['batchPlayerForms', season.id, playerIds],
-              queryFn: async () => {
-                // This will use the existing hook logic
-                const { formData } = useBatchFormLoader(season.id, playerIds);
-                return formData || {};
-              },
+              queryFn: () => getPlayerFormBatch(season.id, playerIds),
               staleTime: 0
             });
-            
+
             formsMap[season.id] = data || {};
           } catch (error) {
             console.error(`Error loading forms for season ${season.id}:`, error);

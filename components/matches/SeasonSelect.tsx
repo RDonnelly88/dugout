@@ -58,8 +58,11 @@ const SeasonSelect = ({ value, onChange }: SeasonSelectProps) => {
     );
   }
 
+  // `?? ""` keeps the select controlled from the first render. `value` starts
+  // undefined and the effect above fills it in a tick later, which React reads
+  // as an uncontrolled input turning into a controlled one.
   return (
-    <Select value={value} onValueChange={onChange}>
+    <Select value={value ?? ""} onValueChange={onChange}>
       <SelectTrigger>
         <SelectValue placeholder="Select a season" />
       </SelectTrigger>
