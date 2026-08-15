@@ -14,12 +14,15 @@ import { usePermission } from "@/lib/permission-utils";
 import { useToast } from "@/hooks/use-toast";
 
 const CreateSeason = () => {
-  const { canManage } = usePermission();
+  const { canManage, ready } = usePermission();
   const router = useRouter();
   const { toast } = useToast();
   const { createSeasonMutation, handleSubmit } = useCreateSeason();
 
   useEffect(() => {
+    // Nothing is known until the team has loaded, and "unknown" is not
+    // "not allowed".
+    if (!ready) return;
     if (!canManage()) {
       toast({
         title: "Team required",
@@ -28,7 +31,7 @@ const CreateSeason = () => {
       });
       router.push("/");
     }
-  }, [canManage, router, toast]);
+  }, [ready, canManage, router, toast]);
 
   return (
     <div className="page-container animate-slide-up">

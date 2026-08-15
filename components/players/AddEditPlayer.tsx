@@ -18,11 +18,14 @@ import { getPlayer } from "@/lib/db";
 import { usePlayerMutation } from "@/hooks/usePlayerMutation";
 
 const AddEditPlayer = () => {
-  const { canManage } = usePermission();
+  const { canManage, ready } = usePermission();
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
+    // Nothing is known until the team has loaded, and "unknown" is not
+    // "not allowed".
+    if (!ready) return;
     if (!canManage()) {
       toast({
         title: "Team required",
@@ -31,7 +34,7 @@ const AddEditPlayer = () => {
       });
       router.push("/");
     }
-  }, [canManage, router, toast]);
+  }, [ready, canManage, router, toast]);
 
   const { id } = useParams<{ id: string }>();
   const isAddMode = !id;

@@ -19,7 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTeam } from "@/contexts/TeamContext";
 
 const CreateMatch = () => {
-  const { canManage } = usePermission();
+  const { canManage, ready } = usePermission();
   const router = useRouter();
   const { toast } = useToast();
   const { currentTeam } = useTeam();
@@ -40,6 +40,9 @@ const CreateMatch = () => {
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
 
   useEffect(() => {
+    // Nothing is known until the team has loaded, and "unknown" is not
+    // "not allowed".
+    if (!ready) return;
     if (!canManage()) {
       toast({
         title: "Team required",
@@ -48,13 +51,13 @@ const CreateMatch = () => {
       });
       router.push("/");
     }
-  }, [canManage, router, toast]);
+  }, [ready, canManage, router, toast]);
 
   // Update query to filter players by team
   const { data: players = [] } = useQuery({
     queryKey: ['players', currentTeam?.id],
     queryFn: getPlayers,
-    enabled: canManage(),
+    enabled: ready && canManage(),
     select: (data) => {
       // Filter players by current team ID
       if (currentTeam) {

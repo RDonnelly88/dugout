@@ -23,7 +23,7 @@ import { useTeam } from "@/contexts/TeamContext";
 
 const EditMatch = () => {
   const { id } = useParams<{ id: string }>();
-  const { canManage } = usePermission();
+  const { canManage, ready } = usePermission();
   const router = useRouter();
   const { toast } = useToast();
   const { currentTeam } = useTeam();
@@ -54,6 +54,9 @@ const EditMatch = () => {
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
 
   useEffect(() => {
+    // Nothing is known until the team has loaded, and "unknown" is not
+    // "not allowed".
+    if (!ready) return;
     if (!canManage()) {
       toast({
         title: "Permission denied",
@@ -62,12 +65,12 @@ const EditMatch = () => {
       });
       router.push("/matches");
     }
-  }, [canManage, router, toast]);
+  }, [ready, canManage, router, toast]);
 
   const { data: players = [] } = useQuery({
     queryKey: ['players', currentTeam?.id],
     queryFn: getPlayers,
-    enabled: canManage(),
+    enabled: ready && canManage(),
     select: (data) => {
       if (currentTeam) {
         return data.filter(player => player.teamId === currentTeam.id);
