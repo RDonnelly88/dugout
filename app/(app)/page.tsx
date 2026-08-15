@@ -12,10 +12,11 @@ import { useQueryClient } from "@tanstack/react-query";
 const Home = () => {
   const { userTeams, currentTeam } = useTeam();
   const queryClient = useQueryClient();
+  const teamId = currentTeam?.id;
   
   // Force refresh data when team changes
   useEffect(() => {
-    if (currentTeam) {
+    if (teamId) {
       // Invalidate all relevant query keys when team changes
       queryClient.invalidateQueries({ queryKey: ["matches"] });
       queryClient.invalidateQueries({ queryKey: ["currentSeason"] });
@@ -23,9 +24,8 @@ const Home = () => {
       queryClient.invalidateQueries({ queryKey: ["seasons"] });
       // Force clear cache for batch player forms
       queryClient.removeQueries({ queryKey: ["batchPlayerForms"] });
-      console.log("Home: Refreshing data for team:", currentTeam.id);
     }
-  }, [currentTeam?.id, queryClient]);
+  }, [teamId, queryClient]);
   
   // If user has no teams, show create team UI
   if (userTeams.length === 0) {

@@ -21,6 +21,7 @@ import { PlusCircle, Users, Share2, UserPlus } from "lucide-react";
 
 const TeamManagement = () => {
   const { currentTeam, userRole, inviteToTeam, createTeam } = useTeam();
+  const teamId = currentTeam?.id;
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newTeamName, setNewTeamName] = useState("");
@@ -135,11 +136,10 @@ const TeamManagement = () => {
   });
 
   useEffect(() => {
-    if (currentTeam) {
-      console.log("Current team changed, refetching members:", currentTeam.id);
+    if (teamId) {
       refetch();
     }
-  }, [currentTeam?.id, refetch]);
+  }, [teamId, refetch]);
 
   const handleCreateTeam = async () => {
     if (!newTeamName.trim()) return;

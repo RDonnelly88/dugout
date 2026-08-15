@@ -77,9 +77,3 @@ export interface SeasonChampion extends SeasonPlayerStats {
 
 // Updated to include "dnp" as a valid result
 export type PlayerFormResult = "win" | "loss" | "draw" | "dnp";
-
-export interface PlayerForm {
-  playerId: string;
-  playerName: string;
-  form: PlayerFormResult[];
-}

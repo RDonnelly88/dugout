@@ -225,7 +225,7 @@ interface PlayerHoverContentProps {
   playerRanks?: Record<string, number>;
 }
 
-export const PlayerHoverContent = ({ 
+const PlayerHoverContent = ({ 
   player, 
   currentSeasonId, 
   seasonPlayerStats,

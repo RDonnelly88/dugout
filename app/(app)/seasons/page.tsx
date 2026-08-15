@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 
 import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ const Seasons = () => {
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const queryClient = useQueryClient();
   const { currentTeam } = useTeam();
+  const teamId = currentTeam?.id;
   
   // Get all seasons
   const { data: seasons = [], isLoading: isLoadingSeasons } = useQuery({
@@ -45,15 +46,12 @@ const Seasons = () => {
 
   // Force refresh of data when component mounts, team changes, or after creation
   useEffect(() => {
-    if (currentTeam) {
-      console.log("Seasons page: Refreshing data for team:", currentTeam.id);
-      
-      // Force refetch of all relevant queries
-      queryClient.invalidateQueries({ queryKey: ['seasons', currentTeam.id] });
-      queryClient.invalidateQueries({ queryKey: ['seasonChampions', currentTeam.id] });
-      queryClient.invalidateQueries({ queryKey: ['seasonStats', currentTeam.id] });
+    if (teamId) {
+      queryClient.invalidateQueries({ queryKey: ['seasons', teamId] });
+      queryClient.invalidateQueries({ queryKey: ['seasonChampions', teamId] });
+      queryClient.invalidateQueries({ queryKey: ['seasonStats', teamId] });
     }
-  }, [currentTeam?.id, queryClient]);
+  }, [teamId, queryClient]);
 
   // Prepare data for player forms for the current season
   const currentSeason = seasons.find(s => s.isCurrent);
@@ -69,13 +67,20 @@ const Seasons = () => {
     currentSeasonPlayerIds
   );
   
-  // Collect player IDs for all seasons' champions to batch load form data
-  const allChampionPlayerIds: Record<string, string[]> = {};
-  
-  seasons.forEach(season => {
-    const seasonChampions = champions.filter(c => c.seasonId === season.id);
-    allChampionPlayerIds[season.id] = seasonChampions.map(c => c.playerId);
-  });
+  // Champion ids per season, for the batch form load below. Memoised because
+  // the effect that reads it depends on it, and a fresh object every render
+  // would restart the load every render. React Query hands back the same
+  // `seasons` and `champions` references while the data is unchanged, so this
+  // only recomputes when one of them actually moves.
+  const allChampionPlayerIds = useMemo(() => {
+    const byId: Record<string, string[]> = {};
+    seasons.forEach(season => {
+      byId[season.id] = champions
+        .filter(c => c.seasonId === season.id)
+        .map(c => c.playerId);
+    });
+    return byId;
+  }, [seasons, champions]);
   
   // Create a map to store form data for all seasons
   const [allSeasonsForms, setAllSeasonsForms] = useState<Record<string, Record<string, any>>>({});
@@ -120,7 +125,7 @@ const Seasons = () => {
     if (seasons.length > 0 && Object.keys(allChampionPlayerIds).length > 0) {
       loadAllSeasonsForms();
     }
-  }, [seasons.length, Object.keys(allChampionPlayerIds).length]);
+  }, [seasons, allChampionPlayerIds, queryClient]);
 
   // Filter seasons by search term
   const filteredSeasons = seasons.filter(season =>

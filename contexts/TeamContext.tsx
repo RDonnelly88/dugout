@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase-browser";
 import { useAuth } from "./AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -32,9 +32,19 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  const userId = user?.id;
+
+  // The team-fetching effect only asks whether a team has already been picked,
+  // so it reads this rather than depending on `currentTeam` — a dependency
+  // would refetch every team the moment one is selected.
+  const currentTeamRef = useRef(currentTeam);
+  useEffect(() => {
+    currentTeamRef.current = currentTeam;
+  }, [currentTeam]);
+
   useEffect(() => {
     const fetchUserTeams = async () => {
-      if (!user) {
+      if (!userId) {
         setUserTeams([]);
         setCurrentTeam(null);
         setUserRole(null);
@@ -46,7 +56,7 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: memberships, error: membershipError } = await supabase
           .from("team_members")
           .select("*, team:teams(*)")
-          .eq("user_id", user.id);
+          .eq("user_id", userId);
 
         if (membershipError) throw membershipError;
 
@@ -59,7 +69,7 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setUserTeams(teams.map(t => ({ id: t.id, name: t.name, created_at: t.created_at })));
 
-        if (teams.length > 0 && !currentTeam) {
+        if (teams.length > 0 && !currentTeamRef.current) {
           const savedTeamId = localStorage.getItem("currentTeamId");
           const teamToSet = savedTeamId 
             ? teams.find(t => t.id === savedTeamId) || teams[0] 
@@ -91,21 +101,23 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     fetchUserTeams();
-    // Keyed on the id, not the object. Only `user.id` is read in here, and an
-    // auth event hands back a fresh `User` every time — depending on the
-    // reference would refetch every team on each token refresh.
-  }, [user?.id, toast]);
+    // Keyed on the id, not the object: an auth event hands back a fresh `User`
+    // every time, and depending on the reference would refetch every team on
+    // each token refresh.
+  }, [userId, toast]);
+
+  const currentTeamId = currentTeam?.id;
 
   useEffect(() => {
     const updateUserRole = async () => {
-      if (!user || !currentTeam) return;
+      if (!userId || !currentTeamId) return;
 
       try {
         const { data, error } = await supabase
           .from("team_members")
           .select("role")
-          .eq("team_id", currentTeam.id)
-          .eq("user_id", user.id)
+          .eq("team_id", currentTeamId)
+          .eq("user_id", userId)
           .single();
 
         if (error) throw error;
@@ -116,7 +128,7 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     updateUserRole();
-  }, [currentTeam?.id, user?.id]);
+  }, [currentTeamId, userId]);
 
   const ensureProfileExists = async () => {
     if (!user) return { error: "Not authenticated" };
