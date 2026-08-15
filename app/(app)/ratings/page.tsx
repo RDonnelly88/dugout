@@ -61,7 +61,7 @@ export default function RatingsPage() {
     <div className="page-container animate-slide-up">
       <div className="page-header">
         <h1 className="page-title">Ratings</h1>
-        <p className="mt-2 max-w-prose text-muted-foreground">
+        <p className="page-subtitle">
           Elo, adapted for five-a-side. A side is rated at the average of its
           players, everyone on it takes the same adjustment, and beating a
           stronger team is worth more than beating a weaker one. Margin counts,
@@ -75,7 +75,7 @@ export default function RatingsPage() {
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <CardTitle className="text-lg">The table</CardTitle>
+                <CardTitle>The table</CardTitle>
                 <CardDescription>
                   {settling > 0
                     ? `${settling} still settling — a rating counts once someone has played ${ELO.provisionalGames} games.`
@@ -106,7 +106,7 @@ export default function RatingsPage() {
 
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-lg">Top five over time</CardTitle>
+            <CardTitle>Top five over time</CardTitle>
             <CardDescription>
               Everyone starts at {ELO.start}.
             </CardDescription>

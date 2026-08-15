@@ -49,6 +49,14 @@
   --draw: 38 78% 34%;
   --loss: 0 65% 44%;
 
+  /* For text sitting ON those colours, not beside them. Win, draw and loss are
+     chosen to read as text against a surface, so in light mode they are dark
+     blocks — a letter on one has to be white. It was inheriting --foreground
+     and coming out near-black. */
+  --win-foreground: 0 0% 100%;
+  --draw-foreground: 0 0% 100%;
+  --loss-foreground: 0 0% 100%;
+
   --destructive: 0 65% 44%;
   --destructive-foreground: 0 0% 100%;
   --info: 217 75% 45%;
@@ -89,6 +97,11 @@
     --draw: 40 90% 62%;
     --loss: 0 85% 71%;
 
+    /* Inverted: the dark theme's result colours are pale blocks. */
+    --win-foreground: 220 41% 5%;
+    --draw-foreground: 220 41% 5%;
+    --loss-foreground: 220 41% 5%;
+
     --destructive: 0 72% 60%;
     --destructive-foreground: 210 40% 98%;
     --info: 213 85% 70%;
@@ -127,6 +140,11 @@
   --win: 142 63% 58%;
   --draw: 40 90% 62%;
   --loss: 0 85% 71%;
+
+  /* Inverted: the dark theme's result colours are pale blocks. */
+  --win-foreground: 220 41% 5%;
+  --draw-foreground: 220 41% 5%;
+  --loss-foreground: 220 41% 5%;
 
   --destructive: 0 72% 60%;
   --destructive-foreground: 210 40% 98%;
@@ -172,6 +190,9 @@
   --color-win: hsl(var(--win));
   --color-draw: hsl(var(--draw));
   --color-loss: hsl(var(--loss));
+  --color-win-foreground: hsl(var(--win-foreground));
+  --color-draw-foreground: hsl(var(--draw-foreground));
+  --color-loss-foreground: hsl(var(--loss-foreground));
   --color-info: hsl(var(--info));
   --color-grid: hsl(var(--grid));
 
@@ -386,6 +407,17 @@ html[data-theme="dark"] {
    Composites
    ───────────────────────────────────────────────────────────── */
 
+/* ── Type scale ──
+ *
+ * Four steps, and every page uses the same four. They exist because the sizes
+ * were previously chosen at each call site: page titles ran from `text-2xl` to
+ * `text-3xl` to `text-6xl`, and `CardTitle` defaulted to `text-2xl` — the same
+ * size as a page heading — so forty call sites each overrode it by hand and no
+ * two cards agreed.
+ *
+ * Reach for a raw `text-*` only for something genuinely one-off, like a score.
+ */
+
 @utility page-container {
   @apply w-full max-w-[1200px] mx-auto px-4 py-6 md:px-6 md:py-8;
 }
@@ -394,8 +426,19 @@ html[data-theme="dark"] {
   @apply mb-6 md:mb-8;
 }
 
+/* The one h1 on the page. */
 @utility page-title {
-  @apply text-2xl font-bold tracking-tight text-foreground;
+  @apply text-2xl font-bold tracking-tight text-foreground md:text-3xl;
+}
+
+/* The sentence under it, explaining what the page is for. */
+@utility page-subtitle {
+  @apply mt-2 max-w-prose text-sm text-muted-foreground md:text-base;
+}
+
+/* A heading inside a page: a card's title, or a band within one. */
+@utility section-title {
+  @apply text-lg font-semibold leading-none tracking-tight text-foreground;
 }
 
 @utility stat-item {

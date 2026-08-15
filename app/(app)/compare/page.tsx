@@ -199,7 +199,7 @@ export default function ComparePage() {
     return (
       <div className="page-container">
         <h1 className="page-title">Compare</h1>
-        <p className="mt-2 text-muted-foreground">
+        <p className="page-subtitle">
           Add a second player and you can put two of them side by side.
         </p>
       </div>
@@ -219,7 +219,7 @@ export default function ComparePage() {
     <div className="page-container animate-slide-up">
       <div className="page-header">
         <h1 className="page-title">Compare</h1>
-        <p className="mt-2 max-w-prose text-muted-foreground">
+        <p className="page-subtitle">
           Two players side by side, and — the part a league table can never show
           — how they get on with each other.
         </p>
@@ -324,7 +324,7 @@ export default function ComparePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">When they meet</CardTitle>
+          <CardTitle>When they meet</CardTitle>
           <CardDescription>
             Counted from {a.name}&apos;s side, over {scopeName}.
           </CardDescription>

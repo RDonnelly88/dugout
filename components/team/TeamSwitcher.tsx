@@ -45,7 +45,7 @@ const TeamSwitcher = ({ variant = "default" }: { variant?: "default" | "minimal"
         </SelectTrigger>
         <SelectContent className="bg-surface-2 border-border">
           {userTeams.map(team => (
-            <SelectItem key={team.id} value={team.id} className="hover:bg-gray-700">
+            <SelectItem key={team.id} value={team.id} className="hover:bg-surface-2">
               <div className="flex items-center justify-between w-full">
                 <span>{team.name}</span>
                 {currentTeam?.id === team.id && (
@@ -81,7 +81,7 @@ const TeamSwitcher = ({ variant = "default" }: { variant?: "default" | "minimal"
               </SelectTrigger>
               <SelectContent className="bg-surface-2 border-border">
                 {userTeams.map(team => (
-                  <SelectItem key={team.id} value={team.id} className="hover:bg-gray-700">
+                  <SelectItem key={team.id} value={team.id} className="hover:bg-surface-2">
                     <div className="flex items-center justify-between w-full">
                       <span>{team.name}</span>
                       {currentTeam?.id === team.id && (
@@ -115,7 +115,7 @@ const TeamSwitcher = ({ variant = "default" }: { variant?: "default" | "minimal"
           </SelectTrigger>
           <SelectContent className="bg-surface-2 border-border">
             {userTeams.map(team => (
-              <SelectItem key={team.id} value={team.id} className="hover:bg-gray-700">
+              <SelectItem key={team.id} value={team.id} className="hover:bg-surface-2">
                 <div className="flex items-center justify-between w-full">
                   <span>{team.name}</span>
                   {currentTeam?.id === team.id && (

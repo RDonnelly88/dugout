@@ -45,9 +45,9 @@ const TeamsList = ({ match, players, getPlayerName }: TeamsListProps) => {
                 <Link 
                   key={playerId}
                   href={`/players/${playerId}`}
-                  className="flex items-center p-3 rounded-lg hover:bg-blue-50 border border-blue-100 transition-colors"
+                  className="flex items-center p-3 rounded-lg hover:bg-info/10 border border-info/20 transition-colors"
                 >
-                  <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden mr-3">
+                  <div className="h-10 w-10 rounded-full bg-info/15 flex items-center justify-center overflow-hidden mr-3">
                     {playerObj?.image ? (
                       <img
                         src={playerObj.image}
@@ -55,7 +55,7 @@ const TeamsList = ({ match, players, getPlayerName }: TeamsListProps) => {
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <span className="text-sm font-medium text-blue-600">
+                      <span className="text-sm font-medium text-info">
                         {playerName.charAt(0)}
                       </span>
                     )}
@@ -89,9 +89,9 @@ const TeamsList = ({ match, players, getPlayerName }: TeamsListProps) => {
                 <Link 
                   key={playerId}
                   href={`/players/${playerId}`}
-                  className="flex items-center p-3 rounded-lg hover:bg-red-50 border border-red-100 transition-colors"
+                  className="flex items-center p-3 rounded-lg hover:bg-loss/10 border border-loss/20 transition-colors"
                 >
-                  <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center overflow-hidden mr-3">
+                  <div className="h-10 w-10 rounded-full bg-loss/15 flex items-center justify-center overflow-hidden mr-3">
                     {playerObj?.image ? (
                       <img
                         src={playerObj.image}
@@ -99,7 +99,7 @@ const TeamsList = ({ match, players, getPlayerName }: TeamsListProps) => {
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <span className="text-sm font-medium text-red-600">
+                      <span className="text-sm font-medium text-loss">
                         {playerName.charAt(0)}
                       </span>
                     )}

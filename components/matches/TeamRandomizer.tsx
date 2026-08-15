@@ -86,6 +86,16 @@ const TeamRandomizer = ({
     [ratingFor, form]
   );
 
+  // Everyone starts on the middle level, so until somebody sets them the skill
+  // split is dead even and looks broken rather than untouched.
+  const skillNote = useMemo(() => {
+    if (availablePlayers.length < 2) return undefined;
+    const levels = new Set(availablePlayers.map((p) => p.skillLevel ?? SKILL.default));
+    return levels.size === 1
+      ? `Everyone here is on ${[...levels][0]} — set levels on the player pages.`
+      : undefined;
+  }, [availablePlayers]);
+
   const preview = useMemo(
     () =>
       ({
@@ -150,6 +160,7 @@ const TeamRandomizer = ({
           value={method}
           onChange={setMethod}
           preview={preview}
+          notes={{ skill: skillNote }}
           disabled={dealing || disabled || !canRandomize}
         />
       </section>

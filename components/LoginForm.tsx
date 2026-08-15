@@ -163,7 +163,7 @@ const LoginForm = () => {
                   {error && (
                     <p
                       role="alert"
-                      className="p-3 bg-loss/10 border border-red-500/20 rounded-md text-loss text-sm"
+                      className="p-3 bg-loss/10 border border-loss/20 rounded-md text-loss text-sm"
                     >
                       {error}
                     </p>
@@ -273,7 +273,7 @@ const LoginForm = () => {
                   {error && (
                     <p
                       role="alert"
-                      className="p-3 bg-loss/10 border border-red-500/20 rounded-md text-loss text-sm"
+                      className="p-3 bg-loss/10 border border-loss/20 rounded-md text-loss text-sm"
                     >
                       {error}
                     </p>

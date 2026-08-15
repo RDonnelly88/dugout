@@ -73,7 +73,7 @@ const JoinTeamForm = () => {
       </CardHeader>
       <CardContent>
         {formError && (
-          <Alert variant="destructive" className="mb-4 border-red-900 bg-red-950">
+          <Alert variant="destructive" className="mb-4 border-loss/40 bg-loss/15">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>{formError}</AlertDescription>

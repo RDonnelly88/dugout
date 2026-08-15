@@ -83,14 +83,14 @@ const CreateMatch = () => {
   return (
     <div className="page-container animate-slide-up">
       <div className="page-header">
-        <h1 className="page-title text-gradient">Create Match</h1>
-        <p className="mt-2 text-muted-foreground text-center max-w-xl mx-auto">
+        <h1 className="page-title">Create Match</h1>
+        <p className="page-subtitle mx-auto text-center">
           Set up your next match with customizable team formations
         </p>
       </div>
 
       <Card className="neo-glassmorphism border-accent/30 shadow-accent/10">
-        <CardContent className="p-6">
+        <CardContent>
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="bg-card/50 rounded-xl overflow-hidden shadow-lg border border-accent/30 p-4">
               <TeamRandomizer 

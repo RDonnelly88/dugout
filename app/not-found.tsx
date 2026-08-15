@@ -21,7 +21,7 @@ const NotFound = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/50 p-4">
       <div className="text-center glass-card p-8 rounded-xl max-w-md mx-auto animate-fade-in shadow-lg">
-        <h1 className="text-6xl font-bold mb-2 text-gradient">404</h1>
+        <h1 className="mb-2 text-6xl font-bold text-accent">404</h1>
         <p className="text-xl text-muted-foreground mb-6">
           Oops! This page has gone missing.
         </p>

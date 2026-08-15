@@ -34,7 +34,7 @@ const DeleteMatchDialog = ({ match, onOpenChange, onConfirmDelete }: DeleteMatch
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirmDelete} className="bg-red-600 hover:bg-red-700">
+          <AlertDialogAction onClick={onConfirmDelete} className="bg-destructive hover:bg-destructive">
             Delete
           </AlertDialogAction>
         </AlertDialogFooter>

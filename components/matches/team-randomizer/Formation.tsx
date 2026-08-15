@@ -91,7 +91,7 @@ const Formation = ({ teamA, teamB, teamSize, onRemovePlayer }: FormationProps) =
         <div className="team-pitch bg-win/15 rounded-t-lg overflow-hidden h-[320px] relative">
           {renderTeam(teamA, "Team A", "red")}
         </div>
-        <div className="team-name-banner bg-red-700/80 text-foreground py-2 text-center font-semibold rounded-b-lg">
+        <div className="team-name-banner bg-destructive/80 text-foreground py-2 text-center font-semibold rounded-b-lg">
           Team A
         </div>
       </div>
@@ -99,7 +99,7 @@ const Formation = ({ teamA, teamB, teamSize, onRemovePlayer }: FormationProps) =
         <div className="team-pitch bg-win/15 rounded-t-lg overflow-hidden h-[320px] relative">
           {renderTeam(teamB, "Team B", "green")}
         </div>
-        <div className="team-name-banner bg-green-700/80 text-foreground py-2 text-center font-semibold rounded-b-lg">
+        <div className="team-name-banner bg-win/80 text-foreground py-2 text-center font-semibold rounded-b-lg">
           Team B
         </div>
       </div>

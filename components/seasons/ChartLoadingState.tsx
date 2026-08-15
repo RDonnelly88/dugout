@@ -16,7 +16,7 @@ const ChartLoadingState: React.FC<ChartLoadingStateProps> = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="h-80 flex items-center justify-center">
-        <div className="animate-pulse w-full h-48 bg-gray-200 rounded"></div>
+        <div className="animate-pulse w-full h-48 bg-surface-2 rounded"></div>
       </CardContent>
     </Card>
   );

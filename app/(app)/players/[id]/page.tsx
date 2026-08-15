@@ -122,13 +122,13 @@ const PlayerDetail = () => {
       </div>
 
       <Card className="mb-8 overflow-hidden">
-        <CardContent className="p-6">
+        <CardContent>
           <div className="flex flex-col md:flex-row items-center gap-6">
             <PlayerAvatar name={player.name} image={player.image} size="xl" />
             
             <div className="flex-1 text-center md:text-left">
               <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-                <h1 className="text-3xl font-bold">{player.name}</h1>
+                <h1 className="page-title">{player.name}</h1>
                 <PlayerSeasonStars playerId={player.id} size="lg" />
               </div>
               
@@ -171,7 +171,7 @@ const PlayerDetail = () => {
         {currentSeasonStats && currentSeason && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg flex items-center">
+              <CardTitle className="flex items-center">
                 <Trophy className="h-5 w-5 mr-2 text-draw" />
                 Current Season Stats ({currentSeason.name})
                 <Badge className="ml-2" variant="outline">
@@ -280,10 +280,10 @@ const PlayerDetail = () => {
                                 <Badge 
                                   className={`ml-2 ${
                                     result === 'win' 
-                                      ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                      ? 'bg-win/15 text-win hover:bg-win/20' 
                                       : result === 'loss' 
-                                        ? 'bg-red-100 text-red-800 hover:bg-red-200' 
-                                        : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                                        ? 'bg-loss/15 text-loss hover:bg-loss/20' 
+                                        : 'bg-draw/15 text-draw hover:bg-draw/20'
                                   }`}
                                 >
                                   {result === 'win' ? 'Win' : result === 'loss' ? 'Loss' : 'Draw'}

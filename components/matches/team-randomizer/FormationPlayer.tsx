@@ -24,7 +24,7 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
 
   console.log(`Rendering FormationPlayer for ${player.name} at index ${index} and team ${teamColor}`);
   
-  const bgColor = teamColor === 'red' ? 'bg-red-600' : 'bg-green-600';
+  const bgColor = teamColor === 'red' ? 'bg-destructive' : 'bg-win';
   const textColor = 'text-foreground';
   
   // Get current season
@@ -103,7 +103,7 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
               <div className="grid grid-cols-4 gap-1 text-center">
                 <div>
                   <span className="text-sm font-bold">{playerSeasonStats.played}</span>
-                  <span className="text-xs block text-blue-200">Played</span>
+                  <span className="text-xs block text-info">Played</span>
                 </div>
                 <div>
                   <span className="text-sm font-bold">{playerSeasonStats.wins}</span>

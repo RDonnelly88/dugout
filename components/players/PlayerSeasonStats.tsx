@@ -22,7 +22,7 @@ const PlayerSeasonStats = ({
 }: PlayerSeasonStatsProps) => {
   return (
     <Card>
-      <CardContent className="p-6">
+      <CardContent>
         <Tabs defaultValue="overall" onValueChange={(value) => onSeasonSelect(value === "overall" ? null : value)}>
           <TabsList className="w-full">
             <TabsTrigger value="overall" className="flex-1">Overall</TabsTrigger>
@@ -39,29 +39,29 @@ const PlayerSeasonStats = ({
                 label="Matches Played" 
                 value={overallStats.played}
                 icon={<Trophy className="h-5 w-5 text-info" />}
-                bgColor="bg-blue-50"
-                textColor="text-blue-800"
+                bgColor="bg-info/10"
+                textColor="text-info"
               />
               <StatCard 
                 label="Victories" 
                 value={overallStats.wins}
                 icon={<TrendingUp className="h-5 w-5 text-win" />}
-                bgColor="bg-green-50"
-                textColor="text-green-800"
+                bgColor="bg-win/10"
+                textColor="text-win"
               />
               <StatCard 
                 label="Draws" 
                 value={overallStats.draws}
                 icon={<MinusCircle className="h-5 w-5 text-draw" />}
-                bgColor="bg-amber-50"
-                textColor="text-amber-800"
+                bgColor="bg-draw/10"
+                textColor="text-draw"
               />
               <StatCard 
                 label="Defeats" 
                 value={overallStats.losses}
                 icon={<TrendingDown className="h-5 w-5 text-loss" />}
-                bgColor="bg-red-50"
-                textColor="text-red-800"
+                bgColor="bg-loss/10"
+                textColor="text-loss"
               />
             </div>
             
@@ -82,29 +82,29 @@ const PlayerSeasonStats = ({
                   label="Matches Played" 
                   value={stat.played}
                   icon={<Trophy className="h-5 w-5 text-info" />}
-                  bgColor="bg-blue-50"
-                  textColor="text-blue-800"
+                  bgColor="bg-info/10"
+                  textColor="text-info"
                 />
                 <StatCard 
                   label="Victories" 
                   value={stat.wins}
                   icon={<TrendingUp className="h-5 w-5 text-win" />}
-                  bgColor="bg-green-50"
-                  textColor="text-green-800"
+                  bgColor="bg-win/10"
+                  textColor="text-win"
                 />
                 <StatCard 
                   label="Draws" 
                   value={stat.draws}
                   icon={<MinusCircle className="h-5 w-5 text-draw" />}
-                  bgColor="bg-amber-50"
-                  textColor="text-amber-800"
+                  bgColor="bg-draw/10"
+                  textColor="text-draw"
                 />
                 <StatCard 
                   label="Defeats" 
                   value={stat.losses}
                   icon={<TrendingDown className="h-5 w-5 text-loss" />}
-                  bgColor="bg-red-50"
-                  textColor="text-red-800"
+                  bgColor="bg-loss/10"
+                  textColor="text-loss"
                 />
               </div>
               

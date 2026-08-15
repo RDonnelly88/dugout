@@ -147,20 +147,20 @@ const SeasonDetail = () => {
       ) : (
         <>
           <Card className="mb-6">
-            <CardContent className="p-6">
+            <CardContent>
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
                 <div>
-                  <h1 className="text-2xl font-bold flex items-center">
+                  <h1 className="page-title flex items-center">
                     {season.name}
                     <div className="flex gap-2 ml-2">
                       {season.isCurrent && (
-                        <Badge variant="default" className="bg-win hover:bg-green-600">
+                        <Badge variant="default" className="bg-win hover:bg-win">
                           <Check className="h-3 w-3 mr-1" />
                           Current Season
                         </Badge>
                       )}
                       {season.isFinished && (
-                        <Badge variant="outline" className="bg-slate-100 text-slate-700">
+                        <Badge variant="outline" className="bg-surface-2 text-foreground">
                           <Lock className="h-3 w-3 mr-1" />
                           Finished
                         </Badge>
@@ -174,12 +174,12 @@ const SeasonDetail = () => {
                 </div>
 
                 <div className="flex items-center mt-4 md:mt-0 gap-4">
-                  <div className="bg-blue-50 text-blue-800 p-2 rounded-md flex items-center">
+                  <div className="bg-info/10 text-info p-2 rounded-md flex items-center">
                     <span className="font-medium">{seasonMatches.length}</span>
                     <span className="ml-1 text-sm">Matches</span>
                   </div>
                   
-                  <div className="bg-amber-50 text-amber-800 p-2 rounded-md flex items-center">
+                  <div className="bg-draw/10 text-draw p-2 rounded-md flex items-center">
                     <Trophy className="h-4 w-4 mr-1 text-draw" />
                     <span className="font-medium">{playerStats[0]?.playerName || "No champion yet"}</span>
                   </div>
@@ -236,7 +236,7 @@ const SeasonDetail = () => {
                           <Link href="/matches/create">Create a Match</Link>
                         </Button>
                       ) : (
-                        <p className="text-amber-600">This season is finished. No more matches can be added.</p>
+                        <p className="text-draw">This season is finished. No more matches can be added.</p>
                       )}
                     </div>
                   )}

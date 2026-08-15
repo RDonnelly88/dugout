@@ -67,8 +67,8 @@ const SeasonLeaderboard = ({
     }
     if (rank === 2) {
       return (
-        <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200">
-          <Medal className="h-3 w-3 mr-1 text-slate-400" />
+        <Badge variant="outline" className="bg-surface-2 text-foreground border-border">
+          <Medal className="h-3 w-3 mr-1 text-muted-foreground" />
           2nd Place
         </Badge>
       );
@@ -76,7 +76,7 @@ const SeasonLeaderboard = ({
     if (rank === 3) {
       return (
         <Badge variant="outline" className="bg-draw/10 text-draw border-draw/30">
-          <Medal className="h-3 w-3 mr-1 text-amber-700" />
+          <Medal className="h-3 w-3 mr-1 text-draw" />
           3rd Place
         </Badge>
       );

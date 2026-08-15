@@ -61,13 +61,13 @@ const MatchScore = ({
         </div>
         
         {winner && (
-          <div className="mt-4 inline-flex items-center bg-green-50 text-green-700 px-4 py-2 rounded-full">
+          <div className="mt-4 inline-flex items-center bg-win/10 text-win px-4 py-2 rounded-full">
             <Trophy className="h-4 w-4 mr-2" />
             <span className="font-medium">{winner} won the match</span>
           </div>
         )}
         {!winner && isCompleted && (
-          <div className="mt-4 inline-flex items-center bg-blue-50 text-blue-700 px-4 py-2 rounded-full">
+          <div className="mt-4 inline-flex items-center bg-info/10 text-info px-4 py-2 rounded-full">
             <span className="font-medium">Match ended in a draw</span>
           </div>
         )}

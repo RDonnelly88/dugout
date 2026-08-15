@@ -98,7 +98,7 @@ const TeamSelector = () => {
         <PopoverTrigger asChild>
           <Button 
             variant="outline" 
-            className="flex items-center justify-between w-56 text-left font-normal border-border bg-surface-2 hover:bg-gray-700"
+            className="flex items-center justify-between w-56 text-left font-normal border-border bg-surface-2 hover:bg-surface-2"
           >
             <div className="flex items-center">
               <Users className="h-4 w-4 mr-2 text-muted-foreground" />
@@ -115,7 +115,7 @@ const TeamSelector = () => {
             {userTeams.map(team => (
               <button
                 key={team.id}
-                className="flex items-center justify-between w-full px-2.5 py-2 text-sm hover:bg-gray-700 cursor-pointer"
+                className="flex items-center justify-between w-full px-2.5 py-2 text-sm hover:bg-surface-2 cursor-pointer"
                 onClick={(e) => handleTeamSwitch(team.id, e)}
               >
                 <span className="truncate">{team.name}</span>
@@ -135,7 +135,7 @@ const TeamSelector = () => {
             }}>
               <DialogTrigger asChild>
                 <button
-                  className="flex items-center w-full px-2.5 py-2 text-sm text-primary hover:bg-gray-700 cursor-pointer"
+                  className="flex items-center w-full px-2.5 py-2 text-sm text-primary hover:bg-surface-2 cursor-pointer"
                   onClick={handleCreateTeamClick}
                 >
                   <Plus className="h-4 w-4 mr-2" />
@@ -161,7 +161,7 @@ const TeamSelector = () => {
                   </div>
                   
                   {debugInfo && (
-                    <div className="p-2 bg-red-950 border border-red-800 rounded text-xs overflow-auto">
+                    <div className="p-2 bg-loss/15 border border-loss/40 rounded text-xs overflow-auto">
                       <p className="font-bold mb-1">Debug Information:</p>
                       <p className="font-mono whitespace-pre-wrap">{debugInfo}</p>
                     </div>
@@ -188,7 +188,7 @@ const TeamSelector = () => {
           </div>
           <div className="border-t border-border px-2 py-1.5">
             <button
-              className="flex items-center w-full px-2.5 py-2 text-sm hover:bg-gray-700 cursor-pointer"
+              className="flex items-center w-full px-2.5 py-2 text-sm hover:bg-surface-2 cursor-pointer"
               onClick={handleSignOut}
             >
               <LogOut className="h-4 w-4 mr-2" />
