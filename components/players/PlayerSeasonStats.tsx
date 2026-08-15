@@ -48,12 +48,17 @@ const PlayerSeasonStats = ({
           defaultValue="overall"
           onValueChange={(value) => onSeasonSelect(value === "overall" ? null : value)}
         >
-          <TabsList className="w-full">
-            <TabsTrigger value="overall" className="flex-1">
-              All time
-            </TabsTrigger>
+          {/*
+           * Wraps rather than sharing one fixed-height row between however
+           * many seasons there are. `TabsList` is `h-10` with the triggers
+           * splitting the width, so a squad with five seasons behind it had
+           * six of them squeezed into a bar built for two, spilling out of the
+           * rounded edge it sits in.
+           */}
+          <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
+            <TabsTrigger value="overall">All time</TabsTrigger>
             {seasonStats.map((stat) => (
-              <TabsTrigger key={stat.seasonId} value={stat.seasonId} className="flex-1">
+              <TabsTrigger key={stat.seasonId} value={stat.seasonId}>
                 {stat.seasonName}
               </TabsTrigger>
             ))}

@@ -24,7 +24,11 @@ import MatchListItem from "@/components/matches/MatchListItem";
 import { ratingSwings } from "@/lib/match-impact";
 import { StatTile, StatTiles } from "@/components/StatTile";
 
+/** How many of a player's matches to list before asking. */
+const MATCHES_SHOWN = 10;
+
 const PlayerDetail = () => {
+  const [showAllMatches, setShowAllMatches] = React.useState(false);
   const {
     player,
     playerMatches,
@@ -114,6 +118,13 @@ const PlayerDetail = () => {
   const recentResults: PlayerFormResult[] = playerRecentMatches.map(
     (match) => getPlayerMatchResult(match).result ?? "dnp"
   );
+
+  const orderedMatches = [...playerMatches].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+  const shownMatches = showAllMatches
+    ? orderedMatches
+    : orderedMatches.slice(0, MATCHES_SHOWN);
 
   return (
     <div className="page-container animate-slide-up">
@@ -218,8 +229,8 @@ const PlayerDetail = () => {
       </Tabs>
 
       <div className="mt-8">
-        <h2 className="text-xl font-semibold mb-4">
-          {selectedSeason ? `Matches in ${selectedSeason.name}` : 'All Matches'}
+        <h2 className="section-title mb-4">
+          {selectedSeason ? `Matches in ${selectedSeason.name}` : "Matches"}
         </h2>
 
         {playerMatches.length === 0 ? (
@@ -231,12 +242,11 @@ const PlayerDetail = () => {
             </p>
           </div>
         ) : (
-          /* The same row as the matches page, rather than a second design for
-             the same list — with this player's own result on the end. */
-          <ul className="space-y-2">
-            {[...playerMatches]
-              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-              .map((match) => (
+          <>
+            {/* The same row as the matches page, rather than a second design
+                for the same list — with this player's own result on the end. */}
+            <ul className="space-y-2">
+              {shownMatches.map((match) => (
                 <MatchListItem
                   key={match.id}
                   match={match}
@@ -244,7 +254,23 @@ const PlayerDetail = () => {
                   swing={swings.get(match.id)}
                 />
               ))}
-          </ul>
+            </ul>
+
+            {/* Somebody with two years behind them has fifty of these, which
+                is a great deal of scrolling past to reach nothing, and a page
+                too tall for the browser to photograph in one piece. */}
+            {playerMatches.length > MATCHES_SHOWN && (
+              <Button
+                variant="outline"
+                className="mt-3 w-full"
+                onClick={() => setShowAllMatches((shown) => !shown)}
+              >
+                {showAllMatches
+                  ? "Show fewer"
+                  : `Show all ${playerMatches.length}`}
+              </Button>
+            )}
+          </>
         )}
       </div>
     </div>

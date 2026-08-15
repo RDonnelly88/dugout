@@ -274,6 +274,69 @@ describe("computeRatings and matches missed", () => {
     );
   });
 
+  /**
+   * The latest change is about the squad's last match, not the player's. A
+   * regular who sat one out should read as flat or drifting, and it used to
+   * show whatever their own last game did — a confident rise beside somebody
+   * who had not turned out for months.
+   */
+  it("reports the last match for somebody who was in it", () => {
+    const ratings = computeRatings([
+      match(["a"], ["b"], 3, 1, "2026-01-01"),
+      match(["a"], ["b"], 3, 1, "2026-01-08"),
+    ]);
+
+    const a = ratings.get("a")!;
+    expect(a.missed).toBe(0);
+    expect(a.lastChange).toBeCloseTo(a.history.at(-1)!.change);
+    expect(a.lastChange).toBeGreaterThan(0);
+  });
+
+  it("reports nothing moving for somebody inside the grace", () => {
+    const ratings = computeRatings([
+      match(["a"], ["b"], 5, 0, "2026-01-01"),
+      ...withoutThem(1),
+    ]);
+
+    const a = ratings.get("a")!;
+    expect(a.missed).toBe(1);
+    expect(a.lastChange).toBe(0);
+  });
+
+  it("reports a fall for a strong player who missed it, beyond the grace", () => {
+    const ratings = computeRatings([
+      match(["a"], ["b"], 5, 0, "2026-01-01"),
+      ...withoutThem(ELO.decay.graceMatches + 3),
+    ]);
+
+    const a = ratings.get("a")!;
+    // Above the starting mark and drifting back down towards it.
+    expect(a.rating).toBeGreaterThan(ELO.start);
+    expect(a.lastChange).toBeLessThan(0);
+  });
+
+  it("reports a rise for a weak player who missed it, drifting back up", () => {
+    const ratings = computeRatings([
+      match(["b"], ["a"], 5, 0, "2026-01-01"),
+      ...withoutThem(ELO.decay.graceMatches + 3),
+    ]);
+
+    const a = ratings.get("a")!;
+    expect(a.rating).toBeLessThan(ELO.start);
+    expect(a.lastChange).toBeGreaterThan(0);
+  });
+
+  it("rates somebody from their very first game", () => {
+    const ratings = computeRatings([match(["a"], ["b"], 3, 1, "2026-01-01")]);
+
+    const a = ratings.get("a")!;
+    expect(a.games).toBe(1);
+    // Rated immediately, and flagged as still finding its level rather than
+    // withheld — a squad two weeks old had an empty table before.
+    expect(a.rating).not.toBe(ELO.start);
+    expect(a.provisional).toBe(true);
+  });
+
   it("gives the same answer whenever it is asked", () => {
     const fixtures = [
       match(["a"], ["b"], 5, 0, "2026-01-01"),

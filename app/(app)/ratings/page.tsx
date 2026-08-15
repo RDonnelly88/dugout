@@ -67,10 +67,12 @@ export default function RatingsPage() {
             Elo, adapted for five-a-side. A side is rated at the average of its
             players, everyone on it takes the same adjustment, and beating a
             stronger team is worth more than beating a weaker one. A win is a
-            win — a thrashing counts the same as a scrape. Miss more than{" "}
-            {ELO.decay.graceMatches} matches the rest of the squad played and
-            your rating drifts back towards {ELO.start}; a break when nobody
-            plays costs nothing.
+            win — a thrashing counts the same as a scrape. Everybody has a
+            rating from their first game; the first {ELO.provisionalGames} move
+            it further while it finds its level. Miss more than{" "}
+            {ELO.decay.graceMatches} matches the rest of the squad played and it
+            drifts back towards {ELO.start}; a break when nobody plays costs
+            nothing.
           </>
         }
       />
@@ -83,8 +85,8 @@ export default function RatingsPage() {
                 <CardTitle>The table</CardTitle>
                 <CardDescription>
                   {settling > 0
-                    ? `${settling} still settling — a rating counts once someone has played ${ELO.provisionalGames} games.`
-                    : "Everyone's rating has settled."}
+                    ? `${settling} still settling — those move faster until ${ELO.provisionalGames} games are behind them.`
+                    : "Every rating has settled."}
                 </CardDescription>
               </div>
               <ActiveFilter

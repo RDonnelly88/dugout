@@ -88,8 +88,11 @@ export default function PlayerRatingCard({ playerId }: { playerId: string }) {
     );
   }
 
-  const last = rating.history.at(-1);
-  const change = last ? Math.round(last.change) : 0;
+  // What the squad's most recent match did to this rating, which is a drift
+  // downwards if they were not in it. Their own last game is a different
+  // question, and answering that one here made a rating look freshly earned
+  // months after it was.
+  const change = Math.round(rating.lastChange);
   const values = rating.history.map((h) => h.rating);
 
   return (
@@ -122,7 +125,12 @@ export default function PlayerRatingCard({ playerId }: { playerId: string }) {
             ) : (
               <Minus className="h-4 w-4" />
             )}
-            {Math.abs(change)} last game
+            {Math.abs(change)}{" "}
+            {rating.missed === 0
+              ? "last game"
+              : rating.missed === 1
+                ? "missed one"
+                : `missed ${rating.missed}`}
           </p>
         </div>
 

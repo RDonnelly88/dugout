@@ -25,10 +25,26 @@ async function setTheme(page: Page, theme: "light" | "dark") {
   }, theme);
 }
 
-/** Charts and lists settle a moment after navigation. */
+/**
+ * Waits for the page to actually have something on it.
+ *
+ * A fixed pause after `networkidle` is not enough. The suite starts a cold dev
+ * server every run, so the first visit to a route compiles it on demand, and a
+ * screenshot taken during that is a picture of an empty page — which passes,
+ * because nothing here asserts. The player page came out blank that way.
+ *
+ * Waiting on real content rather than a timeout means the pause can be short
+ * when nothing is compiling and long when something is.
+ */
 async function settled(page: Page) {
   await page.waitForLoadState("networkidle").catch(() => {});
-  await page.waitForTimeout(400);
+  await page
+    .waitForFunction(() => document.body.innerText.trim().length > 150, null, {
+      timeout: 30_000,
+    })
+    .catch(() => {});
+  // Charts and list animations land just after the text does.
+  await page.waitForTimeout(500);
 }
 
 const PAGES = [
@@ -74,8 +90,11 @@ test.describe("screenshots", () => {
         .locator('a[href^="/players/"]:not([href*="/edit/"]):not([href$="/add"])')
         .first()
         .click();
+      // Before settling, not after: `networkidle` resolves while the client is
+      // still on the previous route, so the wait was being satisfied by the
+      // page we had just left and the shot caught the next one half-built.
+      await page.waitForURL(/\/players\/[0-9a-f-]{36}/);
       await settled(page);
-      await expect(page).toHaveURL(/\/players\/[0-9a-f-]{36}/);
       await shot(page, info.project.name, `09-player-detail-${theme}`);
     });
 
@@ -89,8 +108,8 @@ test.describe("screenshots", () => {
         .locator('a[href^="/seasons/"]:not([href$="/create"])')
         .first()
         .click();
+      await page.waitForURL(/\/seasons\/[0-9a-f-]{36}/);
       await settled(page);
-      await expect(page).toHaveURL(/\/seasons\/[0-9a-f-]{36}/);
       await shot(page, info.project.name, `10-season-detail-${theme}`);
     });
 
@@ -99,8 +118,8 @@ test.describe("screenshots", () => {
       await page.goto("/matches");
       await settled(page);
       await page.locator('a[href^="/matches/"]:not([href$="/create"])').first().click();
+      await page.waitForURL(/\/matches\/[0-9a-f-]{36}/);
       await settled(page);
-      await expect(page).toHaveURL(/\/matches\/[0-9a-f-]{36}/);
       await shot(page, info.project.name, `12-match-detail-${theme}`);
     });
 
