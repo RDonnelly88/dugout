@@ -27,11 +27,11 @@ export const usePlayerRatings = () => {
   /**
    * Everyone who has played, strongest first.
    *
-   * Including the ones still settling. Holding a rating back until somebody
-   * had ten games meant a new squad saw an empty table for their first two
-   * months, which is precisely when a table is most interesting. They are
-   * marked instead: the number is real, it is simply moving faster than the
-   * rest and will keep moving for a while.
+   * Including the ones with barely any games behind them. Holding a rating
+   * back until somebody had ten meant a new squad saw an empty table for
+   * their first two months, which is precisely when a table is most
+   * interesting. They are marked instead: the number is real and moves like
+   * everybody else's, it is simply resting on less.
    */
   const ranked = useMemo(
     () => [...ratings.values()].sort((a, b) => b.rating - a.rating),
