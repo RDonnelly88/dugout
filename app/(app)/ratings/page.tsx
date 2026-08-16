@@ -20,6 +20,7 @@ import ActiveFilter, {
   type ActiveScope,
 } from "@/components/players/ActiveFilter";
 import PageHeader from "@/components/PageHeader";
+import RatingsGuide from "@/components/ratings/RatingsGuide";
 
 export default function RatingsPage() {
   const { currentTeam } = useTeam();
@@ -62,6 +63,7 @@ export default function RatingsPage() {
     <div className="page-container animate-slide-up">
       <PageHeader
         title="Ratings"
+        actions={<RatingsGuide players={players} />}
         subtitle={
           <>
             Elo, adapted for five-a-side. A side is rated at the average of its
