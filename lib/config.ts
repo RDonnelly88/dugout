@@ -42,10 +42,26 @@ export const ELO = {
   /**
    * Games before a rating stops being flagged as a rough guess.
    *
-   * A label on the confidence of a number, never a lever on it: everybody's
-   * rating moves by the same amount from their first game to their last.
+   * A label on the confidence of a number, never a lever on it: how far a
+   * rating moves is `formShare`'s business and nothing to do with this.
    */
   settledAfter: 10,
+
+  /**
+   * How far recent form tilts a player's share of their side's pot.
+   *
+   * Nought splits a result level, as it always was. One lets a man on a
+   * perfect run take roughly double the share of a man on none. It changes
+   * only who gets what out of the pot, never the size of it, so a match
+   * stays exactly zero-sum whatever this is set to.
+   *
+   * Form is read from the window in `lib/form.ts` — the same figure the
+   * match card shows — and it is measured before kick-off, which is what
+   * keeps this safe. A share worked out from the result itself would pay a
+   * player less for a win than it charged them for a defeat, and that walks
+   * everyone towards the middle until the table says nothing.
+   */
+  formShare: 0.8,
 
   /**
    * Ratings drift back towards `start` for matches a player missed.

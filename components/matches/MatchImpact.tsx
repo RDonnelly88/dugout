@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
+import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import { getMatches } from "@/lib/db";
 import { useTeam } from "@/contexts/TeamContext";
 import { useSideNames } from "@/hooks/useSideNames";
@@ -117,6 +118,10 @@ function Side({
               <span className="min-w-0 flex-1 truncate">
                 {player?.name ?? "Unknown"}
               </span>
+              {/* The run they walked in on, which is why two team-mates in
+                  the same result took different numbers. Without it the card
+                  looks arbitrary. */}
+              <PlayerFormDisplay results={entry.form} size="xs" />
               <span className="tabular text-muted-foreground">
                 {displayRating(entry.after)}
               </span>

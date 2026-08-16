@@ -425,81 +425,149 @@ describe("a match's pot is conserved", () => {
 
 describe("sharing a result out across a side", () => {
   /**
-   * Two players a long way apart in rating, on the same side, in the same
-   * result. Weighting the split by strength moved them by different amounts
-   * — and because teams are picked to be level, the stronger man is nearly
-   * always the one above his side's mean, so paying him less for a win than
-   * charging him for a defeat walked every outlier back towards 1200 and
-   * left the table almost flat.
+   * Form decides the split, and only form. Two other things could have —
+   * how good a player is, and how long they have been about — and both are
+   * deliberately kept out of it. Strength, because sides are picked level,
+   * so the better man is nearly always the one above his side's mean, and
+   * paying him less for a win than charging him for a defeat walks every
+   * outlier back towards the start until the table is flat. Experience,
+   * because a team result carries nothing that says who earned it.
    */
-  const spread = (scoreA: number, scoreB: number) => {
-    const warmUps = [
-      ...Array.from({ length: 6 }, (_, i) => match(["strong"], [`up${i}`], 1, 0)),
-      ...Array.from({ length: 6 }, (_, i) => match([`down${i}`], ["weak"], 1, 0)),
-    ];
+
+  /** Five straight wins, then a match with somebody else. */
+  const onFire = (id: string) =>
+    Array.from({ length: 5 }, (_, i) => match([id], [`beat-${id}-${i}`], 1, 0));
+  /** Five straight defeats. */
+  const onIce = (id: string) =>
+    Array.from({ length: 5 }, (_, i) => match([`lost-${id}-${i}`], [id], 1, 0));
+
+  it("gives the man in form more of a win than the man out of it", () => {
     const ratings = computeRatings([
-      ...warmUps,
-      match(["strong", "weak"], ["x", "y"], scoreA, scoreB),
+      ...onFire("hot"),
+      ...onIce("cold"),
+      match(["hot", "cold"], ["x", "y"], 1, 0),
     ]);
-    return {
-      strong: ratings.get("strong")!,
-      weak: ratings.get("weak")!,
-    };
-  };
 
-  it("moves teammates of very different strength alike on a win", () => {
-    const { strong, weak } = spread(1, 0);
+    const hot = ratings.get("hot")!.history.at(-1)!;
+    const cold = ratings.get("cold")!.history.at(-1)!;
 
-    expect(strong.rating).toBeGreaterThan(weak.rating);
-    expect(strong.history.at(-1)!.change).toBeGreaterThan(0);
-    expect(strong.history.at(-1)!.change).toBeCloseTo(
-      weak.history.at(-1)!.change,
-      9
-    );
-  });
-
-  it("moves them alike on a defeat too", () => {
-    const { strong, weak } = spread(0, 1);
-
-    expect(strong.history.at(-1)!.change).toBeLessThan(0);
-    expect(strong.history.at(-1)!.change).toBeCloseTo(
-      weak.history.at(-1)!.change,
-      9
-    );
+    expect(hot.change).toBeGreaterThan(0);
+    expect(cold.change).toBeGreaterThan(0);
+    expect(hot.change).toBeGreaterThan(cold.change);
   });
 
   /**
-   * The rating a newcomer's number moves at is the rating everybody's moves
-   * at. Weighting a debutant's share up settles them faster, but it means
-   * two players on the same side, in the same result, walk off with
-   * different numbers — and a team result carries nothing that tells them
-   * apart. Their first few games are flagged as a rough guess instead.
+   * The other side of the same coin, and the price of it: whoever swings
+   * hardest one way swings hardest the other. Deliberate — a share that
+   * knew which way the result went would drift the table, and a share
+   * settled before kick-off cannot.
    */
-  it("moves a debutant no differently from a ten-season regular", () => {
-    const warmUps = ["old1", "old2", "old3", "old4"].flatMap((id) =>
-      Array.from({ length: ELO.settledAfter }, (_, i) =>
-        match([id], [`filler-${id}-${i}`], 1, 0)
-      )
-    );
-    const decider = match(
-      ["debutant", "old1", "old2", "old3", "old4"],
-      ["b1", "b2", "b3", "b4", "b5"],
-      1,
-      0
+  it("and more of a defeat, being the same share either way", () => {
+    const ratings = computeRatings([
+      ...onFire("hot"),
+      ...onIce("cold"),
+      match(["hot", "cold"], ["x", "y"], 0, 1),
+    ]);
+
+    const hot = ratings.get("hot")!.history.at(-1)!;
+    const cold = ratings.get("cold")!.history.at(-1)!;
+
+    expect(hot.change).toBeLessThan(0);
+    expect(hot.change).toBeLessThan(cold.change);
+  });
+
+  it("takes no notice of how good the two of them are", () => {
+    // Both walk in on the same run of results, so the only thing left to
+    // tell them apart is the rating itself — which must not count.
+    const apart = [
+      ...Array.from({ length: 6 }, (_, i) => match(["rich"], [`gift${i}`], 1, 0)),
+      ...Array.from({ length: 6 }, (_, i) => match([`hard${i}`], ["poor"], 1, 0)),
+    ];
+    const together = Array.from({ length: 5 }, (_, i) =>
+      match(["rich", "poor"], [`opp${i}`, `opp2${i}`], 1, 0)
     );
 
-    const ratings = computeRatings([...warmUps, decider]);
-    const debutant = ratings.get("debutant")!;
-    const regular = ratings.get("old1")!;
+    const ratings = computeRatings([
+      ...apart,
+      ...together,
+      match(["rich", "poor"], ["x", "y"], 1, 0),
+    ]);
 
-    expect(debutant.games).toBe(1);
-    expect(regular.games).toBeGreaterThan(ELO.settledAfter);
-    expect(debutant.history.at(-1)!.change).toBeCloseTo(
-      regular.history.at(-1)!.change,
+    const rich = ratings.get("rich")!;
+    const poor = ratings.get("poor")!;
+
+    expect(rich.rating).toBeGreaterThan(poor.rating + 100);
+    expect(rich.history.at(-1)!.change).toBeCloseTo(
+      poor.history.at(-1)!.change,
       9
     );
-    // Flagged, not favoured.
+  });
+
+  it("takes no notice of how long they have been about", () => {
+    // A veteran and a newer face carrying the same five results.
+    const veteran = Array.from({ length: 14 }, (_, i) =>
+      match(["vet"], [`v${i}`], i % 2, 1 - (i % 2))
+    );
+    const together = Array.from({ length: 5 }, (_, i) =>
+      match(["vet", "newer"], [`w${i}`, `w2${i}`], 1, 0)
+    );
+
+    const ratings = computeRatings([
+      ...veteran,
+      ...together,
+      match(["vet", "newer"], ["x", "y"], 1, 0),
+    ]);
+
+    const vet = ratings.get("vet")!;
+    const newer = ratings.get("newer")!;
+
+    expect(vet.games).toBeGreaterThan(newer.games + 10);
+    expect(vet.history.at(-1)!.change).toBeCloseTo(
+      newer.history.at(-1)!.change,
+      9
+    );
+  });
+
+  it("gives a debutant an even share, and flags them rather than favours them", () => {
+    // A player with one win and one defeat behind them sits exactly at par,
+    // which is where somebody with no games at all is assumed to be.
+    const par = [
+      match(["par"], ["p1"], 1, 0),
+      match(["par"], ["p2"], 0, 1),
+    ];
+
+    const ratings = computeRatings([
+      ...par,
+      match(["debutant", "par"], ["x", "y"], 1, 0),
+    ]);
+
+    const debutant = ratings.get("debutant")!;
+    const atPar = ratings.get("par")!;
+
+    expect(debutant.games).toBe(1);
+    expect(debutant.history.at(-1)!.change).toBeCloseTo(
+      atPar.history.at(-1)!.change,
+      9
+    );
     expect(debutant.unsettled).toBe(true);
-    expect(regular.unsettled).toBe(false);
+  });
+
+  it("keeps the match zero-sum however lopsided the form on it", () => {
+    const teamA = ["a1", "a2", "a3", "a4", "a5"];
+    const teamB = ["b1", "b2", "b3", "b4", "b5"];
+    const ratings = computeRatings([
+      ...onFire("a1"),
+      ...onIce("a2"),
+      ...onFire("b1"),
+      ...onIce("b2"),
+      match(teamA, teamB, 1, 0),
+    ]);
+
+    const total = [...teamA, ...teamB].reduce(
+      (sum, id) => sum + ratings.get(id)!.history.at(-1)!.change,
+      0
+    );
+    expect(total).toBeCloseTo(0, 9);
   });
 });
+

@@ -1,4 +1,5 @@
 import { ELO } from "./config";
+import { formShare, rollForm, type FormResult } from "./form";
 import { outcomeOf } from "./match-result";
 import type { Match } from "@/types";
 
@@ -11,7 +12,14 @@ interface RatingPoint {
   change: number;
   /** The mean rating of the side they faced, going in. */
   opponentRating: number;
-  result: "win" | "draw" | "loss";
+  result: FormResult;
+  /**
+   * The run they walked in on, newest first, which is what decided their
+   * share of the pot. Carried here so a match card can show the reason two
+   * team-mates in the same result took different numbers, rather than
+   * working form out a second time and risking a different answer.
+   */
+  formBefore: FormResult[];
 }
 
 export interface PlayerRating {
@@ -144,6 +152,11 @@ export function computeRatings(matches: Match[]): Map<string, PlayerRating> {
   // rather than something a caller needs.
   const lastPlayedIndex = new Map<string, number>();
 
+  // The run each player carries into the next match. Rolled forward here
+  // rather than recomputed per match, which would walk the whole history
+  // once for every fixture in it.
+  const form = new Map<string, FormResult[]>();
+
   played.forEach((match, index) => {
     const outcome = outcomeOf(match)!;
 
@@ -184,16 +197,26 @@ export function computeRatings(matches: Match[]): Map<string, PlayerRating> {
       side: PlayerRating[],
       pot: number,
       opponentRating: number,
-      result: "win" | "draw" | "loss"
+      result: FormResult
     ) => {
-      // You win as a team, so the pot is split level. A result says what the
-      // five of them did between them and nothing about which of them did
-      // it; sharing it out by any measure of the players themselves invents
-      // that missing detail, and every way of inventing it that was tried
-      // cost more of the ladder's spread than it gave back.
-      const change = pot / side.length;
+      // The pot is fixed by the match; form only decides who takes what out
+      // of it. Weights are normalised across the side, so whatever they are
+      // the side's total is the pot and the match stays zero-sum.
+      //
+      // Read from the run each player walked in on, never from tonight's
+      // result. A share that knew the result would pay a man less for a win
+      // than it charged him for a defeat, and since sides are picked level
+      // the better player is nearly always the one above his side's mean —
+      // that bleeds him towards the middle every week until the table is
+      // flat. Form is settled before kick-off, so it cannot do that.
+      const runs = side.map((player) => form.get(player.playerId) ?? []);
+      const weights = runs.map(
+        (run) => 1 + ELO.formShare * (formShare(run) - 0.5) * 2
+      );
+      const total = weights.reduce((sum, w) => sum + w, 0);
 
-      for (const player of side) {
+      side.forEach((player, i) => {
+        const change = (weights[i] / total) * pot;
         const next = player.rating + change;
 
         player.previous = player.rating;
@@ -208,8 +231,11 @@ export function computeRatings(matches: Match[]): Map<string, PlayerRating> {
           change,
           opponentRating,
           result,
+          formBefore: runs[i],
         });
-      }
+
+        form.set(player.playerId, rollForm(runs[i], result));
+      });
     };
 
     const resultA = actualA === 1 ? "win" : actualA === 0.5 ? "draw" : "loss";

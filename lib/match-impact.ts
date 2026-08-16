@@ -1,5 +1,5 @@
 import { computeRatings } from "./elo";
-import { recentForm } from "./form";
+import { recentForm, type FormResult } from "./form";
 import { SKILL } from "./config";
 import type { Match, Player } from "@/types";
 
@@ -9,6 +9,12 @@ interface PlayerImpact {
   before: number;
   after: number;
   change: number;
+  /**
+   * The run they walked in on, newest first. Two team-mates in the same
+   * result take different numbers because of this, so it is shown beside
+   * them rather than left to be guessed at.
+   */
+  form: FormResult[];
 }
 
 export interface SideImpact {
@@ -60,6 +66,7 @@ export function matchImpact(
       before: moment.rating - moment.change,
       after: moment.rating,
       change: moment.change,
+      form: moment.formBefore,
     };
   };
 
