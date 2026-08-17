@@ -20,6 +20,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import MatchList from "@/components/matches/MatchList";
+import SeasonWrap from "@/components/seasons/SeasonWrap";
+import { useQuery } from "@tanstack/react-query";
+import { getPlayers } from "@/lib/db";
+import { useTeam } from "@/contexts/TeamContext";
 import SeasonForm from "@/components/seasons/SeasonForm";
 import SeasonSelector from "@/components/seasons/SeasonSelector";
 import SeasonLeaderboard from "@/components/seasons/SeasonLeaderboard";
@@ -30,6 +34,14 @@ import PageHeader from "@/components/PageHeader";
 import { StatTile, StatTiles } from "@/components/StatTile";
 
 const SeasonDetail = () => {
+  const { currentTeam } = useTeam();
+  // The squad, for the names and faces on the season's awards.
+  const { data: allPlayers = [] } = useQuery({
+    queryKey: ["players", currentTeam?.id],
+    queryFn: getPlayers,
+    enabled: !!currentTeam,
+  });
+
   const {
     season,
     seasons,
@@ -216,8 +228,9 @@ const SeasonDetail = () => {
           </PageHeader>
 
           <Tabs defaultValue="leaderboard" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="leaderboard">League Table</TabsTrigger>
+              <TabsTrigger value="story">The Season</TabsTrigger>
               <TabsTrigger value="positions">Position Tracking</TabsTrigger>
               <TabsTrigger value="matches">Matches</TabsTrigger>
             </TabsList>
@@ -230,6 +243,10 @@ const SeasonDetail = () => {
                 isFinished={season.isFinished}
                 seasonId={season.id}
               />
+            </TabsContent>
+
+            <TabsContent value="story" className="space-y-4">
+              <SeasonWrap matches={seasonMatches} players={allPlayers} />
             </TabsContent>
 
             <TabsContent value="positions" className="space-y-4">
