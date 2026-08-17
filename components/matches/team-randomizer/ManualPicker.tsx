@@ -1,15 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import { useReducedMotion } from "motion/react";
 import { ArrowLeftRight, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import PlayerAvatar from "@/components/players/PlayerAvatar";
+import { useSideNames } from "@/hooks/useSideNames";
+import { usePlayerRatings } from "@/hooks/usePlayerRatings";
+import {
+  assign,
+  boardFrom,
+  dragged,
+  occupants,
+  swapSides,
+  usable,
+  type Board,
+  type Slot,
+} from "@/lib/team-picker";
 import type { Split } from "@/lib/team-balance";
 import type { Player } from "@/types";
-import { SIDE_NAMES } from "@/lib/config";
+import PlayerChip from "./PlayerChip";
+import DropZone from "./DropZone";
 
-type Side = "A" | "B";
+const mean = (xs: number[]) =>
+  xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : undefined;
 
 /**
  * Sorting the players into two sides by hand.
@@ -17,6 +42,12 @@ type Side = "A" | "B";
  * Opens on a shuffle rather than an empty board, because starting from two
  * roughly even sides and moving three people is far less work than placing
  * everyone one at a time.
+ *
+ * Two ways to move somebody, because neither suits both hands. Tapping picks
+ * players out and the buttons send the lot across at once, which is the quick
+ * way on a phone and the only way with a keyboard. Dragging is the obvious
+ * way with a mouse, and carries the whole selection when the player picked up
+ * is part of it.
  */
 export default function ManualPicker({
   players,
@@ -30,30 +61,89 @@ export default function ManualPicker({
   onComplete: (teamA: Player[], teamB: Player[]) => void;
   onCancel: () => void;
 }) {
-  const [sides, setSides] = useState<Record<string, Side>>(() => {
-    const map: Record<string, Side> = {};
-    for (const player of start.teamA) map[player.id] = "A";
-    for (const player of start.teamB) map[player.id] = "B";
-    return map;
-  });
+  const sides = useSideNames();
+  const { ratingFor } = usePlayerRatings();
+  const reduced = useReducedMotion();
 
-  // Anyone the starting split didn't cover lands on the first side rather
-  // than vanishing.
-  const sideOf = (player: Player): Side => sides[player.id] ?? "A";
+  const [board, setBoard] = useState<Board>(() => boardFrom(start, players));
+  const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
+  const [carrying, setCarrying] = useState<string | null>(null);
 
-  const teamA = players.filter((p) => sideOf(p) === "A");
-  const teamB = players.filter((p) => sideOf(p) === "B");
-  const usable = teamA.length > 0 && teamB.length > 0;
+  const sensors = useSensors(
+    // A little travel before a drag starts, so a tap stays a tap.
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    // On a touch screen the same movement is a scroll, so a drag has to be
+    // asked for by holding still first.
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 8 },
+    }),
+    useSensor(KeyboardSensor)
+  );
 
-  const put = (playerId: string, side: Side) =>
-    setSides((prev) => ({ ...prev, [playerId]: side }));
+  const inSlot = (slot: Slot) => occupants(board, slot, players);
+  const teamA = inSlot("A");
+  const teamB = inSlot("B");
+  const bench = inSlot("bench");
 
-  const swapSides = () =>
-    setSides(
-      Object.fromEntries(
-        players.map((p) => [p.id, sideOf(p) === "A" ? "B" : "A"] as const)
-      )
+  const averageOf = (side: Player[]) =>
+    mean(
+      side.flatMap((p) => {
+        const rating = ratingFor(p.id)?.rating;
+        return rating === undefined ? [] : [rating];
+      })
     );
+
+  const move = (ids: Iterable<string>, slot: Slot) => {
+    setBoard((prev) => assign(prev, ids, slot));
+    setPicked(new Set());
+  };
+
+  const toggle = (id: string) =>
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const onDragStart = (event: DragStartEvent) =>
+    setCarrying(String(event.active.id));
+
+  const onDragEnd = (event: DragEndEvent) => {
+    setCarrying(null);
+    const slot = event.over?.id;
+    if (!slot) return;
+    move(dragged(String(event.active.id), picked), slot as Slot);
+  };
+
+  const carried = useMemo(
+    () => (carrying ? dragged(carrying, picked) : new Set<string>()),
+    [carrying, picked]
+  );
+  const carriedPlayer = players.find((p) => p.id === carrying);
+
+  const zone = (slot: Slot, title: string, side: Player[]) => (
+    <DropZone
+      slot={slot}
+      title={title}
+      count={side.length}
+      meanRating={averageOf(side)}
+    >
+      {side.map((player) => (
+        <PlayerChip
+          key={player.id}
+          player={player}
+          rating={ratingFor(player.id)?.rating}
+          selected={picked.has(player.id)}
+          onToggle={() => toggle(player.id)}
+          dimmed={carrying !== null && carried.has(player.id)}
+        />
+      ))}
+      {side.length === 0 && (
+        <p className="m-auto text-xs text-muted-foreground">Drop players here</p>
+      )}
+    </DropZone>
+  );
 
   return (
     <div>
@@ -61,62 +151,85 @@ export default function ManualPicker({
         Pick the teams
       </DialogTitle>
       <DialogDescription className="mt-1 text-center text-sm text-muted-foreground">
-        {teamA.length} against {teamB.length}
+        Tap to pick players out, then send them across — or drag them over.
       </DialogDescription>
 
       <div className="mt-4 flex justify-center">
-        <Button variant="outline" size="sm" onClick={swapSides} className="gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setBoard(swapSides)}
+          className="gap-2"
+        >
           <ArrowLeftRight className="h-4 w-4" />
           Swap the sides over
         </Button>
       </div>
 
-      <ul className="mt-4 space-y-1">
-        {players.map((player) => {
-          const side = sideOf(player);
-          return (
-            <li
-              key={player.id}
-              className="flex items-center gap-3 rounded-lg border border-border bg-surface-2/50 p-2"
-            >
-              <PlayerAvatar name={player.name} image={player.image} size="xs" />
-              <span className="min-w-0 flex-1 truncate text-sm">{player.name}</span>
+      <DndContext
+        sensors={sensors}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onDragCancel={() => setCarrying(null)}
+      >
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {zone("A", sides.A, teamA)}
+          {zone("B", sides.B, teamB)}
+        </div>
 
-              <fieldset className="flex shrink-0 items-center gap-0.5 rounded-full border border-border bg-surface p-0.5">
-                <legend className="sr-only">Side for {player.name}</legend>
-                {(["A", "B"] as const).map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => put(player.id, option)}
-                    aria-pressed={side === option}
-                    className={`focus-ring rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                      side === option
-                        ? option === "A"
-                          ? "bg-info/20 text-info"
-                          : "bg-accent/20 text-accent"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {SIDE_NAMES[option]}
-                  </button>
-                ))}
-              </fieldset>
-            </li>
-          );
-        })}
-      </ul>
+        <div className="mt-3">{zone("bench", "Not playing", bench)}</div>
+
+        <DragOverlay dropAnimation={reduced ? null : undefined}>
+          {carriedPlayer && (
+            <div className="rounded-lg border border-accent bg-surface p-2 text-sm shadow-lg">
+              {carried.size > 1
+                ? `${carried.size} players`
+                : carriedPlayer.name}
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
+
+      {picked.size > 0 && (
+        <div className="sticky bottom-0 mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface/95 p-3 backdrop-blur">
+          <span className="text-sm font-medium">
+            {picked.size} picked out
+          </span>
+          <div className="ml-auto flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => move(picked, "A")}>
+              Send to {sides.A}
+            </Button>
+            <Button size="sm" onClick={() => move(picked, "B")}>
+              Send to {sides.B}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => move(picked, "bench")}
+            >
+              Bench
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setPicked(new Set())}
+            >
+              Clear
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="mt-6 flex flex-col items-center gap-3">
         <Button
           onClick={() => onComplete(teamA, teamB)}
-          disabled={!usable}
+          disabled={!usable(board)}
           className="gap-2"
         >
           <Check className="h-4 w-4" />
           Use these teams
         </Button>
-        {!usable && (
+        {!usable(board) && (
           <p className="text-xs text-muted-foreground">
             Both sides need at least one player.
           </p>
