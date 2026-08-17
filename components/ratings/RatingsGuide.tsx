@@ -12,14 +12,7 @@ import { workedExample, driftCurve } from "@/lib/ratings-guide";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import SidePanel from "@/components/ui/side-panel";
 import type { Player } from "@/types";
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
@@ -92,180 +85,176 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
   const afterAWhile = drift.at(-1)!;
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
+    <SidePanel
+      open={open}
+      onOpenChange={setOpen}
+      title="How the table is worked out"
+      description={
+        <>
+          Everyone starts on {ELO.start}. Beat a side rated above you and you
+          take more than you would for beating one below. A win is a win — a
+          thrashing counts the same as a scrape.
+        </>
+      }
+      trigger={
         <Button variant="outline" size="sm">
           <HelpCircle className="mr-2 h-4 w-4" />
           How it works
         </Button>
-      </SheetTrigger>
+      }
+    >
+      <div className="space-y-6">
+        <Section title="A night, in three steps">
+          <div className="space-y-4">
+            <Step n={1} title="Each side is averaged">
+              A team is worth the average of the players in it. Nothing else
+              goes in — not the score, not who is in goal.
+            </Step>
+            <Step n={2} title="The result sets a pot">
+              The further apart the two averages, the more an upset is worth
+              and the less a win anybody saw coming. The pot is what the
+              winning side gains and exactly what the losing side drops —
+              nobody is created or destroyed by playing a game.
+            </Step>
+            <Step n={3} title="Form decides the shares">
+              The pot is split across the side by how everyone has been going
+              lately, over their last {FORM_LENGTH} games. Whoever is
+              flying takes more of a win — and more of a defeat.
+            </Step>
+          </div>
+        </Section>
 
-      <SheetContent
-        side="right"
-        className="w-full overflow-y-auto sm:max-w-lg"
-      >
-        <SheetHeader>
-          <SheetTitle>How the table is worked out</SheetTitle>
-          <SheetDescription>
-            Everyone starts on {ELO.start}. Beat a side rated above you and you
-            take more than you would for beating one below. A win is a win — a
-            thrashing counts the same as a scrape.
-          </SheetDescription>
-        </SheetHeader>
-
-        <div className="mt-6 space-y-6 pb-10">
-          <Section title="A night, in three steps">
-            <div className="space-y-4">
-              <Step n={1} title="Each side is averaged">
-                A team is worth the average of the players in it. Nothing else
-                goes in — not the score, not who is in goal.
-              </Step>
-              <Step n={2} title="The result sets a pot">
-                The further apart the two averages, the more an upset is worth
-                and the less a win anybody saw coming. The pot is what the
-                winning side gains and exactly what the losing side drops —
-                nobody is created or destroyed by playing a game.
-              </Step>
-              <Step n={3} title="Form decides the shares">
-                The pot is split across the side by how everyone has been going
-                lately, over their last {FORM_LENGTH} games. Whoever is
-                flying takes more of a win — and more of a defeat.
-              </Step>
-            </div>
-          </Section>
-
-          {example && (
-            <Section title="Your last game, worked through">
-              <div className="rounded-xl border border-border bg-surface-2/40 p-4 text-sm">
-                <p className="text-muted-foreground">
-                  <span className="font-medium text-foreground">
-                    {example.winner.name}
-                  </span>{" "}
-                  averaged{" "}
-                  <span className="tabular">
-                    {displayRating(example.winner.ratingBefore)}
-                  </span>
-                  ,{" "}
-                  <span className="font-medium text-foreground">
-                    {example.loser.name}
-                  </span>{" "}
-                  <span className="tabular">
-                    {displayRating(example.loser.ratingBefore)}
-                  </span>
-                  . That made {example.winner.name} about{" "}
-                  <span className="tabular">{pct(example.expected)}</span> to win.
-                </p>
-                <p className="mt-2 text-muted-foreground">
-                  {example.drawn ? "They drew" : "They won"}, so{" "}
-                  <span className="tabular font-medium text-foreground">
-                    {Math.abs(Math.round(example.pot))}
-                  </span>{" "}
-                  points moved from one side to the other. Split by form:
-                </p>
-
-                <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
-                  {example.winner.players
-                    .slice()
-                    .sort((a, b) => b.change - a.change)
-                    .map((p) => (
-                      <li key={p.playerId} className="flex items-center gap-2">
-                        <PlayerAvatar
-                          name={byId.get(p.playerId)?.name ?? "Unknown"}
-                          image={byId.get(p.playerId)?.image}
-                          size="xs"
-                        />
-                        <span className="min-w-0 flex-1 truncate">
-                          {byId.get(p.playerId)?.name ?? "Unknown"}
-                        </span>
-                        <PlayerFormDisplay results={p.form} size="xs" />
-                        <span
-                          className={`w-10 text-right tabular ${
-                            p.change >= 0 ? "text-win" : "text-loss"
-                          }`}
-                        >
-                          {signed(p.change)}
-                        </span>
-                      </li>
-                    ))}
-                </ul>
-                <p className="mt-3 text-xs text-muted-foreground">
-                  Same result, same side, different numbers — that is the form
-                  strip beside each name doing the work. The six of them still
-                  add up to the pot.
-                </p>
-              </div>
-            </Section>
-          )}
-
-          <Section title="Weeks off">
-            <p className="text-sm text-muted-foreground">
-              Miss more than {ELO.decay.graceMatches} matches the rest of the
-              squad played and a rating starts drifting back towards{" "}
-              {ELO.start}. A holiday costs nothing. A long absence takes the
-              edge off: someone on{" "}
-              <span className="tabular">{strong}</span> who sat out{" "}
-              {afterAWhile.missed} would come back on{" "}
-              <span className="tabular">{Math.round(afterAWhile.rating)}</span>.
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              It is counted in games the squad played without you, not weeks on
-              the calendar — a winter where nobody plays costs nobody anything.
-              It never carries you past {ELO.start}, so time off can make a
-              strong player ordinary but never bad.
-            </p>
-          </Section>
-
-          <Section title="Straight answers">
-            <dl className="space-y-3 text-sm">
-              <div>
-                <dt className="font-medium">
-                  Does a higher rating mean I will win?
-                </dt>
-                <dd className="mt-0.5 text-muted-foreground">
-                  Not really. Sides get picked to be even, so most Mondays are
-                  close to a coin toss whatever the table says. The rating is
-                  for picking fair teams, not for predicting the result.
-                </dd>
-              </div>
-              <div>
-                <dt className="font-medium">Why did everyone&apos;s number change?</dt>
-                <dd className="mt-0.5 text-muted-foreground">
-                  Nothing is stored. The whole table is worked out from every
-                  match, every time it is opened, so correcting a scoreline from
-                  March re-rates everything after it — which is what should
-                  happen.
-                </dd>
-              </div>
-              <div>
-                <dt className="font-medium">I am new. Am I treated differently?</dt>
-                <dd className="mt-0.5 text-muted-foreground">
-                  No. Your rating moves exactly as far as anyone else&apos;s from
-                  your first game. It is only marked as a rough guess until{" "}
-                  {ELO.settledAfter} games are behind it, because a number
-                  resting on three results is a shakier guess than one resting
-                  on forty.
-                </dd>
-              </div>
-            </dl>
-          </Section>
-
-          <Section title="The actual sums">
-            <div className="space-y-2 rounded-lg border border-border bg-surface-2/40 p-3 font-mono text-xs text-muted-foreground">
-              <p>expected = 1 / (1 + 10^((them − us) / 400))</p>
-              <p>
-                pot = {example?.headcount ?? 5} × {ELO.k} × (result − expected)
+        {example && (
+          <Section title="Your last game, worked through">
+            <div className="rounded-xl border border-border bg-surface-2/40 p-4 text-sm">
+              <p className="text-muted-foreground">
+                <span className="font-medium text-foreground">
+                  {example.winner.name}
+                </span>{" "}
+                averaged{" "}
+                <span className="tabular">
+                  {displayRating(example.winner.ratingBefore)}
+                </span>
+                ,{" "}
+                <span className="font-medium text-foreground">
+                  {example.loser.name}
+                </span>{" "}
+                <span className="tabular">
+                  {displayRating(example.loser.ratingBefore)}
+                </span>
+                . That made {example.winner.name} about{" "}
+                <span className="tabular">{pct(example.expected)}</span> to win.
               </p>
-              <p>your share = pot × (your weight / the side&apos;s weights)</p>
-              <p>weight = 1 + {ELO.formShare} × (form − par)</p>
+              <p className="mt-2 text-muted-foreground">
+                {example.drawn ? "They drew" : "They won"}, so{" "}
+                <span className="tabular font-medium text-foreground">
+                  {Math.abs(Math.round(example.pot))}
+                </span>{" "}
+                points moved from one side to the other. Split by form:
+              </p>
+
+              <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
+                {example.winner.players
+                  .slice()
+                  .sort((a, b) => b.change - a.change)
+                  .map((p) => (
+                    <li key={p.playerId} className="flex items-center gap-2">
+                      <PlayerAvatar
+                        name={byId.get(p.playerId)?.name ?? "Unknown"}
+                        image={byId.get(p.playerId)?.image}
+                        size="xs"
+                      />
+                      <span className="min-w-0 flex-1 truncate">
+                        {byId.get(p.playerId)?.name ?? "Unknown"}
+                      </span>
+                      <PlayerFormDisplay results={p.form} size="xs" />
+                      <span
+                        className={`w-10 text-right tabular ${
+                          p.change >= 0 ? "text-win" : "text-loss"
+                        }`}
+                      >
+                        {signed(p.change)}
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Same result, same side, different numbers — that is the form
+                strip beside each name doing the work. The six of them still
+                add up to the pot.
+              </p>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Result is 1 for a win, ½ for a draw, 0 for a defeat. Form is read
-              before kick-off, never from the result — a share that knew how the
-              night went would quietly drag everyone towards the middle.
-            </p>
           </Section>
-        </div>
-      </SheetContent>
-    </Sheet>
+        )}
+
+        <Section title="Weeks off">
+          <p className="text-sm text-muted-foreground">
+            Miss more than {ELO.decay.graceMatches} matches the rest of the
+            squad played and a rating starts drifting back towards{" "}
+            {ELO.start}. A holiday costs nothing. A long absence takes the
+            edge off: someone on{" "}
+            <span className="tabular">{strong}</span> who sat out{" "}
+            {afterAWhile.missed} would come back on{" "}
+            <span className="tabular">{Math.round(afterAWhile.rating)}</span>.
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            It is counted in games the squad played without you, not weeks on
+            the calendar — a winter where nobody plays costs nobody anything.
+            It never carries you past {ELO.start}, so time off can make a
+            strong player ordinary but never bad.
+          </p>
+        </Section>
+
+        <Section title="Straight answers">
+          <dl className="space-y-3 text-sm">
+            <div>
+              <dt className="font-medium">
+                Does a higher rating mean I will win?
+              </dt>
+              <dd className="mt-0.5 text-muted-foreground">
+                Not really. Sides get picked to be even, so most Mondays are
+                close to a coin toss whatever the table says. The rating is
+                for picking fair teams, not for predicting the result.
+              </dd>
+            </div>
+            <div>
+              <dt className="font-medium">Why did everyone&apos;s number change?</dt>
+              <dd className="mt-0.5 text-muted-foreground">
+                Nothing is stored. The whole table is worked out from every
+                match, every time it is opened, so correcting a scoreline from
+                March re-rates everything after it — which is what should
+                happen.
+              </dd>
+            </div>
+            <div>
+              <dt className="font-medium">I am new. Am I treated differently?</dt>
+              <dd className="mt-0.5 text-muted-foreground">
+                No. Your rating moves exactly as far as anyone else&apos;s from
+                your first game. It is only marked as a rough guess until{" "}
+                {ELO.settledAfter} games are behind it, because a number
+                resting on three results is a shakier guess than one resting
+                on forty.
+              </dd>
+            </div>
+          </dl>
+        </Section>
+
+        <Section title="The actual sums">
+          <div className="space-y-2 rounded-lg border border-border bg-surface-2/40 p-3 font-mono text-xs text-muted-foreground">
+            <p>expected = 1 / (1 + 10^((them − us) / 400))</p>
+            <p>
+              pot = {example?.headcount ?? 5} × {ELO.k} × (result − expected)
+            </p>
+            <p>your share = pot × (your weight / the side&apos;s weights)</p>
+            <p>weight = 1 + {ELO.formShare} × (form − par)</p>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Result is 1 for a win, ½ for a draw, 0 for a defeat. Form is read
+            before kick-off, never from the result — a share that knew how the
+            night went would quietly drag everyone towards the middle.
+          </p>
+        </Section>
+      </div>
+    </SidePanel>
   );
 }
