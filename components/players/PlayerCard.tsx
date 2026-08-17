@@ -10,6 +10,7 @@ import { usePlayerRank } from "@/hooks/usePlayerRank";
 import { usePermission } from "@/lib/permission-utils";
 import { winRate } from "@/lib/player-stats";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
+import TransitionLink from "@/components/TransitionLink";
 import { isActivePlayer } from "@/components/players/ActiveFilter";
 import { displayRating, type PlayerRating } from "@/lib/elo";
 import { SKILL } from "@/lib/config";
@@ -120,7 +121,11 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
         </button>
       </div>
 
-      <Link href={`/players/${player.id}`} className="block focus:outline-none">
+      <TransitionLink
+        href={`/players/${player.id}`}
+        className="block focus:outline-none"
+        shareAvatar
+      >
         <CardContent className="flex h-full flex-col p-0">
           <div className="flex items-center gap-4 p-5 pr-20">
             <PlayerAvatar name={player.name} image={player.image} size="lg" />
@@ -202,7 +207,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
             </div>
           </div>
         </CardContent>
-      </Link>
+      </TransitionLink>
     </Card>
   );
 };

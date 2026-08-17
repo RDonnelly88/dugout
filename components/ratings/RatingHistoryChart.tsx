@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import {
+  Area,
   CartesianGrid,
+  ComposedChart,
   Line,
-  LineChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -50,6 +51,12 @@ export default function RatingHistoryChart({
   height?: number;
 }) {
   const theme = useChartTheme();
+  const alone = players.length === 1;
+  // Two of these can share a page — a player's own card and the table's chart
+  // — and a gradient is addressed by id, so they cannot share one. Stripped of
+  // anything that is not a name, since `url(#…)` is a CSS reference and a
+  // generated id is only promised to be unique.
+  const fillId = `rating-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
   // Recharts wants one row per x value with a key per series, so the per-player
   // histories are pivoted onto a shared date axis. A player who missed a week
@@ -96,7 +103,19 @@ export default function RatingHistoryChart({
   return (
     <div style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
+        <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
+          {/* One line gets the ground beneath it filled, which reads as a
+              shape rather than a squiggle. Five lines do not: five washes
+              over one another and the only thing anybody can see is the
+              overlap. */}
+          {alone && (
+            <defs>
+              <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={theme.accent} stopOpacity={0.28} />
+                <stop offset="100%" stopColor={theme.accent} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+          )}
           <CartesianGrid stroke={theme.grid} strokeDasharray="3 3" vertical={false} />
           <XAxis
             dataKey="date"
@@ -168,6 +187,21 @@ export default function RatingHistoryChart({
               );
             }}
           />
+          {alone && (
+            <Area
+              type="monotone"
+              dataKey={players[0].playerId}
+              // The line on top of it draws the stroke; this is the ground.
+              stroke="none"
+              fill={`url(#${fillId})`}
+              connectNulls
+              isAnimationActive={false}
+              // Recharts would otherwise put this in the legend and the
+              // tooltip as a second reading of the same rating.
+              legendType="none"
+              tooltipType="none"
+            />
+          )}
           {players.map(({ playerId, name }, i) => (
             <Line
               key={playerId}
@@ -182,7 +216,7 @@ export default function RatingHistoryChart({
               isAnimationActive={false}
             />
           ))}
-        </LineChart>
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );

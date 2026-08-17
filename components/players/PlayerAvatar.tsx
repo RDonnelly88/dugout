@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { readAvatar } from "@/lib/avatars";
 import { cn } from "@/lib/utils";
 
@@ -28,17 +29,24 @@ export default function PlayerAvatar({
   image,
   size = "md",
   className,
+  style,
 }: {
   name: string;
   image: string | null | undefined;
   size?: AvatarSize;
   className?: string;
+  /** For the one thing a class cannot carry: a view transition name. */
+  style?: CSSProperties;
 }) {
   const avatar = readAvatar(image);
   const s = SIZES[size];
 
   return (
     <span
+      // Marks the face a link may hand to the page it navigates to. Every
+      // avatar carries it; the link picks the one inside itself.
+      data-avatar
+      style={style}
       className={cn(
         "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-2 text-muted-foreground",
         s.box,

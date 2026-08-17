@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
+import TransitionLink from "@/components/TransitionLink";
 import { motion, useReducedMotion } from "motion/react";
 import { ChevronDown, ChevronUp, Hourglass, Minus } from "lucide-react";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
+import Counter from "@/components/Counter";
 import { displayRating, type PlayerRating } from "@/lib/elo";
 import { ELO } from "@/lib/config";
 import type { Player } from "@/types";
@@ -74,9 +75,10 @@ export default function RatingLeaderboard({
 
         return (
           <li key={rating.playerId}>
-            <Link
+            <TransitionLink
               href={`/players/${rating.playerId}`}
               className="focus-ring relative flex items-center gap-3 overflow-hidden rounded-lg border border-border bg-surface px-3 py-2.5 transition-colors hover:border-border-strong"
+              shareAvatar
             >
               {/* Behind the content, so the row stays readable at any width. */}
               <motion.span
@@ -142,9 +144,12 @@ export default function RatingLeaderboard({
                 <Delta change={rating.lastChange} />
               </span>
               <span className="relative w-14 text-right text-base font-bold tabular">
-                {displayRating(rating.rating)}
+                {/* Counted from the mark everybody starts on, so the number
+                    travels the distance this player has actually covered
+                    rather than up from nought. */}
+                <Counter value={displayRating(rating.rating)} from={ELO.start} />
               </span>
-            </Link>
+            </TransitionLink>
           </li>
         );
       })}

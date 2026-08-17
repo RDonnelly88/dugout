@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ChevronDown, ChevronUp, Minus, TrendingUp } from "lucide-react";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
 import RatingHistoryChart from "@/components/ratings/RatingHistoryChart";
+import Counter from "@/components/Counter";
 import { displayRating } from "@/lib/elo";
 import { ELO } from "@/lib/config";
 import {
@@ -73,7 +74,7 @@ export default function PlayerRatingCard({
       <CardContent>
         <div className="flex items-end justify-between gap-4">
           <p className="text-4xl font-bold tabular">
-            {displayRating(rating.rating)}
+            <Counter value={displayRating(rating.rating)} from={ELO.start} />
           </p>
           <p
             className={`flex items-center gap-0.5 text-sm tabular ${
