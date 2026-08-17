@@ -53,8 +53,13 @@ export interface PlayerRating {
   lastChange: number;
   history: RatingPoint[];
   /**
-   * Where the rating went after their last game — one point per match the
-   * squad played without them, carrying the date of each.
+   * Every match the squad played without them, carrying the date of each and
+   * where the rating stood once that night had been counted.
+   *
+   * Both the weeks off in the middle of a career and the ones since they last
+   * turned out. The middle ones used to be folded silently into whatever they
+   * walked in on for their next game, so a chart drew a straight line across
+   * two months away and nothing said what the two months had cost.
    *
    * `history` only holds matches they were in, so a chart drawn from it alone
    * stops dead at whenever they last turned out and shows a rating that has
@@ -164,11 +169,21 @@ export function computeRatings(matches: Match[]): Map<string, PlayerRating> {
     const sideB = match.teamB.players.map(ensure);
 
     // Drift is settled before the match is rated, so somebody back after a
-    // dozen missed games is rated on what they walk in with.
+    // dozen missed games is rated on what they walk in with — and each of
+    // those weeks is written down on the way past rather than folded into
+    // the rating they turn up with, which left a chart nothing to draw and
+    // nothing to say about a month away.
     for (const player of [...sideA, ...sideB]) {
       const previous = lastPlayedIndex.get(player.playerId);
       if (previous !== undefined) {
-        player.rating = decayed(player.rating, index - previous - 1);
+        const missed = index - previous - 1;
+        for (let i = 0; i < missed; i++) {
+          player.drifted.push({
+            date: played[previous + i + 1].date,
+            rating: decayed(player.rating, i + 1),
+          });
+        }
+        player.rating = decayed(player.rating, missed);
       }
       lastPlayedIndex.set(player.playerId, index);
     }
@@ -265,12 +280,15 @@ export function computeRatings(matches: Match[]): Map<string, PlayerRating> {
         ? player.rating - (player.history.at(-1)?.change ?? 0)
         : decayed(player.rating, missed - 1);
 
-    // One point per match they were not in, so a chart carries on to the
-    // present rather than stopping at whenever they last played.
-    player.drifted = Array.from({ length: missed }, (_, i) => ({
-      date: played[previous + i + 1].date,
-      rating: decayed(player.rating, i + 1),
-    }));
+    // The weeks since their last game, added to the ones already noted along
+    // the way, so a chart carries on to the present rather than stopping at
+    // whenever they last played.
+    player.drifted.push(
+      ...Array.from({ length: missed }, (_, i) => ({
+        date: played[previous + i + 1].date,
+        rating: decayed(player.rating, i + 1),
+      }))
+    );
 
     player.missed = missed;
     player.drift = player.rating - current;

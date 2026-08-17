@@ -171,7 +171,7 @@ const PlayerDetail = () => {
       </PageHeader>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <PlayerRatingCard playerId={player.id} />
+        <PlayerRatingCard playerId={player.id} playerName={player.name} />
         {/* Current Season Stats */}
         {currentSeasonStats && currentSeason && (
           <Card>

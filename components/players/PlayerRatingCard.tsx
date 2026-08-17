@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useReducedMotion } from "motion/react";
 import { ChevronDown, ChevronUp, Minus, TrendingUp } from "lucide-react";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
+import RatingHistoryChart from "@/components/ratings/RatingHistoryChart";
 import { displayRating } from "@/lib/elo";
 import { ELO } from "@/lib/config";
-import { useChartTheme } from "@/lib/useChartTheme";
 import {
   Card,
   CardContent,
@@ -18,56 +17,21 @@ import {
 /**
  * A player's rating, with the shape of how it got there.
  *
- * The sparkline is drawn by hand rather than with Recharts: it is forty points
- * with no axes, labels or interaction, and a chart library for that is several
- * hundred kilobytes to draw a squiggle.
+ * The line is the same one the ratings page draws. It was a hand-rolled
+ * sparkline, on the reasoning that forty points with no axes, labels or
+ * interaction did not warrant a chart library — sound until the interaction
+ * was the point. A player looking at their own rating is exactly who wants
+ * to ask what a given night was, and the two of them drawing the same
+ * history differently meant fixing one fixed nothing on the other.
  */
-function Sparkline({ values, colour }: { values: number[]; colour: string }) {
-  const reduced = useReducedMotion();
-  if (values.length < 2) return null;
-
-  const low = Math.min(...values);
-  const high = Math.max(...values);
-  const span = Math.max(1, high - low);
-
-  const points = values
-    .map((v, i) => {
-      const x = (i / (values.length - 1)) * 100;
-      const y = 30 - ((v - low) / span) * 28 - 1;
-      return `${x.toFixed(2)},${y.toFixed(2)}`;
-    })
-    .join(" ");
-
-  return (
-    <svg
-      viewBox="0 0 100 30"
-      preserveAspectRatio="none"
-      className="h-12 w-full"
-      aria-hidden
-    >
-      {/* Fades in rather than drawing itself. A pathLength animation works by
-          setting a dash array, and the axes here are scaled unevenly by
-          preserveAspectRatio="none" — which stretches the dashes too and
-          leaves the line in pieces. */}
-      <motion.polyline
-        points={points}
-        fill="none"
-        stroke={colour}
-        strokeWidth={1.5}
-        vectorEffect="non-scaling-stroke"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        initial={reduced ? false : { opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-      />
-    </svg>
-  );
-}
-
-export default function PlayerRatingCard({ playerId }: { playerId: string }) {
+export default function PlayerRatingCard({
+  playerId,
+  playerName,
+}: {
+  playerId: string;
+  playerName: string;
+}) {
   const { ratingFor } = usePlayerRatings();
-  const theme = useChartTheme();
   const rating = ratingFor(playerId);
 
   if (!rating || rating.games === 0) {
@@ -93,15 +57,6 @@ export default function PlayerRatingCard({ playerId }: { playerId: string }) {
   // question, and answering that one here made a rating look freshly earned
   // months after it was.
   const change = Math.round(rating.lastChange);
-  // Carries on past their last game for every match the squad played without
-  // them, so the line finishes where the rating actually is. Without the tail
-  // it stopped at whenever they last turned out, showing a figure that had
-  // since drifted as though it were still standing.
-  const values = [
-    ...rating.history.map((h) => h.rating),
-    ...rating.drifted.map((d) => d.rating),
-  ];
-
   return (
     <Card>
       <CardHeader>
@@ -141,7 +96,12 @@ export default function PlayerRatingCard({ playerId }: { playerId: string }) {
           </p>
         </div>
 
-        <Sparkline values={values} colour={theme.accent} />
+        <div className="mt-2">
+          <RatingHistoryChart
+            players={[{ playerId, name: playerName, rating }]}
+            height={200}
+          />
+        </div>
 
         <Link
           href="/ratings"

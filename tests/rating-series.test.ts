@@ -101,6 +101,41 @@ describe("ratingSeries", () => {
     expect([...dates].sort((x, y) => x.localeCompare(y))).toEqual(dates);
   });
 
+  /**
+   * The weeks off in the middle of a career used to be folded into whatever
+   * a player walked in on for their next game, so a chart drew a straight
+   * line across two months away and nothing said what the two months cost.
+   */
+  it("shows the weeks missed in the middle, not only the ones since", () => {
+    const ratings = computeRatings([
+      match(["a"], ["b"], 5, 0, "2026-01-01"),
+      ...withoutThem(ELO.decay.graceMatches + 4, 2),
+      match(["a"], ["b"], 1, 0, "2026-03-01"),
+    ]);
+    const series = ratingSeries(ratings.get("a")!);
+
+    const away = series.filter((p) => !p.played);
+    expect(away).toHaveLength(ELO.decay.graceMatches + 4);
+    // Every one of them sits between the two games, not after the last.
+    for (const point of away) {
+      expect(point.date > "2026-01-01" && point.date < "2026-03-01").toBe(true);
+    }
+    // And the last of them cost something, the grace being long gone.
+    expect(away.at(-1)!.change).toBeLessThan(0);
+  });
+
+  it("keeps the middle weeks and the trailing ones both", () => {
+    const ratings = computeRatings([
+      match(["a"], ["b"], 5, 0, "2026-01-01"),
+      ...withoutThem(4, 2),
+      match(["a"], ["b"], 1, 0, "2026-03-01"),
+      ...withoutThem(3, 4),
+    ]);
+    const away = ratingSeries(ratings.get("a")!).filter((p) => !p.played);
+
+    expect(away).toHaveLength(7);
+  });
+
   it("has nothing to draw for somebody who has never played", () => {
     const ratings = computeRatings([match(["a"], ["b"], 1, 0, "2026-01-01")]);
     expect(ratings.get("nobody")).toBeUndefined();
