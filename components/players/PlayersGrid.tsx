@@ -10,6 +10,7 @@ import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
 import { usePermission } from "@/lib/permission-utils";
 import { scopeTo, type ActiveScope } from "./ActiveFilter";
+import { orderPlayers, type PlayerSort } from "@/lib/player-order";
 
 interface PlayersGridProps {
   players: Player[];
@@ -20,6 +21,7 @@ interface PlayersGridProps {
   onDeleteClick: (player: Player) => void;
   searchTerm: string;
   scope: ActiveScope;
+  sort: PlayerSort;
 }
 
 const PlayersGrid: React.FC<PlayersGridProps> = ({
@@ -31,6 +33,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
   onDeleteClick,
   searchTerm,
   scope,
+  sort,
 }) => {
   // One query for the whole grid. Asking per card would open a dozen requests
   // for the same answer and let them arrive at different moments.
@@ -56,20 +59,24 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
     };
   }, [all]);
 
-  const filteredPlayers = scopeTo(players, scope).filter(player =>
-    player.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Show loading skeleton
-  if (players.length > 0 && filteredPlayers.length === 0 && searchTerm === "") {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="shimmer h-[200px] bg-surface border-border rounded-lg" />
-        ))}
-      </div>
+  const filteredPlayers = React.useMemo(() => {
+    const matching = scopeTo(players, scope).filter((player) =>
+      player.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }
+    return orderPlayers(
+      matching.map((player) => {
+        const record = recordFor(player.id, player.name);
+        return {
+          ...player,
+          rating: ratingFor(player.id),
+          form: batchFormData[player.id] ?? [],
+          played: record.played,
+          wins: record.wins,
+        };
+      }),
+      sort
+    );
+  }, [players, scope, searchTerm, sort, batchFormData, recordFor, ratingFor]);
 
   // No players found
   if (filteredPlayers.length === 0) {
