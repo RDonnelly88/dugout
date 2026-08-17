@@ -120,8 +120,8 @@ const TeamRandomizer = ({
 
   const startDealing = () => {
     if (!canRandomize) return;
-    // Manual opens on a shuffle, so there is something to adjust rather than an
-    // empty board.
+    // Still dealt for the balance methods; the manual picker opens empty and
+    // ignores it.
     setDealt(
       isBalanceMethod(method)
         ? splitTeams(availablePlayers, method, weightFor[method])
@@ -185,7 +185,6 @@ const TeamRandomizer = ({
               (method === "manual" ? (
                 <ManualPicker
                   players={availablePlayers}
-                  start={dealt}
                   onComplete={finish}
                   onCancel={() => setDealing(false)}
                 />

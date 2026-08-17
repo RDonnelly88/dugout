@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   assign,
-  boardFrom,
   dragged,
+  emptyBoard,
   occupants,
   swapSides,
   usable,
@@ -22,32 +22,40 @@ const player = (id: string): Player => ({
 const squad = ["a", "b", "c", "d", "e"].map(player);
 const names = (players: Player[]) => players.map((p) => p.id);
 
-describe("boardFrom", () => {
-  it("puts the split's two sides where the split said", () => {
-    const board = boardFrom(
-      { teamA: [player("a"), player("b")], teamB: [player("c")] },
-      squad
-    );
+describe("emptyBoard", () => {
+  /**
+   * Opening on a shuffle meant a side had to be un-picked before it could be
+   * picked, and a board that already looks answered invites nudging rather
+   * than choosing.
+   */
+  it("starts with everybody waiting and nobody placed", () => {
+    const board = emptyBoard(squad);
 
-    expect(names(occupants(board, "A", squad))).toEqual(["a", "b"]);
-    expect(names(occupants(board, "B", squad))).toEqual(["c"]);
+    expect(names(occupants(board, "bench", squad))).toEqual([
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+    ]);
+    expect(occupants(board, "A", squad)).toEqual([]);
+    expect(occupants(board, "B", squad)).toEqual([]);
   });
 
-  /**
-   * Anybody the split did not mention used to land on the first side, which
-   * quietly added a player nobody had picked.
-   */
-  it("benches anyone the split did not cover", () => {
-    const board = boardFrom({ teamA: [player("a")], teamB: [player("b")] }, squad);
+  it("has nothing usable in it until both sides have somebody", () => {
+    const board = emptyBoard(squad);
 
-    expect(names(occupants(board, "bench", squad))).toEqual(["c", "d", "e"]);
+    expect(usable(board)).toBe(false);
+    expect(usable(assign(board, ["a"], "A"))).toBe(false);
+    expect(usable(assign(assign(board, ["a"], "A"), ["b"], "B"))).toBe(true);
   });
 });
 
 describe("assign", () => {
-  const board = boardFrom(
-    { teamA: [player("a"), player("b")], teamB: [player("c"), player("d")] },
-    squad
+  const board = assign(
+    assign(emptyBoard(squad), ["a", "b"], "A"),
+    ["c", "d"],
+    "B"
   );
 
   it("moves a whole group in one go", () => {
@@ -74,10 +82,7 @@ describe("assign", () => {
 
 describe("swapSides", () => {
   it("turns the two sides around", () => {
-    const board = boardFrom(
-      { teamA: [player("a")], teamB: [player("b")] },
-      squad
-    );
+    const board = assign(assign(emptyBoard(squad), ["a"], "A"), ["b"], "B");
     const swapped = swapSides(board);
 
     expect(names(occupants(swapped, "A", squad))).toEqual(["b"]);
@@ -85,10 +90,7 @@ describe("swapSides", () => {
   });
 
   it("leaves the bench alone", () => {
-    const board = boardFrom(
-      { teamA: [player("a")], teamB: [player("b")] },
-      squad
-    );
+    const board = assign(assign(emptyBoard(squad), ["a"], "A"), ["b"], "B");
 
     expect(names(occupants(swapSides(board), "bench", squad))).toEqual([
       "c",

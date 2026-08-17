@@ -18,6 +18,15 @@ const METHODS: {
    */
   gap?: (difference: number) => string;
 }[] = [
+  // First, because picking them yourself is a decision rather than a fallback
+  // — and because it is the one people reach for when the shuffle has just
+  // produced something daft.
+  {
+    value: "manual",
+    label: "Pick them yourself",
+    blurb: "Sort everyone into sides by hand.",
+    Icon: Hand,
+  },
   {
     value: "random",
     label: "Straight shuffle",
@@ -44,12 +53,6 @@ const METHODS: {
     blurb: "Uses the level you set on each player, so a debutant still counts.",
     Icon: Star,
     gap: (d) => (d < 0.005 ? "dead even" : `${d.toFixed(2)} levels apart`),
-  },
-  {
-    value: "manual",
-    label: "Pick them yourself",
-    blurb: "Sort everyone into sides by hand.",
-    Icon: Hand,
   },
 ];
 
@@ -94,7 +97,10 @@ export default function MethodPicker({
             initial={reduced ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25, delay: reduced ? 0 : i * 0.05 }}
-            className={`focus-ring rounded-xl border p-3 text-left transition-colors disabled:opacity-50 ${
+            // `flex flex-col`: a button centres its contents, so in a grid row
+            // stretched to the tallest card the ones without a gap readout sat
+            // their heading halfway down while the others sat at the top.
+            className={`focus-ring flex flex-col items-start rounded-xl border p-3 text-left transition-colors disabled:opacity-50 ${
               selected
                 ? "border-accent bg-accent/10"
                 : "border-border bg-surface hover:border-border-strong"

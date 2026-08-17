@@ -18,17 +18,17 @@ import { Button } from "@/components/ui/button";
 import { DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useSideNames } from "@/hooks/useSideNames";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
+import { createPortal } from "react-dom";
 import {
   assign,
-  boardFrom,
   dragged,
+  emptyBoard,
   occupants,
   swapSides,
   usable,
   type Board,
   type Slot,
 } from "@/lib/team-picker";
-import type { Split } from "@/lib/team-balance";
 import type { Player } from "@/types";
 import PlayerChip from "./PlayerChip";
 import DropZone from "./DropZone";
@@ -39,9 +39,10 @@ const mean = (xs: number[]) =>
 /**
  * Sorting the players into two sides by hand.
  *
- * Opens on a shuffle rather than an empty board, because starting from two
- * roughly even sides and moving three people is far less work than placing
- * everyone one at a time.
+ * Opens with nobody placed. Starting from a shuffle meant a side had to be
+ * un-picked before it could be picked, and a board that already looks
+ * answered invites nudging rather than choosing — the shuffle is its own
+ * method for anyone who wants one.
  *
  * Two ways to move somebody, because neither suits both hands. Tapping picks
  * players out and the buttons send the lot across at once, which is the quick
@@ -51,13 +52,10 @@ const mean = (xs: number[]) =>
  */
 export default function ManualPicker({
   players,
-  start,
   onComplete,
   onCancel,
 }: {
   players: Player[];
-  /** The arrangement to open on. */
-  start: Split<Player>;
   onComplete: (teamA: Player[], teamB: Player[]) => void;
   onCancel: () => void;
 }) {
@@ -65,7 +63,7 @@ export default function ManualPicker({
   const { ratingFor } = usePlayerRatings();
   const reduced = useReducedMotion();
 
-  const [board, setBoard] = useState<Board>(() => boardFrom(start, players));
+  const [board, setBoard] = useState<Board>(() => emptyBoard(players));
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
   const [carrying, setCarrying] = useState<string | null>(null);
 
@@ -151,7 +149,8 @@ export default function ManualPicker({
         Pick the teams
       </DialogTitle>
       <DialogDescription className="mt-1 text-center text-sm text-muted-foreground">
-        Tap to pick players out, then send them across — or drag them over.
+        Nobody is on a side yet. Tap to pick players out and send them across,
+        or drag them over.
       </DialogDescription>
 
       <div className="mt-4 flex justify-center">
@@ -177,17 +176,26 @@ export default function ManualPicker({
           {zone("B", sides.B, teamB)}
         </div>
 
-        <div className="mt-3">{zone("bench", "Not playing", bench)}</div>
+        <div className="mt-3">{zone("bench", "Not on a side yet", bench)}</div>
 
-        <DragOverlay dropAnimation={reduced ? null : undefined}>
-          {carriedPlayer && (
-            <div className="rounded-lg border border-accent bg-surface p-2 text-sm shadow-lg">
-              {carried.size > 1
-                ? `${carried.size} players`
-                : carriedPlayer.name}
-            </div>
+        {/* Portalled to the body on purpose. The overlay is positioned
+            fixed, and a fixed element inside a transformed ancestor measures
+            from that ancestor rather than the viewport — the dialog is
+            translated by half its own size to centre it, so the thing being
+            dragged appeared half a dialog away from the finger holding it. */}
+        {typeof document !== "undefined" &&
+          createPortal(
+            <DragOverlay dropAnimation={reduced ? null : undefined}>
+              {carriedPlayer && (
+                <div className="rounded-lg border border-accent bg-surface p-2 text-sm shadow-lg">
+                  {carried.size > 1
+                    ? `${carried.size} players`
+                    : carriedPlayer.name}
+                </div>
+              )}
+            </DragOverlay>,
+            document.body
           )}
-        </DragOverlay>
       </DndContext>
 
       {picked.size > 0 && (
