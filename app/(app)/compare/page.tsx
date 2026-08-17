@@ -13,6 +13,7 @@ import { winRate } from "@/lib/player-stats";
 import { computeRatings, displayRating } from "@/lib/elo";
 import { emptyRecord } from "@/lib/player-stats";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
+import RatingHistoryChart from "@/components/ratings/RatingHistoryChart";
 import {
   Card,
   CardContent,
@@ -322,6 +323,25 @@ export default function ComparePage() {
               format={(n) => n.toFixed(2)}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Ratings over time</CardTitle>
+          <CardDescription>
+            The two of them since they started. Tap a line to read the night.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <RatingHistoryChart
+            players={[a, b].flatMap((player) => {
+              const line = rating(player.id);
+              return line
+                ? [{ playerId: player.id, name: player.name, rating: line }]
+                : [];
+            })}
+          />
         </CardContent>
       </Card>
 

@@ -21,6 +21,7 @@ import ActiveFilter, {
 } from "@/components/players/ActiveFilter";
 import PageHeader from "@/components/PageHeader";
 import RatingsGuide from "@/components/ratings/RatingsGuide";
+import ChartPlayerPicker, { MAX_LINES } from "@/components/ratings/ChartPlayerPicker";
 
 export default function RatingsPage() {
   const { currentTeam } = useTeam();
@@ -48,14 +49,20 @@ export default function RatingsPage() {
     [ranked, scope, byId]
   );
 
-  // Five lines is the most that stays legible; beyond that it is a plate of
-  // spaghetti. The top of the table is the interesting part anyway.
-  const charted = shown.slice(0, 5).flatMap((rating) => {
-    const player = byId.get(rating.playerId);
-    return player
-      ? [{ playerId: rating.playerId, name: player.name, rating }]
-      : [];
-  });
+  // The top of the table is a reasonable opening guess and rarely the
+  // comparison anybody actually wants, so it is only the starting point.
+  // Held as null until the table has loaded, or the default would stick as
+  // an empty list picked before there was anybody to pick.
+  const [chartedIds, setChartedIds] = useState<string[] | null>(null);
+  const charted = useMemo(() => {
+    const ids =
+      chartedIds ?? shown.slice(0, MAX_LINES).map((rating) => rating.playerId);
+    return ids.flatMap((playerId) => {
+      const player = byId.get(playerId);
+      const rating = all.find((entry) => entry.playerId === playerId);
+      return player && rating ? [{ playerId, name: player.name, rating }] : [];
+    });
+  }, [chartedIds, shown, all, byId]);
 
   const rough = all.filter((r) => r.unsettled).length;
 
@@ -116,12 +123,20 @@ export default function RatingsPage() {
 
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Top five over time</CardTitle>
+            <CardTitle>Over time</CardTitle>
             <CardDescription>
-              Everyone starts at {ELO.start}.
+              Everyone starts at {ELO.start}. Tap a line to read the night.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
+            <ChartPlayerPicker
+              players={shown.flatMap((rating) => {
+                const player = byId.get(rating.playerId);
+                return player ? [player] : [];
+              })}
+              charted={charted.map((entry) => entry.playerId)}
+              onChange={setChartedIds}
+            />
             <RatingHistoryChart players={charted} />
           </CardContent>
         </Card>

@@ -122,7 +122,11 @@ export default function RatingHistoryChart({
               fill: theme["muted-foreground"],
             }}
           />
+          {/* Click, not hover. There is no hovering on a phone, and the
+              point of a point is worth reading there most of all — it stays
+              up until the next tap rather than flickering past. */}
           <Tooltip
+            trigger="click"
             cursor={{ stroke: theme.border }}
             content={({ active, payload, label }) => {
               if (!active || !payload?.length) return null;
@@ -173,7 +177,7 @@ export default function RatingHistoryChart({
               stroke={theme[SERIES_COLOURS[i % SERIES_COLOURS.length]]}
               strokeWidth={2}
               dot={false}
-              activeDot={{ r: 4 }}
+              activeDot={{ r: 5 }}
               connectNulls
               isAnimationActive={false}
             />
