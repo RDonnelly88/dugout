@@ -4,15 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
 import { usePlayerForm } from "@/hooks/usePlayerForm";
 import PlayerFormDisplay from '@/components/players/PlayerFormDisplay';
-import { TrendingUp, Trophy, Flag, Zap } from "lucide-react";
+import { TrendingUp, Trophy, Flag } from "lucide-react";
 import { calculatePlayerRanks } from "@/lib/ranking-utils";
 import PlayerSelectionFilters from './PlayerSelectionFilters';
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
+import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
+import { usePlayerRatings } from "@/hooks/usePlayerRatings";
+import SkillScale from "@/components/players/SkillScale";
+import { displayRating } from "@/lib/elo";
+import { SKILL } from "@/lib/config";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import { useTeam } from "@/contexts/TeamContext";
 
@@ -33,12 +37,18 @@ const PlayerSelection = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [showActiveOnly, setShowActiveOnly] = useState(true);
   const { recordFor } = usePlayerRecords();
+  const { ratingFor } = usePlayerRatings();
 
   const { data: currentSeason } = useQuery({
     queryKey: ['currentSeason', currentTeam?.id],
     queryFn: getCurrentSeason
   });
   
+  const { formData: batchFormData } = useBatchFormLoader(
+    currentSeason?.id ?? null,
+    players.map((player) => player.id)
+  );
+
   const { data: seasonPlayerStats = [] } = useQuery({
     queryKey: ['seasonStats', currentSeason?.id],
     queryFn: () => currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
@@ -134,9 +144,8 @@ const PlayerSelection = ({
       
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
         {filteredAndSortedPlayers.map(player => {
-          const seasonStats = seasonPlayerStats.find(stat => stat.playerId === player.id);
-          const gamesPlayed = seasonStats?.played ?? recordFor(player.id, player.name).played;
-          const isFrequentPlayer = gamesPlayed >= 5; // Consider frequent if played 5+ games
+          const rating = ratingFor(player.id);
+          const formResults = batchFormData[player.id] ?? [];
           
           return (
             <div 
@@ -157,20 +166,18 @@ const PlayerSelection = ({
                 <Label htmlFor={`player-${player.id}`} className="cursor-pointer flex items-center justify-between">
                   <HoverCard>
                     <HoverCardTrigger>
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="hover:underline truncate">{player.name}</span>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          {isFrequentPlayer && (
-                            <Badge variant="secondary" className="text-xs px-1 py-0">
-                              <Zap className="h-2 w-2 mr-0.5" />
-                              Active
-                            </Badge>
+                      <div className="flex min-w-0 flex-col gap-1">
+                        <span className="truncate hover:underline">{player.name}</span>
+                        {/* The same three things the player card leads with, so
+                            a name means the same wherever it is read. */}
+                        <div className="flex items-center gap-2">
+                          {rating && (
+                            <span className="tabular text-xs text-muted-foreground">
+                              {displayRating(rating.rating)}
+                            </span>
                           )}
-                          {gamesPlayed > 0 && (
-                            <Badge variant="outline" className="text-xs px-1 py-0">
-                              {gamesPlayed}
-                            </Badge>
-                          )}
+                          <PlayerFormDisplay results={formResults} size="xs" />
+                          <SkillScale level={player.skillLevel ?? SKILL.default} />
                         </div>
                       </div>
                     </HoverCardTrigger>

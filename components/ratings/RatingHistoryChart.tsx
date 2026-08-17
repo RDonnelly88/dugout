@@ -14,6 +14,7 @@ import {
 import { format, parseISO } from "date-fns";
 import { useChartTheme } from "@/lib/useChartTheme";
 import { displayRating, type PlayerRating } from "@/lib/elo";
+import { ratingSeries, type SeriesPoint } from "@/lib/rating-series";
 import { ELO } from "@/lib/config";
 
 const SERIES_COLOURS = [
@@ -23,6 +24,16 @@ const SERIES_COLOURS = [
   "draw",
   "loss",
 ] as const;
+
+/** What a point on the line was: a result and its swing, or a week away. */
+function describe(point: SeriesPoint): string {
+  const moved = Math.round(point.change);
+  const swing = `${moved > 0 ? "+" : moved < 0 ? "−" : ""}${Math.abs(moved)}`;
+  if (!point.played) return moved === 0 ? "didn't play" : `away ${swing}`;
+  const word =
+    point.result === "win" ? "won" : point.result === "draw" ? "drew" : "lost";
+  return `${word} ${swing}`;
+}
 
 /**
  * Ratings over time.
@@ -44,23 +55,34 @@ export default function RatingHistoryChart({
   // histories are pivoted onto a shared date axis. A player who missed a week
   // has no point there, and `connectNulls` carries the line across the gap
   // rather than breaking it.
-  const data = useMemo(() => {
+  const { data, detail } = useMemo(() => {
     const byDate = new Map<string, Record<string, number | string>>();
+    // What happened to each player on each date, for the tooltip. The line
+    // itself only needs a number; the reason for it lives here.
+    const detail = new Map<string, Map<string, SeriesPoint>>();
 
     for (const { playerId, rating } of players) {
-      // The matches they played, then the ones they missed. Without the second
-      // half a line stopped at whenever somebody last turned out, which read
-      // as a rating holding steady when it had been drifting for weeks.
-      for (const point of [...rating.history, ...rating.drifted]) {
+      // The matches they played and the ones they missed, on one line.
+      // Without the second half a line stopped at whenever somebody last
+      // turned out, which read as a rating holding steady when it had been
+      // drifting for weeks.
+      for (const point of ratingSeries(rating)) {
         const row = byDate.get(point.date) ?? { date: point.date };
         row[playerId] = displayRating(point.rating);
         byDate.set(point.date, row);
+
+        const forDate = detail.get(point.date) ?? new Map<string, SeriesPoint>();
+        forDate.set(playerId, point);
+        detail.set(point.date, forDate);
       }
     }
 
-    return [...byDate.values()].sort((a, b) =>
-      String(a.date).localeCompare(String(b.date))
-    );
+    return {
+      data: [...byDate.values()].sort((a, b) =>
+        String(a.date).localeCompare(String(b.date))
+      ),
+      detail,
+    };
   }, [players]);
 
   if (data.length < 2) {
@@ -101,14 +123,46 @@ export default function RatingHistoryChart({
             }}
           />
           <Tooltip
-            contentStyle={{
-              background: theme.surface,
-              border: `1px solid ${theme.border}`,
-              borderRadius: 8,
-              fontSize: 12,
-              color: theme.foreground,
+            cursor={{ stroke: theme.border }}
+            content={({ active, payload, label }) => {
+              if (!active || !payload?.length) return null;
+              const forDate = detail.get(String(label));
+              return (
+                <div
+                  className="rounded-lg border border-border bg-surface p-2 text-xs shadow-lg"
+                  style={{ color: theme.foreground }}
+                >
+                  <p className="mb-1 font-medium">
+                    {format(parseISO(String(label)), "d MMM yyyy")}
+                  </p>
+                  <ul className="space-y-0.5">
+                    {payload.map((series) => {
+                      const point = forDate?.get(String(series.dataKey));
+                      return (
+                        <li
+                          key={String(series.dataKey)}
+                          className="flex items-baseline gap-2"
+                        >
+                          <span
+                            className="h-2 w-2 shrink-0 rounded-full"
+                            style={{ background: series.color }}
+                          />
+                          <span className="flex-1">{series.name}</span>
+                          <span className="tabular font-medium">
+                            {series.value}
+                          </span>
+                          {point && (
+                            <span className="tabular text-muted-foreground">
+                              {describe(point)}
+                            </span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
             }}
-            labelFormatter={(d) => format(parseISO(String(d)), "d MMM yyyy")}
           />
           {players.map(({ playerId, name }, i) => (
             <Line
