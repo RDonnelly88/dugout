@@ -1,4 +1,3 @@
-import type { Split } from "./team-balance";
 import type { Player } from "@/types";
 
 /** Where a player is standing: on one of the sides, or not yet on either. */
@@ -7,24 +6,19 @@ export type Slot = "A" | "B" | "bench";
 export type Board = Record<string, Slot>;
 
 /**
- * Sorting a squad into two sides, as plain data.
+ * Everyone waiting, nobody placed.
  *
- * Kept out of the component because the fiddly part is not the dragging, it
- * is what a drag means when several players are picked up at once, and that
- * is worth being able to test without a pointer.
+ * Sorting a squad into two sides is kept out of the component because the
+ * fiddly part is not the dragging, it is what a drag means when several
+ * players are picked up at once, and that is worth being able to test
+ * without a pointer.
+ *
+ * Opening on a shuffle meant every side had to be un-picked before it could
+ * be picked, and a board that already looks answered invites nudging rather
+ * than choosing. Picking by hand starts from nothing.
  */
-export function boardFrom(
-  split: Pick<Split<Player>, "teamA" | "teamB">,
-  players: Player[]
-): Board {
-  const board: Board = {};
-  // Anyone the split did not cover waits on the bench rather than quietly
-  // landing on a side.
-  for (const player of players) board[player.id] = "bench";
-  for (const player of split.teamA) board[player.id] = "A";
-  for (const player of split.teamB) board[player.id] = "B";
-  return board;
-}
+export const emptyBoard = (players: Player[]): Board =>
+  Object.fromEntries(players.map((player) => [player.id, "bench" as const]));
 
 /** Everyone standing in one place, in the squad's own order. */
 export const occupants = (board: Board, slot: Slot, players: Player[]): Player[] =>
