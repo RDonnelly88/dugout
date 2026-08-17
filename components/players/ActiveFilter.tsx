@@ -1,6 +1,10 @@
 "use client";
 
 import { Users, UserCheck } from "lucide-react";
+import {
+  SegmentedControl,
+  SegmentedControlItem,
+} from "@/components/ui/segmented-control";
 import type { Player } from "@/types";
 
 export type ActiveScope = "active" | "all";
@@ -40,31 +44,24 @@ export default function ActiveFilter({
   disabled?: boolean;
 }) {
   return (
-    <fieldset
+    <SegmentedControl
+      label="Which players to show"
+      value={value}
+      onValueChange={(next) => onChange(next as ActiveScope)}
       disabled={disabled}
-      className="flex h-10 w-fit items-center gap-0.5 rounded-full border border-border bg-surface p-1"
+      className="h-10"
     >
-      <legend className="sr-only">Which players to show</legend>
-      {OPTIONS.map(({ value: option, label, Icon }) => {
-        const selected = value === option;
-        return (
-          <button
-            key={option}
-            type="button"
-            onClick={() => onChange(option)}
-            aria-pressed={selected}
-            className={`focus-ring flex h-full items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors disabled:opacity-50 ${
-              selected
-                ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Icon className="h-3.5 w-3.5" aria-hidden />
-            {label}
-            {counts && <span className="tabular opacity-70">{counts[option]}</span>}
-          </button>
-        );
-      })}
-    </fieldset>
+      {OPTIONS.map(({ value: option, label, Icon }) => (
+        <SegmentedControlItem
+          key={option}
+          value={option}
+          className="h-full px-3 text-xs font-medium"
+        >
+          <Icon className="h-3.5 w-3.5" aria-hidden />
+          {label}
+          {counts && <span className="tabular opacity-70">{counts[option]}</span>}
+        </SegmentedControlItem>
+      ))}
+    </SegmentedControl>
   );
 }

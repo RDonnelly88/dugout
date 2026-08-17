@@ -8,6 +8,10 @@ import {
   isThemeChoice,
   type ThemeChoice,
 } from "@/lib/theme";
+import {
+  SegmentedControl,
+  SegmentedControlItem,
+} from "@/components/ui/segmented-control";
 
 const OPTIONS: { value: ThemeChoice; label: string; Icon: typeof Sun }[] = [
   { value: "light", label: "Light", Icon: Sun },
@@ -68,30 +72,26 @@ export default function ThemeToggle({
   }
 
   return (
-    <fieldset
-      // `w-fit`: a fieldset is a block element, so it would otherwise stretch
-      // to the width of the card and draw a pill round nothing.
-      className="flex w-fit items-center gap-0.5 rounded-full border border-border bg-surface p-0.5"
+    <SegmentedControl
+      label="Colour theme"
+      // Unpressed until mounted: the server cannot know what this browser last
+      // chose, and guessing produces a hydration mismatch.
+      value={mounted ? choice : ""}
+      onValueChange={(next) => apply(next as ThemeChoice)}
+      className="p-0.5"
       aria-busy={!mounted}
     >
-      <legend className="sr-only">Colour theme</legend>
       {OPTIONS.map(({ value, label, Icon }) => (
-        <button
+        <SegmentedControlItem
           key={value}
-          type="button"
-          onClick={() => apply(value)}
-          aria-pressed={mounted && choice === value}
+          value={value}
           title={label}
-          className={`focus-ring flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
-            mounted && choice === value
-              ? "bg-accent text-accent-foreground"
-              : "text-muted-foreground hover:text-accent"
-          }`}
+          className="h-8 w-8 justify-center hover:text-accent"
         >
           <Icon size={14} aria-hidden />
           <span className="sr-only">{label}</span>
-        </button>
+        </SegmentedControlItem>
       ))}
-    </fieldset>
+    </SegmentedControl>
   );
 }
