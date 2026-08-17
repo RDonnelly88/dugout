@@ -47,19 +47,6 @@ export const getPlayerRecords = async (): Promise<PlayerRecord[]> => {
   );
 };
 
-/** Wins as a share of games played. Zero games is 0, not a division by zero. */
-export const winRate = (record: Pick<PlayerRecord, "wins" | "played">): number =>
-  record.played > 0 ? record.wins / record.played : 0;
-
-/** An empty record, so a player with no games renders zeroes rather than gaps. */
-export const emptyRecord = (playerId: string, playerName: string): PlayerRecord => ({
-  playerId,
-  playerName,
-  playerImage: null,
-  isActive: true,
-  played: 0,
-  wins: 0,
-  draws: 0,
-  losses: 0,
-  points: 0,
-});
+// Re-exported so every caller still imports a record's arithmetic from the
+// same place, without that import pulling a database client along with it.
+export { winRate, emptyRecord } from "./player-record";

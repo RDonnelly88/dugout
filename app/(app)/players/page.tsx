@@ -14,10 +14,14 @@ import PlayersGrid from "@/components/players/PlayersGrid";
 import { useTeam } from "@/contexts/TeamContext";
 import { isActivePlayer, type ActiveScope } from "@/components/players/ActiveFilter";
 import PageHeader from "@/components/PageHeader";
+import PageLoading from "@/components/PageLoading";
+import PlayerSort from "@/components/players/PlayerSort";
+import type { PlayerSort as PlayerSortValue } from "@/lib/player-order";
 
 const Players = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [scope, setScope] = useState<ActiveScope>("active");
+  const [sort, setSort] = useState<PlayerSortValue>("rank");
   const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -116,12 +120,12 @@ const Players = () => {
         }}
       />
 
+      <div className="mb-4">
+        <PlayerSort value={sort} onChange={setSort} />
+      </div>
+
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="shimmer h-[200px] bg-surface border-border rounded-lg" />
-          ))}
-        </div>
+        <PageLoading rows={4} label="Loading the squad" />
       ) : (
         <PlayersGrid
           players={players}
@@ -132,6 +136,7 @@ const Players = () => {
           onDeleteClick={handleDeleteClick}
           searchTerm={searchTerm}
           scope={scope}
+          sort={sort}
         />
       )}
 

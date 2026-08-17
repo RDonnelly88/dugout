@@ -14,6 +14,7 @@ import { isActivePlayer } from "@/components/players/ActiveFilter";
 import { displayRating, type PlayerRating } from "@/lib/elo";
 import { SKILL } from "@/lib/config";
 import SkillScale from "@/components/players/SkillScale";
+import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
 
 /**
  * Where a rating sits in the squad, nought to one, coloured warm at the top and
@@ -127,6 +128,11 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <h3 className="truncate text-lg font-medium">{player.name}</h3>
+                {/* Seasons won, which the detail page and both season screens
+                    already show and this one did not — a title is the first
+                    thing anybody would want on a card, and the component
+                    draws nothing for the many who have none. */}
+                <PlayerSeasonStars playerId={player.id} size="sm" />
                 {seasonId && hasPlayedCurrentSeason && rank && (
                   <Badge className="bg-surface-2 text-foreground">#{rank}</Badge>
                 )}

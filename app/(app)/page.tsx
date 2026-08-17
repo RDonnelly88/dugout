@@ -5,12 +5,13 @@ import { useTeam } from "@/contexts/TeamContext";
 import CreateFirstTeam from "@/components/team/CreateFirstTeam";
 import SelectTeam from "@/components/team/SelectTeam";
 import Dashboard from "@/components/dashboard/Dashboard";
+import PageLoading from "@/components/PageLoading";
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 // Main home component
 const Home = () => {
-  const { userTeams, currentTeam } = useTeam();
+  const { userTeams, currentTeam, loading } = useTeam();
   const queryClient = useQueryClient();
   const teamId = currentTeam?.id;
   
@@ -27,6 +28,13 @@ const Home = () => {
     }
   }, [teamId, queryClient]);
   
+  // Nobody has no teams until the teams have been looked for. Deciding on an
+  // empty list while the request is still out told every returning member on
+  // every sign-in to create their first team, for as long as the fetch took.
+  if (loading) {
+    return <PageLoading rows={4} label="Loading your teams" />;
+  }
+
   // If user has no teams, show create team UI
   if (userTeams.length === 0) {
     return <CreateFirstTeam />;
