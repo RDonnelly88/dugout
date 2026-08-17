@@ -1,10 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { Flame, Sparkles, TrendingUp, Users, Zap } from "lucide-react";
 import { seasonWrap } from "@/lib/season-wrap";
 import { displayRating } from "@/lib/elo";
+import { getMatches } from "@/lib/db";
+import { useTeam } from "@/contexts/TeamContext";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Match, Player } from "@/types";
@@ -68,15 +71,28 @@ function Named({
  * Nothing is shown that the season cannot support: a squad three games in has
  * no most-improved player and no partnership, and says so by leaving them
  * out rather than crowning somebody on one good night.
+ *
+ * The whole match history is fetched alongside the season's own, because a
+ * rating is not reset in January: a player walks into a season carrying what
+ * they earned in the last one, and the climb is measured from that. It is the
+ * same query the rest of the app reads, so it costs nothing to ask for.
  */
 export default function SeasonWrap({
-  matches,
+  season,
   players,
 }: {
-  matches: Match[];
+  /** The matches this season, which is what the awards are about. */
+  season: Match[];
   players: Player[];
 }) {
-  const wrap = useMemo(() => seasonWrap(matches), [matches]);
+  const { currentTeam } = useTeam();
+  const { data: history = [], isPending } = useQuery({
+    queryKey: ["matches", currentTeam?.id],
+    queryFn: getMatches,
+    enabled: !!currentTeam,
+  });
+
+  const wrap = useMemo(() => seasonWrap(history, season), [history, season]);
   const byId = useMemo(
     () => new Map(players.map((player) => [player.id, player])),
     [players]
@@ -174,7 +190,9 @@ export default function SeasonWrap({
     body: React.ReactNode;
   }[];
 
-  if (awards.length === 0) return null;
+  // Half the awards need the ratings, so showing the other half first would
+  // have the card grow an award a moment after it appeared.
+  if (isPending || awards.length === 0) return null;
 
   return (
     <Card>

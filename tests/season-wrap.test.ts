@@ -87,20 +87,38 @@ describe("seasonWrap", () => {
   });
 
   describe("the climber", () => {
-    /** Arriving good and staying good is not the same as improving. */
-    it("measures the climb rather than the finishing rating", () => {
-      const fixtures = [
-        // `steady` wins throughout and finishes high, but starts high too.
-        ...Array.from({ length: 4 }, () => match(["steady"], ["v1"], 1, 0)),
-        // `riser` loses, then wins a run, so travels further.
-        ...Array.from({ length: 3 }, () => match(["v2"], ["riser"], 1, 0)),
-        ...Array.from({ length: 5 }, () => match(["riser"], ["v3"], 1, 0)),
-      ];
+    /**
+     * The point of the award, and only possible because ratings are replayed
+     * over the whole history: a player walks into a season carrying what they
+     * earned in the last one, so a climb can be measured against it.
+     */
+    it("measures the climb from what they carried into the season", () => {
+      // Last season: `faller` was the best of them, `riser` the worst.
+      const before = Array.from({ length: 5 }, () =>
+        match(["faller"], ["riser"], 1, 0)
+      );
+      // This season: the other way round.
+      const season = Array.from({ length: 5 }, () =>
+        match(["riser"], ["faller"], 1, 0)
+      );
 
-      const wrap = seasonWrap(fixtures);
+      const wrap = seasonWrap([...before, ...season], season);
+
       expect(wrap.climber?.playerId).toBe("riser");
       expect(wrap.climber!.change).toBeGreaterThan(0);
-      expect(wrap.climber!.to).toBeGreaterThan(wrap.climber!.from);
+      // They started the season below where they finished it.
+      expect(wrap.climber!.from).toBeLessThan(wrap.climber!.to);
+    });
+
+    it("takes no notice of games played before the season began", () => {
+      const before = Array.from({ length: 4 }, () => match(["a"], ["b"], 1, 0));
+      const season = Array.from({ length: 4 }, () => match(["b"], ["a"], 1, 0));
+
+      const wrap = seasonWrap([...before, ...season], season);
+
+      // `b` lost four then won four: within the season only the winning half
+      // counts, so they are the climber despite a wretched year overall.
+      expect(wrap.climber?.playerId).toBe("b");
     });
 
     it("says nothing when a squad has barely played", () => {

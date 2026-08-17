@@ -246,7 +246,7 @@ const SeasonDetail = () => {
             </TabsContent>
 
             <TabsContent value="story" className="space-y-4">
-              <SeasonWrap matches={seasonMatches} players={allPlayers} />
+              <SeasonWrap season={seasonMatches} players={allPlayers} />
             </TabsContent>
 
             <TabsContent value="positions" className="space-y-4">

@@ -67,29 +67,30 @@ const played = (matches: Match[]) =>
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
 /** Games needed before a season is long enough to have improved across. */
-const CLIMB_GAMES = 4;
+const CLIMB_GAMES = 3;
 
 /**
  * Whoever improved most over the season.
  *
- * The two halves of a player's own season compared, not their first rating
- * against their last. Everybody starts a season on the same mark, so
- * measuring from there makes the biggest climber whoever finished highest —
- * which is the table, and the table already exists. Halves ask a different
- * question: were they better by the end than they were at the start.
+ * Read from the rating each player carried into their first game of the
+ * season and the one they carried out of their last — which is what a climb
+ * is, and only works because ratings are replayed over the whole history
+ * rather than the season alone. Rating this season on its own resets
+ * everybody to the starting mark, and then the biggest climber is whoever
+ * finished highest, which is the table and the table already exists.
+ *
+ * A squad's very first season is the exception, everybody genuinely having
+ * started level, and there this does come close to the final standings.
  */
-function climber(matches: Match[]): Mover | null {
-  const ratings = computeRatings(matches);
-  const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+function climber(ratings: RatingTable, inSeason: Set<string>): Mover | null {
   let best: Mover | null = null;
 
   for (const rating of ratings.values()) {
-    const line = rating.history.map((point) => point.rating);
-    if (line.length < CLIMB_GAMES) continue;
+    const nights = rating.history.filter((point) => inSeason.has(point.matchId));
+    if (nights.length < CLIMB_GAMES) continue;
 
-    const half = Math.floor(line.length / 2);
-    const from = mean(line.slice(0, half));
-    const to = mean(line.slice(-half));
+    const from = nights[0].rating - nights[0].change;
+    const to = nights.at(-1)!.rating;
     const change = to - from;
 
     if (!best || change > best.change)
@@ -148,9 +149,7 @@ function everPresent(matches: Match[]): Turnout | null {
  * was least expected at the time rather than one that looks odd in
  * hindsight. A draw counts by how far it fell from a foregone conclusion.
  */
-function biggestUpset(matches: Match[]): Upset | null {
-  const fixtures = played(matches);
-  const ratings = computeRatings(matches);
+function biggestUpset(fixtures: Match[], ratings: RatingTable): Upset | null {
   let best: (Upset & { surprise: number }) | null = null;
 
   for (const match of fixtures) {
@@ -248,14 +247,29 @@ function partnership(matches: Match[]): Partnership | null {
   return best && best.lift > 0.5 ? best : null;
 }
 
-export function seasonWrap(matches: Match[]): SeasonWrap {
-  const fixtures = played(matches);
+type RatingTable = ReturnType<typeof computeRatings>;
+
+/**
+ * `history` is every match the squad has ever played, and `season` the slice
+ * being written up. Both, because the awards are about the season but the
+ * ratings behind them are not: a player walks into a season carrying what
+ * they earned in the last one, and a climb measured from a reset is not a
+ * climb.
+ */
+export function seasonWrap(
+  history: Match[],
+  season: Match[] = history
+): SeasonWrap {
+  const fixtures = played(season);
+  const ratings = computeRatings(history);
+  const inSeason = new Set(fixtures.map((match) => match.id));
+
   return {
     matches: fixtures.length,
-    climber: climber(matches),
-    streak: longestStreak(matches),
-    everPresent: everPresent(matches),
-    upset: biggestUpset(matches),
-    partnership: partnership(matches),
+    climber: climber(ratings, inSeason),
+    streak: longestStreak(season),
+    everPresent: everPresent(season),
+    upset: biggestUpset(fixtures, ratings),
+    partnership: partnership(season),
   };
 }
