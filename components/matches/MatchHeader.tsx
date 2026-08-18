@@ -6,6 +6,7 @@ import { Calendar, Edit, MapPin, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/PageHeader";
+import ShareMatchButton from "@/components/matches/ShareMatchButton";
 import { useSideNames } from "@/hooks/useSideNames";
 import { Match } from "@/types";
 
@@ -58,6 +59,8 @@ const MatchHeader = ({ match, isCompleted, onEditClick }: MatchHeaderProps) => {
       }
       actions={
         <>
+          {isCompleted && <ShareMatchButton match={match} />}
+
           <Button variant="outline" size="sm" asChild className="gap-1">
             <Link href={`/matches/edit/${match.id}`}>
               <Pencil className="h-4 w-4" />
