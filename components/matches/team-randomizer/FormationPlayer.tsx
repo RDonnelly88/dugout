@@ -3,7 +3,7 @@ import React from 'react';
 import { Player } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { usePlayerForm } from "@/hooks/usePlayerForm";
+import { useSquadForm } from "@/hooks/useSquadForm";
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
 import PlayerFormDisplay from '@/components/players/PlayerFormDisplay';
@@ -35,11 +35,9 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
     queryFn: getCurrentSeason
   });
 
-  // Get player form data
-  const { form, isLoading } = usePlayerForm(
-    currentSeason?.id || null,
-    player.id
-  );
+  // The squad's recent nights rather than the season's: a card on the pitch
+  // is not a season view. One map for the whole formation, not a query a head.
+  const { formFor, isLoading } = useSquadForm();
   
   // Get season stats
   const { data: seasonPlayerStats = [] } = useQuery({
@@ -57,9 +55,7 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
         .findIndex(stat => stat.playerId === player.id) + 1
     : null;
   
-  // Display last 5 matches in form
-  const recentForm = form.slice(0, 5);
-  console.log(`Player ${player.name} recent form:`, recentForm);
+  const recentForm = formFor(player.id);
   
   return (
     <div className="player-formation-card">

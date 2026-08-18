@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import PlayerCard from "./PlayerCard";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
+import { useSquadForm } from "@/hooks/useSquadForm";
 import { usePermission } from "@/lib/permission-utils";
 import { scopeTo, type ActiveScope } from "./ActiveFilter";
 import { orderPlayers, type PlayerSort } from "@/lib/player-order";
@@ -16,8 +17,6 @@ interface PlayersGridProps {
   players: Player[];
   currentSeasonId: string | null;
   seasonPlayerStats: SeasonPlayerStats[];
-  batchFormData: Record<string, PlayerFormResult[]>;
-  isLoadingForms: boolean;
   onDeleteClick: (player: Player) => void;
   searchTerm: string;
   scope: ActiveScope;
@@ -28,8 +27,6 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
   players,
   currentSeasonId,
   seasonPlayerStats,
-  batchFormData,
-  isLoadingForms,
   onDeleteClick,
   searchTerm,
   scope,
@@ -41,6 +38,9 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
   // Likewise the ratings: the hook replays the entire match history, so a card
   // calling it for itself would replay it once per player on screen.
   const { ratingFor, all } = usePlayerRatings();
+  // Not the season's form: the squad list is not a season view, so it shows
+  // how people have been going lately whatever the calendar says.
+  const { formFor, isLoading: isLoadingForms } = useSquadForm();
   const { canManage, ready } = usePermission();
   const editable = ready && canManage();
 
@@ -69,14 +69,14 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
         return {
           ...player,
           rating: ratingFor(player.id),
-          form: batchFormData[player.id] ?? [],
+          form: formFor(player.id),
           played: record.played,
           wins: record.wins,
         };
       }),
       sort
     );
-  }, [players, scope, searchTerm, sort, batchFormData, recordFor, ratingFor]);
+  }, [players, scope, searchTerm, sort, formFor, recordFor, ratingFor]);
 
   // No players found
   if (filteredPlayers.length === 0) {
@@ -104,7 +104,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
   // Function to get player's season stats and form data
   const getPlayerSeasonData = (playerId: string): { seasonStats: SeasonPlayerStats | undefined, formResults: PlayerFormResult[] } => {
     const playerStats = seasonPlayerStats.find(stat => stat.playerId === playerId);
-    const formResults = batchFormData[playerId] || [];
+    const formResults = formFor(playerId);
     
     return { 
       seasonStats: playerStats,

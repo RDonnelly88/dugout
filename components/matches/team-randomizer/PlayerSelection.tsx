@@ -6,13 +6,12 @@ import { Label } from "@/components/ui/label";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
-import { usePlayerForm } from "@/hooks/usePlayerForm";
+import { useSquadForm } from "@/hooks/useSquadForm";
 import PlayerFormDisplay from '@/components/players/PlayerFormDisplay';
 import { TrendingUp, Trophy, Flag } from "lucide-react";
 import { calculatePlayerRanks } from "@/lib/ranking-utils";
 import PlayerSelectionFilters from './PlayerSelectionFilters';
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
-import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
 import SkillScale from "@/components/players/SkillScale";
 import { displayRating } from "@/lib/elo";
@@ -44,10 +43,9 @@ const PlayerSelection = ({
     queryFn: getCurrentSeason
   });
   
-  const { formData: batchFormData } = useBatchFormLoader(
-    currentSeason?.id ?? null,
-    players.map((player) => player.id)
-  );
+  // The squad's recent nights, worked out once for the whole list. Picking a
+  // side is not a season view, and asking per player opened one request each.
+  const { formFor } = useSquadForm();
 
   const { data: seasonPlayerStats = [] } = useQuery({
     queryKey: ['seasonStats', currentSeason?.id],
@@ -145,7 +143,7 @@ const PlayerSelection = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
         {filteredAndSortedPlayers.map(player => {
           const rating = ratingFor(player.id);
-          const formResults = batchFormData[player.id] ?? [];
+          const formResults = formFor(player.id);
           
           return (
             <div 
@@ -184,7 +182,6 @@ const PlayerSelection = ({
                     <HoverCardContent className="w-72 p-3 bg-popover border border-border text-foreground">
                       <PlayerHoverContent 
                         player={player} 
-                        currentSeasonId={currentSeason?.id || null}
                         seasonPlayerStats={seasonPlayerStats}
                         playerRanks={playerRanks}
                       />
@@ -221,21 +218,16 @@ const PlayerSelection = ({
 
 interface PlayerHoverContentProps {
   player: Player;
-  currentSeasonId: string | null;
   seasonPlayerStats: Array<any>;
   playerRanks?: Record<string, number>;
 }
 
 const PlayerHoverContent = ({ 
   player, 
-  currentSeasonId, 
   seasonPlayerStats,
   playerRanks = {}
 }: PlayerHoverContentProps) => {
-  const { form, isLoading } = usePlayerForm(
-    currentSeasonId,
-    player.id
-  );
+  const { formFor, isLoading } = useSquadForm();
   const { recordFor } = usePlayerRecords();
   const record = recordFor(player.id, player.name);
 
@@ -245,7 +237,7 @@ const PlayerHoverContent = ({
   
   const playerRank = hasPlayedGames ? playerRanks[player.id] : null;
   
-  const recentForm = form.slice(0, 5);
+  const recentForm = formFor(player.id);
   
   return (
     <>

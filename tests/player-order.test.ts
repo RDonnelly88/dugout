@@ -57,15 +57,16 @@ describe("orderPlayers", () => {
     expect(order(squad, "form")).toEqual(["perfect", "mixed"]);
   });
 
-  it("ignores games somebody did not play when reading their form", () => {
+  it("counts a night somebody missed against their form", () => {
     const squad = [
       p("patchy", { form: ["win", "dnp", "dnp"] as PlayerFormResult[] }),
       p("steady", { form: ["win", "draw"] as PlayerFormResult[] }),
     ];
 
-    // Three points a game against two, so the patchy one leads despite the
-    // gaps — the alternative counts a night off as a defeat.
-    expect(order(squad, "form")).toEqual(["patchy", "steady"]);
+    // One point a night against two: a win out of three nights is not a
+    // better run than a win and a draw out of two. The same rule the strip
+    // beside them is drawn from, and the one the rating model reads.
+    expect(order(squad, "form")).toEqual(["steady", "patchy"]);
   });
 
   it("sorts by games played, most first", () => {

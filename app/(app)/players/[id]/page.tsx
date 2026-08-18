@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { usePlayerDetail } from "@/hooks/usePlayerDetail";
-import { usePlayerForm } from "@/hooks/usePlayerForm";
 import { usePlayerRank } from "@/hooks/usePlayerRank";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import PlayerSeasonStats from "@/components/players/PlayerSeasonStats";
@@ -65,12 +64,6 @@ const PlayerDetail = () => {
   // Use the shared hook for consistent rank calculation
   const { rank: playerRank, hasPlayedCurrentSeason } = usePlayerRank(
     currentSeason?.id || null,
-    player?.id || null
-  );
-    
-  // Get player form for the currently selected season with improved loading state handling
-  const { form: currentSeasonForm, isLoading: isLoadingForm } = usePlayerForm(
-    currentSeason?.id || null, 
     player?.id || null
   );
 
@@ -170,8 +163,7 @@ const PlayerDetail = () => {
         <div className="flex items-center gap-3">
           <span className="eyebrow">Recent form</span>
           <PlayerFormDisplay
-            results={currentSeasonForm.length > 0 ? currentSeasonForm : recentResults}
-            isLoading={isLoadingForm && currentSeasonForm.length === 0}
+            results={recentResults}
           />
         </div>
       </PageHeader>
