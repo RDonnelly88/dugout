@@ -3,7 +3,8 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
-import { Flame, Sparkles, TrendingUp, Users, Zap } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Flame, Sparkles, TrendingUp, Users, Zap } from "lucide-react";
 import { seasonWrap } from "@/lib/season-wrap";
 import { displayRating } from "@/lib/elo";
 import { getMatches } from "@/lib/db";
@@ -19,26 +20,44 @@ function Award({
   title,
   children,
   index,
+  href,
 }: {
   icon: typeof Flame;
   title: string;
   children: React.ReactNode;
   index: number;
+  /** Where the award leads, for the one that is about a single night. */
+  href?: string;
 }) {
   const reduced = useReducedMotion();
+
+  const card = (
+    <>
+      <h4 className="eyebrow mb-2 flex items-center gap-1.5">
+        <Icon className="h-3.5 w-3.5 text-accent" />
+        {title}
+      </h4>
+      {children}
+    </>
+  );
 
   return (
     <motion.div
       initial={reduced ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: reduced ? 0 : index * 0.08 }}
-      className="rounded-xl border border-border bg-surface-2/40 p-4"
+      className="rounded-xl border border-border bg-surface-2/40"
     >
-      <h4 className="eyebrow mb-2 flex items-center gap-1.5">
-        <Icon className="h-3.5 w-3.5 text-accent" />
-        {title}
-      </h4>
-      {children}
+      {href ? (
+        <Link
+          href={href}
+          className="focus-ring block h-full rounded-xl p-4 transition-colors hover:border-border-strong hover:bg-surface-2/70"
+        >
+          {card}
+        </Link>
+      ) : (
+        <div className="p-4">{card}</div>
+      )}
     </motion.div>
   );
 }
@@ -165,6 +184,9 @@ export default function SeasonWrap({
     wrap.upset && {
       icon: Sparkles,
       title: "Result of the season",
+      // The one award that names a single night, so it is the one worth
+      // being a way into that night.
+      href: `/matches/${wrap.upset.matchId}`,
       body: (
         <div>
           <div className="mb-1 flex -space-x-2">
@@ -181,6 +203,10 @@ export default function SeasonWrap({
             {wrap.upset.drawn ? "Held" : "Beat"} a side the table gave them{" "}
             <span className="tabular">{pct(wrap.upset.expected)}</span> against
           </p>
+          <p className="mt-1 flex items-center gap-1 text-xs text-accent">
+            See the match
+            <ArrowRight className="h-3 w-3" />
+          </p>
         </div>
       ),
     },
@@ -188,6 +214,7 @@ export default function SeasonWrap({
     icon: typeof Flame;
     title: string;
     body: React.ReactNode;
+    href?: string;
   }[];
 
   // Half the awards need the ratings, so showing the other half first would
@@ -205,7 +232,13 @@ export default function SeasonWrap({
       <CardContent>
         <div className="grid gap-3 sm:grid-cols-2">
           {awards.map((award, i) => (
-            <Award key={award.title} icon={award.icon} title={award.title} index={i}>
+            <Award
+              key={award.title}
+              icon={award.icon}
+              title={award.title}
+              index={i}
+              href={award.href}
+            >
               {award.body}
             </Award>
           ))}

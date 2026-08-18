@@ -18,6 +18,12 @@ import { displayRating, type PlayerRating } from "@/lib/elo";
 import { ratingSeries, type SeriesPoint } from "@/lib/rating-series";
 import { ELO } from "@/lib/config";
 
+/**
+ * What the area under a single line calls itself, so the tooltip can tell it
+ * apart from the line it sits under and leave it out.
+ */
+const FILL = "__fill";
+
 const SERIES_COLOURS = [
   "accent",
   "info",
@@ -150,6 +156,12 @@ export default function RatingHistoryChart({
             content={({ active, payload, label }) => {
               if (!active || !payload?.length) return null;
               const forDate = detail.get(String(label));
+              // The area under a lone line is a second series over the same
+              // numbers, and `tooltipType="none"` keeps it out of the default
+              // tooltip but not out of the payload handed to a custom one. It
+              // arrives unnamed, so it was drawing a row headed by the
+              // player's id.
+              const lines = payload.filter((series) => series.name !== FILL);
               return (
                 <div
                   className="rounded-lg border border-border bg-surface p-2 text-xs shadow-lg"
@@ -159,7 +171,7 @@ export default function RatingHistoryChart({
                     {format(parseISO(String(label)), "d MMM yyyy")}
                   </p>
                   <ul className="space-y-0.5">
-                    {payload.map((series) => {
+                    {lines.map((series) => {
                       const point = forDate?.get(String(series.dataKey));
                       return (
                         <li
@@ -190,6 +202,7 @@ export default function RatingHistoryChart({
           {alone && (
             <Area
               type="monotone"
+              name={FILL}
               dataKey={players[0].playerId}
               // The line on top of it draws the stroke; this is the ground.
               stroke="none"
