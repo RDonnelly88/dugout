@@ -1,7 +1,13 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
-import { initials, type ShareCard, type ShareSide } from "./share-card";
+import {
+  initials,
+  type ShareCard,
+  type SharePlayer,
+  type ShareRow,
+  type ShareSide,
+} from "./share-card";
 
 /**
  * A match drawn as a picture, for sending to people who are not in the app.
@@ -26,10 +32,20 @@ const C = {
   accent: "#2ee5c1",
   win: "#50d782",
   draw: "#f5bb47",
+  loss: "#f97b7b",
 };
 
-/** The shape every chat app expects a link preview to be. */
-const CARD = { width: 1200, height: 630 };
+/**
+ * The card is as tall as it has something to say.
+ *
+ * A link preview wants 1200 by 630, but this is never a link preview — the
+ * file itself is what gets sent, so the only shape it has to suit is a phone
+ * screen. With tables under the result it grows to fit them; without, it
+ * stays short rather than leaving a third of the picture empty, which is
+ * precisely what a squad in its first fortnight would get.
+ */
+const WIDTH = 1200;
+const HEIGHT = { withTables: 900, plain: 630 };
 
 interface RowSize {
   chip: number;
@@ -37,17 +53,36 @@ interface RowSize {
   gap: number;
 }
 
+function Swing({ change, size }: { change: number; size: number }) {
+  const moved = Math.round(change);
+  return (
+    <div
+      style={{
+        display: "flex",
+        fontSize: size,
+        fontWeight: 700,
+        // A night that moved nothing is a night inside the grace, not a loss.
+        color: moved > 0 ? C.win : moved < 0 ? C.loss : C.muted,
+      }}
+    >
+      {moved > 0 ? "+" : moved < 0 ? "−" : "±"}
+      {Math.abs(moved)}
+    </div>
+  );
+}
+
 function Chip({
-  name,
+  player,
   tint,
   size,
   mirrored,
 }: {
-  name: string;
+  player: SharePlayer;
   tint: string;
   size: RowSize;
   mirrored: boolean;
 }) {
+  const { name } = player;
   return (
     <div
       style={{
@@ -82,15 +117,94 @@ function Chip({
       </div>
       <div
         style={{
-          fontSize: size.name,
-          color: C.text,
+          display: "flex",
+          flexDirection: mirrored ? "row-reverse" : "row",
+          alignItems: "baseline",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            fontSize: size.name,
+            color: C.text,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {name}
+        </div>
+        {player.change !== undefined && (
+          <div
+            style={{
+              display: "flex",
+              marginLeft: mirrored ? 0 : 10,
+              marginRight: mirrored ? 10 : 0,
+            }}
+          >
+            <Swing change={player.change} size={Math.round(size.name * 0.8)} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One of the two tables under the result.
+ *
+ * Whoever played that night is picked out, because the question a table
+ * answers on a match card is not "who is best" but "and where does that
+ * leave us?".
+ */
+function Table({ title, rows }: { title: string; rows: ShareRow[] }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", width: 480 }}>
+      <div
+        style={{
+          display: "flex",
+          marginBottom: 12,
+          fontSize: 20,
+          fontWeight: 700,
+          letterSpacing: 2,
+          color: C.accent,
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",
         }}
       >
-        {name}
+        {title.toUpperCase()}
       </div>
+      {rows.map((row, i) => (
+        <div
+          key={row.name}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            marginBottom: 4,
+            padding: "5px 12px",
+            borderRadius: 8,
+            background: row.played ? C.raised : "transparent",
+            fontSize: 24,
+            color: row.played ? C.text : C.muted,
+          }}
+        >
+          <div style={{ display: "flex", width: 34, color: C.muted }}>{i + 1}</div>
+          <div
+            style={{
+              display: "flex",
+              flex: 1,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              fontWeight: row.played ? 700 : 400,
+            }}
+          >
+            {row.name}
+          </div>
+          <div style={{ display: "flex", fontWeight: 700 }}>{row.figure}</div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -98,14 +212,14 @@ function Chip({
 /**
  * How big a name can be drawn.
  *
- * The card is a fixed 1200 by 630 and a squad is not a fixed size, so the
- * rows shrink to fit rather than the eleventh player falling off the bottom
- * edge — which is exactly what a picture of a match should never do.
+ * The card is a fixed width and a squad is not a fixed size, so the rows
+ * shrink to fit rather than the eleventh player falling off the bottom edge —
+ * which is exactly what a picture of a match should never do.
  */
-const ROOM_FOR_NAMES = 236;
+const ROOM_FOR_NAMES = { withTables: 250, plain: 236 };
 
-function rowSize(rows: number): RowSize {
-  const height = Math.min(46, Math.floor(ROOM_FOR_NAMES / Math.max(rows, 1)));
+function rowSize(rows: number, room: number): RowSize {
+  const height = Math.min(46, Math.floor(room / Math.max(rows, 1)));
   return {
     chip: Math.min(40, height - 6),
     name: Math.min(28, Math.round(height * 0.62)),
@@ -161,7 +275,27 @@ export function matchCardImage(card: ShareCard, fonts: ImageFont[]): ImageRespon
   const tintA = drawn ? C.draw : card.a.won ? C.win : C.muted;
   const tintB = drawn ? C.draw : card.b.won ? C.win : C.muted;
   const scored = card.a.score !== undefined && card.b.score !== undefined;
-  const size = rowSize(Math.max(card.a.players.length, card.b.players.length));
+  // Whichever of the two there is something to say about. A squad in its first
+  // fortnight has neither, and an empty heading over four blank rows is worse
+  // than leaving the space to the result.
+  const tables = [
+    card.ladder.length > 0 && (
+      <Table key="ladder" title="Ratings" rows={card.ladder} />
+    ),
+    card.standings.length > 0 && (
+      <Table
+        key="standings"
+        title={card.seasonName ?? "League table"}
+        rows={card.standings}
+      />
+    ),
+  ].filter(Boolean);
+
+  const roomy = tables.length > 0;
+  const size = rowSize(
+    Math.max(card.a.players.length, card.b.players.length),
+    roomy ? ROOM_FOR_NAMES.withTables : ROOM_FOR_NAMES.plain
+  );
 
   return new ImageResponse(
     (
@@ -254,19 +388,43 @@ export function matchCardImage(card: ShareCard, fonts: ImageFont[]): ImageRespon
           }}
         >
           <div style={{ display: "flex", flexDirection: "column" }}>
-            {card.a.players.map((name) => (
-              <Chip key={name} name={name} tint={tintA} size={size} mirrored={false} />
+            {card.a.players.map((player) => (
+              <Chip
+                key={player.name}
+                player={player}
+                tint={tintA}
+                size={size}
+                mirrored={false}
+              />
             ))}
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-            {card.b.players.map((name) => (
-              <Chip key={name} name={name} tint={tintB} size={size} mirrored />
+            {card.b.players.map((player) => (
+              <Chip key={player.name} player={player} tint={tintB} size={size} mirrored />
             ))}
           </div>
         </div>
+
+        {tables.length > 0 && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: tables.length === 1 ? "center" : "space-between",
+              marginTop: 20,
+              paddingTop: 24,
+              borderTop: `2px solid ${C.border}`,
+            }}
+          >
+            {tables}
+          </div>
+        )}
       </div>
     ),
-    { ...CARD, fonts }
+    {
+      width: WIDTH,
+      height: roomy ? HEIGHT.withTables : HEIGHT.plain,
+      fonts,
+    }
   );
 }
 
