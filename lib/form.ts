@@ -1,16 +1,22 @@
 import { FORM_LENGTH } from "./config";
-import type { Match } from "@/types";
-import { outcomeOf } from "./match-result";
+import type { Match, PlayerFormResult } from "@/types";
+import { outcomeOf, resultFor } from "./match-result";
 
 export type FormResult = "win" | "draw" | "loss";
 
 export interface RecentForm {
   playerId: string;
+  /** Of the window, the ones they actually turned out for. */
   games: number;
   points: number;
-  /** Points per game over the window. Three is a perfect run, nought a wipeout. */
+  /**
+   * Points per match in the window — over the squad's last few nights, not
+   * over the ones this player chose to appear at. Three is a perfect run,
+   * nought a wipeout, and a night missed is a nought like any other.
+   */
   pointsPerGame: number;
-  results: FormResult[];
+  /** Newest first, with `dnp` where they were not there. */
+  results: PlayerFormResult[];
 }
 
 /** What a result is worth. The league's own scoring, and the only copy of it. */
@@ -55,9 +61,12 @@ export function formShare(results: readonly FormResult[]): number {
 /**
  * How everyone has been going lately.
  *
- * The last few results only, because "on form" means recently — a player who
- * carried the team in March and has not turned up since is not someone to
- * build a side around tonight. All-time is what the record is for.
+ * The window is the squad's last few matches, the same few for everybody, and
+ * a night missed counts as nought. Measuring each player over their own last
+ * five instead made the table incomparable: three wins out of three read as a
+ * perfect run and outranked five games of four wins, and the card promising
+ * "points a game over the last five" was quietly dividing one player's by
+ * three. Turning up is part of being in form.
  *
  * Derived from the matches, like everything else here, so it cannot fall out
  * of step with them.
@@ -66,47 +75,44 @@ export function recentForm(
   matches: Match[],
   windowSize: number = FORM_LENGTH
 ): Map<string, RecentForm> {
+  const window = matches
+    .filter((m) => outcomeOf(m) !== null)
+    // Newest first, so taking the window is just a slice.
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, windowSize);
+
+  // Anybody who turned out at least once in the window. Somebody who has not
+  // played in any of it has no recent form to speak of, rather than a stale
+  // one carried forward from March.
+  const appeared = new Set(
+    window.flatMap((match) => [...match.teamA.players, ...match.teamB.players])
+  );
+
   const byPlayer = new Map<string, RecentForm>();
 
-  const played = matches
-    .filter((m) => outcomeOf(m) !== null)
-    // Newest first, so taking the window is just a length check.
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  for (const playerId of appeared) {
+    const results: PlayerFormResult[] = [];
+    let points = 0;
+    let games = 0;
 
-  for (const match of played) {
-    const outcome = outcomeOf(match)!;
-
-    const sides = [
-      { players: match.teamA.players, key: "a" as const },
-      { players: match.teamB.players, key: "b" as const },
-    ];
-
-    for (const side of sides) {
-      const result =
-        outcome === "draw" ? "draw" : outcome === side.key ? "win" : "loss";
-      const points = pointsFor(result);
-
-      for (const playerId of side.players) {
-        const entry =
-          byPlayer.get(playerId) ??
-          ({
-            playerId,
-            games: 0,
-            points: 0,
-            pointsPerGame: 0,
-            results: [],
-          } satisfies RecentForm);
-
-        if (entry.games < windowSize) {
-          entry.games += 1;
-          entry.points += points;
-          entry.pointsPerGame = entry.points / entry.games;
-          entry.results.push(result);
-        }
-
-        byPlayer.set(playerId, entry);
+    for (const match of window) {
+      const result = resultFor(match, playerId);
+      if (result === null) {
+        results.push("dnp");
+        continue;
       }
+      results.push(result);
+      points += pointsFor(result);
+      games += 1;
     }
+
+    byPlayer.set(playerId, {
+      playerId,
+      games,
+      points,
+      pointsPerGame: points / window.length,
+      results,
+    });
   }
 
   return byPlayer;

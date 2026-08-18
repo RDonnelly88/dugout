@@ -1,7 +1,23 @@
 
-import { PlayerFormResult } from "@/types";
+import { Match, PlayerFormResult } from "@/types";
 import { supabase } from "@/lib/supabase-browser";
+import { mapSupabaseMatchToMatch } from "@/lib/supabase-utils";
+import { resultFor } from "@/lib/match-result";
 import { FORM_LENGTH } from "@/lib/config";
+
+/**
+ * How a match went for one player, or `dnp` if they were not in it.
+ *
+ * Asks `resultFor` rather than comparing the two scores, because a five-a-side
+ * result is who won and the score is optional detail on top. Comparing scores
+ * read every match nobody wrote the goals down for as a nil-nil draw, and put
+ * a D on the card of a player who had won.
+ */
+const formResult = (match: Match, playerId: string): PlayerFormResult =>
+  resultFor(match, playerId) ?? "dnp";
+
+/** Enough of a match row to read a result off. */
+const FORM_COLUMNS = "id, date, team_a, team_b, status, outcome";
 
 // Function to get a player's form data for a specific season
 export const getPlayerFormInSeason = async (
@@ -40,7 +56,7 @@ export const getPlayerFormInSeason = async (
     // Get the last 5 matches in the season (not the last 5 matches the player played)
     const { data: matches, error: matchesError } = await supabase
       .from("matches")
-      .select("id, date, team_a, team_b, status")
+      .select(FORM_COLUMNS)
       .eq("season_id", seasonId)
       .eq("team_id", currentTeamId)
       .eq("status", "completed")
@@ -56,39 +72,9 @@ export const getPlayerFormInSeason = async (
       return [];
     }
     
-    // For each match, check if the player participated and what the result was
-    const playerForm: PlayerFormResult[] = [];
-    
-    for (const match of matches) {
-      // Check if player was in team A or team B
-      const teamA = match.team_a as { players: string[], score?: number };
-      const teamB = match.team_b as { players: string[], score?: number };
-      
-      const isInTeamA = teamA.players?.includes(playerId);
-      const isInTeamB = teamB.players?.includes(playerId);
-      
-      if (!isInTeamA && !isInTeamB) {
-        // Player didn't participate in this match
-        playerForm.push('dnp');
-      } else {
-        // Player participated, determine the result
-        const teamAScore = teamA.score || 0;
-        const teamBScore = teamB.score || 0;
-        
-        if (teamAScore === teamBScore) {
-          playerForm.push('draw');
-        } else if (
-          (isInTeamA && teamAScore > teamBScore) || 
-          (isInTeamB && teamBScore > teamAScore)
-        ) {
-          playerForm.push('win');
-        } else {
-          playerForm.push('loss');
-        }
-      }
-    }
-    
-    return playerForm;
+    return matches.map((row) =>
+      formResult(mapSupabaseMatchToMatch(row), playerId)
+    );
   } catch (error) {
     console.error("Error fetching player form:", error);
     return [];
@@ -136,7 +122,7 @@ export const getPlayerFormBatch = async (
     // Get the last 5 completed matches in the season
     const { data: matches, error: matchesError } = await supabase
       .from("matches")
-      .select("id, date, team_a, team_b, status")
+      .select(FORM_COLUMNS)
       .eq("season_id", seasonId)
       .eq("team_id", currentTeamId)
       .eq("status", "completed")
@@ -159,32 +145,10 @@ export const getPlayerFormBatch = async (
     });
     
     // For each match, determine each player's participation and result
-    for (const match of matches) {
-      const teamA = match.team_a as { players: string[], score?: number };
-      const teamB = match.team_b as { players: string[], score?: number };
-      const teamAScore = teamA.score || 0;
-      const teamBScore = teamB.score || 0;
-      
+    for (const row of matches) {
+      const match = mapSupabaseMatchToMatch(row);
       for (const playerId of playerIds) {
-        const isInTeamA = teamA.players?.includes(playerId);
-        const isInTeamB = teamB.players?.includes(playerId);
-        
-        if (!isInTeamA && !isInTeamB) {
-          // Player didn't participate in this match
-          results[playerId].push('dnp');
-        } else {
-          // Player participated, determine the result
-          if (teamAScore === teamBScore) {
-            results[playerId].push('draw');
-          } else if (
-            (isInTeamA && teamAScore > teamBScore) || 
-            (isInTeamB && teamBScore > teamAScore)
-          ) {
-            results[playerId].push('win');
-          } else {
-            results[playerId].push('loss');
-          }
-        }
+        results[playerId].push(formResult(match, playerId));
       }
     }
     

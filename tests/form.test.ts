@@ -77,3 +77,69 @@ describe("recentForm", () => {
     expect(recentForm([pending]).size).toBe(0);
   });
 });
+
+describe("form over the squad's window, not the player's", () => {
+  /**
+   * The bug this fixes: three wins out of three read as a perfect run and
+   * outranked a player who turned out five times and won four, while the card
+   * above them promised "points a game over the last five".
+   */
+  it("counts a night missed as nought", () => {
+    const fixtures = [
+      match(["ever", "sometimes"], ["x"], 1, 0, "2026-01-01"),
+      match(["ever", "sometimes"], ["x"], 1, 0, "2026-01-02"),
+      match(["ever", "sometimes"], ["x"], 1, 0, "2026-01-03"),
+      match(["ever"], ["x"], 1, 0, "2026-01-04"),
+      match(["ever"], ["x"], 1, 0, "2026-01-05"),
+    ];
+
+    const form = recentForm(fixtures, 5);
+
+    expect(form.get("ever")!.pointsPerGame).toBe(3);
+    // Nine points over five nights, not over the three they fancied.
+    expect(form.get("sometimes")!.points).toBe(9);
+    expect(form.get("sometimes")!.pointsPerGame).toBeCloseTo(1.8);
+  });
+
+  it("still says how many they actually played", () => {
+    const fixtures = [
+      match(["a"], ["b"], 1, 0, "2026-01-01"),
+      match(["c"], ["b"], 1, 0, "2026-01-02"),
+      match(["c"], ["b"], 1, 0, "2026-01-03"),
+    ];
+
+    expect(recentForm(fixtures, 3).get("a")!.games).toBe(1);
+  });
+
+  it("marks the nights they were not there", () => {
+    const fixtures = [
+      match(["a"], ["b"], 1, 0, "2026-01-01"),
+      match(["c"], ["b"], 1, 0, "2026-01-02"),
+      match(["a"], ["b"], 0, 1, "2026-01-03"),
+    ];
+
+    // Newest first.
+    expect(recentForm(fixtures, 3).get("a")!.results).toEqual([
+      "loss",
+      "dnp",
+      "win",
+    ]);
+  });
+
+  /** A short history is a short window, not four imaginary noughts. */
+  it("divides by what the squad has played when that is less than the window", () => {
+    const form = recentForm([match(["a"], ["b"], 3, 0, "2026-01-01")], 5);
+
+    expect(form.get("a")!.pointsPerGame).toBe(3);
+  });
+
+  it("has nothing to say about somebody absent for the whole window", () => {
+    const fixtures = [
+      match(["old"], ["b"], 1, 0, "2026-01-01"),
+      match(["c"], ["b"], 1, 0, "2026-01-02"),
+      match(["c"], ["b"], 1, 0, "2026-01-03"),
+    ];
+
+    expect(recentForm(fixtures, 2).get("old")).toBeUndefined();
+  });
+});
