@@ -74,12 +74,14 @@ export default function RatingsPage() {
         subtitle={
           <>
             Elo, adapted for five-a-side. A side is rated at the average of its
-            players, everyone on it takes the same adjustment, and beating a
-            stronger team is worth more than beating a weaker one. A win is a
-            win — a thrashing counts the same as a scrape. Everybody has a
-            rating from their first game, and one under {ELO.settledAfter} games
-            is marked as a rough guess until there is enough behind it to lean
-            on. Miss more than{" "}
+            players, beating a stronger team is worth more than beating a
+            weaker one, and what the result is worth is split across the side
+            by how each player has been going — so two team-mates in the same
+            win walk off with different numbers. A win is a win — a thrashing
+            counts the same as a scrape. Everybody has a rating from their
+            first game, and one under {ELO.settledAfter} games is marked as a
+            rough guess until there is enough behind it to lean on. Miss more
+            than{" "}
             {ELO.decay.graceMatches} matches the rest of the squad played and it
             drifts back towards {ELO.start}; a break when nobody plays costs
             nothing.
