@@ -7,7 +7,7 @@ import { getMatch, getPlayers, updateMatch } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { Match } from "@/types";
 import { useTeam } from "@/contexts/TeamContext";
-import { outcomeOf, type Outcome } from "@/lib/match-result";
+import { outcomeOf, resolveOutcome, type Outcome } from "@/lib/match-result";
 
 export const useMatchDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -79,17 +79,7 @@ export const useMatchDetail = () => {
     }
   }, [match, currentTeam, router, toast]);
 
-  // A score, when both halves are given, decides the result — so the two can
-  // never be saved disagreeing with each other. The database enforces the same
-  // rule.
-  const effectiveOutcome: Outcome | null =
-    teamAScore !== undefined && teamBScore !== undefined
-      ? teamAScore > teamBScore
-        ? "a"
-        : teamAScore < teamBScore
-          ? "b"
-          : "draw"
-      : outcome;
+  const effectiveOutcome = resolveOutcome(teamAScore, teamBScore, outcome);
 
   const handleSaveResult = () => {
     if (!effectiveOutcome) {
@@ -145,17 +135,17 @@ export const useMatchDetail = () => {
     return player ? player.name : "Unknown Player";
   };
 
-  // Initialize form values when match data is loaded
+  // Fill the form from the match, but only take a score off one that has
+  // actually been played. Fixtures written before the creation screen stopped
+  // inventing them carry a nil-nil, and reading it back put a complete score
+  // on a game nobody had turned up to — which then decided the result and left
+  // the buttons apparently dead.
   useEffect(() => {
-    if (match) {
-      if (match.teamA?.score !== undefined) {
-        setTeamAScore(match.teamA.score);
-      }
-      if (match.teamB?.score !== undefined) {
-        setTeamBScore(match.teamB.score);
-      }
-      setOutcome(outcomeOf(match));
-    }
+    if (!match) return;
+    const played = match.status === "completed";
+    setTeamAScore(played ? match.teamA?.score : undefined);
+    setTeamBScore(played ? match.teamB?.score : undefined);
+    setOutcome(outcomeOf(match));
   }, [match]);
 
   return {

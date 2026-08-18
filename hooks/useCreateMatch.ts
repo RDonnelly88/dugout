@@ -5,9 +5,17 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addMatch } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
-import { Player } from "@/types";
+import { Match, Player } from "@/types";
 import { useTeam } from "@/contexts/TeamContext";
 import { useSideNames } from "@/hooks/useSideNames";
+
+/**
+ * What a fixture is before anybody has played it: two sides and a date.
+ *
+ * Typed rather than `any`, which is what let a status outside the union and a
+ * score nobody had recorded through unnoticed.
+ */
+type NewMatch = Omit<Match, "id" | "createdAt" | "updatedAt">;
 
 export const useCreateMatch = () => {
   const [teamA, setTeamA] = useState<string[]>([]);
@@ -65,7 +73,7 @@ export const useCreateMatch = () => {
   };
 
   const createMatchMutation = useMutation({
-    mutationFn: (matchData: any) => addMatch(matchData),
+    mutationFn: (matchData: NewMatch) => addMatch(matchData),
     onSuccess: (data) => {
       // Invalidate all team-specific queries to ensure data is refreshed
       if (currentTeam) {
@@ -120,19 +128,20 @@ export const useCreateMatch = () => {
 
     console.log(`Creating match for team: ${currentTeam.id}`);
     
-    const matchData = {
+    // No score. Nobody has played, and nought is a scoreline: a fixture
+    // created nil-nil arrives at the recording screen with a complete score
+    // already on it, and a complete score overrules the result being clicked.
+    const matchData: NewMatch = {
       teamA: {
         name: sides.A,
-        players: teamA,
-        score: 0
+        players: teamA
       },
       teamB: {
         name: sides.B,
-        players: teamB,
-        score: 0
+        players: teamB
       },
       date: date.toISOString(),
-      status: "scheduled",
+      status: "pending",
       outcome: null,
       seasonId: seasonId === "none" ? undefined : seasonId,
       teamId: currentTeam.id

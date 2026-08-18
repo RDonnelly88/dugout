@@ -45,3 +45,23 @@ export function resultFor(
   if (outcome === "draw") return "draw";
   return outcome === side ? "win" : "loss";
 }
+
+/**
+ * The result that will be saved, given what was said and what was written down.
+ *
+ * A complete score decides it, so the two can never be stored disagreeing —
+ * the database enforces the same rule. Half a score decides nothing, and no
+ * score at all leaves the answer to whoever is recording it.
+ *
+ * A fixture nobody has played has no score, which is why creating one must not
+ * invent a nil-nil: two noughts are a complete score, and a complete score
+ * overrules the person clicking "Bibs won".
+ */
+export function resolveOutcome(
+  scoreA: number | undefined,
+  scoreB: number | undefined,
+  said: Outcome | null
+): Outcome | null {
+  if (typeof scoreA !== "number" || typeof scoreB !== "number") return said;
+  return scoreA > scoreB ? "a" : scoreA < scoreB ? "b" : "draw";
+}
