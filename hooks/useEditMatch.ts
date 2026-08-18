@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Player, Match, MatchStatus } from "@/types";
 import { useTeam } from "@/contexts/TeamContext";
 import { useSideNames } from "@/hooks/useSideNames";
-import { outcomeOf, type Outcome } from "@/lib/match-result";
+import { outcomeOf, resolveOutcome, type Outcome } from "@/lib/match-result";
 
 export const useEditMatch = (matchId: string) => {
   const [teamA, setTeamA] = useState<string[]>([]);
@@ -41,24 +41,19 @@ export const useEditMatch = (matchId: string) => {
       setTeamB(match.teamB?.players || []);
       setDate(match.date ? new Date(match.date) : undefined);
       setSeasonId(match.seasonId);
-      setTeamAScore(match.teamA?.score);
-      setTeamBScore(match.teamB?.score);
+      // Only off a match that has been played: a fixture carrying a nil-nil
+      // from before creation stopped inventing one would otherwise arrive with
+      // a complete score, which decides the result on its own.
+      const played = match.status === "completed";
+      setTeamAScore(played ? match.teamA?.score : undefined);
+      setTeamBScore(played ? match.teamB?.score : undefined);
       setOutcome(outcomeOf(match));
       setStatus(match.status);
       setNotes(match.notes || "");
     }
   }, [match]);
 
-  // A score, when both halves are given, decides the result, so the two can
-  // never be saved disagreeing. The database enforces the same rule.
-  const effectiveOutcome: Outcome | null =
-    teamAScore !== undefined && teamBScore !== undefined
-      ? teamAScore > teamBScore
-        ? "a"
-        : teamAScore < teamBScore
-          ? "b"
-          : "draw"
-      : outcome;
+  const effectiveOutcome = resolveOutcome(teamAScore, teamBScore, outcome);
 
   const togglePlayer = (team: 'A' | 'B', playerId: string) => {
     if (team === 'A') {
