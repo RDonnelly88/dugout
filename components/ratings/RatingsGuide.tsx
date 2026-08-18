@@ -9,6 +9,7 @@ import { useSideNames } from "@/hooks/useSideNames";
 import { ELO, FORM_LENGTH } from "@/lib/config";
 import { displayRating } from "@/lib/elo";
 import { workedExample, driftCurve } from "@/lib/ratings-guide";
+import { Frac, Line, Sup, Times, Var, Working } from "@/components/ratings/Formula";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import { Button } from "@/components/ui/button";
@@ -240,14 +241,72 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
         </Section>
 
         <Section title="The actual sums">
-          <div className="space-y-2 rounded-lg border border-border bg-surface-2/40 p-3 font-mono text-xs text-muted-foreground">
-            <p>expected = 1 / (1 + 10^((them − us) / 400))</p>
-            <p>
-              pot = {example?.headcount ?? 5} × {ELO.k} × (result − expected)
-            </p>
-            <p>your share = pot × (your weight / the side&apos;s weights)</p>
-            <p>weight = 1 + {ELO.formShare} × (form − par)</p>
-          </div>
+          <Working>
+            <Line name="expected">
+              <Frac
+                over={<>1</>}
+                under={
+                  <>
+                    1 <span className="mx-1 text-muted-foreground">+</span> 10
+                    <Sup>
+                      <Frac
+                        over={
+                          <>
+                            <Var>them</Var>
+                            <span className="mx-1 text-muted-foreground">−</span>
+                            <Var>us</Var>
+                          </>
+                        }
+                        under={<>400</>}
+                      />
+                    </Sup>
+                  </>
+                }
+              />
+            </Line>
+
+            <Line name="pot">
+              <span>{example?.headcount ?? 5}</span>
+              <Times />
+              <span>{ELO.k}</span>
+              <Times />
+              <span className="whitespace-nowrap">
+                (<Var>result</Var>
+                <span className="mx-1 text-muted-foreground">−</span>
+                <Var>expected</Var>)
+              </span>
+            </Line>
+
+            <Line name="your share">
+              <Var>pot</Var>
+              <Times />
+              <Frac
+                over={
+                  <>
+                    <Var>your weight</Var>
+                  </>
+                }
+                under={
+                  <>
+                    <Var>the side&apos;s weights</Var>
+                  </>
+                }
+              />
+            </Line>
+
+            <Line name="weight">
+              <span>1</span>
+              <span className="mx-1.5 text-muted-foreground">+</span>
+              <span>{ELO.formShare}</span>
+              <Times />
+              <span className="whitespace-nowrap">
+                (<Var>form</Var>
+                <span className="mx-1 text-muted-foreground">−</span>
+                <Var>par</Var>)
+              </span>
+            </Line>
+          </Working>
+
           <p className="mt-2 text-xs text-muted-foreground">
             Result is 1 for a win, ½ for a draw, 0 for a defeat. Form is read
             before kick-off, never from the result — a share that knew how the
