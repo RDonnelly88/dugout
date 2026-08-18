@@ -9,12 +9,48 @@ import type { Match } from "@/types";
  * pixels and nothing else.
  */
 
+export interface SharePlayer {
+  name: string;
+  /**
+   * What the night did to their rating. Absent for anybody the ladder has no
+   * entry for, which happens to a player deleted since the match was played.
+   */
+  change?: number;
+}
+
 export interface ShareSide {
   name: string;
   /** Absent when nobody wrote the goals down, which is most Tuesdays. */
   score?: number;
-  players: string[];
+  players: SharePlayer[];
   won: boolean;
+}
+
+/** One line of a standings table on the card. */
+export interface ShareRow {
+  name: string;
+  /** Already rounded and ready to draw: a rating, or a points total. */
+  figure: number;
+  /** Whether they were in this match, so the tables answer "and us?". */
+  played: boolean;
+}
+
+/**
+ * The tables that go under the result, and what the card is told about them.
+ *
+ * Both are optional. A squad with three games behind it has a ladder worth
+ * nothing and a match outside any season has no standings, and half a table
+ * is worse than none.
+ */
+export interface ShareTables {
+  /** What the night did to each player, by id. */
+  changes?: Map<string, number>;
+  /** The ladder as it stood when this match finished, strongest first. */
+  ladder?: { playerId: string; name: string; rating: number }[];
+  /** The season's league table as it stands, best first. */
+  standings?: { playerId: string; name: string; points: number }[];
+  /** What the season is called, for the heading over its table. */
+  seasonName?: string;
 }
 
 export interface ShareCard {
@@ -26,7 +62,15 @@ export interface ShareCard {
   location?: string;
   a: ShareSide;
   b: ShareSide;
+  /** Top of the ladder that night. Empty when there is not enough to show. */
+  ladder: ShareRow[];
+  /** Top of the season's league table, and what the season is called. */
+  standings: ShareRow[];
+  seasonName?: string;
 }
+
+/** How many of each table the card has room for. */
+const TOP = 5;
 
 /** An en dash, because a score is a range and a hyphen is not. */
 const DASH = "–";
@@ -55,7 +99,8 @@ function spokenDate(iso: string): string {
 export function shareCard(
   match: Match,
   sideNames: { A: string; B: string },
-  nameOf: (playerId: string) => string
+  nameOf: (playerId: string) => string,
+  tables: ShareTables = {}
 ): ShareCard | null {
   const outcome = outcomeOf(match);
   if (!outcome) return null;
@@ -89,13 +134,28 @@ export function shareCard(
             ? "Comfortable enough"
             : "A hammering";
 
-  const names = (ids: string[]) => ids.map(nameOf);
+  const inMatch = new Set([...match.teamA.players, ...match.teamB.players]);
+  const names = (ids: string[]): SharePlayer[] =>
+    ids.map((id) => ({ name: nameOf(id), change: tables.changes?.get(id) }));
+
+  const top = <T extends { playerId: string; name: string }>(
+    rows: T[] | undefined,
+    figure: (row: T) => number
+  ): ShareRow[] =>
+    (rows ?? []).slice(0, TOP).map((row) => ({
+      name: row.name,
+      figure: Math.round(figure(row)),
+      played: inMatch.has(row.playerId),
+    }));
 
   return {
     headline,
     blurb,
     date: spokenDate(match.date),
     location: match.location || undefined,
+    ladder: top(tables.ladder, (row) => row.rating),
+    standings: top(tables.standings, (row) => row.points),
+    seasonName: tables.seasonName,
     a: {
       name: sideNames.A,
       score: scored ? scoreA : undefined,

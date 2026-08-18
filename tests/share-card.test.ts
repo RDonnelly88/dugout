@@ -87,8 +87,8 @@ describe("shareCard", () => {
   it("turns the ids into names", () => {
     const card = shareCard(match(), sides, nameOf)!;
 
-    expect(card.a.players).toEqual(["Ross Donnelly"]);
-    expect(card.b.players).toEqual(["Sam"]);
+    expect(card.a.players.map((p) => p.name)).toEqual(["Ross Donnelly"]);
+    expect(card.b.players.map((p) => p.name)).toEqual(["Sam"]);
   });
 
   /**
@@ -160,5 +160,79 @@ describe("the blurb", () => {
     )!;
 
     expect(card.blurb).toBe("Bibs win it");
+  });
+});
+
+describe("what the night was worth", () => {
+  it("puts each player's swing beside them", () => {
+    const card = shareCard(match(), sides, nameOf, {
+      changes: new Map([
+        ["p1", 18.4],
+        ["p2", -18.4],
+      ]),
+    })!;
+
+    expect(card.a.players[0].change).toBeCloseTo(18.4);
+    expect(card.b.players[0].change).toBeCloseTo(-18.4);
+  });
+
+  /** A player deleted since the match still has a shirt on the night. */
+  it("leaves the swing off anybody the ladder has never heard of", () => {
+    const card = shareCard(match(), sides, nameOf, { changes: new Map() })!;
+    expect(card.a.players[0].change).toBeUndefined();
+  });
+});
+
+describe("the tables under the result", () => {
+  const ladder = [
+    { playerId: "p3", name: "Chris", rating: 1301.6 },
+    { playerId: "p1", name: "Ross Donnelly", rating: 1288.2 },
+    { playerId: "p4", name: "Danny", rating: 1250 },
+    { playerId: "p5", name: "Ally", rating: 1210 },
+    { playerId: "p6", name: "Paul", rating: 1190 },
+    { playerId: "p7", name: "Ewan", rating: 1150 },
+  ];
+
+  it("takes the top five and no more", () => {
+    const card = shareCard(match(), sides, nameOf, { ladder })!;
+
+    expect(card.ladder).toHaveLength(5);
+    expect(card.ladder.at(-1)!.name).toBe("Paul");
+  });
+
+  it("rounds a rating rather than drawing four decimal places", () => {
+    const card = shareCard(match(), sides, nameOf, { ladder })!;
+    expect(card.ladder[0].figure).toBe(1302);
+  });
+
+  /** The tables are there to answer "and where does that leave us?". */
+  it("marks whoever was in this match", () => {
+    const card = shareCard(match(), sides, nameOf, { ladder })!;
+
+    expect(card.ladder[0].played).toBe(false);
+    expect(card.ladder[1].played).toBe(true);
+  });
+
+  it("carries the season's own name over its table", () => {
+    const card = shareCard(match(), sides, nameOf, {
+      standings: [{ playerId: "p1", name: "Ross Donnelly", points: 26 }],
+      seasonName: "Winter 2026",
+    })!;
+
+    expect(card.seasonName).toBe("Winter 2026");
+    expect(card.standings[0]).toEqual({
+      name: "Ross Donnelly",
+      figure: 26,
+      played: true,
+    });
+  });
+
+  /** A squad with nothing to rank says nothing rather than drawing a stub. */
+  it("has no tables when it is told of none", () => {
+    const card = shareCard(match(), sides, nameOf)!;
+
+    expect(card.ladder).toEqual([]);
+    expect(card.standings).toEqual([]);
+    expect(card.seasonName).toBeUndefined();
   });
 });
