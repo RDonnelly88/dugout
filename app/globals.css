@@ -385,6 +385,28 @@ html[data-theme="dark"] {
   }
 }
 
+/* ─────────────────────────────────────────────────────────────
+   Crossing between pages
+
+   The browser draws the transition; these only set its pace. The face carried
+   from a card to the page it opens moves on its own clock, slower than the
+   crossfade behind it, because it is the thing being followed.
+
+   Nothing here needs a fallback: a browser without view transitions never
+   starts one, and `TransitionLink` navigates the ordinary way.
+   ───────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 220ms;
+  }
+
+  ::view-transition-group(player-avatar) {
+    animation-duration: 320ms;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

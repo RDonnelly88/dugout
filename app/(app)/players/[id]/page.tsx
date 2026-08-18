@@ -20,6 +20,7 @@ import type { PlayerFormResult } from "@/types";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import PlayerRatingCard from "@/components/players/PlayerRatingCard";
 import PageHeader from "@/components/PageHeader";
+import { AVATAR_TRANSITION } from "@/components/TransitionLink";
 import MatchListItem from "@/components/matches/MatchListItem";
 import { ratingSwings } from "@/lib/match-impact";
 import { StatTile, StatTiles } from "@/components/StatTile";
@@ -144,7 +145,14 @@ const PlayerDetail = () => {
       <PageHeader
         title={
           <span className="flex items-center gap-3">
-            <PlayerAvatar name={player.name} image={player.image} size="lg" />
+            {/* The other half of the transition begun on the card that was
+                tapped: same name, so the browser carries one face across. */}
+            <PlayerAvatar
+              name={player.name}
+              image={player.image}
+              size="lg"
+              style={{ viewTransitionName: AVATAR_TRANSITION }}
+            />
             {player.name}
           </span>
         }
