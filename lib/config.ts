@@ -60,8 +60,17 @@ export const ELO = {
    * keeps this safe. A share worked out from the result itself would pay a
    * player less for a win than it charged them for a defeat, and that walks
    * everyone towards the middle until the table says nothing.
+   *
+   * The setting is a trade between two things that pull opposite ways. High,
+   * and two team-mates in the same win walk off with satisfyingly different
+   * numbers. Also high, and a fading player is cushioned: his cold run shrinks
+   * his share of his own defeats, so the top of the table comes down far more
+   * slowly than the bottom climbs. Replayed over the squad's history, halving
+   * this barely moves a single final rating — the redistribution is within a
+   * side and largely cancels over a season — while a sustained slump reaches
+   * the middle in about two thirds of the matches it used to take.
    */
-  formShare: 0.8,
+  formShare: 0.5,
 
   /**
    * Ratings drift back towards `start` for matches a player missed.
