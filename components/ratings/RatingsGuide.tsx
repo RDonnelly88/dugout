@@ -119,8 +119,9 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
             </Step>
             <Step n={3} title="Form decides the shares">
               The pot is split across the side by how everyone has been going
-              lately, over their last {FORM_LENGTH} games. Whoever is
-              flying takes more of a win — and more of a defeat.
+              lately, over the squad&apos;s last {FORM_LENGTH} nights — a night
+              missed counts as a nought, so turning up is part of it. Whoever
+              is flying takes more of a win, and more of a defeat.
             </Step>
           </div>
         </Section>

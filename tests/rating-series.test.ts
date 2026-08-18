@@ -10,16 +10,22 @@ function match(
   b: string[],
   scoreA: number,
   scoreB: number,
-  date = `2026-01-${String(++counter).padStart(2, "0")}`
+  date?: string
 ): Match {
+  // The number is taken here rather than in the default date, so a caller
+  // passing a date of their own still gets an id of their own. Sharing one
+  // made four matches indistinguishable to anything that looks a result up
+  // by id.
+  const n = ++counter;
+  const on = date ?? `2026-01-${String(n).padStart(2, "0")}`;
   return {
-    id: `m${counter}`,
-    date,
+    id: `m${n}`,
+    date: on,
     teamA: { name: "A", players: a, score: scoreA },
     teamB: { name: "B", players: b, score: scoreB },
     status: "completed",
-    createdAt: date,
-    updatedAt: date,
+    createdAt: on,
+    updatedAt: on,
   };
 }
 

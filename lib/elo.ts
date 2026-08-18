@@ -1,7 +1,7 @@
 import { ELO } from "./config";
 import { formShare, rollForm, type FormResult } from "./form";
 import { outcomeOf } from "./match-result";
-import type { Match } from "@/types";
+import type { Match, PlayerFormResult } from "@/types";
 
 interface RatingPoint {
   matchId: string;
@@ -19,7 +19,7 @@ interface RatingPoint {
    * team-mates in the same result took different numbers, rather than
    * working form out a second time and risking a different answer.
    */
-  formBefore: FormResult[];
+  formBefore: PlayerFormResult[];
 }
 
 export interface PlayerRating {
@@ -157,10 +157,14 @@ export function computeRatings(matches: Match[]): Map<string, PlayerRating> {
   // rather than something a caller needs.
   const lastPlayedIndex = new Map<string, number>();
 
-  // The run each player carries into the next match. Rolled forward here
-  // rather than recomputed per match, which would walk the whole history
-  // once for every fixture in it.
-  const form = new Map<string, FormResult[]>();
+  // The run each player carries into the next match, newest first, with the
+  // nights the squad played without them marked. Rolled forward here rather
+  // than recomputed per match, which would walk the whole history once for
+  // every fixture in it.
+  //
+  // The same run the table shows beside a name, so the strip on a match card
+  // is the thing that decided the share rather than a second opinion on it.
+  const form = new Map<string, PlayerFormResult[]>();
 
   played.forEach((match, index) => {
     const outcome = outcomeOf(match)!;
@@ -261,6 +265,19 @@ export function computeRatings(matches: Match[]): Map<string, PlayerRating> {
     // the first result of the evening influence the second.
     apply(sideA, potA, ratingB, resultA);
     apply(sideB, potB, ratingA, resultB);
+
+    // Everybody else who has played before tonight was not here, and that
+    // counts. A run of five is five of the squad's nights, not five of the
+    // ones a player fancied — which is what lets a strip show the gaps and
+    // still be the thing the share was worked out from. Nobody picks up a
+    // blank for a match played before their debut: they were not there to
+    // miss it.
+    const out = new Set([...sideA, ...sideB].map((p) => p.playerId));
+    for (const playerId of ratings.keys()) {
+      if (out.has(playerId)) continue;
+      if (!lastPlayedIndex.has(playerId)) continue;
+      form.set(playerId, rollForm(form.get(playerId) ?? [], "dnp"));
+    }
   });
 
   // Bring everyone up to the last match played, so two players are comparable

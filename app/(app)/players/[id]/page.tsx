@@ -22,6 +22,7 @@ import PlayerRatingCard from "@/components/players/PlayerRatingCard";
 import PageHeader from "@/components/PageHeader";
 import { AVATAR_TRANSITION } from "@/components/TransitionLink";
 import MatchListItem from "@/components/matches/MatchListItem";
+import { recentForm } from "@/lib/form";
 import { ratingSwings } from "@/lib/match-impact";
 import { StatTile, StatTiles } from "@/components/StatTile";
 
@@ -108,16 +109,13 @@ const PlayerDetail = () => {
     );
   }
 
-  // Prepare player info card
-  const playerRecentMatches = playerMatches
-    .filter(match => match.status === 'completed')
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 5);
-  
-  // A null result means the match has no score yet, which reads the same as
-  // not having played in it.
-  const recentResults: PlayerFormResult[] = playerRecentMatches.map(
-    (match) => getPlayerMatchResult(match).result ?? "dnp"
+  // The run to show when there is no current season to read one from: the
+  // squad's recent nights, with the ones this player was missing marked, which
+  // is the same run every other strip in the app draws. Their own last five
+  // results would close the gaps up and read as an unbroken run.
+  const recentResults: PlayerFormResult[] = React.useMemo(
+    () => recentForm(allMatches).get(player?.id ?? "")?.results ?? [],
+    [allMatches, player?.id]
   );
 
   const orderedMatches = [...playerMatches].sort(

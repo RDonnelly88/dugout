@@ -143,3 +143,24 @@ describe("form over the squad's window, not the player's", () => {
     expect(recentForm(fixtures, 2).get("old")).toBeUndefined();
   });
 });
+
+describe("a first game is not a missed one", () => {
+  it("gives a debutant only the nights since they arrived", () => {
+    const fixtures = [
+      match(["old"], ["x"], 1, 0, "2026-01-01"),
+      match(["old"], ["x"], 1, 0, "2026-01-02"),
+      match(["old"], ["x"], 1, 0, "2026-01-03"),
+      match(["old", "new"], ["x"], 1, 0, "2026-01-04"),
+      match(["old", "new"], ["x"], 0, 1, "2026-01-05"),
+    ];
+
+    const form = recentForm(fixtures, 5);
+
+    // Newest first, and nothing before the fourth night.
+    expect(form.get("new")!.results).toEqual(["loss", "win"]);
+    // Three points over the two they have played, not over five.
+    expect(form.get("new")!.pointsPerGame).toBe(1.5);
+    // And the ever-present is measured over all five.
+    expect(form.get("old")!.results).toHaveLength(5);
+  });
+});

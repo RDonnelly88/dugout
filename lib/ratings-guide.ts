@@ -2,8 +2,8 @@ import { ELO } from "./config";
 import { expectedScore } from "./elo";
 import { matchImpact } from "./match-impact";
 import { outcomeOf } from "./match-result";
-import type { FormResult } from "./form";
-import type { Match, Player } from "@/types";
+
+import type { Match, Player, PlayerFormResult } from "@/types";
 
 /**
  * A real result, taken apart, for the guide to walk through.
@@ -16,7 +16,7 @@ import type { Match, Player } from "@/types";
 interface GuidePlayer {
   playerId: string;
   /** The run they walked in on, newest first. */
-  form: FormResult[];
+  form: PlayerFormResult[];
   change: number;
   after: number;
 }
