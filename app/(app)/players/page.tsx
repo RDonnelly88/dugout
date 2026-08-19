@@ -1,12 +1,11 @@
 "use client";
 
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPlayers, deletePlayer, getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
 import { Player } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
 import DeletePlayerDialog from "@/components/players/DeletePlayerDialog";
 import CurrentSeasonCard from "@/components/players/CurrentSeasonCard";
 import PlayerSearchBar from "@/components/players/PlayerSearchBar";
@@ -44,21 +43,6 @@ const Players = () => {
     enabled: !!currentSeason,
     staleTime: 60000
   });
-
-  const playerIds = currentSeason ? players.map(player => player.id) : [];
-
-  const { formData: batchFormData, isLoading: isLoadingForms } = useBatchFormLoader(
-    currentSeason?.id || null, 
-    playerIds
-  );
-
-  useEffect(() => {
-    if (currentSeason?.id) {
-      queryClient.invalidateQueries({ 
-        queryKey: ['batchPlayerForms', currentSeason.id] 
-      });
-    }
-  }, [currentSeason?.id, queryClient]);
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deletePlayer(id),
@@ -131,8 +115,6 @@ const Players = () => {
           players={players}
           currentSeasonId={currentSeason?.id || null}
           seasonPlayerStats={seasonPlayerStats}
-          batchFormData={batchFormData}
-          isLoadingForms={isLoadingForms}
           onDeleteClick={handleDeleteClick}
           searchTerm={searchTerm}
           scope={scope}

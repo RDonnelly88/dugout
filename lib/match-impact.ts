@@ -1,7 +1,7 @@
 import { computeRatings } from "./elo";
-import { recentForm, type FormResult } from "./form";
+import { recentForm } from "./form";
 import { SKILL } from "./config";
-import type { Match, Player } from "@/types";
+import type { Match, Player, PlayerFormResult } from "@/types";
 
 interface PlayerImpact {
   playerId: string;
@@ -10,11 +10,12 @@ interface PlayerImpact {
   after: number;
   change: number;
   /**
-   * The run they walked in on, newest first. Two team-mates in the same
-   * result take different numbers because of this, so it is shown beside
-   * them rather than left to be guessed at.
+   * The run they walked in on, newest first, with the nights they were not
+   * there marked. Two team-mates in the same result take different numbers
+   * because of this, so it is shown beside them rather than left to be
+   * guessed at.
    */
-  form: FormResult[];
+  form: PlayerFormResult[];
 }
 
 export interface SideImpact {

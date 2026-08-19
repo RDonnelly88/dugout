@@ -4,6 +4,16 @@ import { outcomeOf, resultFor } from "./match-result";
 
 export type FormResult = "win" | "draw" | "loss";
 
+/**
+ * A run, newest first, with `dnp` for a night the squad played without them.
+ *
+ * One shape for form everywhere: what the table shows beside a name and what
+ * the rating model reads before deciding a share are the same list. A strip
+ * that skipped the weeks somebody was missing told a different story from the
+ * number beside it.
+ */
+export type FormRun = readonly PlayerFormResult[];
+
 export interface RecentForm {
   playerId: string;
   /** Of the window, the ones they actually turned out for. */
@@ -19,8 +29,13 @@ export interface RecentForm {
   results: PlayerFormResult[];
 }
 
-/** What a result is worth. The league's own scoring, and the only copy of it. */
-const pointsFor = (result: FormResult): number =>
+/**
+ * What a result is worth. The league's own scoring, and the only copy of it.
+ *
+ * A night missed scores what a defeat scores. Turning up is part of being in
+ * form — a player cannot be flying on the strength of three games out of ten.
+ */
+const pointsFor = (result: PlayerFormResult): number =>
   result === "win" ? 3 : result === "draw" ? 1 : 0;
 
 /** A perfectly ordinary run: the mark everything else is read against. */
@@ -38,10 +53,10 @@ const SETTLING_GAMES = 2;
 
 /** Newest first, capped at the window — the shape the rest of this file uses. */
 export const rollForm = (
-  previous: readonly FormResult[],
-  result: FormResult,
+  previous: FormRun,
+  result: PlayerFormResult,
   windowSize: number = FORM_LENGTH
-): FormResult[] => [result, ...previous].slice(0, windowSize);
+): PlayerFormResult[] => [result, ...previous].slice(0, windowSize);
 
 /**
  * Where a run sits between a wipeout and a perfect one, as nought to one.
@@ -50,7 +65,7 @@ export const rollForm = (
  * on from a player's very first game without a single result swinging it to
  * an extreme.
  */
-export function formShare(results: readonly FormResult[]): number {
+export function formShare(results: FormRun): number {
   const points = results.reduce((sum, r) => sum + pointsFor(r), 0);
   const eased =
     (points + SETTLING_GAMES * PAR_POINTS_PER_GAME) /
@@ -62,7 +77,7 @@ export function formShare(results: readonly FormResult[]): number {
  * How everyone has been going lately.
  *
  * The window is the squad's last few matches, the same few for everybody, and
- * a night missed counts as nought. Measuring each player over their own last
+ * a night missed counts as nought — from a player's first game onwards. Measuring each player over their own last
  * five instead made the table incomparable: three wins out of three read as a
  * perfect run and outranked five games of four wins, and the card promising
  * "points a game over the last five" was quietly dividing one player's by
@@ -75,11 +90,23 @@ export function recentForm(
   matches: Match[],
   windowSize: number = FORM_LENGTH
 ): Map<string, RecentForm> {
-  const window = matches
+  const played = matches
     .filter((m) => outcomeOf(m) !== null)
     // Newest first, so taking the window is just a slice.
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, windowSize);
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  // A night is only missed if the player was around to miss it. Counting the
+  // weeks before somebody's debut would hand every newcomer a run of blanks
+  // and read it as poor form, which is the head start argument in reverse.
+  const debut = new Map<string, number>();
+  played.forEach((match, index) => {
+    for (const id of [...match.teamA.players, ...match.teamB.players]) {
+      // Newest first, so the last index seen is the earliest match.
+      debut.set(id, index);
+    }
+  });
+
+  const window = played.slice(0, windowSize);
 
   // Anybody who turned out at least once in the window. Somebody who has not
   // played in any of it has no recent form to speak of, rather than a stale
@@ -95,22 +122,24 @@ export function recentForm(
     let points = 0;
     let games = 0;
 
-    for (const match of window) {
+    window.forEach((match, index) => {
+      if (index > (debut.get(playerId) ?? 0)) return;
+
       const result = resultFor(match, playerId);
       if (result === null) {
         results.push("dnp");
-        continue;
+        return;
       }
       results.push(result);
       points += pointsFor(result);
       games += 1;
-    }
+    });
 
     byPlayer.set(playerId, {
       playerId,
       games,
       points,
-      pointsPerGame: points / window.length,
+      pointsPerGame: points / results.length,
       results,
     });
   }

@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { usePlayerDetail } from "@/hooks/usePlayerDetail";
-import { usePlayerForm } from "@/hooks/usePlayerForm";
 import { usePlayerRank } from "@/hooks/usePlayerRank";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import PlayerSeasonStats from "@/components/players/PlayerSeasonStats";
@@ -22,6 +21,7 @@ import PlayerRatingCard from "@/components/players/PlayerRatingCard";
 import PageHeader from "@/components/PageHeader";
 import { AVATAR_TRANSITION } from "@/components/TransitionLink";
 import MatchListItem from "@/components/matches/MatchListItem";
+import { recentForm } from "@/lib/form";
 import { ratingSwings } from "@/lib/match-impact";
 import { StatTile, StatTiles } from "@/components/StatTile";
 
@@ -66,12 +66,6 @@ const PlayerDetail = () => {
     currentSeason?.id || null,
     player?.id || null
   );
-    
-  // Get player form for the currently selected season with improved loading state handling
-  const { form: currentSeasonForm, isLoading: isLoadingForm } = usePlayerForm(
-    currentSeason?.id || null, 
-    player?.id || null
-  );
 
   if (isLoading) {
     return (
@@ -108,16 +102,13 @@ const PlayerDetail = () => {
     );
   }
 
-  // Prepare player info card
-  const playerRecentMatches = playerMatches
-    .filter(match => match.status === 'completed')
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 5);
-  
-  // A null result means the match has no score yet, which reads the same as
-  // not having played in it.
-  const recentResults: PlayerFormResult[] = playerRecentMatches.map(
-    (match) => getPlayerMatchResult(match).result ?? "dnp"
+  // The run to show when there is no current season to read one from: the
+  // squad's recent nights, with the ones this player was missing marked, which
+  // is the same run every other strip in the app draws. Their own last five
+  // results would close the gaps up and read as an unbroken run.
+  const recentResults: PlayerFormResult[] = React.useMemo(
+    () => recentForm(allMatches).get(player?.id ?? "")?.results ?? [],
+    [allMatches, player?.id]
   );
 
   const orderedMatches = [...playerMatches].sort(
@@ -172,8 +163,7 @@ const PlayerDetail = () => {
         <div className="flex items-center gap-3">
           <span className="eyebrow">Recent form</span>
           <PlayerFormDisplay
-            results={currentSeasonForm.length > 0 ? currentSeasonForm : recentResults}
-            isLoading={isLoadingForm && currentSeasonForm.length === 0}
+            results={recentResults}
           />
         </div>
       </PageHeader>

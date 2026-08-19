@@ -14,16 +14,22 @@ function match(
   b: string[],
   scoreA: number,
   scoreB: number,
-  date = `2026-01-${String(++counter).padStart(2, "0")}`
+  date?: string
 ): Match {
+  // The number is taken here rather than in the default date, so a caller
+  // passing a date of their own still gets an id of their own. Sharing one
+  // made four matches indistinguishable to anything that looks a result up
+  // by id.
+  const n = ++counter;
+  const on = date ?? `2026-01-${String(n).padStart(2, "0")}`;
   return {
-    id: `m${counter}`,
-    date,
+    id: `m${n}`,
+    date: on,
     teamA: { name: "A", players: a, score: scoreA },
     teamB: { name: "B", players: b, score: scoreB },
     status: "completed",
-    createdAt: date,
-    updatedAt: date,
+    createdAt: on,
+    updatedAt: on,
   };
 }
 
@@ -434,17 +440,18 @@ describe("sharing a result out across a side", () => {
    * because a team result carries nothing that says who earned it.
    */
 
-  /** Five straight wins, then a match with somebody else. */
-  const onFire = (id: string) =>
-    Array.from({ length: 5 }, (_, i) => match([id], [`beat-${id}-${i}`], 1, 0));
-  /** Five straight defeats. */
-  const onIce = (id: string) =>
-    Array.from({ length: 5 }, (_, i) => match([`lost-${id}-${i}`], [id], 1, 0));
+  /**
+   * Five nights where one of them wins and the other loses, so both walk into
+   * the sixth having played every match — the only difference between them
+   * being how those matches went. Running the two through separate fixtures
+   * would leave each of them absent for the other's, and an absence is part
+   * of a run now.
+   */
+  const oneEach = Array.from({ length: 5 }, () => match(["hot"], ["cold"], 1, 0));
 
   it("gives the man in form more of a win than the man out of it", () => {
     const ratings = computeRatings([
-      ...onFire("hot"),
-      ...onIce("cold"),
+      ...oneEach,
       match(["hot", "cold"], ["x", "y"], 1, 0),
     ]);
 
@@ -464,8 +471,7 @@ describe("sharing a result out across a side", () => {
    */
   it("and more of a defeat, being the same share either way", () => {
     const ratings = computeRatings([
-      ...onFire("hot"),
-      ...onIce("cold"),
+      ...oneEach,
       match(["hot", "cold"], ["x", "y"], 0, 1),
     ]);
 
@@ -552,14 +558,62 @@ describe("sharing a result out across a side", () => {
     expect(debutant.unsettled).toBe(true);
   });
 
+  /**
+   * The run the share is worked out from is the same one the table draws
+   * beside a name: the squad's last five nights, with the ones somebody was
+   * missing marked. A strip that skipped them would be telling a different
+   * story from the number next to it.
+   */
+  it("marks the nights a player was not there in the run they walk in on", () => {
+    const ratings = computeRatings([
+      match(["away", "regular"], ["x", "y"], 1, 0),
+      match(["regular"], ["x"], 1, 0),
+      match(["regular"], ["x"], 1, 0),
+      match(["away", "regular"], ["x", "y"], 1, 0),
+    ]);
+
+    // Newest first: the two they missed sit between their two wins.
+    expect(ratings.get("away")!.history.at(-1)!.formBefore).toEqual([
+      "dnp",
+      "dnp",
+      "win",
+    ]);
+  });
+
+  it("takes less out of a win for somebody who has been missing", () => {
+    const fixtures = [
+      // Both win their first, so neither has an edge from the result itself.
+      match(["kept", "missed"], ["x", "y"], 1, 0),
+      // Three nights only one of them turns out for.
+      ...Array.from({ length: 3 }, () => match(["kept"], ["x"], 1, 0)),
+      match(["kept", "missed"], ["x", "y"], 1, 0),
+    ];
+
+    const ratings = computeRatings(fixtures);
+    const kept = ratings.get("kept")!.history.at(-1)!.change;
+    const missed = ratings.get("missed")!.history.at(-1)!.change;
+
+    expect(kept).toBeGreaterThan(missed);
+  });
+
+  /** You cannot miss a match played before you had ever turned up. */
+  it("charges a debutant nothing for the weeks before their first game", () => {
+    const before = Array.from({ length: 4 }, () => match(["a"], ["b"], 1, 0));
+    const ratings = computeRatings([
+      ...before,
+      match(["new", "alsoNew"], ["a", "b"], 1, 0),
+    ]);
+
+    expect(ratings.get("new")!.history.at(-1)!.formBefore).toEqual([]);
+  });
+
   it("keeps the match zero-sum however lopsided the form on it", () => {
     const teamA = ["a1", "a2", "a3", "a4", "a5"];
     const teamB = ["b1", "b2", "b3", "b4", "b5"];
+    // Four of the ten walk in on runs as far apart as runs get: two who have
+    // won every week, two who have not turned out at all.
     const ratings = computeRatings([
-      ...onFire("a1"),
-      ...onIce("a2"),
-      ...onFire("b1"),
-      ...onIce("b2"),
+      ...Array.from({ length: 5 }, () => match(["a1", "b1"], ["x", "y"], 1, 0)),
       match(teamA, teamB, 1, 0),
     ]);
 

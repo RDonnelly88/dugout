@@ -199,9 +199,23 @@ export default function SeasonWrap({
               />
             ))}
           </div>
+          {/* Above an even chance the winners were the favourites, so there
+              was no upset all season and saying there was would be inventing
+              one. The award still names the result the table came closest to
+              getting wrong. */}
           <p className="text-xs text-muted-foreground">
-            {wrap.upset.drawn ? "Held" : "Beat"} a side the table gave them{" "}
-            <span className="tabular">{pct(wrap.upset.expected)}</span> against
+            {wrap.upset.expected < 0.5 ? (
+              <>
+                {wrap.upset.drawn ? "Held" : "Beat"} a side the table gave them{" "}
+                <span className="tabular">{pct(wrap.upset.expected)}</span>{" "}
+                against
+              </>
+            ) : (
+              <>
+                The closest the table came to being wrong, and it still had
+                them at <span className="tabular">{pct(wrap.upset.expected)}</span>
+              </>
+            )}
           </p>
           <p className="mt-1 flex items-center gap-1 text-xs text-accent">
             See the match

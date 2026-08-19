@@ -9,16 +9,22 @@ function match(
   b: string[],
   scoreA: number,
   scoreB: number,
-  date = `2026-01-${String(++counter).padStart(2, "0")}`
+  date?: string
 ): Match {
+  // The number is taken here rather than in the default date, so a caller
+  // passing a date of their own still gets an id of their own. Sharing one
+  // made four matches indistinguishable to anything that looks a result up
+  // by id.
+  const n = ++counter;
+  const on = date ?? `2026-01-${String(n).padStart(2, "0")}`;
   return {
-    id: `m${counter}`,
-    date,
+    id: `m${n}`,
+    date: on,
     teamA: { name: "Bibs", players: a, score: scoreA },
     teamB: { name: "No bibs", players: b, score: scoreB },
     status: "completed",
-    createdAt: date,
-    updatedAt: date,
+    createdAt: on,
+    updatedAt: on,
   };
 }
 
@@ -80,6 +86,30 @@ describe("matchImpact", () => {
 
     expect(impact.A.formAfter).toBeGreaterThanOrEqual(impact.A.formBefore);
     expect(impact.B.formAfter).toBeLessThanOrEqual(impact.B.formBefore);
+  });
+
+  /**
+   * The strip beside each name on a match page is the run that decided their
+   * share, so it has to carry the nights they were not there. Closing the
+   * gaps up drew an unbroken run of wins beside a player who had turned out
+   * once in a month, and made the number next to it look arbitrary.
+   */
+  it("carries the nights a player missed into the strip beside them", () => {
+    const fixtures = [
+      match(["a", "c"], ["b"], 1, 0, "2026-05-01"),
+      match(["b"], ["c"], 1, 0, "2026-05-02"),
+      match(["b"], ["c"], 1, 0, "2026-05-03"),
+      match(["a", "c"], ["b"], 1, 0, "2026-05-04"),
+    ];
+    const impact = matchImpact(fixtures, fixtures.at(-1)!, squad)!;
+
+    const a = impact.A.players.find((p) => p.playerId === "a")!;
+    // Newest first: two nights missed, then the win they opened with.
+    expect(a.form).toEqual(["dnp", "dnp", "win"]);
+
+    // Somebody who played every one of them has no gaps at all.
+    const c = impact.A.players.find((p) => p.playerId === "c")!;
+    expect(c.form).not.toContain("dnp");
   });
 
   it("is nothing for a fixture that was never played", () => {
