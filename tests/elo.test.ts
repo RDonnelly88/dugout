@@ -174,7 +174,7 @@ describe("computeRatings", () => {
   it("ignores anything that is not a played result", () => {
     const pending: Match = {
       ...match(["a"], ["b"], 0, 0),
-      status: "pending",
+      status: "scheduled",
     };
     const noScore: Match = {
       id: "ns",

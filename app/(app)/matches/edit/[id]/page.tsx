@@ -172,7 +172,7 @@ const EditMatch = () => {
                 <Switch
                   id="match-completed"
                   checked={status === "completed"}
-                  onCheckedChange={(checked) => setStatus(checked ? "completed" : "pending")}
+                  onCheckedChange={(checked) => setStatus(checked ? "completed" : "scheduled")}
                 />
               </div>
 

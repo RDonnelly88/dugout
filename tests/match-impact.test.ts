@@ -113,7 +113,7 @@ describe("matchImpact", () => {
   });
 
   it("is nothing for a fixture that was never played", () => {
-    const scheduled: Match = { ...match(["a"], ["c"], 0, 0, "2026-02-01"), status: "pending" };
+    const scheduled: Match = { ...match(["a"], ["c"], 0, 0, "2026-02-01"), status: "scheduled" };
     expect(matchImpact([scheduled], scheduled, squad)).toBeNull();
   });
 

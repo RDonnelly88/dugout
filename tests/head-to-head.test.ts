@@ -82,7 +82,7 @@ describe("headToHead", () => {
   });
 
   it("skips fixtures that have not been played", () => {
-    const pending: Match = { ...match(["a", "b"], ["c"], 0, 0), status: "pending" };
+    const pending: Match = { ...match(["a", "b"], ["c"], 0, 0), status: "scheduled" };
 
     expect(headToHead([pending], "a", "b").together.played).toBe(0);
   });
