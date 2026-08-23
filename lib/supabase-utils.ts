@@ -50,6 +50,34 @@ export const mapSupabaseMatchToMatch = (data: any): Match => {
   };
 };
 
+/**
+ * The columns an edit writes, from the fields it was handed.
+ *
+ * Only what the caller actually passed, so editing a date does not blank a
+ * score. A field missing from here fails quietly in the worst way: the write
+ * succeeds, having saved everything except the thing that changed.
+ *
+ * `outcome`, `seasonId` and `notes` are checked against undefined rather than
+ * for truth, because clearing any of them is itself an edit — and an outcome
+ * is null for a match with no result, which is a value, not an absence.
+ */
+export const mapMatchUpdateToSupabase = (
+  updates: Partial<Omit<Match, "id" | "createdAt" | "updatedAt">>
+): Record<string, unknown> => {
+  const columns: Record<string, unknown> = {};
+
+  if (updates.date) columns.date = updates.date;
+  if (updates.location) columns.location = updates.location;
+  if (updates.status) columns.status = updates.status;
+  if (updates.teamA) columns.team_a = updates.teamA;
+  if (updates.teamB) columns.team_b = updates.teamB;
+  if (updates.outcome !== undefined) columns.outcome = updates.outcome;
+  if (updates.seasonId !== undefined) columns.season_id = updates.seasonId;
+  if (updates.notes !== undefined) columns.notes = updates.notes;
+
+  return columns;
+};
+
 // Helper function to map our Match type to Supabase format
 export const mapMatchToSupabase = (match: Omit<Match, "id" | "createdAt" | "updatedAt">): any => {
   return {
