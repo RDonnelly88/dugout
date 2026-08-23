@@ -141,7 +141,7 @@ export const useCreateMatch = () => {
         players: teamB
       },
       date: date.toISOString(),
-      status: "pending",
+      status: "scheduled",
       outcome: null,
       seasonId: seasonId === "none" ? undefined : seasonId,
       teamId: currentTeam.id

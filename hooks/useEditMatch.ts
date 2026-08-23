@@ -19,7 +19,7 @@ export const useEditMatch = (matchId: string) => {
   const [teamAScore, setTeamAScore] = useState<number | undefined>(undefined);
   const [teamBScore, setTeamBScore] = useState<number | undefined>(undefined);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
-  const [status, setStatus] = useState<MatchStatus>("pending");
+  const [status, setStatus] = useState<MatchStatus>("scheduled");
   const [notes, setNotes] = useState<string>("");
   const router = useRouter();
   const queryClient = useQueryClient();

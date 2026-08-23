@@ -55,7 +55,7 @@ describe("chemistryFor", () => {
   });
 
   it("ignores matches that never finished", () => {
-    const unplayed: Match = { ...match(["a", "b"], ["c"], 0, 0), status: "pending" };
+    const unplayed: Match = { ...match(["a", "b"], ["c"], 0, 0), status: "scheduled" };
     expect(chemistryFor([unplayed], "a").played).toBe(0);
   });
 

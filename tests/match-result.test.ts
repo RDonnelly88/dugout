@@ -44,7 +44,7 @@ describe("outcomeOf", () => {
   });
 
   it("is nothing for a fixture, whatever it carries", () => {
-    expect(outcomeOf({ ...base, status: "pending", outcome: "a" })).toBeNull();
+    expect(outcomeOf({ ...base, status: "scheduled", outcome: "a" })).toBeNull();
   });
 });
 

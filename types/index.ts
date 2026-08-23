@@ -49,7 +49,17 @@ export interface TeamInfo {
   score?: number;
 }
 
-export type MatchStatus = "pending" | "in_progress" | "completed";
+/**
+ * The two states a match can be in, and the only two the column will hold.
+ *
+ * Kept as values rather than a bare union so a test can hold them against the
+ * `matches_status_check` constraint in the migration. A status the database
+ * refuses is not a typo the compiler can see: the generated types render the
+ * column as `string`, so the check has to be written down somewhere.
+ */
+export const MATCH_STATUSES = ["scheduled", "completed"] as const;
+
+export type MatchStatus = (typeof MATCH_STATUSES)[number];
 
 export interface Match {
   id: string;

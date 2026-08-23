@@ -71,7 +71,7 @@ describe("recentForm", () => {
   it("ignores fixtures that have not been played", () => {
     const pending: Match = {
       ...match(["a"], ["b"], 0, 0, "2026-01-01"),
-      status: "pending",
+      status: "scheduled",
     };
 
     expect(recentForm([pending]).size).toBe(0);

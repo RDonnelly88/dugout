@@ -74,7 +74,7 @@ describe("shareCard", () => {
 
   /** A card reading "not played yet" is worse than no card. */
   it("has no picture for a fixture nobody has played", () => {
-    expect(shareCard(match({ status: "pending" }), sides, nameOf)).toBeNull();
+    expect(shareCard(match({ status: "scheduled" }), sides, nameOf)).toBeNull();
   });
 
   it("uses the squad's own words for its sides", () => {

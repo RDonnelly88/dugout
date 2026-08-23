@@ -39,7 +39,7 @@ describe("seasonWrap", () => {
   });
 
   it("counts only matches that were actually played", () => {
-    const pending: Match = { ...match(["a"], ["b"], 0, 0), status: "pending" };
+    const pending: Match = { ...match(["a"], ["b"], 0, 0), status: "scheduled" };
     const wrap = seasonWrap([match(["a"], ["b"], 1, 0), pending]);
 
     expect(wrap.matches).toBe(1);
