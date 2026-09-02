@@ -10,13 +10,22 @@ interface PlayerFormDisplayProps {
   size?: 'xs' | 'sm' | 'md' | 'lg';
   showLabel?: boolean;
   isLoading?: boolean;
+  /**
+   * One more result, drawn after the run and ringed.
+   *
+   * For a screen about a single night, where the run is context and that night
+   * is the subject. Kept apart from `results` so the ring cannot land on a
+   * square that is simply the most recent one.
+   */
+  latest?: PlayerFormResult;
 }
 
-const PlayerFormDisplay = ({ 
-  results = [], 
+const PlayerFormDisplay = ({
+  results = [],
   size = 'md',
   showLabel = false,
-  isLoading = false
+  isLoading = false,
+  latest
 }: PlayerFormDisplayProps) => {
   // Create empty form squares for loading state
   if (isLoading) {
@@ -43,17 +52,17 @@ const PlayerFormDisplay = ({
   }
   
   // Don't render anything if there's no form data or it's empty
-  if (!results || results.length === 0) {
+  if ((!results || results.length === 0) && !latest) {
     return (
       <div className="text-xs text-muted-foreground">No match data</div>
     );
   }
-  
+
   // Only show the 5 most recent results
   // For display, we want most recent on the right
   const recentResults = results.slice(0, 5).reverse();
-  
-  const getFormSquare = (result: PlayerFormResult, index: number) => {
+
+  const getFormSquare = (result: PlayerFormResult, index: number, ringed = false) => {
     let bgColor = "bg-surface-2";
     let textColor = "text-muted-foreground";
     let letter = "-";
@@ -85,18 +94,26 @@ const PlayerFormDisplay = ({
       <div 
         key={index}
         className={cn(
-          "flex items-center justify-center rounded font-semibold",
+          "flex shrink-0 items-center justify-center rounded font-semibold",
           bgColor,
           textColor,
-          size === 'xs' ? 'w-4 h-4 text-[8px]' : 
-          size === 'sm' ? 'w-5 h-5 text-[10px]' : 
-          size === 'md' ? 'w-6 h-6 text-xs' : 'w-8 h-8 text-sm'
+          size === 'xs' ? 'w-4 h-4 text-[8px]' :
+          size === 'sm' ? 'w-5 h-5 text-[10px]' :
+          size === 'md' ? 'w-6 h-6 text-xs' : 'w-8 h-8 text-sm',
+          // The gap is what makes the ring legible. Drawn tight to the square
+          // it sits on a win, a loss or a draw — three saturated colours, one
+          // of them close enough to the accent to swallow it. Offset, the ring
+          // reads against the panel instead, so it looks the same whatever
+          // result it happens to land on.
+          ringed && "ring-2 ring-accent ring-offset-2 ring-offset-surface-2 ml-2"
         )}
         title={
-          result === 'win' ? 'Win' : 
-          result === 'loss' ? 'Loss' : 
-          result === 'draw' ? 'Draw' : 
-          result === 'dnp' ? 'Did Not Play' : 'No result'
+          ringed
+            ? "This match"
+            : result === 'win' ? 'Win' :
+              result === 'loss' ? 'Loss' :
+              result === 'draw' ? 'Draw' :
+              result === 'dnp' ? 'Did Not Play' : 'No result'
         }
       >
         {result === 'dnp' ? 
@@ -119,6 +136,7 @@ const PlayerFormDisplay = ({
       )}
       <div className="flex space-x-1 items-center">
         {recentResults.map((result, index) => getFormSquare(result, index))}
+        {latest !== undefined && getFormSquare(latest, recentResults.length, true)}
       </div>
     </div>
   );
