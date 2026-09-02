@@ -16,6 +16,7 @@ import { getMatches } from "@/lib/db";
 import { useTeam } from "@/contexts/TeamContext";
 import { useSideNames } from "@/hooks/useSideNames";
 import { matchImpact, type SideImpact } from "@/lib/match-impact";
+import { resultFor } from "@/lib/match-result";
 import { displayRating } from "@/lib/elo";
 import type { Match, Player } from "@/types";
 
@@ -78,10 +79,13 @@ function Side({
   name,
   impact,
   players,
+  match,
 }: {
   name: string;
   impact: SideImpact;
   players: Map<string, Player>;
+  /** The night in question, to pick this result out of the run. */
+  match: Match;
 }) {
   return (
     <div className="rounded-xl border border-border bg-surface-2/40 p-4">
@@ -120,8 +124,14 @@ function Side({
               </span>
               {/* The run they walked in on, which is why two team-mates in
                   the same result took different numbers. Without it the card
-                  looks arbitrary. */}
-              <PlayerFormDisplay results={entry.form} size="xs" />
+                  looks arbitrary. This night is ringed on the end of it, so
+                  the five that decided the weighting stay distinct from the
+                  one being read. */}
+              <PlayerFormDisplay
+                results={entry.form}
+                size="xs"
+                latest={resultFor(match, entry.playerId) ?? undefined}
+              />
               <span className="tabular text-muted-foreground">
                 {displayRating(entry.after)}
               </span>
@@ -183,8 +193,8 @@ export default function MatchImpact({
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-2">
-        <Side name={sides.A} impact={impact.A} players={byId} />
-        <Side name={sides.B} impact={impact.B} players={byId} />
+        <Side name={sides.A} impact={impact.A} players={byId} match={match} />
+        <Side name={sides.B} impact={impact.B} players={byId} match={match} />
       </CardContent>
     </Card>
   );
