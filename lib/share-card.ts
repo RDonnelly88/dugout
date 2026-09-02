@@ -1,5 +1,5 @@
 import { outcomeOf } from "./match-result";
-import type { Match } from "@/types";
+import type { Match, PlayerFormResult } from "@/types";
 
 /**
  * What a match looks like as a picture worth sending to the group.
@@ -16,6 +16,14 @@ export interface SharePlayer {
    * entry for, which happens to a player deleted since the match was played.
    */
   change?: number;
+  /** Where the night left them on the ladder, first being top. */
+  rank?: number;
+  /**
+   * How the last few nights went, newest first and this one among them — the
+   * card is the record of a game that has just been played, so a run ending
+   * the week before it would be answering a question nobody asked.
+   */
+  form?: PlayerFormResult[];
 }
 
 export interface ShareSide {
@@ -45,7 +53,13 @@ export interface ShareRow {
 export interface ShareTables {
   /** What the night did to each player, by id. */
   changes?: Map<string, number>;
-  /** The ladder as it stood when this match finished, strongest first. */
+  /** How each player had been going by the end of it, newest first, by id. */
+  form?: Map<string, PlayerFormResult[]>;
+  /**
+   * The whole ladder as it stood when this match finished, strongest first.
+   * The table takes the top of it and everybody's place comes from its order,
+   * so the two cannot disagree about who is second.
+   */
   ladder?: { playerId: string; name: string; rating: number }[];
   /** The season's league table as it stands, best first. */
   standings?: { playerId: string; name: string; points: number }[];
@@ -64,9 +78,10 @@ export interface ShareCard {
   b: ShareSide;
   /** Top of the ladder that night. Empty when there is not enough to show. */
   ladder: ShareRow[];
-  /** Top of the season's league table, and what the season is called. */
+  /** Top of the season's league table. */
   standings: ShareRow[];
-  seasonName?: string;
+  /** What to head that table with. */
+  standingsTitle: string;
 }
 
 /** How many of each table the card has room for. */
@@ -88,6 +103,18 @@ function spokenDate(iso: string): string {
     month: "long",
     year: "numeric",
   });
+}
+
+/**
+ * What to head the league table with.
+ *
+ * A season is called "Autumn 2026", and a month and a year on their own over a
+ * column of numbers read as the date the table was taken rather than as the
+ * season it covers. Not said twice for a squad who have already said it.
+ */
+function tableTitle(seasonName?: string): string {
+  if (!seasonName) return "League table";
+  return /^season\b/i.test(seasonName) ? seasonName : `Season ${seasonName}`;
 }
 
 /**
@@ -135,8 +162,16 @@ export function shareCard(
             : "A hammering";
 
   const inMatch = new Set([...match.teamA.players, ...match.teamB.players]);
+  const rankOf = new Map(
+    (tables.ladder ?? []).map((row, index) => [row.playerId, index + 1])
+  );
   const names = (ids: string[]): SharePlayer[] =>
-    ids.map((id) => ({ name: nameOf(id), change: tables.changes?.get(id) }));
+    ids.map((id) => ({
+      name: nameOf(id),
+      change: tables.changes?.get(id),
+      rank: rankOf.get(id),
+      form: tables.form?.get(id),
+    }));
 
   const top = <T extends { playerId: string; name: string }>(
     rows: T[] | undefined,
@@ -155,7 +190,7 @@ export function shareCard(
     location: match.location || undefined,
     ladder: top(tables.ladder, (row) => row.rating),
     standings: top(tables.standings, (row) => row.points),
-    seasonName: tables.seasonName,
+    standingsTitle: tableTitle(tables.seasonName),
     a: {
       name: sideNames.A,
       score: scored ? scoreA : undefined,
