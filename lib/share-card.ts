@@ -42,6 +42,13 @@ export interface ShareRow {
   figure: number;
   /** Whether they were in this match, so the tables answer "and us?". */
   played: boolean;
+  /**
+   * The placing to draw against the row, which is not the same as the row's
+   * position in the list: three players level on a league share a number, and
+   * the fourth of them is fourth. Counting the rows off instead would have the
+   * table disagree with the number beside the same player's name overhead.
+   */
+  place: number;
 }
 
 /**
@@ -188,12 +195,14 @@ export function shareCard(
 
   const top = <T extends { playerId: string; name: string }>(
     rows: T[] | undefined,
-    figure: (row: T) => number
+    figure: (row: T) => number,
+    place: (row: T, index: number) => number
   ): ShareRow[] =>
-    (rows ?? []).slice(0, TOP).map((row) => ({
+    (rows ?? []).slice(0, TOP).map((row, index) => ({
       name: row.name,
       figure: Math.round(figure(row)),
       played: inMatch.has(row.playerId),
+      place: place(row, index),
     }));
 
   return {
@@ -201,8 +210,11 @@ export function shareCard(
     blurb,
     date: spokenDate(match.date),
     location: match.location || undefined,
-    ladder: top(tables.ladder, (row) => row.rating),
-    standings: top(league, (row) => row.points),
+    // Ratings are a measurement rather than a count, so two of them being
+    // equal to the point of sharing a place does not happen; the row number is
+    // the placing. A league is a count, and ties are its normal weather.
+    ladder: top(tables.ladder, (row) => row.rating, (_row, index) => index + 1),
+    standings: top(league, (row) => row.points, (row) => rankOf[row.playerId]),
     standingsTitle: tableTitle(tables.seasonName),
     a: {
       name: sideNames.A,
