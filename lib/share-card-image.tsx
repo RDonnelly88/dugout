@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
+import { FORM_LENGTH } from "./config";
 import {
   initials,
   type ShareCard,
@@ -45,6 +46,9 @@ const C = {
  * stays short rather than leaving a third of the picture empty, which is
  * precisely what a squad in its first fortnight would get.
  */
+/** The space between two squares of a run. */
+const FORM_GAP = 4;
+
 const WIDTH = 1200;
 const HEIGHT = { withTables: 900, plain: 630 };
 
@@ -93,8 +97,21 @@ const FORM_LETTER: Record<PlayerFormResult, string> = {
  */
 function FormRun({ results, size }: { results: PlayerFormResult[]; size: RowSize }) {
   return (
-    <div style={{ display: "flex", flexShrink: 0 }}>
-      {[...results].reverse().map((result, index) => (
+    <div
+      style={{
+        display: "flex",
+        flexShrink: 0,
+        // Always as wide as a full run, and filled from the right. A player
+        // three games into their first season has a short run, and without a
+        // width to sit in every strip on the card started somewhere different
+        // and the column of placings after them came out ragged. Filled from
+        // the right because the last square is this match on every row, so it
+        // is the edge that has to line up.
+        width: FORM_LENGTH * size.box + (FORM_LENGTH - 1) * FORM_GAP,
+        justifyContent: "flex-end",
+      }}
+    >
+      {[...results].slice(0, FORM_LENGTH).reverse().map((result, index) => (
         <div
           key={index}
           style={{
@@ -103,7 +120,7 @@ function FormRun({ results, size }: { results: PlayerFormResult[]; size: RowSize
             justifyContent: "center",
             width: size.box,
             height: size.box,
-            marginLeft: index === 0 ? 0 : 4,
+            marginLeft: index === 0 ? 0 : FORM_GAP,
             borderRadius: 4,
             background: FORM_TINT[result],
             // A missed night is a square with nothing in it rather than no
@@ -272,7 +289,7 @@ function Table({ title, rows }: { title: string; rows: ShareRow[] }) {
       >
         {title.toUpperCase()}
       </div>
-      {rows.map((row, i) => (
+      {rows.map((row) => (
         <div
           key={row.name}
           style={{
@@ -286,7 +303,7 @@ function Table({ title, rows }: { title: string; rows: ShareRow[] }) {
             color: row.played ? C.text : C.muted,
           }}
         >
-          <div style={{ display: "flex", width: 34, color: C.muted }}>{i + 1}</div>
+          <div style={{ display: "flex", width: 34, color: C.muted }}>{row.place}</div>
           <div
             style={{
               display: "flex",

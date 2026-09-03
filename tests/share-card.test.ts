@@ -237,6 +237,7 @@ describe("the tables under the result", () => {
       name: "Ross Donnelly",
       figure: 26,
       played: true,
+      place: 1,
     });
   });
 
@@ -322,6 +323,32 @@ describe("the tables under the result", () => {
     expect(card.a.players[0].rank).toBe(1);
     // Same points, fewer games: behind both of them.
     expect(card.b.players[0].rank).toBe(3);
+  });
+
+  /**
+   * Three players level on a league share a number beside their names, so the
+   * table has to say the same thing. Counting the rows off gives the third of
+   * them a 3 under a name the card has just called joint first.
+   */
+  it("numbers a tie in the table the way it numbers it beside a name", () => {
+    const level = [
+      { playerId: "p3", name: "Chris", points: 26, played: 12, wins: 8 },
+      { playerId: "p1", name: "Ross Donnelly", points: 26, played: 12, wins: 8 },
+      { playerId: "p4", name: "Danny", points: 26, played: 12, wins: 8 },
+      { playerId: "p5", name: "Ally", points: 20, played: 12, wins: 6 },
+    ];
+
+    const card = shareCard(match(), sides, nameOf, { standings: level })!;
+
+    expect(card.standings.map((row) => row.place)).toEqual([1, 1, 1, 4]);
+    expect(card.a.players[0].rank).toBe(1);
+  });
+
+  /** A rating is a measurement, so its table is numbered straight down. */
+  it("numbers the ladder by its rows", () => {
+    const card = shareCard(match(), sides, nameOf, { ladder })!;
+
+    expect(card.ladder.map((row) => row.place)).toEqual([1, 2, 3, 4, 5]);
   });
 
   /** Points first, then games played — not whatever order the view returned. */
