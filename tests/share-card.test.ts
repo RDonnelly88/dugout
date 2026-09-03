@@ -193,6 +193,17 @@ describe("the tables under the result", () => {
     { playerId: "p7", name: "Ewan", rating: 1150 },
   ];
 
+  // Deliberately not the ladder's order: p1 is second by rating and third on
+  // points, and p2 is outside the five rows the card has room to draw.
+  const standings = [
+    { playerId: "p3", name: "Chris", points: 31 },
+    { playerId: "p4", name: "Danny", points: 28 },
+    { playerId: "p1", name: "Ross Donnelly", points: 26 },
+    { playerId: "p5", name: "Ally", points: 22 },
+    { playerId: "p6", name: "Paul", points: 19 },
+    { playerId: "p2", name: "Sam", points: 14 },
+  ];
+
   it("takes the top five and no more", () => {
     const card = shareCard(match(), sides, nameOf, { ladder })!;
 
@@ -258,14 +269,33 @@ describe("the tables under the result", () => {
    * The table shows the top five and everybody else is somewhere below it, so
    * a place beside a name is the only way the card answers "and me?".
    */
-  it("gives each player their place on the whole ladder", () => {
-    const card = shareCard(match(), sides, nameOf, { ladder })!;
+  it("gives each player their place in the league", () => {
+    const card = shareCard(match(), sides, nameOf, { standings })!;
 
-    expect(card.a.players[0].rank).toBe(2);
+    expect(card.a.players[0].rank).toBe(3);
   });
 
-  it("leaves the place off anybody the ladder has never heard of", () => {
-    const card = shareCard(match(), sides, nameOf, { ladder: [] })!;
+  /**
+   * The two tables order the same squad differently, and the number beside a
+   * name belongs to the one it is nearest in meaning: a season is played for
+   * points, not for a rating.
+   */
+  it("takes the place from the league rather than the ladder", () => {
+    const card = shareCard(match(), sides, nameOf, { ladder, standings })!;
+
+    // Second on the ladder, third in the league.
+    expect(card.a.players[0].rank).toBe(3);
+  });
+
+  it("places a player the table has not cut to, not only the top five", () => {
+    const card = shareCard(match(), sides, nameOf, { standings })!;
+
+    expect(card.standings).toHaveLength(5);
+    expect(card.b.players[0].rank).toBe(6);
+  });
+
+  it("leaves the place off anybody the league has never heard of", () => {
+    const card = shareCard(match(), sides, nameOf, { standings: [] })!;
 
     expect(card.a.players[0].rank).toBeUndefined();
   });

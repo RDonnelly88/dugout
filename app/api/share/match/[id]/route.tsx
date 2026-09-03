@@ -86,6 +86,10 @@ export async function GET(
   // player one, the ladder is replayed from every match the squad has played,
   // and the league table is a view that owns the points. Each is subject to
   // its own policy, and every one of them is scoped by the team on the match.
+  //
+  // The league table comes back whole rather than cut to the rows the card
+  // draws, because every place beside a name is read off its order and the
+  // players in a match are not the players at the top of it.
   const [{ data: team }, { data: squad }, { data: history }, { data: table }] =
     await Promise.all([
       supabase
@@ -101,7 +105,6 @@ export async function GET(
             .select("player_id, player_name, points, season_name")
             .eq("season_id", row.season_id)
             .order("points", { ascending: false })
-            .limit(5)
         : Promise.resolve({ data: null }),
     ]);
 

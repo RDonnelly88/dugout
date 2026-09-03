@@ -16,7 +16,7 @@ export interface SharePlayer {
    * entry for, which happens to a player deleted since the match was played.
    */
   change?: number;
-  /** Where the night left them on the ladder, first being top. */
+  /** Where they stand in the season's league, first being top. */
   rank?: number;
   /**
    * How the last few nights went, newest first and this one among them — the
@@ -55,13 +55,14 @@ export interface ShareTables {
   changes?: Map<string, number>;
   /** How each player had been going by the end of it, newest first, by id. */
   form?: Map<string, PlayerFormResult[]>;
-  /**
-   * The whole ladder as it stood when this match finished, strongest first.
-   * The table takes the top of it and everybody's place comes from its order,
-   * so the two cannot disagree about who is second.
-   */
+  /** The ladder as it stood when this match finished, strongest first. */
   ladder?: { playerId: string; name: string; rating: number }[];
-  /** The season's league table as it stands, best first. */
+  /**
+   * The whole league table as it stands, best first. The card shows the top
+   * of it and every place beside a name comes from its order, so the two
+   * cannot disagree about who is second — which means it has to arrive whole
+   * rather than already cut to the rows that get drawn.
+   */
   standings?: { playerId: string; name: string; points: number }[];
   /** What the season is called, for the heading over its table. */
   seasonName?: string;
@@ -162,8 +163,11 @@ export function shareCard(
             : "A hammering";
 
   const inMatch = new Set([...match.teamA.players, ...match.teamB.players]);
+  // Off the league table rather than the ladder, so the number beside a name
+  // and the table under it are answers to the same question. The table shows
+  // the top five; this is how somebody sixth finds themselves.
   const rankOf = new Map(
-    (tables.ladder ?? []).map((row, index) => [row.playerId, index + 1])
+    (tables.standings ?? []).map((row, index) => [row.playerId, index + 1])
   );
   const names = (ids: string[]): SharePlayer[] =>
     ids.map((id) => ({
