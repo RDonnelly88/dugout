@@ -196,12 +196,12 @@ describe("the tables under the result", () => {
   // Deliberately not the ladder's order: p1 is second by rating and third on
   // points, and p2 is outside the five rows the card has room to draw.
   const standings = [
-    { playerId: "p3", name: "Chris", points: 31 },
-    { playerId: "p4", name: "Danny", points: 28 },
-    { playerId: "p1", name: "Ross Donnelly", points: 26 },
-    { playerId: "p5", name: "Ally", points: 22 },
-    { playerId: "p6", name: "Paul", points: 19 },
-    { playerId: "p2", name: "Sam", points: 14 },
+    { playerId: "p3", name: "Chris", points: 31, played: 12, wins: 10 },
+    { playerId: "p4", name: "Danny", points: 28, played: 12, wins: 9 },
+    { playerId: "p1", name: "Ross Donnelly", points: 26, played: 11, wins: 8 },
+    { playerId: "p5", name: "Ally", points: 22, played: 10, wins: 7 },
+    { playerId: "p6", name: "Paul", points: 19, played: 9, wins: 6 },
+    { playerId: "p2", name: "Sam", points: 14, played: 8, wins: 4 },
   ];
 
   it("takes the top five and no more", () => {
@@ -226,7 +226,9 @@ describe("the tables under the result", () => {
 
   it("carries the season's own name over its table", () => {
     const card = shareCard(match(), sides, nameOf, {
-      standings: [{ playerId: "p1", name: "Ross Donnelly", points: 26 }],
+      standings: [
+        { playerId: "p1", name: "Ross Donnelly", points: 26, played: 11, wins: 8 },
+      ],
       seasonName: "Winter 2026",
     })!;
 
@@ -298,6 +300,46 @@ describe("the tables under the result", () => {
     const card = shareCard(match(), sides, nameOf, { standings: [] })!;
 
     expect(card.a.players[0].rank).toBeUndefined();
+  });
+
+  /**
+   * The season page settles a tie on points by games played and then wins, and
+   * gives two players who match on all three the same number. A card saying
+   * somebody is third while the table they are looking at says joint first is
+   * the same squad being told two different things.
+   */
+  it("settles a tie the way the season page settles it", () => {
+    const level = [
+      { playerId: "p3", name: "Chris", points: 26, played: 12, wins: 8 },
+      { playerId: "p1", name: "Ross Donnelly", points: 26, played: 12, wins: 8 },
+      { playerId: "p2", name: "Sam", points: 26, played: 9, wins: 8 },
+    ];
+
+    const card = shareCard(match(), sides, nameOf, { standings: level })!;
+
+    // Level on all three with Chris, so they share the place rather than one
+    // of them being second by the order they happened to arrive in.
+    expect(card.a.players[0].rank).toBe(1);
+    // Same points, fewer games: behind both of them.
+    expect(card.b.players[0].rank).toBe(3);
+  });
+
+  /** Points first, then games played — not whatever order the view returned. */
+  it("orders the table itself rather than trusting what it was handed", () => {
+    const jumbled = [
+      { playerId: "p2", name: "Sam", points: 14, played: 8, wins: 4 },
+      { playerId: "p3", name: "Chris", points: 31, played: 12, wins: 10 },
+      { playerId: "p1", name: "Ross Donnelly", points: 26, played: 11, wins: 8 },
+    ];
+
+    const card = shareCard(match(), sides, nameOf, { standings: jumbled })!;
+
+    expect(card.standings.map((row) => row.name)).toEqual([
+      "Chris",
+      "Ross Donnelly",
+      "Sam",
+    ]);
+    expect(card.a.players[0].rank).toBe(2);
   });
 });
 

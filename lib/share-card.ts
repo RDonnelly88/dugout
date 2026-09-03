@@ -1,4 +1,5 @@
 import { outcomeOf } from "./match-result";
+import { calculatePlayerRanks, sortPlayersByRank } from "./ranking-utils";
 import type { Match, PlayerFormResult } from "@/types";
 
 /**
@@ -58,12 +59,21 @@ export interface ShareTables {
   /** The ladder as it stood when this match finished, strongest first. */
   ladder?: { playerId: string; name: string; rating: number }[];
   /**
-   * The whole league table as it stands, best first. The card shows the top
-   * of it and every place beside a name comes from its order, so the two
-   * cannot disagree about who is second — which means it has to arrive whole
-   * rather than already cut to the rows that get drawn.
+   * The whole league, in any order. The card takes the top of it and reads
+   * every place beside a name off it, so it has to arrive whole rather than
+   * already cut to the rows that get drawn.
+   *
+   * Ordered and ranked here by the same rules the season page uses, rather
+   * than trusted to arrive sorted: a table and a number that disagreed about
+   * who is second would both be on the same picture.
    */
-  standings?: { playerId: string; name: string; points: number }[];
+  standings?: {
+    playerId: string;
+    name: string;
+    points: number;
+    played: number;
+    wins: number;
+  }[];
   /** What the season is called, for the heading over its table. */
   seasonName?: string;
 }
@@ -163,17 +173,16 @@ export function shareCard(
             : "A hammering";
 
   const inMatch = new Set([...match.teamA.players, ...match.teamB.players]);
-  // Off the league table rather than the ladder, so the number beside a name
-  // and the table under it are answers to the same question. The table shows
-  // the top five; this is how somebody sixth finds themselves.
-  const rankOf = new Map(
-    (tables.standings ?? []).map((row, index) => [row.playerId, index + 1])
-  );
+  // Off the league rather than the ladder, so the number beside a name and the
+  // table under it are answers to the same question. The table shows the top
+  // five; this is how somebody sixth finds themselves.
+  const league = sortPlayersByRank(tables.standings ?? []);
+  const rankOf = calculatePlayerRanks(tables.standings ?? []);
   const names = (ids: string[]): SharePlayer[] =>
     ids.map((id) => ({
       name: nameOf(id),
       change: tables.changes?.get(id),
-      rank: rankOf.get(id),
+      rank: rankOf[id],
       form: tables.form?.get(id),
     }));
 
@@ -193,7 +202,7 @@ export function shareCard(
     date: spokenDate(match.date),
     location: match.location || undefined,
     ladder: top(tables.ladder, (row) => row.rating),
-    standings: top(tables.standings, (row) => row.points),
+    standings: top(league, (row) => row.points),
     standingsTitle: tableTitle(tables.seasonName),
     a: {
       name: sideNames.A,

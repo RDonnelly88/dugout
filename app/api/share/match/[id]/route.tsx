@@ -102,7 +102,7 @@ export async function GET(
       row.season_id
         ? supabase
             .from("season_player_stats")
-            .select("player_id, player_name, points, season_name")
+            .select("player_id, player_name, points, played, wins, season_name")
             .eq("season_id", row.season_id)
             .order("points", { ascending: false })
         : Promise.resolve({ data: null }),
@@ -136,6 +136,11 @@ export async function GET(
               playerId: entry.player_id,
               name: entry.player_name ?? "Unknown",
               points: entry.points ?? 0,
+              // The season page settles a tie on points by games played and
+              // then wins, so the card has to carry both to land on the same
+              // order it does.
+              played: entry.played ?? 0,
+              wins: entry.wins ?? 0,
             },
           ]
         : []
