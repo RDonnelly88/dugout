@@ -1,12 +1,22 @@
-import { SeasonPlayerStats, SeasonChampion } from "@/types";
+/**
+ * The four numbers a placing is decided on. Stated structurally rather than as
+ * a season row, so anything holding a league — a table, a share card — is
+ * ranked by these rules rather than growing a second set of its own.
+ */
+export interface Rankable {
+  playerId: string;
+  points: number;
+  played: number;
+  wins: number;
+}
 
 /**
  * Calculate golf-style player rankings based on points, games played, and wins
  * Players with identical stats share the same rank
- * @param players Array of player stats (either SeasonPlayerStats or SeasonChampion)
+ * @param players Array of anything carrying a placing’s four numbers
  * @returns Object mapping player IDs to their ranks
  */
-export const calculatePlayerRanks = <T extends SeasonPlayerStats | SeasonChampion>(
+export const calculatePlayerRanks = <T extends Rankable>(
   players: T[]
 ): Record<string, number> => {
   // Filter out players with zero matches played
@@ -59,7 +69,7 @@ export const calculatePlayerRanks = <T extends SeasonPlayerStats | SeasonChampio
  * @param players Array of player stats
  * @returns Sorted array of players
  */
-export const sortPlayersByRank = <T extends SeasonPlayerStats | SeasonChampion>(
+export const sortPlayersByRank = <T extends Rankable>(
   players: T[]
 ): T[] => {
   // Filter out players with zero matches played

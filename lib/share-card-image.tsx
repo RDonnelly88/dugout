@@ -8,6 +8,7 @@ import {
   type ShareRow,
   type ShareSide,
 } from "./share-card";
+import type { PlayerFormResult } from "@/types";
 
 /**
  * A match drawn as a picture, for sending to people who are not in the app.
@@ -51,6 +52,73 @@ interface RowSize {
   chip: number;
   name: number;
   gap: number;
+  /** One square of the form strip. */
+  box: number;
+}
+
+/**
+ * How wide one side's list of names is.
+ *
+ * Fixed rather than fitted to the longest name, so both lists put their form
+ * and their places in the same columns and the eye can read straight down
+ * them. A name longer than its share of the row is cut rather than allowed to
+ * shove the run of results off the card.
+ */
+const COLUMN = 500;
+
+const FORM_TINT: Record<PlayerFormResult, string> = {
+  win: C.win,
+  draw: C.draw,
+  loss: C.loss,
+  dnp: C.raised,
+};
+
+const FORM_LETTER: Record<PlayerFormResult, string> = {
+  win: "W",
+  draw: "D",
+  loss: "L",
+  // A night the squad played without them, which is a blank rather than a
+  // result. The strip in the app draws a struck-through figure here; there is
+  // no icon set in a picture, so a dash says the same thing.
+  dnp: "–",
+};
+
+/**
+ * How the last few nights went, oldest first.
+ *
+ * The run arrives newest first and is drawn the other way round, the same way
+ * the app draws it, so it reads forwards and ends on the night the card is
+ * about. The list is never reversed for the away side: a mirrored run of
+ * results would be a different story told backwards.
+ */
+function FormRun({ results, size }: { results: PlayerFormResult[]; size: RowSize }) {
+  return (
+    <div style={{ display: "flex", flexShrink: 0 }}>
+      {[...results].reverse().map((result, index) => (
+        <div
+          key={index}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: size.box,
+            height: size.box,
+            marginLeft: index === 0 ? 0 : 4,
+            borderRadius: 4,
+            background: FORM_TINT[result],
+            // A missed night is a square with nothing in it rather than no
+            // square at all, so five weeks are still five things wide.
+            border: `1px solid ${result === "dnp" ? C.border : "transparent"}`,
+            color: result === "dnp" ? C.muted : C.bg,
+            fontSize: Math.round(size.box * 0.6),
+            fontWeight: 700,
+          }}
+        >
+          {FORM_LETTER[result]}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function Swing({ change, size }: { change: number; size: number }) {
@@ -93,7 +161,7 @@ function Chip({
         flexDirection: mirrored ? "row-reverse" : "row",
         alignItems: "center",
         marginBottom: size.gap,
-        maxWidth: 460,
+        width: COLUMN,
       }}
     >
       <div
@@ -118,6 +186,8 @@ function Chip({
       <div
         style={{
           display: "flex",
+          flex: 1,
+          minWidth: 0,
           flexDirection: mirrored ? "row-reverse" : "row",
           alignItems: "baseline",
           overflow: "hidden",
@@ -146,6 +216,33 @@ function Chip({
           </div>
         )}
       </div>
+      {player.form && player.form.length > 0 && (
+        <div
+          style={{
+            display: "flex",
+            flexShrink: 0,
+            marginLeft: mirrored ? 0 : 14,
+            marginRight: mirrored ? 14 : 0,
+          }}
+        >
+          <FormRun results={player.form} size={size} />
+        </div>
+      )}
+      {player.rank !== undefined && (
+        <div
+          style={{
+            display: "flex",
+            flexShrink: 0,
+            marginLeft: mirrored ? 0 : 12,
+            marginRight: mirrored ? 12 : 0,
+            fontSize: Math.round(size.name * 0.72),
+            fontWeight: 700,
+            color: C.muted,
+          }}
+        >
+          #{player.rank}
+        </div>
+      )}
     </div>
   );
 }
@@ -224,6 +321,7 @@ function rowSize(rows: number, room: number): RowSize {
     chip: Math.min(40, height - 6),
     name: Math.min(28, Math.round(height * 0.62)),
     gap: 6,
+    box: Math.min(22, Math.round(height * 0.5)),
   };
 }
 
@@ -283,11 +381,7 @@ export function matchCardImage(card: ShareCard, fonts: ImageFont[]): ImageRespon
       <Table key="ladder" title="Ratings" rows={card.ladder} />
     ),
     card.standings.length > 0 && (
-      <Table
-        key="standings"
-        title={card.seasonName ?? "League table"}
-        rows={card.standings}
-      />
+      <Table key="standings" title={card.standingsTitle} rows={card.standings} />
     ),
   ].filter(Boolean);
 

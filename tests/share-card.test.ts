@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { initials, shareCard } from "@/lib/share-card";
-import type { Match } from "@/types";
+import type { Match, PlayerFormResult } from "@/types";
 
 const sides = { A: "Bibs", B: "No bibs" };
 const nameOf = (id: string) => ({ p1: "Ross Donnelly", p2: "Sam" })[id] ?? id;
@@ -193,6 +193,17 @@ describe("the tables under the result", () => {
     { playerId: "p7", name: "Ewan", rating: 1150 },
   ];
 
+  // Deliberately not the ladder's order: p1 is second by rating and third on
+  // points, and p2 is outside the five rows the card has room to draw.
+  const standings = [
+    { playerId: "p3", name: "Chris", points: 31, played: 12, wins: 10 },
+    { playerId: "p4", name: "Danny", points: 28, played: 12, wins: 9 },
+    { playerId: "p1", name: "Ross Donnelly", points: 26, played: 11, wins: 8 },
+    { playerId: "p5", name: "Ally", points: 22, played: 10, wins: 7 },
+    { playerId: "p6", name: "Paul", points: 19, played: 9, wins: 6 },
+    { playerId: "p2", name: "Sam", points: 14, played: 8, wins: 4 },
+  ];
+
   it("takes the top five and no more", () => {
     const card = shareCard(match(), sides, nameOf, { ladder })!;
 
@@ -215,16 +226,36 @@ describe("the tables under the result", () => {
 
   it("carries the season's own name over its table", () => {
     const card = shareCard(match(), sides, nameOf, {
-      standings: [{ playerId: "p1", name: "Ross Donnelly", points: 26 }],
+      standings: [
+        { playerId: "p1", name: "Ross Donnelly", points: 26, played: 11, wins: 8 },
+      ],
       seasonName: "Winter 2026",
     })!;
 
-    expect(card.seasonName).toBe("Winter 2026");
+    expect(card.standingsTitle).toBe("Season Winter 2026");
     expect(card.standings[0]).toEqual({
       name: "Ross Donnelly",
       figure: 26,
       played: true,
     });
+  });
+
+  /** "August 2026" over a column of numbers reads as a date, not a season. */
+  it("says what the name is the name of", () => {
+    const titleFor = (seasonName?: string) =>
+      shareCard(match(), sides, nameOf, { seasonName })!.standingsTitle;
+
+    expect(titleFor("August 2026")).toBe("Season August 2026");
+    expect(titleFor()).toBe("League table");
+  });
+
+  it("does not say it twice for a squad who have said it themselves", () => {
+    const titleFor = (seasonName: string) =>
+      shareCard(match(), sides, nameOf, { seasonName })!.standingsTitle;
+
+    expect(titleFor("Season 4")).toBe("Season 4");
+    expect(titleFor("season two")).toBe("season two");
+    expect(titleFor("Seasonal five-a-side")).toBe("Season Seasonal five-a-side");
   });
 
   /** A squad with nothing to rank says nothing rather than drawing a stub. */
@@ -233,6 +264,100 @@ describe("the tables under the result", () => {
 
     expect(card.ladder).toEqual([]);
     expect(card.standings).toEqual([]);
-    expect(card.seasonName).toBeUndefined();
+    expect(card.standingsTitle).toBe("League table");
+  });
+
+  /**
+   * The table shows the top five and everybody else is somewhere below it, so
+   * a place beside a name is the only way the card answers "and me?".
+   */
+  it("gives each player their place in the league", () => {
+    const card = shareCard(match(), sides, nameOf, { standings })!;
+
+    expect(card.a.players[0].rank).toBe(3);
+  });
+
+  /**
+   * The two tables order the same squad differently, and the number beside a
+   * name belongs to the one it is nearest in meaning: a season is played for
+   * points, not for a rating.
+   */
+  it("takes the place from the league rather than the ladder", () => {
+    const card = shareCard(match(), sides, nameOf, { ladder, standings })!;
+
+    // Second on the ladder, third in the league.
+    expect(card.a.players[0].rank).toBe(3);
+  });
+
+  it("places a player the table has not cut to, not only the top five", () => {
+    const card = shareCard(match(), sides, nameOf, { standings })!;
+
+    expect(card.standings).toHaveLength(5);
+    expect(card.b.players[0].rank).toBe(6);
+  });
+
+  it("leaves the place off anybody the league has never heard of", () => {
+    const card = shareCard(match(), sides, nameOf, { standings: [] })!;
+
+    expect(card.a.players[0].rank).toBeUndefined();
+  });
+
+  /**
+   * The season page settles a tie on points by games played and then wins, and
+   * gives two players who match on all three the same number. A card saying
+   * somebody is third while the table they are looking at says joint first is
+   * the same squad being told two different things.
+   */
+  it("settles a tie the way the season page settles it", () => {
+    const level = [
+      { playerId: "p3", name: "Chris", points: 26, played: 12, wins: 8 },
+      { playerId: "p1", name: "Ross Donnelly", points: 26, played: 12, wins: 8 },
+      { playerId: "p2", name: "Sam", points: 26, played: 9, wins: 8 },
+    ];
+
+    const card = shareCard(match(), sides, nameOf, { standings: level })!;
+
+    // Level on all three with Chris, so they share the place rather than one
+    // of them being second by the order they happened to arrive in.
+    expect(card.a.players[0].rank).toBe(1);
+    // Same points, fewer games: behind both of them.
+    expect(card.b.players[0].rank).toBe(3);
+  });
+
+  /** Points first, then games played — not whatever order the view returned. */
+  it("orders the table itself rather than trusting what it was handed", () => {
+    const jumbled = [
+      { playerId: "p2", name: "Sam", points: 14, played: 8, wins: 4 },
+      { playerId: "p3", name: "Chris", points: 31, played: 12, wins: 10 },
+      { playerId: "p1", name: "Ross Donnelly", points: 26, played: 11, wins: 8 },
+    ];
+
+    const card = shareCard(match(), sides, nameOf, { standings: jumbled })!;
+
+    expect(card.standings.map((row) => row.name)).toEqual([
+      "Chris",
+      "Ross Donnelly",
+      "Sam",
+    ]);
+    expect(card.a.players[0].rank).toBe(2);
+  });
+});
+
+describe("the run each player is on", () => {
+  const run: PlayerFormResult[] = ["win", "dnp", "loss", "win", "draw"];
+
+  it("puts it beside them, newest first", () => {
+    const card = shareCard(match(), sides, nameOf, {
+      form: new Map([["p1", run]]),
+    })!;
+
+    expect(card.a.players[0].form).toEqual(run);
+  });
+
+  /** Nothing to draw for somebody the window has no record of. */
+  it("leaves it off anybody with no recent nights", () => {
+    const card = shareCard(match(), sides, nameOf, { form: new Map() })!;
+
+    expect(card.a.players[0].form).toBeUndefined();
   });
 });
