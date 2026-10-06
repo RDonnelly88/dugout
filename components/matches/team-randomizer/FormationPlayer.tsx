@@ -72,7 +72,9 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
               </Badge>
               <PlayerAvatar name={player.name} image={player.image} size="md" className="border-2 border-white/50 shadow-lg hover:border-white transition-all duration-200" />
             </div>
-            <span className="mt-1 text-xs font-medium text-foreground truncate max-w-[60px] text-center">
+            {/* On a chip of its own: the grass behind it is a stripe of two
+                greens, and no one text colour reads on both. */}
+            <span className="mt-1 max-w-[72px] truncate rounded bg-surface/90 px-1.5 py-0.5 text-center text-xs font-medium text-foreground">
               {player.name}
             </span>
           </button>

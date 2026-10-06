@@ -77,7 +77,10 @@ export default function RatingLeaderboard({
           <li key={rating.playerId}>
             <TransitionLink
               href={`/players/${rating.playerId}`}
-              className="focus-ring relative flex items-center gap-3 overflow-hidden rounded-lg border border-border bg-surface px-3 py-2.5 transition-colors hover:border-border-strong"
+              className={`focus-ring relative flex items-center gap-3 overflow-hidden rounded-lg border bg-surface px-3 py-2.5 transition-colors hover:border-border-strong ${
+                // The top of the ladder lit like a leader's board.
+                index === 0 ? "border-accent/50 glow-accent" : "border-border"
+              }`}
               shareAvatar
             >
               {/* Behind the content, so the row stays readable at any width. */}

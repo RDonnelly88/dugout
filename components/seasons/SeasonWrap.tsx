@@ -6,10 +6,13 @@ import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { ArrowRight, Flame, Sparkles, TrendingUp, Users, Zap } from "lucide-react";
 import { seasonWrap } from "@/lib/season-wrap";
+import { seasonNights } from "@/lib/season-story";
 import { displayRating } from "@/lib/elo";
 import { getMatches } from "@/lib/db";
 import { useTeam } from "@/contexts/TeamContext";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
+import Stamp from "@/components/ui/stamp";
+import SeasonNights from "@/components/seasons/SeasonNights";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Match, Player } from "@/types";
 
@@ -18,12 +21,15 @@ const pct = (x: number) => `${Math.round(x * 100)}%`;
 function Award({
   icon: Icon,
   title,
+  stamp,
   children,
   index,
   href,
 }: {
   icon: typeof Flame;
   title: string;
+  /** A word or a figure stamped in the corner. Repeats what the card says. */
+  stamp: string;
   children: React.ReactNode;
   index: number;
   /** Where the award leads, for the one that is about a single night. */
@@ -33,10 +39,16 @@ function Award({
 
   const card = (
     <>
-      <h4 className="eyebrow mb-2 flex items-center gap-1.5">
-        <Icon className="h-3.5 w-3.5 text-accent" />
-        {title}
-      </h4>
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <h4 className="eyebrow flex items-center gap-1.5">
+          <Icon className="h-3.5 w-3.5 text-accent" />
+          {title}
+        </h4>
+        {/* Alternate leans, so a grid of them looks stamped by hand. */}
+        <Stamp tilt={index % 2 === 0 ? -6 : 5} className="shrink-0 text-[10px]">
+          {stamp}
+        </Stamp>
+      </div>
       {children}
     </>
   );
@@ -46,7 +58,7 @@ function Award({
       initial={reduced ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: reduced ? 0 : index * 0.08 }}
-      className="rounded-xl border border-border bg-surface-2/40"
+      className="rounded-xl border border-border bg-surface/70"
     >
       {href ? (
         <Link
@@ -99,10 +111,13 @@ function Named({
 export default function SeasonWrap({
   season,
   players,
+  finished = false,
 }: {
   /** The matches this season, which is what the awards are about. */
   season: Match[];
   players: Player[];
+  /** Whether the last night was the final one or only the latest. */
+  finished?: boolean;
 }) {
   const { currentTeam } = useTeam();
   const { data: history = [], isPending } = useQuery({
@@ -112,6 +127,10 @@ export default function SeasonWrap({
   });
 
   const wrap = useMemo(() => seasonWrap(history, season), [history, season]);
+  const nights = useMemo(
+    () => seasonNights(season, { upsetMatchId: wrap.upset?.matchId, finished }),
+    [season, wrap.upset?.matchId, finished]
+  );
   const byId = useMemo(
     () => new Map(players.map((player) => [player.id, player])),
     [players]
@@ -121,6 +140,7 @@ export default function SeasonWrap({
     wrap.climber && {
       icon: TrendingUp,
       title: "Most improved",
+      stamp: `+${Math.round(wrap.climber.change)}`,
       body: (
         <Named
           player={byId.get(wrap.climber.playerId)}
@@ -133,6 +153,7 @@ export default function SeasonWrap({
     wrap.streak && {
       icon: Flame,
       title: "Longest run",
+      stamp: `${wrap.streak.length} in a row`,
       body: (
         <Named
           player={byId.get(wrap.streak.playerId)}
@@ -143,6 +164,7 @@ export default function SeasonWrap({
     wrap.partnership && {
       icon: Users,
       title: "Best pair",
+      stamp: "Partners",
       body: (
         <div className="flex items-center gap-2">
           <div className="flex -space-x-2">
@@ -172,6 +194,7 @@ export default function SeasonWrap({
     wrap.everPresent && {
       icon: Zap,
       title: "Never missed",
+      stamp: pct(wrap.everPresent.share),
       body: (
         <Named
           player={byId.get(wrap.everPresent.playerId)}
@@ -184,6 +207,7 @@ export default function SeasonWrap({
     wrap.upset && {
       icon: Sparkles,
       title: "Result of the season",
+      stamp: wrap.upset.expected < 0.5 ? "Upset" : "Close call",
       // The one award that names a single night, so it is the one worth
       // being a way into that night.
       href: `/matches/${wrap.upset.matchId}`,
@@ -227,6 +251,7 @@ export default function SeasonWrap({
   ].filter(Boolean) as {
     icon: typeof Flame;
     title: string;
+    stamp: string;
     body: React.ReactNode;
     href?: string;
   }[];
@@ -236,27 +261,44 @@ export default function SeasonWrap({
   if (isPending || awards.length === 0) return null;
 
   return (
-    <Card>
+    // Printed, like the programme a club would hand out at the last game.
+    <Card className="grain overflow-hidden">
       <CardHeader>
+        <p className="eyebrow">
+          Season review · {wrap.matches} {wrap.matches === 1 ? "night" : "nights"}
+        </p>
         <CardTitle className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-accent" />
           How the season went
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {awards.map((award, i) => (
-            <Award
-              key={award.title}
-              icon={award.icon}
-              title={award.title}
-              index={i}
-              href={award.href}
-            >
-              {award.body}
-            </Award>
-          ))}
-        </div>
+      <CardContent className="space-y-8">
+        <section aria-labelledby="season-nights">
+          <h3 id="season-nights" className="eyebrow mb-4">
+            The nights that made it
+          </h3>
+          <SeasonNights nights={nights} />
+        </section>
+
+        <section aria-labelledby="season-awards">
+          <h3 id="season-awards" className="eyebrow mb-3">
+            The awards
+          </h3>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {awards.map((award, i) => (
+              <Award
+                key={award.title}
+                icon={award.icon}
+                title={award.title}
+                stamp={award.stamp}
+                index={i}
+                href={award.href}
+              >
+                {award.body}
+              </Award>
+            ))}
+          </div>
+        </section>
       </CardContent>
     </Card>
   );

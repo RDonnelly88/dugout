@@ -72,8 +72,8 @@ const SeasonDetail = () => {
             Back
           </Button>
         </div>
-        <div className="shimmer rounded-xl h-[100px] mb-6"></div>
-        <div className="shimmer rounded-xl h-[400px]"></div>
+        <div className="sheen rounded-xl h-[100px] mb-6"></div>
+        <div className="sheen rounded-xl h-[400px]"></div>
       </div>
     );
   }
@@ -246,7 +246,11 @@ const SeasonDetail = () => {
             </TabsContent>
 
             <TabsContent value="story" className="space-y-4">
-              <SeasonWrap season={seasonMatches} players={allPlayers} />
+              <SeasonWrap
+                season={seasonMatches}
+                players={allPlayers}
+                finished={season.isFinished}
+              />
             </TabsContent>
 
             <TabsContent value="positions" className="space-y-4">

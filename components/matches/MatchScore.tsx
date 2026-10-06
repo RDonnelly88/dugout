@@ -3,6 +3,9 @@
 import { Check, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import Stamp from "@/components/ui/stamp";
+import RollingNumber from "@/components/RollingNumber";
+import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { useSideNames } from "@/hooks/useSideNames";
 import { outcomeOf, type Outcome } from "@/lib/match-result";
@@ -56,30 +59,65 @@ const MatchScore = ({
       typeof match.teamA?.score === "number" &&
       typeof match.teamB?.score === "number";
 
-    return (
-      <div className="mb-4 rounded-xl bg-surface-2/40 p-6 text-center">
-        <div className="flex flex-col items-center justify-center gap-4 md:flex-row">
-          <h3 className="flex-1 text-xl font-bold md:text-right">{sides.A}</h3>
-          <div className="tabular px-6 text-4xl font-bold">
-            {hasScore ? (
-              <>
-                {match.teamA.score} – {match.teamB.score}
-              </>
-            ) : (
-              <span className="text-2xl text-muted-foreground">v</span>
+    // A function rather than a component: declared in here, a component would
+    // be a new type every render and remount the board, re-rolling the score.
+    const side = (which: Outcome) => {
+      const won = settled === which;
+      return (
+        <div className="flex min-w-0 flex-1 flex-col items-center gap-2">
+          <h3
+            className={cn(
+              "max-w-full truncate rounded-full px-4 py-1 text-lg font-bold md:text-xl",
+              won && "bg-win/10 text-win glow-win"
             )}
-          </div>
-          <h3 className="flex-1 text-xl font-bold md:text-left">{sides.B}</h3>
+          >
+            {nameFor(which)}
+          </h3>
+          {hasScore && (
+            <RollingNumber
+              value={which === "a" ? match.teamA.score! : match.teamB.score!}
+              className={cn(
+                "scoreboard text-7xl md:text-8xl",
+                settled !== "draw" && !won && "text-muted-foreground"
+              )}
+            />
+          )}
+        </div>
+      );
+    };
+
+    return (
+      <div className="grain bezel relative mb-4 overflow-hidden rounded-xl bg-surface-2/40 px-4 pb-6 pt-14 text-center md:pt-8">
+        {/* The whistle has gone. Said again in words below, for anyone the
+            stamp is hidden from. */}
+        <Stamp
+          ink={settled === "draw" ? "draw" : "win"}
+          className="absolute right-3 top-3 text-xs md:right-5 md:top-4"
+        >
+          Full time
+        </Stamp>
+
+        <div className="flex items-start justify-center gap-2 md:gap-6">
+          {side("a")}
+          <span
+            className={cn(
+              "text-muted-foreground",
+              hasScore ? "scoreboard self-center pt-10 text-5xl md:text-6xl" : "self-center text-2xl"
+            )}
+          >
+            {hasScore ? "–" : "v"}
+          </span>
+          {side("b")}
         </div>
 
         {settled === "draw" ? (
-          <p className="mt-4 inline-flex items-center rounded-full bg-info/10 px-4 py-2 font-medium text-info">
-            Honours even
+          <p className="mt-5 inline-flex items-center rounded-full bg-draw/10 px-4 py-2 font-medium text-draw">
+            Full time · honours even
           </p>
         ) : settled ? (
-          <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-win/10 px-4 py-2 font-medium text-win">
+          <p className="mt-5 inline-flex items-center gap-2 rounded-full bg-win/10 px-4 py-2 font-medium text-win">
             <Trophy className="h-4 w-4" />
-            {nameFor(settled)} won
+            Full time · {nameFor(settled)} won
           </p>
         ) : null}
       </div>

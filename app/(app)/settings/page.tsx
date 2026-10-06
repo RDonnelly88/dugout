@@ -1,5 +1,6 @@
 import PasskeySettings from "@/components/PasskeySettings";
 import ThemeToggle from "@/components/ThemeToggle";
+import SoundToggle from "@/components/SoundToggle";
 import SignOutButton from "@/components/SignOutButton";
 import DataExport from "@/components/DataExport";
 import { getThemePreference } from "@/lib/theme-server";
@@ -34,7 +35,7 @@ export default async function SettingsPage() {
         title="Settings"
         subtitle={
           <>
-            How the app looks, and how you get into it.
+            How the app looks and sounds, and how you get into it.
           </>
         }
       />
@@ -50,6 +51,19 @@ export default async function SettingsPage() {
           </CardHeader>
           <CardContent>
             <ThemeToggle initial={theme} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Sound</CardTitle>
+            <CardDescription>
+              Only on this device, so a phone can stay quiet at work and still
+              whistle at the pitch.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SoundToggle />
           </CardContent>
         </Card>
 

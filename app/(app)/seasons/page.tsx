@@ -212,7 +212,7 @@ const Seasons = () => {
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="shimmer h-[200px] rounded-lg" />
+            <div key={i} className="sheen h-[200px] rounded-lg" />
           ))}
         </div>
       ) : filteredSeasons.length === 0 ? (

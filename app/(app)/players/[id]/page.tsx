@@ -76,8 +76,8 @@ const PlayerDetail = () => {
             Back
           </Button>
         </div>
-        <div className="shimmer rounded-xl h-[200px] mb-8"></div>
-        <div className="shimmer rounded-xl h-[400px]"></div>
+        <div className="sheen rounded-xl h-[200px] mb-8"></div>
+        <div className="sheen rounded-xl h-[400px]"></div>
       </div>
     );
   }

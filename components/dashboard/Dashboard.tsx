@@ -22,7 +22,8 @@ import {
 } from "@/components/ui/card";
 import SeasonLeaderboard from "@/components/seasons/SeasonLeaderboard";
 import RatingLeaderboard from "@/components/ratings/RatingLeaderboard";
-import MatchListItem from "@/components/matches/MatchListItem";
+import MatchCard from "@/components/matches/MatchCard";
+import { Rail } from "@/components/ui/rail";
 import QuickActions from "./QuickActions";
 import FormLeaders from "./FormLeaders";
 
@@ -166,7 +167,7 @@ const Dashboard = () => {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {currentSeason && seasonPlayerStats.length > 0 && (
-          <div className="lg:col-span-2">
+          <div className="reveal lg:col-span-2">
             <SeasonLeaderboard
               stats={seasonPlayerStats}
               seasonId={currentSeason.id}
@@ -177,9 +178,11 @@ const Dashboard = () => {
           </div>
         )}
 
-        <FormLeaders matches={matches} players={players} />
+        <div className="reveal">
+          <FormLeaders matches={matches} players={players} />
+        </div>
 
-        <Card>
+        <Card className="reveal">
           <CardHeader>
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -197,12 +200,12 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
+        <Card className="reveal lg:col-span-2">
           <CardHeader>
             <div className="flex items-start justify-between gap-3">
               <div>
                 <CardTitle>Recent matches</CardTitle>
-                <CardDescription>The last five, newest first</CardDescription>
+                <CardDescription>The last five, newest first. Swipe for more.</CardDescription>
               </div>
               <More href="/matches">All matches</More>
             </div>
@@ -213,13 +216,13 @@ const Dashboard = () => {
                 Nothing played yet.
               </p>
             ) : (
-              /* No delete here. This is a glance, and a bin beside a row you
+              /* No delete here. This is a glance, and a bin beside a card you
                  came to read is an accident waiting to happen. */
-              <ul className="space-y-2">
+              <Rail label="Recent matches">
                 {recent.map((match) => (
-                  <MatchListItem key={match.id} match={match} />
+                  <MatchCard key={match.id} match={match} />
                 ))}
-              </ul>
+              </Rail>
             )}
           </CardContent>
         </Card>

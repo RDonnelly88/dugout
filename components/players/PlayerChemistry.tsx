@@ -210,7 +210,7 @@ export default function PlayerChemistry({
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="shimmer h-32 rounded-xl" />
+            <div key={i} className="sheen h-32 rounded-xl" />
           ))}
         </CardContent>
       </Card>

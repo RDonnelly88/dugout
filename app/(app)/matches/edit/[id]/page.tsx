@@ -104,7 +104,7 @@ const EditMatch = () => {
             Back
           </Button>
         </div>
-        <div className="shimmer rounded-xl h-[600px]"></div>
+        <div className="sheen rounded-xl h-[600px]"></div>
       </div>
     );
   }

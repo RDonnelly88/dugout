@@ -9,6 +9,7 @@ import PlayerAvatar from "@/components/players/PlayerAvatar";
 import type { Split } from "@/lib/team-balance";
 import type { Player } from "@/types";
 import { SIDE_NAMES } from "@/lib/config";
+import { playCardFlip, playKickOff } from "@/lib/sound";
 
 /**
  * Dealing the sides out, one card at a time.
@@ -121,11 +122,27 @@ export default function CardPackRandomizer({
                 </div>
               </motion.div>
             )}
-            <Button onClick={() => setRevealed((r) => r + 1)} className="gap-2">
+            <Button
+              onClick={() => {
+                // The last card turned is the teams being set: a kick-off
+                // whistle instead of another card.
+                if (revealed + 1 >= order.length) playKickOff();
+                else playCardFlip();
+                setRevealed((r) => r + 1);
+              }}
+              className="gap-2"
+            >
               <PackageOpen className="h-4 w-4" />
               {revealed === 0 ? "Turn the first card" : "Next"}
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => setRevealed(order.length)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                playKickOff();
+                setRevealed(order.length);
+              }}
+            >
               Skip to the end
             </Button>
           </>

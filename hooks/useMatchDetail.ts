@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Match } from "@/types";
 import { useTeam } from "@/contexts/TeamContext";
 import { outcomeOf, resolveOutcome, type Outcome } from "@/lib/match-result";
+import { playFullTime, primeSound } from "@/lib/sound";
 
 export const useMatchDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -52,6 +53,7 @@ export const useMatchDetail = () => {
       
       setIsEditing(false);
       setShowConfetti(true);
+      playFullTime();
       
       // Hide confetti after a few seconds
       setTimeout(() => {
@@ -127,6 +129,9 @@ export const useMatchDetail = () => {
       status: "completed" as const
     };
 
+    // Still inside the click, so the whistle is allowed to sound once the
+    // save comes back.
+    primeSound();
     updateMatchMutation.mutate({ id: match.id, updates });
   };
 
