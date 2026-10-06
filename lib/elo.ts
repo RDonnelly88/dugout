@@ -8,8 +8,22 @@ interface RatingPoint {
   date: string;
   /** Rating after this match. */
   rating: number;
-  /** How far this night moved it. */
+  /**
+   * How far this night moved it: the result itself, plus every older game
+   * fading by one more match.
+   */
   change: number;
+  /**
+   * What the result alone was worth to them: `ELO.k` times what their side
+   * took less what it was expected to. The same for everybody on the side,
+   * fixed on the night, and only ever faded afterwards.
+   */
+  settled: number;
+  /**
+   * Which of the squad's matches this was, counting from its first, so the
+   * game's age — and so how much it still counts — can be read off later.
+   */
+  night: number;
   /** The mean rating of the side they faced, going in. */
   opponentRating: number;
   /**
@@ -22,10 +36,9 @@ interface RatingPoint {
   /** The run they walked in on, newest first, for showing beside the result. */
   resultsBefore: RecentResult[];
   /**
-   * How many of their games were still counting going in, which is most of
-   * why two team-mates in the same result move by different amounts: one more
-   * result says more about somebody with four recent games behind them than
-   * about somebody with forty.
+   * How many of their games were still counting going in. Team-mates take
+   * the same verdict from a result; what differs is how much their older
+   * games faded on the same night, and that depends on how many there were.
    */
   countedBefore: number;
 }
@@ -44,8 +57,9 @@ export interface PlayerRating {
   /** Matches the squad has played since this player last turned out. */
   missed: number;
   /**
-   * Their games still inside the window. Nought means the rating rests on
-   * nothing but the pull towards `ELO.start`, and says nothing about them.
+   * Their games still inside the window. Nought means nothing of theirs still
+   * counts: they are back on `ELO.start`, and the number says nothing about
+   * them.
    */
   counted: number;
   /**
@@ -53,10 +67,9 @@ export interface PlayerRating {
    * this player was in it.
    *
    * Not the same as the last entry in `history`, which is the last match they
-   * played — possibly months ago. For anyone who missed the game this is the
-   * small easing back towards `ELO.start` that comes from every one of their
-   * games being a match older, plus any re-rating of the people they played
-   * with and against.
+   * played — possibly months ago. For anyone who missed the game it is only
+   * the easing back towards `ELO.start` that comes from every one of their
+   * games being a match older: a game's verdict never changes once it is in.
    */
   lastChange: number;
   history: RatingPoint[];
@@ -100,133 +113,48 @@ export function expectedScore(a: number, b: number): number {
   return 1 / (1 + 10 ** ((b - a) / 400));
 }
 
-/** The slope of `expectedScore`, per rating point, at an even match. */
-const SCALE = Math.LN10 / 400;
-
-/**
- * Newton's method stops once nobody is moving by more than this. Each step
- * squares the error, so what is left after a step this small is far below
- * anything a rounded rating could show.
- */
-const TOLERANCE = 1e-4;
-const MAX_STEPS = 50;
-/**
- * A cap on any one step of the solve. A warm start is never far from the
- * answer, but a lopsided first night can be, and a capped step cannot
- * overshoot into nonsense.
- */
-const MAX_STEP = 200;
-
 const mean = (xs: number[]) =>
   xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : ELO.start;
 
-interface Night {
-  /** Fit positions of everyone who played, the first side first. */
-  players: Int32Array;
-  /** Each player's part in the gap between the sides: plus or minus one over side size. */
-  share: Float64Array;
-  /** How much the night counts, in the fit being solved. The same for everyone in it. */
-  weight: number;
-  /** 1 if the first side won, ½ for a draw, 0 if it lost. */
-  actual: number;
+/**
+ * What one game did to one player, worked out on the night and never again:
+ * `ELO.k` times how far the result beat or fell short of what their side was
+ * expected to take, from the ratings as they stood going in.
+ */
+interface Contribution {
+  /** Which of the squad's matches it was, counting from their first. */
+  night: number;
+  delta: number;
 }
 
 /**
- * The ratings that best explain everybody's recent results, all at once.
+ * A rating as it stands after `night`: the start, plus every game's
+ * contribution still in the window, each faded by how many of the squad's
+ * matches have been played since.
  *
- * Each player's rating has to answer for their games in the squad's last
- * `ELO.window` matches, the recent ones counting most, given the ratings of
- * the people they played
- * with and against. Those people are being fitted at the same time, which is
- * what credits a win alongside a strong team-mate less than a win alongside
- * a weak one — and goes on doing so as the team-mate's own rating settles.
- *
- * Everybody is also pulled gently towards `ELO.start`, so a rating has to be
- * argued for by results; without it a single win would be an infinite one.
- *
- * Solved by Newton's method from `ratings`, which it overwrites: a weighted
- * logistic regression, settling in a handful of steps from a warm start.
+ * The contributions are fixed. Nothing that happens later changes what a
+ * game was worth — only how much it still counts as it ages.
  */
-function solve(ratings: Float64Array, nights: Night[]) {
-  const n = ratings.length;
-  const width = n + 1;
-  const pull = 1 / (ELO.spread * ELO.spread);
-  // One row per player, flat, with the right-hand side in the last column.
-  const system = new Float64Array(n * width);
-
-  for (let step = 0; step < MAX_STEPS; step++) {
-    system.fill(0);
-    for (let i = 0; i < n; i++) {
-      system[i * width + i] = -pull;
-      system[i * width + n] = (ratings[i] - ELO.start) * pull;
-    }
-
-    for (const night of nights) {
-      const { players, share, weight: w } = night;
-      let gap = 0;
-      for (let k = 0; k < players.length; k++) gap += share[k] * ratings[players[k]];
-      const expected = 1 / (1 + Math.exp(-SCALE * gap));
-      const surprise = SCALE * (night.actual - expected);
-      const slope = SCALE * SCALE * expected * (1 - expected);
-
-      for (let k = 0; k < players.length; k++) {
-        const row = players[k] * width;
-        const wx = w * share[k];
-        system[row + n] -= wx * surprise;
-        const curve = wx * slope;
-        for (let l = 0; l < players.length; l++) {
-          system[row + players[l]] -= curve * share[l];
-        }
-      }
-    }
-
-    const delta = gaussianSolve(system, n);
-    let largest = 0;
-    for (let i = 0; i < n; i++) {
-      const move = Math.max(-MAX_STEP, Math.min(MAX_STEP, delta[i]));
-      ratings[i] += move;
-      largest = Math.max(largest, Math.abs(move));
-    }
-    if (largest < TOLERANCE) return;
+function ratingAt(contributions: Contribution[], night: number): number {
+  let rating = ELO.start;
+  for (const c of contributions) {
+    const age = night - c.night;
+    if (age >= 0 && age < ELO.window) rating += c.delta * WEIGHTS[age];
   }
-}
-
-/**
- * Solves an `n` by `n` system held flat with its right-hand side as an extra
- * column, in place, with partial pivoting.
- */
-function gaussianSolve(m: Float64Array, n: number): Float64Array {
-  const width = n + 1;
-  for (let col = 0; col < n; col++) {
-    let pivot = col;
-    for (let r = col + 1; r < n; r++) {
-      if (Math.abs(m[r * width + col]) > Math.abs(m[pivot * width + col])) pivot = r;
-    }
-    if (pivot !== col) {
-      for (let c = col; c < width; c++) {
-        const t = m[col * width + c];
-        m[col * width + c] = m[pivot * width + c];
-        m[pivot * width + c] = t;
-      }
-    }
-    const top = col * width;
-    for (let r = col + 1; r < n; r++) {
-      const factor = m[r * width + col] / m[top + col];
-      if (factor === 0) continue;
-      for (let c = col; c < width; c++) m[r * width + c] -= factor * m[top + c];
-    }
-  }
-  const out = new Float64Array(n);
-  for (let r = n - 1; r >= 0; r--) {
-    let sum = m[r * width + n];
-    for (let c = r + 1; c < n; c++) sum -= m[r * width + c] * out[c];
-    out[r] = sum / m[r * width + r];
-  }
-  return out;
+  return rating;
 }
 
 /**
  * Ratings for every player, as they stood after each match in turn.
+ *
+ * Each game is settled on the night: the ratings going in say what each side
+ * was expected to take, and every player on a side moves by the same
+ * `ELO.k` times the gap between that and what they took. That amount is
+ * locked in. Afterwards it only fades, counting less with every match the
+ * squad plays and nothing once it is `ELO.window` matches old (see
+ * `gameWeight`), so a rating is "what the recent games said at the time",
+ * never a running total that a good spell two years ago is still propping
+ * up, and never a re-reading of an old game in the light of later ones.
  *
  * Derived rather than stored, for the same reason the win/loss record is:
  * a stored rating is a second copy of something the matches already say, and
@@ -234,15 +162,9 @@ function gaussianSolve(m: Float64Array, n: number): Float64Array {
  * three weeks ago re-rates everything after it, which is what should happen.
  *
  * Only completed matches with a result count. Anything else is a fixture.
- *
  * Runs over the whole history, from the squad's first match, never reset by
- * a season. After every match the whole table is fitted afresh from the
- * squad's recent matches (see `solve` and `gameWeight`), so a rating is
- * always "what the last year or so says", never a running total that a good
- * spell two years ago is still propping up.
- *
- * Depends on nothing outside the matches, so the same history always gives
- * the same table.
+ * a season, and depends on nothing outside the matches, so the same history
+ * always gives the same table.
  */
 export function computeRatings(matches: Match[]): Map<string, PlayerRating> {
   // Half the app asks for the same list of matches — the one the query cache
@@ -267,21 +189,18 @@ function replay(matches: Match[]): Map<string, PlayerRating> {
         m.teamA.players.length > 0 &&
         m.teamB.players.length > 0
     )
-    // Oldest first: each night is fitted on what came before it.
+    // Oldest first: each night is settled on what came before it.
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  // Fit positions, in debut order, so a player keeps one index throughout.
+  // Positions in debut order, so a player keeps one index throughout.
   const index = new Map<string, number>();
   const ids: string[] = [];
-  let current = new Float64Array(0);
+  const contributions: Contribution[][] = [];
 
   // The nights each player turned out for, oldest first.
   const appearances: number[][] = [];
   const lastPlayedIndex = new Map<string, number>();
 
-  // Built as each night is reached, since a fit position is only handed out
-  // on a player's debut.
-  const nights: Night[] = [];
   // Of a player's nights, the ones still inside the window after `night`.
   const inWindow = (player: number, night: number) =>
     appearances[player].filter((g) => night - g < ELO.window).length;
@@ -302,6 +221,7 @@ function replay(matches: Match[]): Map<string, PlayerRating> {
       index.set(playerId, ids.length);
       ids.push(playerId);
       appearances.push([]);
+      contributions.push([]);
       ratings.set(playerId, {
         playerId,
         rating: ELO.start,
@@ -316,9 +236,9 @@ function replay(matches: Match[]): Map<string, PlayerRating> {
       });
     }
 
-    // Going in, for the record and for the match card's "they faced".
-    const before = new Float64Array(ids.length).fill(ELO.start);
-    before.set(current);
+    // Going in: where everybody stood after last night, which is what the
+    // night is judged against and what the match card says "they faced".
+    const before = Float64Array.from(ids, (_, i) => ratingAt(contributions[i], night - 1));
     const at = (playerId: string) => before[index.get(playerId)!];
     const ratingA = mean(sideA.map(at));
     const ratingB = mean(sideB.map(at));
@@ -327,24 +247,18 @@ function replay(matches: Match[]): Map<string, PlayerRating> {
     );
 
     const lineUp = [...sideA, ...sideB];
-    nights.push({
-      players: Int32Array.from(lineUp, (id) => index.get(id)!),
-      share: Float64Array.from(lineUp, (_, k) =>
-        k < sideA.length ? 1 / sideA.length : -1 / sideB.length
-      ),
-      weight: 0,
-      actual: actualA,
-    });
     for (const playerId of lineUp) appearances[index.get(playerId)!].push(night);
 
-    // The squad's last `ELO.window` matches, each weighted by how many have
-    // been played since.
-    const fitted = nights.slice(Math.max(0, night - ELO.window + 1));
-    fitted.forEach((entry, k) => (entry.weight = WEIGHTS[fitted.length - 1 - k]));
+    // The night's verdict, the same for everybody on a side and settled for
+    // good: a side given 70% that wins takes K × 0.3, and one that loses
+    // gives up K × 0.7.
+    const delta = ELO.k * (actualA - expectedScore(ratingA, ratingB));
+    for (const playerId of sideA) contributions[index.get(playerId)!].push({ night, delta });
+    for (const playerId of sideB) contributions[index.get(playerId)!].push({ night, delta: -delta });
 
-    const next = Float64Array.from(before);
-    solve(next, fitted);
-    current = next;
+    // Where everybody stands after it: tonight's verdict at full weight, and
+    // every older game a match further faded, played tonight or not.
+    const next = Float64Array.from(ids, (_, i) => ratingAt(contributions[i], night));
 
     const resultA: Result =
       actualA === 1 ? "win" : actualA === 0.5 ? "draw" : "loss";
@@ -378,6 +292,8 @@ function replay(matches: Match[]): Map<string, PlayerRating> {
         date: match.date,
         rating,
         change: rating - before[i],
+        settled: sideA.includes(playerId) ? delta : -delta,
+        night,
         opponentRating: sideA.includes(playerId) ? ratingB : ratingA,
         expected: sideA.includes(playerId)
           ? expectedScore(ratingA, ratingB)

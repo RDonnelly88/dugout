@@ -22,7 +22,7 @@ const FEATURES = [
   {
     Icon: LineChart,
     title: "Rate everyone",
-    body: "Elo adapted for five-a-side, fitted to the squad's recent matches, so the ladder keeps up with who is actually turning out.",
+    body: "Elo adapted for five-a-side, each result settled on the night and fading as the squad plays on, so the ladder keeps up with who is actually turning out.",
   },
   {
     Icon: Handshake,

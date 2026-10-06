@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { workedExample, fadeCurve } from "@/lib/ratings-guide";
+import { workedExample, fadeCurve, ratingBreakdown, threeWays } from "@/lib/ratings-guide";
+import { computeRatings } from "@/lib/elo";
 import { ELO } from "@/lib/config";
 import type { Match } from "@/types";
 
@@ -82,6 +83,26 @@ describe("workedExample", () => {
     }
   });
 
+  /**
+   * Team-mates finish a night on different numbers, and the guide has to
+   * show why: the result is the same for all of them, the fading is not.
+   */
+  it("splits each player's night into the side's result and their own fading", () => {
+    const earlier = match(["a"], ["x"], 1, 0, "2026-09-01");
+    const fixture = match(["a", "b"], ["x", "y"], 2, 1, "2026-09-02");
+    const example = workedExample([earlier, fixture], sides)!;
+
+    expect(example.winner.settled).toBeCloseTo(ELO.k * (1 - example.expected), 9);
+    expect(example.loser.settled).toBeCloseTo(-example.winner.settled, 9);
+    for (const p of [...example.winner.players, ...example.loser.players]) {
+      const side = example.winner.players.includes(p) ? example.winner : example.loser;
+      expect(side.settled + p.faded).toBeCloseTo(p.change, 9);
+    }
+    const faded = new Map(example.winner.players.map((p) => [p.playerId, p.faded]));
+    expect(faded.get("b")).toBeCloseTo(0, 9);
+    expect(faded.get("a")).toBeLessThan(0);
+  });
+
   it("starts two sides that have never played at even", () => {
     const fixture = match(["a", "b"], ["x", "y"], 1, 0, "2026-08-01");
     const example = workedExample([fixture], sides)!;
@@ -106,5 +127,58 @@ describe("fadeCurve", () => {
 
   it("still counts the oldest game for something", () => {
     expect(curve.at(-1)!.weight).toBeGreaterThan(0);
+  });
+});
+
+describe("threeWays", () => {
+  const night = threeWays();
+
+  it("makes the higher-rated side the favourite", () => {
+    expect(night.chance).toBeGreaterThan(0.5);
+  });
+
+  it("pays the underdog's win most and the favourite's least", () => {
+    const [win, draw, loss] = night.outcomes.map((o) => o.change);
+    expect(win).toBeGreaterThan(0);
+    expect(draw).toBeLessThan(0);
+    expect(loss).toBeLessThan(draw);
+    // Between them the two results that can happen span the whole of K.
+    expect(win - loss).toBeCloseTo(ELO.k, 9);
+  });
+});
+
+describe("ratingBreakdown", () => {
+  const fixtures = [
+    match(["a", "b"], ["c", "d"], 1, 0, "2026-10-01"),
+    match(["a", "c"], ["b", "d"], 1, 1, "2026-10-02"),
+    match(["b", "c"], ["d", "e"], 2, 0, "2026-10-03"),
+    match(["a", "e"], ["b", "c"], 0, 1, "2026-10-04"),
+    match(["b", "d"], ["c", "e"], 3, 1, "2026-10-05"),
+  ];
+
+  it("adds up to the rating", () => {
+    for (const rating of computeRatings(fixtures).values()) {
+      const total = ratingBreakdown(rating).reduce<number>((sum, piece) => sum + piece.now, ELO.start);
+      expect(total).toBeCloseTo(rating.rating, 9);
+    }
+  });
+
+  it("lists their games newest first, aged by the squad's matches since", () => {
+    const pieces = ratingBreakdown(computeRatings(fixtures).get("a")!);
+
+    // a missed the last match, so their newest game is already one old.
+    expect(pieces.map((p) => p.age)).toEqual([1, 3, 4]);
+    expect(pieces[0].weight).toBeCloseTo(0.5 ** (1 / ELO.halfLife), 9);
+  });
+
+  it("leaves out a game too old to count", () => {
+    const opener = match(["a"], ["b"], 1, 0, "2025-01-01");
+    const later = Array.from({ length: ELO.window }, (_, i) =>
+      match(["a"], [`o${i}`], 1, 0, new Date(Date.UTC(2025, 1, 1 + i)).toISOString().slice(0, 10))
+    );
+    const pieces = ratingBreakdown(computeRatings([opener, ...later]).get("a")!);
+
+    expect(pieces).toHaveLength(ELO.window);
+    expect(pieces.some((p) => p.matchId === opener.id)).toBe(false);
   });
 });

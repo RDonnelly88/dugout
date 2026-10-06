@@ -1,7 +1,8 @@
 import { ELO } from "./config";
-import { expectedScore, gameWeight } from "./elo";
+import { expectedScore, gameWeight, type PlayerRating } from "./elo";
 import { matchImpact } from "./match-impact";
 import { outcomeOf } from "./match-result";
+import type { Result } from "./recent-results";
 
 import type { Match } from "@/types";
 
@@ -17,7 +18,13 @@ interface GuidePlayer {
   playerId: string;
   /** How many of their games the rating rested on going in. */
   counted: number;
+  /** The whole night's movement: the side's result plus `faded`. */
   change: number;
+  /**
+   * What their older games gave up by each counting one match less. The
+   * only part of the night that differs between team-mates.
+   */
+  faded: number;
   after: number;
 }
 
@@ -25,6 +32,8 @@ interface GuideSide {
   name: string;
   /** Mean rating of the side going into the match. */
   ratingBefore: number;
+  /** What the result alone was worth to every one of them. */
+  settled: number;
   players: GuidePlayer[];
 }
 
@@ -63,19 +72,27 @@ export function workedExample(
   const outcome = outcomeOf(match)!;
   const aWon = outcome !== "b";
 
+  const actualA = outcome === "a" ? 1 : outcome === "draw" ? 0.5 : 0;
+  const settledA = ELO.k * (actualA - expectedScore(impact.A.ratingBefore, impact.B.ratingBefore));
+
   const side = (
     which: "A" | "B",
     name: string
-  ): GuideSide => ({
-    name,
-    ratingBefore: impact[which].ratingBefore,
-    players: impact[which].players.map((p) => ({
-      playerId: p.playerId,
-      counted: p.counted,
-      change: p.change,
-      after: p.after,
-    })),
-  });
+  ): GuideSide => {
+    const settled = which === "A" ? settledA : -settledA;
+    return {
+      name,
+      ratingBefore: impact[which].ratingBefore,
+      settled,
+      players: impact[which].players.map((p) => ({
+        playerId: p.playerId,
+        counted: p.counted,
+        change: p.change,
+        faded: p.change - settled,
+        after: p.after,
+      })),
+    };
+  };
 
   const a = side("A", sideNames.A);
   const b = side("B", sideNames.B);
@@ -101,4 +118,69 @@ export function fadeCurve(): { age: number; weight: number }[] {
     age,
     weight: gameWeight(age),
   }));
+}
+
+/**
+ * One night between two sides a hundred points apart, played out three ways.
+ *
+ * The only invented numbers in the guide, and only the two ratings: what
+ * each result is worth is worked out from `ELO`, so the example moves with
+ * the settings rather than going stale beside them.
+ */
+export function threeWays(favourite = ELO.start + 50, underdog = ELO.start - 50) {
+  const chance = expectedScore(favourite, underdog);
+  const worth = (took: number) => ELO.k * (took - chance);
+  return {
+    favourite,
+    underdog,
+    chance,
+    outcomes: [
+      { result: "win" as Result, change: worth(1) },
+      { result: "draw" as Result, change: worth(0.5) },
+      { result: "loss" as Result, change: worth(0) },
+    ],
+  };
+}
+
+interface Piece {
+  matchId: string;
+  date: string;
+  result: Result;
+  /** What the result was worth on the night. */
+  settled: number;
+  /** The squad's matches played since. */
+  age: number;
+  weight: number;
+  /** What it adds to the rating today: `settled` × `weight`. */
+  now: number;
+}
+
+/**
+ * A player's rating taken apart into the games it is made of, newest first:
+ * what each was worth on the night, and how much of that it still counts
+ * for. The start plus every `now` is the rating, to the last decimal, so the
+ * guide can show the sum add up rather than claim it does.
+ */
+export function ratingBreakdown(rating: PlayerRating): Piece[] {
+  const last = rating.history.at(-1);
+  if (!last) return [];
+  // The squad's latest match: their last game, plus every one they have
+  // missed since.
+  const latest = last.night + rating.missed;
+  return rating.history
+    .map((point) => {
+      const age = latest - point.night;
+      const weight = gameWeight(age);
+      return {
+        matchId: point.matchId,
+        date: point.date,
+        result: point.result,
+        settled: point.settled,
+        age,
+        weight,
+        now: point.settled * weight,
+      };
+    })
+    .filter((piece) => piece.weight > 0)
+    .reverse();
 }
