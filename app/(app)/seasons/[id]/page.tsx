@@ -28,6 +28,8 @@ import SeasonForm from "@/components/seasons/SeasonForm";
 import SeasonSelector from "@/components/seasons/SeasonSelector";
 import SeasonLeaderboard from "@/components/seasons/SeasonLeaderboard";
 import SeasonPositionChart from "@/components/seasons/SeasonPositionChart";
+import WrappedPicker from "@/components/wrapped/WrappedPicker";
+import { outcomeOf } from "@/lib/match-result";
 import { useSeasonDetail } from "@/hooks/useSeasonDetail";
 import { calculatePlayerRanks } from "@/lib/ranking-utils";
 import PageHeader from "@/components/PageHeader";
@@ -196,7 +198,12 @@ const SeasonDetail = () => {
             }
           >
             <StatTiles>
-              <StatTile label="Matches" value={seasonMatches.length} />
+              {/* Played ones: a fixture on the calendar is not yet a match
+                  of the season, and the seasons list counts the same way. */}
+              <StatTile
+                label="Matches"
+                value={seasonMatches.filter((m) => outcomeOf(m) !== null).length}
+              />
               <StatTile label="Players" value={playerStats.length} />
               <StatTile
                 label={
@@ -226,11 +233,20 @@ const SeasonDetail = () => {
             </StatTiles>
           </PageHeader>
 
+          <div className="mb-6">
+            <WrappedPicker
+              seasonId={season.id}
+              finished={season.isFinished}
+              table={playerStats}
+              players={allPlayers}
+            />
+          </div>
+
           <Tabs defaultValue="leaderboard" className="space-y-4">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="leaderboard">League Table</TabsTrigger>
               <TabsTrigger value="story">The Season</TabsTrigger>
-              <TabsTrigger value="positions">Position Tracking</TabsTrigger>
+              <TabsTrigger value="positions">Positions</TabsTrigger>
               <TabsTrigger value="matches">Matches</TabsTrigger>
             </TabsList>
             

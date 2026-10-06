@@ -63,6 +63,11 @@ where everyone sat in the table after every match of the season.
 towards the table once they're marked complete, so a fixture entered on Tuesday
 doesn't move anything until it's played.
 
+**Wraps them up.** Every player gets their season as a story to tap through —
+their record and place, how they moved up the table, their rating, how they did
+against the odds, their giant-killing, best partnership and nemesis — and a
+picture of it to send to the group.
+
 **Keeps groups apart.** A team owns its own players, matches and seasons.
 Members are admins, who can change things, or viewers, who can't. Share the
 team's code and someone can add themselves.

@@ -11,10 +11,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import type { Match } from "@/types";
+import { cn } from "@/lib/utils";
 
 /**
- * Turns a match into a picture and hands it to whatever the device shares with.
+ * Fetches a picture the app draws — a result, a season wrapped — and hands it
+ * to whatever the device shares with.
  *
  * The file is what travels, not a link. A link would have to be readable by
  * people who are not in the team — which is the one thing row-level security
@@ -25,7 +26,23 @@ import type { Match } from "@/types";
  * files, gets the card in a dialog to save or copy: the picture is the point
  * either way, so the fallback shows it rather than apologising.
  */
-export default function ShareMatchButton({ match }: { match: Match }) {
+export default function ShareImageButton({
+  src,
+  fileName,
+  title,
+  alt,
+  label = "Share",
+  className,
+}: {
+  /** The route that draws the PNG. */
+  src: string;
+  fileName: string;
+  /** Heads the dialog a desktop gets instead of a share sheet. */
+  title: string;
+  alt: string;
+  label?: string;
+  className?: string;
+}) {
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
   const [image, setImage] = useState<string | null>(null);
@@ -39,12 +56,10 @@ export default function ShareMatchButton({ match }: { match: Match }) {
     };
   }, [image]);
 
-  const fileName = `${match.date}-match.png`;
-
   const share = async () => {
     setBusy(true);
     try {
-      const response = await fetch(`/api/share/match/${match.id}`);
+      const response = await fetch(src);
       if (!response.ok) throw new Error(await response.text());
 
       const blob = await response.blob();
@@ -94,7 +109,7 @@ export default function ShareMatchButton({ match }: { match: Match }) {
       <Button
         variant="outline"
         size="sm"
-        className="gap-1"
+        className={cn("gap-1", className)}
         onClick={share}
         disabled={busy}
       >
@@ -103,7 +118,7 @@ export default function ShareMatchButton({ match }: { match: Match }) {
         ) : (
           <Share2 className="h-4 w-4" />
         )}
-        Share
+        {label}
       </Button>
 
       <Dialog
@@ -114,7 +129,7 @@ export default function ShareMatchButton({ match }: { match: Match }) {
       >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>The result, as a picture</DialogTitle>
+            <DialogTitle>{title}</DialogTitle>
             <DialogDescription>
               Save it or copy it, then drop it in the group chat.
             </DialogDescription>
@@ -125,7 +140,7 @@ export default function ShareMatchButton({ match }: { match: Match }) {
           {image && (
             <img
               src={image}
-              alt="The match result"
+              alt={alt}
               className="w-full rounded-xl border border-border"
             />
           )}

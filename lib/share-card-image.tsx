@@ -24,7 +24,7 @@ import type { RecentResult } from "@/types";
  * `var(--surface)` to read.
  */
 
-const C = {
+export const C = {
   bg: "#070b12",
   surface: "#0f151f",
   raised: "#19212e",
@@ -146,7 +146,7 @@ function Swing({ change, size }: { change: number; size: number }) {
         display: "flex",
         fontSize: size,
         fontWeight: 700,
-        // A night that moved nothing is a night inside the grace, not a loss.
+        // A night that moved nothing is neither a gain nor a loss.
         color: moved > 0 ? C.win : moved < 0 ? C.loss : C.muted,
       }}
     >

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import React from "react";
 
-import { ArrowLeft, Edit, Trophy, Flag } from "lucide-react";
+import { ArrowLeft, Edit, Trophy, Flag, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -205,6 +205,29 @@ const PlayerDetail = () => {
         )}
 
       </div>
+
+      {/* Every season they played in, newest first, each opening their
+          story of it. */}
+      {seasonStats.some((stat) => stat.played > 0) && (
+        <div className="mb-8 flex flex-wrap items-center gap-2">
+          <span className="eyebrow mr-1 flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-accent" />
+            Wrapped
+          </span>
+          {[...seasons]
+            .sort((x, y) => new Date(y.startDate).getTime() - new Date(x.startDate).getTime())
+            .filter((s) => seasonStats.some((stat) => stat.seasonId === s.id && stat.played > 0))
+            .map((s) => (
+              <Link
+                key={s.id}
+                href={`/seasons/${s.id}/wrapped/${player.id}`}
+                className="focus-ring rounded-full border border-border bg-surface px-3 py-1 text-sm transition-colors hover:border-accent hover:text-accent"
+              >
+                {s.name}
+              </Link>
+            ))}
+        </div>
+      )}
 
       <Tabs defaultValue="stats" className="mb-8">
         <TabsList className="grid w-full grid-cols-2">
