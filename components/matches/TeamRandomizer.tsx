@@ -17,11 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { splitTeams, type Split } from "@/lib/team-balance";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
-import { recentForm } from "@/lib/form";
-import { getMatches } from "@/lib/db";
-import { useQuery } from "@tanstack/react-query";
-import { useTeam } from "@/contexts/TeamContext";
-import { ELO, SKILL } from "@/lib/config";
+import { ELO } from "@/lib/config";
 
 interface TeamRandomizerProps {
   players: Player[];
@@ -44,18 +40,11 @@ const TeamRandomizer = ({
   onSelectionChange,
   disabled = false,
 }: TeamRandomizerProps) => {
-  const { currentTeam } = useTeam();
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [method, setMethod] = useState<PickMethod>("random");
   const [dealing, setDealing] = useState(false);
 
   const { ratingFor } = usePlayerRatings();
-  const { data: matches = [] } = useQuery({
-    queryKey: ["matches", currentTeam?.id],
-    queryFn: getMatches,
-    enabled: !!currentTeam,
-  });
-  const form = useMemo(() => recentForm(matches), [matches]);
 
   // Active players only, matching what the list shows by default. Selecting
   // everyone meant retired players were picked, hidden, and quietly dealt into
@@ -73,28 +62,13 @@ const TeamRandomizer = ({
   const availablePlayers = players.filter((p) => selectedPlayers.includes(p.id));
   const canRandomize = availablePlayers.length >= 2;
 
-  // Each in its own unit. They used to be scaled onto a common range to make
-  // the gap readouts comparable, which they are not — the readout names its
-  // unit instead, and the search only ever compares within one method.
   const weightFor = useMemo(
     () => ({
       random: () => 0,
       rating: (p: Player) => ratingFor(p.id)?.rating ?? ELO.start,
-      form: (p: Player) => form.get(p.id)?.pointsPerGame ?? 1,
-      skill: (p: Player) => p.skillLevel ?? SKILL.default,
     }),
-    [ratingFor, form]
+    [ratingFor]
   );
-
-  // Everyone starts on the middle level, so until somebody sets them the skill
-  // split is dead even and looks broken rather than untouched.
-  const skillNote = useMemo(() => {
-    if (availablePlayers.length < 2) return undefined;
-    const levels = new Set(availablePlayers.map((p) => p.skillLevel ?? SKILL.default));
-    return levels.size === 1
-      ? `Everyone here is on ${[...levels][0]} — set levels on the player pages.`
-      : undefined;
-  }, [availablePlayers]);
 
   const preview = useMemo(
     () =>
@@ -103,12 +77,6 @@ const TeamRandomizer = ({
         manual: null,
         rating: canRandomize
           ? splitTeams(availablePlayers, "rating", weightFor.rating)
-          : null,
-        form: canRandomize
-          ? splitTeams(availablePlayers, "form", weightFor.form)
-          : null,
-        skill: canRandomize
-          ? splitTeams(availablePlayers, "skill", weightFor.skill)
           : null,
       }) as Record<PickMethod, Split<Player> | null>,
     [availablePlayers, canRandomize, weightFor]
@@ -160,7 +128,6 @@ const TeamRandomizer = ({
           value={method}
           onChange={setMethod}
           preview={preview}
-          notes={{ skill: skillNote }}
           disabled={dealing || disabled || !canRandomize}
         />
       </section>

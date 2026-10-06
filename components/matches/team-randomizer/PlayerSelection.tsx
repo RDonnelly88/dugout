@@ -13,9 +13,7 @@ import { calculatePlayerRanks } from "@/lib/ranking-utils";
 import PlayerSelectionFilters from './PlayerSelectionFilters';
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
-import SkillScale from "@/components/players/SkillScale";
 import { displayRating } from "@/lib/elo";
-import { SKILL } from "@/lib/config";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import { useTeam } from "@/contexts/TeamContext";
 
@@ -175,7 +173,6 @@ const PlayerSelection = ({
                             </span>
                           )}
                           <PlayerFormDisplay results={formResults} size="xs" />
-                          <SkillScale level={player.skillLevel ?? SKILL.default} />
                         </div>
                       </div>
                     </HoverCardTrigger>

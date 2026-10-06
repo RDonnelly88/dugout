@@ -11,7 +11,7 @@ const FEATURES = [
   {
     Icon: Dices,
     title: "Pick the sides",
-    body: "Shuffle them, or even them up by rating, recent form or the level you set yourself.",
+    body: "Shuffle them, even them up by rating, or sort them out yourself.",
   },
   {
     Icon: Trophy,

@@ -23,14 +23,14 @@ function match(
 }
 
 describe("recentForm", () => {
-  it("scores three for a win and one for a draw", () => {
+  it("records wins, draws and defeats from each player's side", () => {
     const form = recentForm([
       match(["a"], ["b"], 3, 0, "2026-01-01"),
       match(["a"], ["b"], 1, 1, "2026-01-02"),
     ]);
 
-    expect(form.get("a")!.points).toBe(4);
-    expect(form.get("b")!.points).toBe(1);
+    expect(form.get("a")!.results).toEqual(["draw", "win"]);
+    expect(form.get("b")!.results).toEqual(["draw", "loss"]);
   });
 
   it("looks only at the window, however long the history is", () => {
@@ -48,8 +48,8 @@ describe("recentForm", () => {
     const form = recentForm(fixtures, 3);
 
     expect(form.get("a")!.games).toBe(3);
-    expect(form.get("a")!.points).toBe(0);
-    expect(form.get("b")!.points).toBe(9);
+    expect(form.get("a")!.results).toEqual(["loss", "loss", "loss"]);
+    expect(form.get("b")!.results).toEqual(["win", "win", "win"]);
   });
 
   it("takes the most recent games regardless of the order given", () => {
@@ -61,11 +61,11 @@ describe("recentForm", () => {
     expect(form.get("a")!.results).toEqual(["win"]);
   });
 
-  it("averages over games actually played, not over the window", () => {
+  it("is only as long as the history when that is shorter than the window", () => {
     const form = recentForm([match(["a"], ["b"], 3, 0, "2026-01-01")], 5);
 
     expect(form.get("a")!.games).toBe(1);
-    expect(form.get("a")!.pointsPerGame).toBe(3);
+    expect(form.get("a")!.results).toEqual(["win"]);
   });
 
   it("ignores fixtures that have not been played", () => {
@@ -79,26 +79,13 @@ describe("recentForm", () => {
 });
 
 describe("form over the squad's window, not the player's", () => {
-  /**
-   * The bug this fixes: three wins out of three read as a perfect run and
-   * outranked a player who turned out five times and won four, while the card
-   * above them promised "points a game over the last five".
-   */
-  it("counts a night missed as nought", () => {
+  it("marks a night missed in the run of somebody who has played before", () => {
     const fixtures = [
       match(["ever", "sometimes"], ["x"], 1, 0, "2026-01-01"),
-      match(["ever", "sometimes"], ["x"], 1, 0, "2026-01-02"),
-      match(["ever", "sometimes"], ["x"], 1, 0, "2026-01-03"),
-      match(["ever"], ["x"], 1, 0, "2026-01-04"),
-      match(["ever"], ["x"], 1, 0, "2026-01-05"),
+      match(["ever"], ["x"], 1, 0, "2026-01-02"),
     ];
 
-    const form = recentForm(fixtures, 5);
-
-    expect(form.get("ever")!.pointsPerGame).toBe(3);
-    // Nine points over five nights, not over the three they fancied.
-    expect(form.get("sometimes")!.points).toBe(9);
-    expect(form.get("sometimes")!.pointsPerGame).toBeCloseTo(1.8);
+    expect(recentForm(fixtures, 5).get("sometimes")!.results).toEqual(["dnp", "win"]);
   });
 
   it("still says how many they actually played", () => {
@@ -126,13 +113,6 @@ describe("form over the squad's window, not the player's", () => {
     ]);
   });
 
-  /** A short history is a short window, not four imaginary noughts. */
-  it("divides by what the squad has played when that is less than the window", () => {
-    const form = recentForm([match(["a"], ["b"], 3, 0, "2026-01-01")], 5);
-
-    expect(form.get("a")!.pointsPerGame).toBe(3);
-  });
-
   it("has nothing to say about somebody absent for the whole window", () => {
     const fixtures = [
       match(["old"], ["b"], 1, 0, "2026-01-01"),
@@ -158,8 +138,6 @@ describe("a first game is not a missed one", () => {
 
     // Newest first, and nothing before the fourth night.
     expect(form.get("new")!.results).toEqual(["loss", "win"]);
-    // Three points over the two they have played, not over five.
-    expect(form.get("new")!.pointsPerGame).toBe(1.5);
     // And the ever-present is measured over all five.
     expect(form.get("old")!.results).toHaveLength(5);
   });

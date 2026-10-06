@@ -13,8 +13,6 @@ import PlayerAvatar from "@/components/players/PlayerAvatar";
 import TransitionLink from "@/components/TransitionLink";
 import { isActivePlayer } from "@/components/players/ActiveFilter";
 import { displayRating, type PlayerRating } from "@/lib/elo";
-import { SKILL } from "@/lib/config";
-import SkillScale from "@/components/players/SkillScale";
 import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
 
 /**
@@ -190,10 +188,6 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
               )}
             </span>
 
-            <span className="flex items-center gap-1.5">
-              <span className="eyebrow">Skill</span>
-              <SkillScale level={player.skillLevel ?? SKILL.default} />
-            </span>
           </div>
 
           <div className="mt-auto border-t border-border bg-surface-2/40 px-5 py-3">

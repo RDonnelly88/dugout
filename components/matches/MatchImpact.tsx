@@ -43,34 +43,15 @@ function Change({ value, digits = 0 }: { value: number; digits?: number }) {
 }
 
 /** One measure, as it stood before the match and after it. */
-function Row({
-  label,
-  before,
-  after,
-  digits = 0,
-  changed = true,
-}: {
-  label: string;
-  before: number;
-  after: number;
-  digits?: number;
-  /** False for a measure a result cannot move, like the hand-set level. */
-  changed?: boolean;
-}) {
+function Row({ label, before, after }: { label: string; before: number; after: number }) {
   return (
     <div className="flex items-baseline justify-between gap-2 py-1.5">
       <span className="eyebrow">{label}</span>
       <span className="tabular flex items-baseline gap-2 text-sm">
-        {changed ? (
-          <>
-            <span className="text-muted-foreground">{before.toFixed(digits)}</span>
-            <span className="text-muted-foreground">→</span>
-            <span className="font-semibold">{after.toFixed(digits)}</span>
-            <Change value={after - before} digits={digits} />
-          </>
-        ) : (
-          <span className="font-semibold">{after.toFixed(digits)}</span>
-        )}
+        <span className="text-muted-foreground">{before}</span>
+        <span className="text-muted-foreground">→</span>
+        <span className="font-semibold">{after}</span>
+        <Change value={after - before} />
       </span>
     </div>
   );
@@ -129,13 +110,6 @@ function Side({
           before={displayRating(impact.ratingBefore)}
           after={displayRating(impact.ratingAfter)}
         />
-        <Row
-          label="Form"
-          before={impact.formBefore}
-          after={impact.formAfter}
-          digits={2}
-        />
-        <Row label="Skill" before={impact.skill} after={impact.skill} digits={1} changed={false} />
       </div>
 
       <ul className="mt-3 space-y-1 border-t border-border pt-3">
@@ -199,8 +173,8 @@ export default function MatchImpact({
   });
 
   const impact = useMemo(
-    () => matchImpact(matches, match, players),
-    [matches, match, players]
+    () => matchImpact(matches, match),
+    [matches, match]
   );
 
   const byId = useMemo(
@@ -222,8 +196,8 @@ export default function MatchImpact({
           What this match changed
         </CardTitle>
         <CardDescription>
-          Each side&apos;s average going in and coming out. Skill is set by hand,
-          so a result never moves it.
+          Each side&apos;s chance before kick-off and what the result made of
+          it, and their average rating going in and coming out.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-2">

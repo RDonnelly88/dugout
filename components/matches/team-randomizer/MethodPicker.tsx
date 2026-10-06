@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { Dices, Hand, Scale, Star, TrendingUp } from "lucide-react";
+import { Dices, Hand, Scale } from "lucide-react";
 import type { Split } from "@/lib/team-balance";
 import type { PickMethod } from "./pick-method";
 import type { Player } from "@/types";
@@ -40,20 +40,6 @@ const METHODS: {
     Icon: Scale,
     gap: (d) => (d < 0.05 ? "dead even" : `${d < 10 ? d.toFixed(1) : Math.round(d)} Elo apart`),
   },
-  {
-    value: "form",
-    label: "Even by form",
-    blurb: "Uses the last few results, so tonight's shape counts more than history.",
-    Icon: TrendingUp,
-    gap: (d) => (d < 0.005 ? "dead even" : `${d.toFixed(2)} pts a game apart`),
-  },
-  {
-    value: "skill",
-    label: "Even by skill",
-    blurb: "Uses the level you set on each player, so a debutant still counts.",
-    Icon: Star,
-    gap: (d) => (d < 0.005 ? "dead even" : `${d.toFixed(2)} levels apart`),
-  },
 ];
 
 /**
@@ -68,21 +54,18 @@ export default function MethodPicker({
   value,
   onChange,
   preview,
-  notes,
   disabled,
 }: {
   value: PickMethod;
   onChange: (method: PickMethod) => void;
   /** The split each method would produce, for the gap readout. */
   preview: Record<PickMethod, Split<Player> | null>;
-  /** Why a method can't tell anyone apart, when that is worth explaining. */
-  notes?: Partial<Record<PickMethod, string>>;
   disabled?: boolean;
 }) {
   const reduced = useReducedMotion();
 
   return (
-    <fieldset disabled={disabled} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    <fieldset disabled={disabled} className="grid gap-2 sm:grid-cols-3">
       <legend className="sr-only">How to pick the teams</legend>
       {METHODS.map(({ value: method, label, blurb, Icon, gap }, i) => {
         const split = preview[method];
@@ -115,11 +98,6 @@ export default function MethodPicker({
             </span>
             {split && gap && (
               <span className="eyebrow mt-2 block">{gap(split.difference)}</span>
-            )}
-            {notes?.[method] && (
-              <span className="mt-1 block text-xs text-muted-foreground">
-                {notes[method]}
-              </span>
             )}
           </motion.button>
         );

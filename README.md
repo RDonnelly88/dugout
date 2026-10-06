@@ -34,9 +34,9 @@ propping anybody up. A win is a win — a nine-nil is one team having a night,
 not nine times the evidence of a one-nil.
 
 **Picks the sides.** Say who turned up, then choose how to split them: a
-straight shuffle, evenly by rating, or evenly by recent form. Each option shows
-the gap it would leave between the two teams before you commit, and the cards
-are dealt out one at a time.
+straight shuffle, evenly by rating, or by hand. The even split shows the gap it
+would leave between the two teams before you commit, and the cards are dealt
+out one at a time.
 
 **Measures everyone against the odds.** Before every match the ratings give
 each side a chance of winning; added up over a player's games, those chances

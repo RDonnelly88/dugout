@@ -1,13 +1,13 @@
 /**
  * Splitting a group into two sides.
  *
- * Three ways, because they answer different questions: a shuffle when the
- * point is that nobody chose, and a weighted split when the point is a game
- * worth playing. The weighted ones take a number per player and try to make
- * the two totals meet in the middle.
+ * Two ways, because they answer different questions: a shuffle when the point
+ * is that nobody chose, and a weighted split when the point is a game worth
+ * playing. The weighted one takes a number per player and tries to make the
+ * two totals meet in the middle.
  */
 
-export type BalanceMethod = "random" | "rating" | "form" | "skill";
+export type BalanceMethod = "random" | "rating";
 
 export interface Split<T> {
   teamA: T[];

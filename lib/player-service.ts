@@ -88,7 +88,6 @@ export const updatePlayer = async (
   if (updates.image !== undefined) formatted.image = updates.image;
   if (updates.imageUrl !== undefined) formatted.image = updates.imageUrl;
   if (updates.isActive !== undefined) formatted.is_active = updates.isActive;
-  if (updates.skillLevel !== undefined) formatted.skill_level = updates.skillLevel;
 
   const { data, error } = await supabase
     .from("players")

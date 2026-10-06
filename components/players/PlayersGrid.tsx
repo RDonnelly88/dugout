@@ -12,6 +12,12 @@ import { useSquadForm } from "@/hooks/useSquadForm";
 import { usePermission } from "@/lib/permission-utils";
 import { scopeTo, type ActiveScope } from "./ActiveFilter";
 import { orderPlayers, type PlayerSort } from "@/lib/player-order";
+import { useQuery } from "@tanstack/react-query";
+import { getMatches } from "@/lib/db";
+import { useTeam } from "@/contexts/TeamContext";
+import { ELO } from "@/lib/config";
+import { matchExpectations, playerLedgers } from "@/lib/expected-wins";
+import { withinTimeline } from "@/lib/timeline";
 
 interface PlayersGridProps {
   players: Player[];
@@ -42,6 +48,23 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
   // how people have been going lately whatever the calendar says.
   const { formFor, isLoading: isLoadingForms } = useSquadForm();
   const { canManage, ready } = usePermission();
+
+  // Wins against expected wins over the rating's own window, for sorting by
+  // who is beating the odds lately. The odds come from the whole history.
+  const { currentTeam } = useTeam();
+  const { data: matches = [] } = useQuery({
+    queryKey: ["matches", currentTeam?.id],
+    queryFn: getMatches,
+    enabled: !!currentTeam,
+  });
+  const recentOdds = React.useMemo(
+    () =>
+      playerLedgers(
+        withinTimeline(matches, { kind: "recent", matches: ELO.window }),
+        matchExpectations(matches)
+      ),
+    [matches]
+  );
   const editable = ready && canManage();
 
   // Where each rating sits within the squad's own spread. Elo has no absolute
@@ -66,17 +89,18 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
     return orderPlayers(
       matching.map((player) => {
         const record = recordFor(player.id, player.name);
+        const odds = recentOdds.get(player.id);
         return {
           ...player,
           rating: ratingFor(player.id),
-          form: formFor(player.id),
+          aboveXw: odds && odds.played > 0 ? odds.above : undefined,
           played: record.played,
           wins: record.wins,
         };
       }),
       sort
     );
-  }, [players, scope, searchTerm, sort, formFor, recordFor, ratingFor]);
+  }, [players, scope, searchTerm, sort, recentOdds, recordFor, ratingFor]);
 
   // No players found
   if (filteredPlayers.length === 0) {

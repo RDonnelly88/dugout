@@ -108,19 +108,5 @@ export const FORM_LENGTH = 5;
  * from — a copy in TypeScript would be a second answer to the same question.
  */
 
-/**
- * The hand-set ability scale.
- *
- * Five steps because people can tell one end from the other and cannot
- * reliably tell 68 from 71. Deliberately unlabelled: naming the steps invited
- * an argument about whether "ringer" meant the best player or the worst, which
- * is not a question a number needs to raise. It is drawn as five pips.
- */
-export const SKILL = {
-  min: 1,
-  max: 5,
-  default: 3,
-} as const;
-
 /** What the two sides are called on screen. Team A is the one in bibs. */
 export const SIDE_NAMES = { A: "Bibs", B: "No bibs" } as const;

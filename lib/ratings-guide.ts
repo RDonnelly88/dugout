@@ -3,7 +3,7 @@ import { expectedScore, gameWeight } from "./elo";
 import { matchImpact } from "./match-impact";
 import { outcomeOf } from "./match-result";
 
-import type { Match, Player } from "@/types";
+import type { Match } from "@/types";
 
 /**
  * A real result, taken apart, for the guide to walk through.
@@ -48,7 +48,6 @@ export interface WorkedExample {
  */
 export function workedExample(
   matches: Match[],
-  players: Player[],
   sideNames: { A: string; B: string }
 ): WorkedExample | null {
   const played = matches
@@ -58,7 +57,7 @@ export function workedExample(
   const match = played[0];
   if (!match) return null;
 
-  const impact = matchImpact(matches, match, players);
+  const impact = matchImpact(matches, match);
   if (!impact) return null;
 
   const outcome = outcomeOf(match)!;

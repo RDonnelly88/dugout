@@ -25,7 +25,7 @@ import RatingLeaderboard from "@/components/ratings/RatingLeaderboard";
 import MatchCard from "@/components/matches/MatchCard";
 import { Rail } from "@/components/ui/rail";
 import QuickActions from "./QuickActions";
-import FormLeaders from "./FormLeaders";
+import OddsLeaders from "./OddsLeaders";
 
 /** A card heading that is also the way through to the whole thing. */
 function More({ href, children }: { href: string; children: React.ReactNode }) {
@@ -46,7 +46,7 @@ function More({ href, children }: { href: string; children: React.ReactNode }) {
  * It used to be a league table and a list of recent matches, which is two of
  * the things the nav already goes to and none of the things you open the app
  * to do. It now leads with picking the teams, and shows the three answers
- * worth having at a glance — the table, who is in form, and who is rated where
+ * worth having at a glance — the table, who is beating the odds, and who is rated where
  * — each linking through to the page that holds the rest.
  */
 const Dashboard = () => {
@@ -181,7 +181,7 @@ const Dashboard = () => {
         )}
 
         <div className="reveal">
-          <FormLeaders matches={matches} players={players} />
+          <OddsLeaders matches={matches} players={players} />
         </div>
 
         <Card className="reveal">

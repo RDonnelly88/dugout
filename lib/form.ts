@@ -16,25 +16,9 @@ export interface RecentForm {
   playerId: string;
   /** Of the window, the ones they actually turned out for. */
   games: number;
-  points: number;
-  /**
-   * Points per match in the window — over the squad's last few nights, not
-   * over the ones this player chose to appear at. Three is a perfect run,
-   * nought a wipeout, and a night missed is a nought like any other.
-   */
-  pointsPerGame: number;
   /** Newest first, with `dnp` where they were not there. */
   results: PlayerFormResult[];
 }
-
-/**
- * What a result is worth. The league's own scoring, and the only copy of it.
- *
- * A night missed scores what a defeat scores. Turning up is part of being in
- * form — a player cannot be flying on the strength of three games out of ten.
- */
-const pointsFor = (result: PlayerFormResult): number =>
-  result === "win" ? 3 : result === "draw" ? 1 : 0;
 
 /** Newest first, capped at the window — the shape the rest of this file uses. */
 export const rollForm = (
@@ -44,14 +28,12 @@ export const rollForm = (
 ): PlayerFormResult[] => [result, ...previous].slice(0, windowSize);
 
 /**
- * How everyone has been going lately.
+ * Everyone's run of recent results: the W/D/L strip drawn beside a name.
  *
- * The window is the squad's last few matches, the same few for everybody, and
- * a night missed counts as nought — from a player's first game onwards. Measuring each player over their own last
- * five instead made the table incomparable: three wins out of three read as a
- * perfect run and outranked five games of four wins, and the card promising
- * "points a game over the last five" was quietly dividing one player's by
- * three. Turning up is part of being in form.
+ * The window is the squad's last few matches, the same few for everybody,
+ * with the nights a player missed marked — from their first game onwards.
+ * It is a record of what happened, not a measure of anybody; how a player is
+ * going against the odds is expected wins' job.
  *
  * Derived from the matches, like everything else here, so it cannot fall out
  * of step with them.
@@ -66,8 +48,7 @@ export function recentForm(
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   // A night is only missed if the player was around to miss it. Counting the
-  // weeks before somebody's debut would hand every newcomer a run of blanks
-  // and read it as poor form, which is the head start argument in reverse.
+  // weeks before somebody's debut would hand every newcomer a run of blanks.
   const debut = new Map<string, number>();
   played.forEach((match, index) => {
     for (const id of [...match.teamA.players, ...match.teamB.players]) {
@@ -79,8 +60,8 @@ export function recentForm(
   const window = played.slice(0, windowSize);
 
   // Anybody who turned out at least once in the window. Somebody who has not
-  // played in any of it has no recent form to speak of, rather than a stale
-  // one carried forward from March.
+  // played in any of it has no recent run to show, rather than a stale one
+  // carried forward from March.
   const appeared = new Set(
     window.flatMap((match) => [...match.teamA.players, ...match.teamB.players])
   );
@@ -89,7 +70,6 @@ export function recentForm(
 
   for (const playerId of appeared) {
     const results: PlayerFormResult[] = [];
-    let points = 0;
     let games = 0;
 
     window.forEach((match, index) => {
@@ -101,17 +81,10 @@ export function recentForm(
         return;
       }
       results.push(result);
-      points += pointsFor(result);
       games += 1;
     });
 
-    byPlayer.set(playerId, {
-      playerId,
-      games,
-      points,
-      pointsPerGame: points / results.length,
-      results,
-    });
+    byPlayer.set(playerId, { playerId, games, results });
   }
 
   return byPlayer;

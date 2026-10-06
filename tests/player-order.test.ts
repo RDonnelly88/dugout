@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { orderPlayers, type Sortable } from "@/lib/player-order";
 import type { PlayerRating } from "@/lib/elo";
-import type { PlayerFormResult } from "@/types";
 
 const rated = (rating: number): PlayerRating =>
   ({ rating }) as PlayerRating;
@@ -13,7 +12,6 @@ const p = (
   id: name,
   name,
   rating: undefined,
-  form: [],
   played: 0,
   wins: 0,
   ...bits,
@@ -48,25 +46,19 @@ describe("orderPlayers", () => {
     expect(order(squad, "rank")).toEqual(["good", "poor", "unrated"]);
   });
 
-  it("sorts form on points a game, not on how many results there are", () => {
-    const wins = ["win", "win"] as PlayerFormResult[];
-    const mixed = ["win", "loss", "win", "loss", "win"] as PlayerFormResult[];
-
-    const squad = [p("mixed", { form: mixed }), p("perfect", { form: wins })];
-
-    expect(order(squad, "form")).toEqual(["perfect", "mixed"]);
-  });
-
-  it("counts a night somebody missed against their form", () => {
+  it("puts whoever is furthest above their expected wins at the top", () => {
     const squad = [
-      p("patchy", { form: ["win", "dnp", "dnp"] as PlayerFormResult[] }),
-      p("steady", { form: ["win", "draw"] as PlayerFormResult[] }),
+      p("behind", { aboveXw: -1.5 }),
+      p("ahead", { aboveXw: 2.4 }),
+      p("level", { aboveXw: 0 }),
     ];
 
-    // One point a night against two: a win out of three nights is not a
-    // better run than a win and a draw out of two. The same rule the strip
-    // beside them is drawn from, and the one the rating model reads.
-    expect(order(squad, "form")).toEqual(["steady", "patchy"]);
+    expect(order(squad, "odds")).toEqual(["ahead", "level", "behind"]);
+  });
+
+  it("sends anybody with no games in the stretch to the end", () => {
+    const squad = [p("away"), p("behind", { aboveXw: -3 })];
+    expect(order(squad, "odds")).toEqual(["behind", "away"]);
   });
 
   it("sorts by games played, most first", () => {
@@ -100,7 +92,7 @@ describe("orderPlayers", () => {
   it("falls back to the name so the order never wobbles", () => {
     const squad = [p("Zoe"), p("Alan"), p("Mark")];
 
-    for (const sort of ["rank", "form", "played", "winRate"] as const) {
+    for (const sort of ["rank", "odds", "played", "winRate"] as const) {
       expect(order(squad, sort)).toEqual(["Alan", "Mark", "Zoe"]);
     }
   });

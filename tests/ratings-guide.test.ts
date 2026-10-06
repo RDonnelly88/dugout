@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { workedExample, fadeCurve } from "@/lib/ratings-guide";
 import { ELO } from "@/lib/config";
-import type { Match, Player } from "@/types";
+import type { Match } from "@/types";
 
 let counter = 0;
 function match(
@@ -26,28 +26,18 @@ function match(
   };
 }
 
-const player = (id: string): Player => ({
-  id,
-  name: id,
-  image: null,
-  createdAt: "2026-01-01",
-  updatedAt: "2026-01-01",
-  skillLevel: undefined,
-});
-
-const squad = ["a", "b", "c", "x", "y", "z"].map(player);
 const sides = { A: "Bibs", B: "No bibs" };
 
 describe("workedExample", () => {
   it("has nothing to show a squad that has not played", () => {
-    expect(workedExample([], squad, sides)).toBeNull();
+    expect(workedExample([], sides)).toBeNull();
   });
 
   it("walks through the most recent result, not the first", () => {
     const older = match(["a"], ["x"], 1, 0, "2026-02-01");
     const latest = match(["b"], ["y"], 1, 0, "2026-03-01");
 
-    const example = workedExample([older, latest], squad, sides)!;
+    const example = workedExample([older, latest], sides)!;
 
     expect(example.matchId).toBe(latest.id);
     expect(example.date).toBe("2026-03-01");
@@ -55,7 +45,7 @@ describe("workedExample", () => {
 
   it("moves the winners up and the losers down", () => {
     const fixture = match(["a", "b", "c"], ["x", "y", "z"], 2, 1, "2026-04-01");
-    const example = workedExample([fixture], squad, sides)!;
+    const example = workedExample([fixture], sides)!;
 
     for (const p of example.winner.players) expect(p.change).toBeGreaterThan(0);
     for (const p of example.loser.players) expect(p.change).toBeLessThan(0);
@@ -64,7 +54,7 @@ describe("workedExample", () => {
   it("says how many games each rating rested on going in", () => {
     const earlier = match(["a"], ["x"], 1, 0, "2026-04-02");
     const fixture = match(["a", "b"], ["x", "y"], 2, 1, "2026-04-03");
-    const example = workedExample([earlier, fixture], squad, sides)!;
+    const example = workedExample([earlier, fixture], sides)!;
 
     const counted = new Map(
       example.winner.players.map((p) => [p.playerId, p.counted])
@@ -75,7 +65,7 @@ describe("workedExample", () => {
 
   it("puts the side that won on the winning side of the story", () => {
     const bibsLost = match(["a", "b"], ["x", "y"], 0, 3, "2026-06-01");
-    const example = workedExample([bibsLost], squad, sides)!;
+    const example = workedExample([bibsLost], sides)!;
 
     expect(example.winner.name).toBe("No bibs");
     expect(example.loser.name).toBe("Bibs");
@@ -84,7 +74,7 @@ describe("workedExample", () => {
 
   it("reads a draw between equals as a draw that moves nobody", () => {
     const drawn = match(["a", "b"], ["x", "y"], 1, 1, "2026-07-01");
-    const example = workedExample([drawn], squad, sides)!;
+    const example = workedExample([drawn], sides)!;
 
     expect(example.drawn).toBe(true);
     for (const p of [...example.winner.players, ...example.loser.players]) {
@@ -94,7 +84,7 @@ describe("workedExample", () => {
 
   it("starts two sides that have never played at even", () => {
     const fixture = match(["a", "b"], ["x", "y"], 1, 0, "2026-08-01");
-    const example = workedExample([fixture], squad, sides)!;
+    const example = workedExample([fixture], sides)!;
 
     expect(example.expected).toBeCloseTo(0.5, 6);
   });

@@ -76,8 +76,8 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
     [players]
   );
   const example = useMemo(
-    () => workedExample(matches, players, sides),
-    [matches, players, sides]
+    () => workedExample(matches, sides),
+    [matches, sides]
   );
 
   const fade = fadeCurve();
