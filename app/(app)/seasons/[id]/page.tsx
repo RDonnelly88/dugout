@@ -29,11 +29,16 @@ import SeasonSelector from "@/components/seasons/SeasonSelector";
 import SeasonLeaderboard from "@/components/seasons/SeasonLeaderboard";
 import SeasonPositionChart from "@/components/seasons/SeasonPositionChart";
 import WrappedPicker from "@/components/wrapped/WrappedPicker";
+import MatchCard from "@/components/matches/MatchCard";
+import { Rail } from "@/components/ui/rail";
 import { outcomeOf } from "@/lib/match-result";
 import { useSeasonDetail } from "@/hooks/useSeasonDetail";
 import { calculatePlayerRanks } from "@/lib/ranking-utils";
 import PageHeader from "@/components/PageHeader";
 import { StatTile, StatTiles } from "@/components/StatTile";
+
+/** How many of the season's latest results the rail at the top shows. */
+const LATEST_NIGHTS = 8;
 
 const SeasonDetail = () => {
   const { currentTeam } = useTeam();
@@ -63,6 +68,11 @@ const SeasonDetail = () => {
 
   const ranks = calculatePlayerRanks(playerStats);
   const leaders = playerStats.filter((p) => ranks[p.playerId] === 1);
+  // The season's last few results, newest first, as a run of scoreboards.
+  const latestNights = seasonMatches
+    .filter((m) => outcomeOf(m) !== null)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, LATEST_NIGHTS);
 
   if (isLoadingSeason) {
     return (
@@ -232,6 +242,17 @@ const SeasonDetail = () => {
               />
             </StatTiles>
           </PageHeader>
+
+          {latestNights.length > 0 && (
+            <section className="mb-6">
+              <h2 className="section-title mb-3">Latest nights</h2>
+              <Rail label={`The latest nights of ${season.name}`}>
+                {latestNights.map((match) => (
+                  <MatchCard key={match.id} match={match} />
+                ))}
+              </Rail>
+            </section>
+          )}
 
           <div className="mb-6">
             <WrappedPicker

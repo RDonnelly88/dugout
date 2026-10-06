@@ -21,12 +21,17 @@ import PlayerRatingCard from "@/components/players/PlayerRatingCard";
 import PageHeader from "@/components/PageHeader";
 import { AVATAR_TRANSITION } from "@/components/TransitionLink";
 import MatchListItem from "@/components/matches/MatchListItem";
+import MatchCard from "@/components/matches/MatchCard";
+import { Rail } from "@/components/ui/rail";
+import { outcomeOf, sideOf } from "@/lib/match-result";
 import { recentResults } from "@/lib/recent-results";
 import { ratingSwings } from "@/lib/match-impact";
 import { StatTile, StatTiles } from "@/components/StatTile";
 
 /** How many of a player's matches to list before asking. */
 const MATCHES_SHOWN = 10;
+/** How many nights the rail at the top runs back. */
+const RECENT_NIGHTS = 10;
 
 const PlayerDetail = () => {
   const [showAllMatches, setShowAllMatches] = React.useState(false);
@@ -59,6 +64,16 @@ const PlayerDetail = () => {
   // the early returns, for the same reason as the record.
   const lastFive: RecentResult[] = React.useMemo(
     () => recentResults(allMatches).get(player?.id ?? "")?.results ?? [],
+    [allMatches, player?.id]
+  );
+
+  // Every season, newest first: the run is about them, not the season picked.
+  const recentNights = React.useMemo(
+    () =>
+      allMatches
+        .filter((m) => outcomeOf(m) !== null && sideOf(m, player?.id ?? "") !== null)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, RECENT_NIGHTS),
     [allMatches, player?.id]
   );
 
@@ -227,6 +242,19 @@ const PlayerDetail = () => {
               </Link>
             ))}
         </div>
+      )}
+
+      {/* Their latest nights as a run of small scoreboards, each lit in the
+          colour of how it went for them, before the full list further down. */}
+      {recentNights.length > 0 && (
+        <section className="mb-8">
+          <h2 className="section-title mb-3">Recent nights</h2>
+          <Rail label={`${player.name}'s recent nights`}>
+            {recentNights.map((match) => (
+              <MatchCard key={match.id} match={match} side={sideOf(match, player.id) ?? undefined} />
+            ))}
+          </Rail>
+        </section>
       )}
 
       <Tabs defaultValue="stats" className="mb-8">

@@ -230,10 +230,10 @@ export default function ComparePage() {
   if (sorted.length < 2) {
     return (
       <div className="page-container">
-        <h1 className="page-title">Compare</h1>
-        <p className="page-subtitle">
-          Add a second player and you can put two of them side by side.
-        </p>
+        <PageHeader
+          title="Compare"
+          subtitle="Add a second player and you can put two of them side by side."
+        />
       </div>
     );
   }

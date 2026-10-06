@@ -582,17 +582,31 @@ html[data-theme="dark"] {
 }
 
 @utility page-header {
-  @apply mb-6 md:mb-8;
+  @apply mb-8 pt-2 md:mb-10 md:pt-6;
 }
 
-/* The one h1 on the page. */
+/* The small tracked line above a title: whose app this is. */
+@utility page-kicker {
+  @apply font-mono text-[11px] font-semibold uppercase tracking-[0.28em] text-accent;
+}
+
+/* The one h1 on the page, at the size of a programme cover: the display face
+   narrowed on its width axis, so a long name still fits a phone at this size,
+   and scaled to the screen rather than stepped at breakpoints. */
 @utility page-title {
-  @apply text-2xl font-bold tracking-tight text-foreground md:text-3xl;
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 7vw, 4.25rem);
+  font-stretch: 78%;
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  color: hsl(var(--foreground));
+  text-wrap: balance;
 }
 
 /* The sentence under it, explaining what the page is for. */
 @utility page-subtitle {
-  @apply mt-2 max-w-prose text-sm text-muted-foreground md:text-base;
+  @apply mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg;
 }
 
 /* A heading inside a page: a card's title, or a band within one. */

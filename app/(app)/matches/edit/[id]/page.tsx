@@ -21,6 +21,7 @@ import { usePermission } from "@/lib/permission-utils";
 import { useToast } from "@/hooks/use-toast";
 import { useTeam } from "@/contexts/TeamContext";
 import { useSideNames } from "@/hooks/useSideNames";
+import PageHeader from "@/components/PageHeader";
 
 const EditMatch = () => {
   const sides = useSideNames();
@@ -135,12 +136,7 @@ const EditMatch = () => {
         </Button>
       </div>
 
-      <div className="page-header">
-        <h1 className="page-title">Edit Match</h1>
-        <p className="page-subtitle">
-          Update match details and team compositions
-        </p>
-      </div>
+      <PageHeader title="Edit match" subtitle="Change the details, the sides or the result." />
 
       <Card className="neo-glassmorphism border-accent/30 shadow-accent/10">
         <CardContent>

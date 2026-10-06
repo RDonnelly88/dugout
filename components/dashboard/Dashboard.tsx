@@ -99,10 +99,13 @@ const Dashboard = () => {
   return (
     <div className="page-container animate-slide-up">
       <PageHeader
+        // The title is the team, so the line above it is the season rather
+        // than the team's name a second time.
+        eyebrow={currentSeason?.name ?? "The Dugout"}
         title={currentTeam?.name ?? "Dugout"}
         subtitle={
           currentSeason
-            ? `${currentSeason.name} · ${played.length} played`
+            ? `${played.filter((m) => m.seasonId === currentSeason.id).length} played this season so far.`
             : "No season running. Start one to keep a table."
         }
       >
