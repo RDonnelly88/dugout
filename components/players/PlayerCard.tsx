@@ -10,6 +10,7 @@ import { usePlayerRank } from "@/hooks/usePlayerRank";
 import { usePermission } from "@/lib/permission-utils";
 import { winRate } from "@/lib/player-stats";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
+import ActiveSwitch from "@/components/players/ActiveSwitch";
 import TransitionLink from "@/components/TransitionLink";
 import { isActivePlayer } from "@/components/players/ActiveFilter";
 import { displayRating, type PlayerRating } from "@/lib/elo";
@@ -101,7 +102,10 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
           whole card being the link is what makes a player reachable from
           anywhere they are named. Hidden for anyone who cannot act on them —
           a viewer, or anybody looking round the demo team. */}
-      <div className={`absolute right-2 top-2 z-10 flex gap-1 ${editable ? "" : "hidden"}`}>
+      <div className={`absolute right-2 top-2 z-10 flex items-center gap-1 ${editable ? "" : "hidden"}`}>
+        {/* Active or not without opening the edit form: it is the one thing
+            about a player that changes from week to week. */}
+        <ActiveSwitch player={player} className="mr-1" />
         <Link
           href={`/players/edit/${player.id}`}
           aria-label={`Edit ${player.name}`}
@@ -125,7 +129,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
         shareAvatar
       >
         <CardContent className="flex h-full flex-col p-0">
-          <div className="flex items-center gap-4 p-5 pr-20">
+          <div className={`flex items-center gap-4 p-5 ${editable ? "pr-32" : "pr-5"}`}>
             <PlayerAvatar name={player.name} image={player.image} size="lg" />
 
             <div className="min-w-0 flex-1">

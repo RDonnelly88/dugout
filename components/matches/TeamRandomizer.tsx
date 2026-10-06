@@ -9,6 +9,7 @@ import MethodPicker from "./team-randomizer/MethodPicker";
 import CardPackRandomizer from "./team-randomizer/CardPackRandomizer";
 import ManualPicker from "./team-randomizer/ManualPicker";
 import { isBalanceMethod, type PickMethod } from "./team-randomizer/pick-method";
+import { keepSelection } from "@/lib/player-selection";
 import {
   Dialog,
   DialogContent,
@@ -48,7 +49,9 @@ const TeamRandomizer = ({
   onSelectionChange,
   disabled = false,
 }: TeamRandomizerProps) => {
-  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
+  // Null until the squad first arrives; see `keepSelection`.
+  const [picked, setPicked] = useState<string[] | null>(null);
+  const selectedPlayers = useMemo(() => picked ?? [], [picked]);
   const [method, setMethod] = useState<PickMethod>("random");
   const [dealing, setDealing] = useState(false);
 
@@ -68,13 +71,12 @@ const TeamRandomizer = ({
     enabled: !!currentSeason,
   });
 
-  // Active players only, matching what the list shows by default. Selecting
+  // Active players to start with, matching what the list shows by default, and
+  // the person's own picks from then on, whatever redraws the list. Selecting
   // everyone meant retired players were picked, hidden, and quietly dealt into
   // the teams — the button read "23 playing" above a list showing twelve.
   useEffect(() => {
-    setSelectedPlayers(
-      players.filter((p) => p.isActive !== false).map((p) => p.id)
-    );
+    setPicked((previous) => keepSelection(previous, players));
   }, [players]);
 
   useEffect(() => {
@@ -139,11 +141,21 @@ const TeamRandomizer = ({
     onRandomize(teamA, teamB);
   };
 
+  // Somebody marked active from the list is playing; somebody marked
+  // inactive is not, and drops out of the picks rather than staying picked
+  // behind the filter.
+  const followActive = (playerId: string, active: boolean) =>
+    setPicked((prev) => {
+      const list = prev ?? [];
+      if (!active) return list.filter((id) => id !== playerId);
+      return list.includes(playerId) ? list : [...list, playerId];
+    });
+
   const togglePlayerSelection = (playerId: string) =>
-    setSelectedPlayers((prev) =>
-      prev.includes(playerId)
-        ? prev.filter((id) => id !== playerId)
-        : [...prev, playerId]
+    setPicked((prev) =>
+      (prev ?? []).includes(playerId)
+        ? (prev ?? []).filter((id) => id !== playerId)
+        : [...(prev ?? []), playerId]
     );
 
   return (
@@ -154,6 +166,7 @@ const TeamRandomizer = ({
           players={players}
           selectedPlayers={selectedPlayers}
           togglePlayerSelection={togglePlayerSelection}
+          onActiveChange={followActive}
           disabled={dealing || disabled}
         />
       </section>

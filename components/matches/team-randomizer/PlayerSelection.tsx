@@ -11,6 +11,8 @@ import ResultStrip from '@/components/players/ResultStrip';
 import { TrendingUp, Trophy, Flag } from "lucide-react";
 import { calculatePlayerRanks } from "@/lib/ranking-utils";
 import PlayerSelectionFilters from './PlayerSelectionFilters';
+import { selectionOrder } from "@/lib/player-selection";
+import ActiveSwitch from "@/components/players/ActiveSwitch";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
 import { displayRating } from "@/lib/elo";
@@ -21,6 +23,8 @@ interface PlayerSelectionProps {
   players: Player[];
   selectedPlayers: string[];
   togglePlayerSelection: (playerId: string) => void;
+  /** A player marked active or not from the list, so the picks can follow. */
+  onActiveChange?: (playerId: string, active: boolean) => void;
   disabled: boolean;
 }
 
@@ -28,6 +32,7 @@ const PlayerSelection = ({
   players, 
   selectedPlayers, 
   togglePlayerSelection,
+  onActiveChange,
   disabled
 }: PlayerSelectionProps) => {
   const { currentTeam } = useTeam();
@@ -56,37 +61,18 @@ const PlayerSelection = ({
     return calculatePlayerRanks(seasonPlayerStats);
   }, [seasonPlayerStats]);
 
-  // Filter and sort players
-  const filteredAndSortedPlayers = useMemo(() => {
-    let filtered = players;
-    
-    // Filter by active status
-    if (showActiveOnly) {
-      filtered = filtered.filter(player => player.isActive !== false);
-    }
-    
-    // Filter by search term
-    if (searchTerm.trim()) {
-      filtered = filtered.filter(player =>
-        player.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    // Sort by frequency (games played) descending, then by name
-    return filtered.sort((a, b) => {
-      const aSeasonStats = seasonPlayerStats.find(stat => stat.playerId === a.id);
-      const bSeasonStats = seasonPlayerStats.find(stat => stat.playerId === b.id);
-      
-      // Prioritize current season stats, fallback to overall stats
-      const aPlayed = aSeasonStats?.played ?? recordFor(a.id, a.name).played;
-      const bPlayed = bSeasonStats?.played ?? recordFor(b.id, b.name).played;
-
-      if (aPlayed !== bPlayed) {
-        return bPlayed - aPlayed; // Most frequent first
-      }
-      return a.name.localeCompare(b.name); // Then alphabetically
-    });
-  }, [players, searchTerm, showActiveOnly, seasonPlayerStats, recordFor]);
+  // Most games first — this season's where there is one, all time otherwise.
+  const filteredAndSortedPlayers = useMemo(
+    () =>
+      selectionOrder(players, {
+        activeOnly: showActiveOnly,
+        search: searchTerm,
+        playedOf: (p) =>
+          seasonPlayerStats.find((stat) => stat.playerId === p.id)?.played ??
+          recordFor(p.id, p.name).played,
+      }),
+    [players, searchTerm, showActiveOnly, seasonPlayerStats, recordFor]
+  );
 
   const filteredSelectedPlayers = filteredAndSortedPlayers.filter(player =>
     selectedPlayers.includes(player.id)
@@ -186,6 +172,10 @@ const PlayerSelection = ({
                   </HoverCard>
                 </Label>
               </div>
+              <ActiveSwitch
+                player={player}
+                onChange={(active) => onActiveChange?.(player.id, active)}
+              />
             </div>
           );
         })}

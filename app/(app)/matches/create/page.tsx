@@ -17,6 +17,7 @@ import { useState } from "react";
 import { usePermission } from "@/lib/permission-utils";
 import { useToast } from "@/hooks/use-toast";
 import { useTeam } from "@/contexts/TeamContext";
+import PageHeader from "@/components/PageHeader";
 
 const CreateMatch = () => {
   const { canManage, ready } = usePermission();
@@ -67,10 +68,8 @@ const CreateMatch = () => {
     }
   });
   
-  // Initialize selected players with all team players
-  useEffect(() => {
-    setSelectedPlayers(players.map(player => player.id));
-  }, [players]);
+  // Filled in by the randomiser, which owns who is picked and reports it
+  // whenever it changes, starting with its first picks.
 
   // Handle player selection from the TeamRandomizer
   const handlePlayerSelectionChange = (playerIds: string[]) => {
@@ -79,12 +78,7 @@ const CreateMatch = () => {
 
   return (
     <div className="page-container animate-slide-up">
-      <div className="page-header">
-        <h1 className="page-title">Create Match</h1>
-        <p className="page-subtitle">
-          Pick who is playing, then how to split them
-        </p>
-      </div>
+      <PageHeader title="New match" subtitle="Pick who is playing, then how to split them." />
 
       {/* One box per idea. This was a card inside a card inside a card, two of
           them drawn with classes that were never defined, so the randomiser's
