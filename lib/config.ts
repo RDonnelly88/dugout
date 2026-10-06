@@ -22,7 +22,9 @@
  * each setting on how well it called the next result and how closely it
  * ranked the true order. A shorter memory notices a change of form sooner
  * and ranks everybody else worse for it, because a five-a-side result says
- * very little about any one of the ten. Counting the window in each player's
+ * very little about any one of the ten. Thirty matches is a choice
+ * about what the table should describe — roughly the last season of games —
+ * rather than the sixty that ranked best in those tests. Counting the window in each player's
  * own games instead of the squad's matches ranked noticeably better in the
  * same tests, at the cost of an absent player's rating standing still rather
  * than easing back.
@@ -35,7 +37,7 @@ export const ELO = {
    * Matches the squad has played since a game, after which it counts half as
    * much towards a rating as the latest.
    */
-  halfLife: 30,
+  halfLife: 15,
 
   /**
    * Matches the squad has played since a game, after which it no longer
@@ -43,7 +45,7 @@ export const ELO = {
    * already counting for a quarter, so nobody's rating lurches the week an
    * old result leaves.
    */
-  window: 60,
+  window: 30,
 
   /**
    * How far apart the squad is assumed to be before any results come in, in
