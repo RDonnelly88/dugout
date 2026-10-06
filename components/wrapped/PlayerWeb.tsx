@@ -1,0 +1,229 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import PlayerAvatar from "@/components/players/PlayerAvatar";
+import { SegmentedControl, SegmentedControlItem } from "@/components/ui/segmented-control";
+import { signedWins, type Ledger } from "@/lib/expected-wins";
+import type { PointValues } from "@/lib/season-positions";
+import type { WrappedPartner } from "@/lib/season-wrapped";
+import {
+  enoughGames,
+  firmness,
+  lean,
+  pointsPerGame,
+  ppg,
+  tone,
+  type WebMeasure,
+} from "@/lib/web-measure";
+import { cn } from "@/lib/utils";
+import type { Player } from "@/types";
+
+/** The drawing's own units; it scales to the card. */
+const SIZE = 340;
+const CENTRE = SIZE / 2;
+const RING = 108;
+const NODE = 28;
+/** Where the names sit, just outside the faces. */
+const LABEL = RING + NODE / 2 + 8;
+
+/**
+ * To a hundredth: the server and the browser can disagree about the last
+ * digits of a sine, and the page as served must match the page as hydrated.
+ */
+const px = (value: number) => Math.round(value * 100) / 100;
+
+const STROKE = { ahead: "stroke-win", behind: "stroke-loss", level: "stroke-border-strong" } as const;
+const TEXT = { ahead: "text-win", behind: "text-loss", level: "text-muted-foreground" } as const;
+
+/**
+ * One player's season as a web: them in the middle, everybody they played
+ * with — or against — round them, a spoke to each.
+ *
+ * On the record, a spoke is green where they took more points a game with
+ * that player than they did across their whole season, and red where fewer;
+ * against the odds, it is wins above or below what the ratings expected. A
+ * thicker spoke is more games, and a faint one too few to say much. The ring
+ * runs best first, clockwise from the top. Tap a face for the numbers.
+ */
+export default function PlayerWeb({
+  player,
+  own,
+  mates,
+  opponents,
+  playerFor,
+  values,
+}: {
+  player: Player;
+  /** Their own season, the baseline a spoke is read against. */
+  own: Ledger;
+  mates: WrappedPartner[];
+  opponents: WrappedPartner[];
+  playerFor: (id: string) => Player | undefined;
+  /** What a win and a draw are worth; without them only the odds are offered. */
+  values: PointValues | null;
+}) {
+  const [side, setSide] = useState<"with" | "against">("with");
+  const [chosen, setChosen] = useState<WebMeasure>("record");
+  const measure: WebMeasure = values ? chosen : "odds";
+  // Only read on the record, which is only offered with real values.
+  const points = useMemo(() => values ?? { win: 1, draw: 0.5 }, [values]);
+  const baseline = pointsPerGame(own, points);
+
+  const entries = side === "with" ? mates : opponents;
+  const ring = useMemo(
+    () =>
+      [...entries].sort(
+        (x, y) =>
+          lean(y.ledger, measure, points, baseline) - lean(x.ledger, measure, points, baseline) ||
+          y.ledger.played - x.ledger.played
+      ),
+    [entries, measure, points, baseline]
+  );
+  const most = Math.max(1, ...ring.map((e) => e.ledger.played));
+  const [picked, setPicked] = useState<string | null>(null);
+  // The best of them until somebody is tapped; a stale pick from the other
+  // side of the toggle falls back the same way.
+  const selected = ring.find((e) => e.playerId === picked) ?? ring[0];
+
+  const seat = (i: number) => {
+    const angle = -Math.PI / 2 + (i / Math.max(ring.length, 1)) * Math.PI * 2;
+    return {
+      x: px(CENTRE + RING * Math.cos(angle)),
+      y: px(CENTRE + RING * Math.sin(angle)),
+      cos: Math.cos(angle),
+      lx: px(CENTRE + LABEL * Math.cos(angle)),
+      ly: px(CENTRE + LABEL * Math.sin(angle) + 4),
+    };
+  };
+  const name = (id: string) => playerFor(id)?.name ?? "Unknown";
+  const first = (id: string) => name(id).split(/\s+/)[0];
+
+  if (ring.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap gap-2">
+        <SegmentedControl
+          label="Team-mates or opponents"
+          value={side}
+          onValueChange={(next) => setSide(next as "with" | "against")}
+          className="h-8"
+        >
+          <SegmentedControlItem value="with" className="h-full px-3 text-xs font-medium">
+            With
+          </SegmentedControlItem>
+          <SegmentedControlItem value="against" className="h-full px-3 text-xs font-medium">
+            Against
+          </SegmentedControlItem>
+        </SegmentedControl>
+        {values && (
+          <SegmentedControl
+            label="How to read the spokes"
+            value={measure}
+            onValueChange={(next) => setChosen(next as WebMeasure)}
+            className="h-8"
+          >
+            <SegmentedControlItem value="record" className="h-full px-3 text-xs font-medium">
+              Record
+            </SegmentedControlItem>
+            <SegmentedControlItem value="odds" className="h-full px-3 text-xs font-medium">
+              Odds
+            </SegmentedControlItem>
+          </SegmentedControl>
+        )}
+      </div>
+
+      <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="mx-auto w-full max-w-[360px] overflow-visible" aria-hidden>
+        <circle cx={CENTRE} cy={CENTRE} r={RING} className="fill-none stroke-border" strokeDasharray="2 5" />
+        {ring.map((entry, i) => {
+          const at = seat(i);
+          const lit = entry.playerId === selected?.playerId;
+          return (
+            <line
+              key={entry.playerId}
+              x1={CENTRE}
+              y1={CENTRE}
+              x2={at.x}
+              y2={at.y}
+              className={STROKE[tone(entry.ledger, measure, points, baseline)]}
+              strokeWidth={1.5 + 4.5 * (entry.ledger.played / most)}
+              strokeLinecap="round"
+              opacity={lit ? 1 : firmness(entry.ledger, measure, most)}
+            />
+          );
+        })}
+        {ring.map((entry, i) => {
+          const at = seat(i);
+          const lit = entry.playerId === selected?.playerId;
+          return (
+            <text
+              key={`name-${entry.playerId}`}
+              x={at.lx}
+              y={at.ly}
+              textAnchor={at.cos > 0.3 ? "start" : at.cos < -0.3 ? "end" : "middle"}
+              className={cn("fill-foreground text-[11px]", lit ? "font-semibold" : "opacity-80")}
+            >
+              {first(entry.playerId)}
+            </text>
+          );
+        })}
+        {ring.map((entry, i) => {
+          const at = seat(i);
+          const lit = entry.playerId === selected?.playerId;
+          const mate = playerFor(entry.playerId);
+          return (
+            <foreignObject
+              key={entry.playerId}
+              x={at.x - NODE / 2 - 3}
+              y={at.y - NODE / 2 - 3}
+              width={NODE + 6}
+              height={NODE + 6}
+            >
+              <button
+                type="button"
+                onClick={() => setPicked(entry.playerId)}
+                aria-label={`${name(entry.playerId)}'s numbers`}
+                aria-pressed={lit}
+                className={cn(
+                  "focus-ring m-[3px] block rounded-full",
+                  lit && "ring-2 ring-accent ring-offset-1 ring-offset-surface-2"
+                )}
+              >
+                <PlayerAvatar name={name(entry.playerId)} image={mate?.image} size="xs" />
+              </button>
+            </foreignObject>
+          );
+        })}
+        <foreignObject x={CENTRE - 26} y={CENTRE - 26} width={52} height={52}>
+          <PlayerAvatar name={player.name} image={player.image} size="md" className="ring-4 ring-accent/50" />
+        </foreignObject>
+      </svg>
+
+      {selected && (
+        <p className="min-h-[4.5rem] text-sm leading-relaxed" aria-live="polite">
+          <span className="font-semibold">{name(selected.playerId)}</span> ·{" "}
+          {selected.ledger.played} {side === "with" ? "together" : "against"} ·{" "}
+          {selected.ledger.wins}W {selected.ledger.draws}D {selected.ledger.losses}L
+          <br />
+          {measure === "record" ? (
+            <>
+              {first(player.id)} took{" "}
+              <span className={cn("font-semibold", TEXT[tone(selected.ledger, measure, points, baseline)])}>
+                {ppg(pointsPerGame(selected.ledger, points))} pts a game
+              </span>{" "}
+              {side === "with" ? "with them" : "against them"}, and {ppg(baseline)} across the season.
+            </>
+          ) : (
+            <>
+              <span className={cn("font-semibold", TEXT[tone(selected.ledger, measure, points, baseline)])}>
+                {signedWins(selected.ledger.above)}
+              </span>{" "}
+              against the odds {side === "with" ? "with them" : "against them"}.
+            </>
+          )}
+          {!enoughGames(selected.ledger) && <span className="opacity-70"> Too few games to say much.</span>}
+        </p>
+      )}
+    </div>
+  );
+}

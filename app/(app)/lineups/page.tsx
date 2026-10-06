@@ -12,6 +12,8 @@ import { lineupReport, LINEUP_MAX } from "@/lib/lineup";
 import { withinTimeline, type Timeline } from "@/lib/timeline";
 import { ringOrder, squadWeb } from "@/lib/squad-web";
 import { sideOf } from "@/lib/match-result";
+import { pointValues } from "@/lib/season-positions";
+import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import SquadWeb from "@/components/lineups/SquadWeb";
 import PageHeader from "@/components/PageHeader";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
@@ -276,6 +278,10 @@ function LineupLab() {
 
   // Odds from the whole history; the stretch only decides which nights count.
   const odds = useMemo(() => matchExpectations(matches), [matches]);
+  // What a win and a draw are worth, read off the all-time table the views
+  // keep, for reading the web as a record.
+  const { records } = usePlayerRecords();
+  const values = useMemo(() => pointValues(records), [records]);
   const scoped = useMemo(() => withinTimeline(matches, timeline), [matches, timeline]);
 
   const candidates = useMemo(
@@ -317,6 +323,7 @@ function LineupLab() {
           picked={picked}
           onOpenPair={openPair}
           onAddPlayer={toggle}
+          values={values}
         />
       </CardContent>
     </Card>

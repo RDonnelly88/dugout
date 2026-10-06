@@ -17,7 +17,7 @@ import type { Match } from "@/types";
  * it points at, and correcting a result from March rewrites it.
  */
 
-interface WrappedPartner {
+export interface WrappedPartner {
   playerId: string;
   ledger: Ledger;
 }
@@ -49,6 +49,12 @@ export interface Wrapped {
   regular: { playerId: string; played: number; wins: number } | null;
   /** The opponent they did worst against, against the odds. */
   nemesis: WrappedPartner | null;
+  /**
+   * Everybody they shared a side with, and everybody they faced, over the
+   * season alone — the web of their season.
+   */
+  mates: WrappedPartner[];
+  opponents: WrappedPartner[];
   /** Longest runs over their own games. */
   winRun: number;
   unbeatenRun: number;
@@ -170,6 +176,8 @@ export function seasonWrapped(
     partner: partner && partner.ledger.above > 0 ? partner : null,
     regular,
     nemesis: nemesis && nemesis.ledger.above < 0 ? nemesis : null,
+    mates: chemistry.withPlayers,
+    opponents: chemistry.againstPlayers,
     winRun: longestRun(results, (r) => r === "win"),
     unbeatenRun: longestRun(results, (r) => r !== "loss"),
     attendanceRun: longestRun(season, (m) => sideOf(m, playerId) !== null),

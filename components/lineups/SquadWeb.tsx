@@ -1,7 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { signedWins, type Ledger } from "@/lib/expected-wins";
+import { signedWins } from "@/lib/expected-wins";
+import type { PointValues } from "@/lib/season-positions";
+import {
+  averagePointsPerGame,
+  enoughGames,
+  firmness,
+  lean,
+  pointsPerGame,
+  ppg,
+  tone,
+  type WebMeasure,
+} from "@/lib/web-measure";
 import type { SquadWeb as Web, WebLink } from "@/lib/squad-web";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import Verdict from "@/components/xw/Verdict";
@@ -26,16 +37,8 @@ const LISTED = 4;
  */
 const px = (value: number) => Math.round(value * 100) / 100;
 
-/** How strongly a link is drawn: a verdict is the thing worth seeing. */
-const STRENGTH: Record<Ledger["verdict"], number> = {
-  early: 0.08,
-  luck: 0.22,
-  above: 0.95,
-  below: 0.95,
-};
-
-const tone = (ledger: Ledger) =>
-  ledger.above > 0.05 ? "stroke-win" : ledger.above < -0.05 ? "stroke-loss" : "stroke-border-strong";
+const STROKE = { ahead: "stroke-win", behind: "stroke-loss", level: "stroke-border-strong" } as const;
+const TEXT = { ahead: "text-win", behind: "text-loss", level: "text-muted-foreground" } as const;
 
 /** Wins with a draw as a half, to one place, dropping a needless ".0". */
 const wins = (value: number) => (Number.isInteger(value) ? String(value) : value.toFixed(1));
@@ -44,11 +47,14 @@ const wins = (value: number) => (Number.isInteger(value) ? String(value) : value
  * The squad as a web: everybody round a ring, a line wherever two of them
  * have shared a side.
  *
- * A line's colour is how those games went against the odds — green ahead,
- * red behind — its weight is how many games there were, and how solidly it
- * is drawn is the verdict: faint while it is too early to say, firm once it
- * is more than luck. Tap a face to light up their lines; tap a line to open
- * the pair in the lab. The list under it says the same in words.
+ * Read two ways (see `WebMeasure`). On the record, a line's colour is how
+ * many points a game the pair took against the squad's average over the same
+ * stretch, and it is drawn firmer the more games there were. Against the odds,
+ * its colour is wins above or below expected and its firmness the verdict:
+ * faint while it is too early to say, firm once it is more than luck. Either
+ * way green is ahead, red behind, and a thicker line is more games. Tap a face
+ * to light up their lines; tap a line to open the pair in the lab. The list
+ * under it says the same in words.
  */
 export default function SquadWeb({
   web,
@@ -57,8 +63,11 @@ export default function SquadWeb({
   picked,
   onOpenPair,
   onAddPlayer,
+  values,
 }: {
   web: Web;
+  /** What a win and a draw are worth; without them the web reads the odds only. */
+  values: PointValues | null;
   /** Seating round the ring; see `ringOrder`. */
   order: string[];
   byId: Map<string, Player>;
@@ -72,6 +81,19 @@ export default function SquadWeb({
   const [focus, setFocus] = useState<string | null>(null);
   const [hover, setHover] = useState<WebLink | null>(null);
   const [only, setOnly] = useState<"all" | "telling">("all");
+  const [chosen, setChosen] = useState<WebMeasure>("record");
+  const measure: WebMeasure = values ? chosen : "odds";
+  // Only read on the record, which is only offered with real values; the
+  // stand-in keeps the odds reading free of a null check at every turn.
+  const points = useMemo(() => values ?? { win: 1, draw: 0.5 }, [values]);
+  // The squad's own points a game over the stretch: a pair above it did
+  // better together than the average game went.
+  const baseline = useMemo(
+    () => averagePointsPerGame(web.players.map((p) => p.ledger), points),
+    [web, points]
+  );
+  const toneOf = (link: WebLink) => tone(link.ledger, measure, points, baseline);
+  const leanOf = (link: WebLink) => lean(link.ledger, measure, points, baseline);
 
   // Drawn at its real width, so names stay a readable size on a phone rather
   // than shrinking with a fixed drawing.
@@ -105,12 +127,16 @@ export default function SquadWeb({
   }, [order, centre, radius]);
 
   const most = Math.max(1, ...web.links.map((l) => l.ledger.played));
-  const shown = web.links.filter(
-    (l) => only === "all" || l.ledger.verdict === "above" || l.ledger.verdict === "below"
-  );
+  // On the odds, beyond luck; on the record, enough games to rank and a lean
+  // worth a colour.
+  const telling = (link: WebLink) =>
+    measure === "odds"
+      ? link.ledger.verdict === "above" || link.ledger.verdict === "below"
+      : enoughGames(link.ledger) && toneOf(link) !== "level";
+  const shown = web.links.filter((l) => only === "all" || telling(l));
   // Faint links first, so the telling ones are drawn on top of them.
   const layered = [...shown].sort(
-    (x, y) => STRENGTH[x.ledger.verdict] - STRENGTH[y.ledger.verdict]
+    (x, y) => firmness(x.ledger, measure, most) - firmness(y.ledger, measure, most)
   );
 
   const touches = (link: WebLink, id: string | null) => id !== null && (link.a === id || link.b === id);
@@ -131,12 +157,12 @@ export default function SquadWeb({
   const focusLinks = focus
     ? web.links
         .filter((l) => touches(l, focus))
-        .sort((x, y) => y.ledger.above - x.ledger.above || y.ledger.played - x.ledger.played)
+        .sort((x, y) => leanOf(y) - leanOf(x) || y.ledger.played - x.ledger.played)
     : [];
-  const telling = web.links.filter((l) => l.ledger.verdict !== "early");
-  const best = [...telling].sort((x, y) => y.ledger.above - x.ledger.above).slice(0, LISTED);
-  const worst = [...telling]
-    .sort((x, y) => x.ledger.above - y.ledger.above)
+  const ranked = web.links.filter((l) => enoughGames(l.ledger));
+  const best = [...ranked].sort((x, y) => leanOf(y) - leanOf(x)).slice(0, LISTED);
+  const worst = [...ranked]
+    .sort((x, y) => leanOf(x) - leanOf(y))
     .filter((l) => !best.includes(l))
     .slice(0, LISTED);
 
@@ -161,19 +187,24 @@ export default function SquadWeb({
               {other ? name(other) : `${name(link.a)} & ${name(link.b)}`}
             </span>
             <span className="tabular block text-xs text-muted-foreground">
-              {link.ledger.played} together · {wins(link.ledger.actual)} v{" "}
-              {link.ledger.expected.toFixed(1)} xW
+              {measure === "record"
+                ? `${link.ledger.played} together · ${link.ledger.wins}W ${link.ledger.draws}D ${link.ledger.losses}L`
+                : `${link.ledger.played} together · ${wins(link.ledger.actual)} v ${link.ledger.expected.toFixed(1)} xW`}
             </span>
           </span>
-          <span
-            className={cn(
-              "tabular font-semibold",
-              link.ledger.above > 0.05 ? "text-win" : link.ledger.above < -0.05 ? "text-loss" : "text-muted-foreground"
+          <span className={cn("tabular text-right font-semibold", TEXT[toneOf(link)])}>
+            {measure === "record" ? (
+              <>
+                {ppg(pointsPerGame(link.ledger, points))}
+                <span className="block text-[10px] font-normal text-muted-foreground">pts a game</span>
+              </>
+            ) : (
+              signedWins(link.ledger.above)
             )}
-          >
-            {signedWins(link.ledger.above)}
           </span>
-          <Verdict verdict={link.ledger.verdict} className="hidden sm:inline-flex" />
+          {measure === "odds" && (
+            <Verdict verdict={link.ledger.verdict} className="hidden sm:inline-flex" />
+          )}
         </button>
       </li>
     );
@@ -190,19 +221,21 @@ export default function SquadWeb({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <span className="h-1 w-5 rounded-full bg-win" aria-hidden /> Beat the odds together
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-1 w-5 rounded-full bg-loss" aria-hidden /> Fell short
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-1 w-5 rounded-full bg-border-strong opacity-40" aria-hidden /> Faint: too
-            early or could be luck
-          </span>
-          <span>Thicker: more games</span>
-        </div>
+        {values && (
+          <SegmentedControl
+            label="How to read the links"
+            value={measure}
+            onValueChange={(next) => setChosen(next as WebMeasure)}
+            className="h-9"
+          >
+            <SegmentedControlItem value="record" className="h-full px-3 text-xs font-medium">
+              Record
+            </SegmentedControlItem>
+            <SegmentedControlItem value="odds" className="h-full px-3 text-xs font-medium">
+              Against the odds
+            </SegmentedControlItem>
+          </SegmentedControl>
+        )}
         <SegmentedControl
           label="Which links to draw"
           value={only}
@@ -213,9 +246,24 @@ export default function SquadWeb({
             Every link
           </SegmentedControlItem>
           <SegmentedControlItem value="telling" className="h-full px-3 text-xs font-medium">
-            Beyond luck
+            {measure === "odds" ? "Beyond luck" : "Telling ones"}
           </SegmentedControlItem>
         </SegmentedControl>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <span className="flex items-center gap-1.5">
+          <span className="h-1 w-5 rounded-full bg-win" aria-hidden />
+          {measure === "odds" ? "Beat the odds together" : `More than the squad's ${ppg(baseline)} pts a game`}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-1 w-5 rounded-full bg-loss" aria-hidden />
+          {measure === "odds" ? "Fell short" : "Fewer"}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-1 w-5 rounded-full bg-border-strong opacity-40" aria-hidden />
+          {measure === "odds" ? "Faint: too early or could be luck" : "Faint: under five games"}
+        </span>
+        <span>Thicker: more games</span>
       </div>
 
       <div ref={box} className="relative mx-auto w-full max-w-[640px]">
@@ -226,7 +274,7 @@ export default function SquadWeb({
           // lists under it.
           // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
           role="img"
-          aria-label="The squad as a web of who has played with whom, coloured by how they did against the odds. The same links are listed below."
+          aria-label={`The squad as a web of who has played with whom, coloured by ${measure === "odds" ? "how they did against the odds" : "points a game together"}. The same links are listed below.`}
           className="block"
         >
           <circle
@@ -239,12 +287,12 @@ export default function SquadWeb({
 
           {layered.map((link) => {
             const lit = focus === null || touches(link, focus);
-            const strength = STRENGTH[link.ledger.verdict];
+            const strength = firmness(link.ledger, measure, most);
             return (
               <path
                 key={`${link.a}|${link.b}`}
                 d={path(link)}
-                className={cn("fill-none transition-opacity", tone(link.ledger))}
+                className={cn("fill-none transition-opacity", STROKE[toneOf(link)])}
                 strokeWidth={1 + 4 * (link.ledger.played / most)}
                 strokeLinecap="round"
                 opacity={lit ? (focus ? Math.max(strength, 0.45) : strength) : 0.04}
@@ -265,7 +313,9 @@ export default function SquadWeb({
               onClick={() => onOpenPair(link.a, link.b)}
             >
               <title>
-                {`${name(link.a)} & ${name(link.b)}: ${link.ledger.played} games together, ${signedWins(link.ledger.above)} wins against the odds`}
+                {measure === "record"
+                  ? `${name(link.a)} & ${name(link.b)}: ${link.ledger.played} games together, ${link.ledger.wins}W ${link.ledger.draws}D ${link.ledger.losses}L, ${ppg(pointsPerGame(link.ledger, points))} points a game`
+                  : `${name(link.a)} & ${name(link.b)}: ${link.ledger.played} games together, ${signedWins(link.ledger.above)} wins against the odds`}
               </title>
             </path>
           ))}
@@ -323,6 +373,7 @@ export default function SquadWeb({
             <p className="tabular text-xs text-muted-foreground">
               {hover.ledger.played} together · {hover.ledger.wins}W {hover.ledger.draws}D{" "}
               {hover.ledger.losses}L
+              {values && ` · ${ppg(pointsPerGame(hover.ledger, values))} pts a game`}
             </p>
             <p className="tabular mt-1 text-xs">
               {wins(hover.ledger.actual)} won v {hover.ledger.expected.toFixed(1)} xW ·{" "}
@@ -365,7 +416,9 @@ export default function SquadWeb({
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <h3 className="eyebrow mb-2">Strongest links</h3>
+            <h3 className="eyebrow mb-2">
+              {measure === "record" ? "Best records together" : "Strongest links"}
+            </h3>
             {best.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nobody has enough games together yet.</p>
             ) : (
@@ -375,7 +428,9 @@ export default function SquadWeb({
             )}
           </div>
           <div>
-            <h3 className="eyebrow mb-2">Weakest links</h3>
+            <h3 className="eyebrow mb-2">
+              {measure === "record" ? "Worst records together" : "Weakest links"}
+            </h3>
             {worst.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nobody has enough games together yet.</p>
             ) : (

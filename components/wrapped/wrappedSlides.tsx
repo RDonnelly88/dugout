@@ -13,6 +13,8 @@ import type { Wrapped } from "@/lib/season-wrapped";
 import { cn } from "@/lib/utils";
 import type { Player, Season, SeasonPlayerStats } from "@/types";
 import type { Slide } from "./WrappedStory";
+import PlayerWeb from "./PlayerWeb";
+import type { PointValues } from "@/lib/season-positions";
 
 /**
  * The small tracked-out label at the top of a card. Not `.eyebrow`, which is
@@ -109,8 +111,11 @@ export function wrappedSlides({
   season,
   row,
   playerFor,
+  values,
 }: {
   story: Wrapped;
+  /** What a win and a draw were worth this season, for points a game. */
+  values: PointValues | null;
   player: Player;
   season: Season;
   /** Their line of the season's table, which owns the points. */
@@ -320,6 +325,26 @@ export function wrappedSlides({
               </span>
             </p>
           )}
+        </Card>
+      ),
+    });
+  }
+
+  if (story.mates.length + story.opponents.length > 0) {
+    slides.push({
+      key: "web",
+      label: `${first}'s web`,
+      tone: "plain",
+      content: (
+        <Card label={`${first}'s web · ${season.name}`}>
+          <PlayerWeb
+            player={player}
+            own={record}
+            mates={story.mates}
+            opponents={story.opponents}
+            playerFor={playerFor}
+            values={values}
+          />
         </Card>
       ),
     });

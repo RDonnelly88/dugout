@@ -139,6 +139,22 @@ describe("seasonWrapped", () => {
   });
 });
 
+describe("the web of a season", () => {
+  it("holds everybody they played with and against, from that season only", () => {
+    const matches = [
+      night(["x", "old"], ["y"], "a", day(0), "s0"),
+      night(["x", "mate"], ["y", "foe"], "a", day(1)),
+      night(["x", "mate"], ["foe"], "b", day(2)),
+    ];
+
+    const story = seasonWrapped(matches, "s1", "x", VALUES)!;
+
+    expect(story.mates.map((m) => m.playerId)).toEqual(["mate"]);
+    expect(story.mates[0].ledger).toMatchObject({ played: 2, wins: 1, losses: 1 });
+    expect(story.opponents.map((o) => o.playerId).sort()).toEqual(["foe", "y"]);
+  });
+});
+
 describe("seasonPlayers", () => {
   it("lists everybody who played a completed match in the season", () => {
     const fixture: Match = { ...night(["late"], ["y"], "a", day(9)), status: "scheduled", outcome: undefined };

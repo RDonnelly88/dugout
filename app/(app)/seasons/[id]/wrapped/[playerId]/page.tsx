@@ -40,9 +40,10 @@ export default function WrappedPage() {
     queryFn: () => getSeasonPlayerStats(id),
   });
 
+  const values = useMemo(() => pointValues(table), [table]);
   const story = useMemo(
-    () => seasonWrapped(matches, id, playerId, pointValues(table)),
-    [matches, id, playerId, table]
+    () => seasonWrapped(matches, id, playerId, values),
+    [matches, id, playerId, values]
   );
 
   const byId = useMemo(() => new Map(players.map((p) => [p.id, p])), [players]);
@@ -81,6 +82,7 @@ export default function WrappedPage() {
         season,
         row: table.find((r) => r.playerId === playerId),
         playerFor: (pid) => byId.get(pid),
+        values,
       })}
     />
   );
