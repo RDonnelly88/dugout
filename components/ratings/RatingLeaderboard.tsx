@@ -7,6 +7,7 @@ import PlayerAvatar from "@/components/players/PlayerAvatar";
 import Counter from "@/components/Counter";
 import { displayRating, type PlayerRating } from "@/lib/elo";
 import { ELO } from "@/lib/config";
+import { awayExplanation } from "@/components/ratings/away";
 import type { Player } from "@/types";
 
 function Delta({ change }: { change: number }) {
@@ -128,7 +129,7 @@ export default function RatingLeaderboard({
                   title={
                     rating.counted === 0
                       ? `None of their games are in the squad's last ${ELO.window} matches, so there is nothing to rate them on.`
-                      : `Not played in the squad's last ${rating.missed} matches. Their games are ageing, so the rating is easing back towards ${ELO.start}.`
+                      : awayExplanation(rating.missed)
                   }
                 >
                   <Hourglass className="h-3 w-3 shrink-0" />
@@ -142,7 +143,7 @@ export default function RatingLeaderboard({
                 title={
                   played
                     ? "Change from the last match"
-                    : "Missed the last match, so their games are a match older."
+                    : awayExplanation(rating.missed)
                 }
               >
                 <Delta change={rating.lastChange} />
