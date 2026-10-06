@@ -1,20 +1,15 @@
 "use client";
 
-import {
-  SegmentedControl,
-  SegmentedControlItem,
-} from "@/components/ui/segmented-control";
+import { ArrowDownWideNarrow } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SORT_LABELS, type PlayerSort as SortValue } from "@/lib/player-order";
 
 const ORDER: SortValue[] = ["rank", "odds", "played", "winRate", "name"];
 
 /**
- * What the squad is sorted by.
- *
- * The grid used to come out in whatever order the query returned, which is no
- * order at all once there are forty of them — every question the page answers
- * ("who is beating the odds", "who turns out", "who is any good") was a question you
- * had to answer by reading every card.
+ * What the squad is sorted by. A menu rather than a row of five pills, which
+ * on a phone ran off the edge of the screen; the list's last column says
+ * which one is picked.
  */
 export default function PlayerSort({
   value,
@@ -24,23 +19,18 @@ export default function PlayerSort({
   onChange: (value: SortValue) => void;
 }) {
   return (
-    <div className="flex items-center gap-2 overflow-x-auto">
-      <span className="shrink-0 text-xs text-muted-foreground">Sort by</span>
-      <SegmentedControl
-        label="Sort the squad by"
-        value={value}
-        onValueChange={(next) => onChange(next as SortValue)}
-      >
+    <Select value={value} onValueChange={(next) => onChange(next as SortValue)}>
+      <SelectTrigger aria-label="Sort the squad by" className="h-10 w-auto gap-2 rounded-full">
+        <ArrowDownWideNarrow className="h-4 w-4 text-muted-foreground" />
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
         {ORDER.map((option) => (
-          <SegmentedControlItem
-            key={option}
-            value={option}
-            className="whitespace-nowrap px-3 py-1 text-xs font-medium"
-          >
+          <SelectItem key={option} value={option}>
             {SORT_LABELS[option]}
-          </SegmentedControlItem>
+          </SelectItem>
         ))}
-      </SegmentedControl>
-    </div>
+      </SelectContent>
+    </Select>
   );
 }
