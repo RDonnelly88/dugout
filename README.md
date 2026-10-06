@@ -47,7 +47,9 @@ plainly whether the gap is more than luck would explain.
 **Finds out who works together.** The line-up lab takes any two to five
 players and shows how they do on the same side against their xW, how the rest
 of them do with each one missing, and who would complete the set — over all
-time, a season, the last few weeks or any dates you pick.
+time, a season, the last few weeks or any dates you pick. The squad web draws
+everybody at once: a line for every pair who have shared a side, green where
+they beat the odds together and red where they fell short.
 
 **Compares any two players.** Rating, record and points per game side by side —
 then the half a league table can never show: how they do on the same team, and

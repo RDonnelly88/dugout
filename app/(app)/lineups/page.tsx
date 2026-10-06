@@ -3,13 +3,15 @@
 import { Suspense, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { FlaskConical, Handshake, UserPlus, X } from "lucide-react";
+import { FlaskConical, Handshake, Network, UserPlus, X } from "lucide-react";
 import { getMatches, getPlayers, getSeasons } from "@/lib/db";
 import { useTeam } from "@/contexts/TeamContext";
 import { ELO } from "@/lib/config";
 import { matchExpectations, signedWins, type Ledger } from "@/lib/expected-wins";
 import { lineupReport, LINEUP_MAX } from "@/lib/lineup";
 import { withinTimeline, type Timeline } from "@/lib/timeline";
+import { ringOrder, squadWeb } from "@/lib/squad-web";
+import SquadWeb from "@/components/lineups/SquadWeb";
 import PageHeader from "@/components/PageHeader";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import ActiveFilter, { isActivePlayer, type ActiveScope } from "@/components/players/ActiveFilter";
@@ -280,6 +282,45 @@ function LineupLab() {
     [players, scope]
   );
 
+  const web = useMemo(
+    () => squadWeb(scoped, odds, new Set(candidates)),
+    [scoped, odds, candidates]
+  );
+  const seating = useMemo(() => ringOrder(web), [web]);
+
+  /** A line tapped in the web opens that pair, from the top of the page. */
+  const openPair = (a: string, b: string) => {
+    update({ p: `${a},${b}` });
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
+  };
+
+  const webCard = (
+    <Card className={picked.length > 0 ? "reveal" : undefined}>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2">
+          <Network className="h-5 w-5 text-accent" />
+          The squad web
+        </CardTitle>
+        <CardDescription>
+          Everybody{scope === "active" ? " active" : ""} round a ring, with a line wherever two of
+          them have shared a side in this stretch. Tap a face to light up their links, or a line
+          to open that pair here.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <SquadWeb
+          web={web}
+          order={seating}
+          byId={byId}
+          picked={picked}
+          onOpenPair={openPair}
+          onAddPlayer={toggle}
+        />
+      </CardContent>
+    </Card>
+  );
+
   const report = useMemo(
     () => (picked.length > 0 ? lineupReport(scoped, odds, picked, candidates) : null),
     [scoped, odds, picked, candidates]
@@ -418,17 +459,20 @@ function LineupLab() {
           {loadingMatches ? (
             <div className="sheen h-64 rounded-xl" />
           ) : !report ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <Handshake className="mx-auto mb-3 h-8 w-8 text-accent" />
-                <p className="font-medium">Who plays well together?</p>
-                <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
-                  Pick two or three of the squad. Their results on the same side are measured
-                  against the odds the ratings gave each of those games, so the rest of the team
-                  is already taken into account.
-                </p>
-              </CardContent>
-            </Card>
+            <>
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Handshake className="mx-auto mb-3 h-8 w-8 text-accent" />
+                  <p className="font-medium">Who plays well together?</p>
+                  <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+                    Pick two or three of the squad, or tap a line in the web below. Their results
+                    on the same side are measured against the odds the ratings gave each of those
+                    games, so the rest of the team is already taken into account.
+                  </p>
+                </CardContent>
+              </Card>
+              {webCard}
+            </>
           ) : (
             <>
               <Headline faces={pickedPlayers} ledger={report.together} />
@@ -545,6 +589,8 @@ function LineupLab() {
                   </CardContent>
                 </Card>
               )}
+
+              {webCard}
             </>
           )}
         </div>
