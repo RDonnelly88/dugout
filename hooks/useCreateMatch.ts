@@ -1,6 +1,6 @@
 import { useRouter } from "next/navigation";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addMatch } from "@/lib/db";
@@ -20,7 +20,13 @@ type NewMatch = Omit<Match, "id" | "createdAt" | "updatedAt">;
 export const useCreateMatch = () => {
   const [teamA, setTeamA] = useState<string[]>([]);
   const [teamB, setTeamB] = useState<string[]>([]);
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  // Today, but the browser's today: the server renders in UTC, and around
+  // midnight in London the two disagree about the date, which broke
+  // hydration. Unset on the server's pass and filled in once mounted.
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  useEffect(() => {
+    setDate((current) => current ?? new Date());
+  }, []);
   const [seasonId, setSeasonId] = useState<string | undefined>(undefined);
   const router = useRouter();
   const queryClient = useQueryClient();

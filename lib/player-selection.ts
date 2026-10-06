@@ -10,8 +10,11 @@ import type { Player } from "@/types";
  * drops out. Resetting on every new copy of the list is how switching the
  * filter to "Everyone" quietly put the whole squad back in.
  */
-export function keepSelection(previous: string[] | null, players: Player[]): string[] {
+export function keepSelection(previous: string[] | null, players: Player[]): string[] | null {
   if (previous === null) {
+    // An empty list is the squad not having arrived yet, not a squad of
+    // nobody: picking from it would settle on no one and keep it that way.
+    if (players.length === 0) return null;
     return players.filter((p) => p.isActive !== false).map((p) => p.id);
   }
   const present = new Set(players.map((p) => p.id));
