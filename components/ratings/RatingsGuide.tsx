@@ -7,16 +7,23 @@ import { getMatches } from "@/lib/db";
 import { useTeam } from "@/contexts/TeamContext";
 import { useSideNames } from "@/hooks/useSideNames";
 import { ELO, XW } from "@/lib/config";
-import { displayRating } from "@/lib/elo";
-import { workedExample, fadeCurve } from "@/lib/ratings-guide";
+import { computeRatings, displayRating, expectedScore, gameWeight } from "@/lib/elo";
+import { workedExample, fadeCurve, threeWays } from "@/lib/ratings-guide";
+import RatingBreakdown from "@/components/ratings/RatingBreakdown";
+import ResultStrip from "@/components/players/ResultStrip";
 import { Frac, Line, Sup, Var, Working } from "@/components/ratings/Formula";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import SidePanel from "@/components/ui/side-panel";
 import type { Player } from "@/types";
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
-const signed = (x: number) => `${x >= 0 ? "+" : "−"}${Math.abs(Math.round(x))}`;
+// Nought gets no sign: a "−0" reads as a loss that never happened.
+const signed = (x: number) =>
+  Math.round(x) === 0 ? "0" : `${x > 0 ? "+" : "−"}${Math.abs(Math.round(x))}`;
+const tone = (x: number) =>
+  Math.round(x) > 0 ? "text-win" : Math.round(x) < 0 ? "text-loss" : "text-muted-foreground";
 
 function Step({
   n,
@@ -80,7 +87,13 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
     [matches, sides]
   );
 
+  const ratings = useMemo(() => computeRatings(matches), [matches]);
+
   const fade = fadeCurve();
+  const night = threeWays();
+  // A middling win, faded: what one game is worth today, in a few weeks and
+  // once it has gone out of the window.
+  const aWin = Math.round(ELO.k / 2);
 
   return (
     <SidePanel
@@ -103,31 +116,87 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
       }
     >
       <div className="space-y-6">
-        <Section title="Every match, in three steps">
+        <Section title="Every match, in four steps">
           <div className="space-y-4">
             <Step n={1} title="Each side is averaged">
-              A team is worth the average of the players in it. Nothing else
-              goes in — not the score, not who is in goal.
+              A team is worth the average of the players in it, as their
+              ratings stood going in. Nothing else goes in — not the score, not
+              who is in goal.
             </Step>
-            <Step n={2} title="Games are weighed by age">
-              Only the squad&apos;s last {ELO.window} matches count. The
-              newest counts in full, one {ELO.halfLife} matches back counts
-              half, and anything older does not count at all.
+            <Step n={2} title="The averages set the odds">
+              The further one side is above the other, the likelier it is to
+              win: level sides are 50–50, a side 100 points better is about{" "}
+              {pct(night.chance)}, and one 400 better about{" "}
+              {pct(expectedScore(ELO.start + 400, ELO.start))}.
             </Step>
             <Step n={3} title="The result is settled, once">
-              The two averages give each side a chance of winning, and
-              everybody on a side moves by {ELO.k} times the gap between that
-              chance and what they took: a win you were given 30% for is worth{" "}
-              {Math.round(ELO.k * 0.7)} points, one you were given 70% for is
-              worth {Math.round(ELO.k * 0.3)}. That amount is fixed on the
-              night. Nothing that happens later changes what a game was worth;
-              it only counts for less as it ages.
+              Everybody on a side moves by {ELO.k} times the gap between what
+              they took and what they were expected to: 1 for a win, ½ for a
+              draw, 0 for a defeat. The same for every player on the side, and
+              fixed on the night — nothing that happens later changes what a
+              game was worth.
+            </Step>
+            <Step n={4} title="Then it fades">
+              Every match the squad plays after, the game counts for a little
+              less: half after {ELO.halfLife} matches, nothing after{" "}
+              {ELO.window}. Your rating is {ELO.start} plus every game still
+              counting, at what it is worth now.
             </Step>
           </div>
         </Section>
 
+        <Section title="One night, three ways it can go">
+          <p className="text-sm text-muted-foreground">
+            Say {sides.A} average{" "}
+            <span className="tabular text-foreground">{night.favourite}</span>{" "}
+            and {sides.B}{" "}
+            <span className="tabular text-foreground">{night.underdog}</span>.
+            That makes {sides.A} about{" "}
+            <span className="tabular text-foreground">{pct(night.chance)}</span>{" "}
+            to win, so they are expected to take {night.chance.toFixed(2)} of
+            the night and {sides.B} {(1 - night.chance).toFixed(2)}.
+          </p>
+          <div className="mt-3 overflow-hidden rounded-xl border border-border">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-4 bg-surface-2/60 px-3 py-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+              <span>Result</span>
+              <span className="w-16 text-right">{sides.A}</span>
+              <span className="w-16 text-right">{sides.B}</span>
+            </div>
+            {night.outcomes.map(({ result, change }) => (
+              <div
+                key={result}
+                className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-4 border-t border-border px-3 py-2.5 text-sm"
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  <ResultStrip results={[result]} size="xs" />
+                  <span className="min-w-0">
+                    {result === "win" ? `${sides.A} win` : result === "draw" ? "A draw" : `${sides.B} win`}
+                    <span className="block text-xs text-muted-foreground">
+                      {ELO.k} × ({result === "win" ? "1" : result === "draw" ? "½" : "0"} −{" "}
+                      {night.chance.toFixed(2)})
+                    </span>
+                  </span>
+                </span>
+                <span className={cn("w-16 text-right font-semibold tabular", tone(change))}>
+                  {signed(change)}
+                </span>
+                <span className={cn("w-16 text-right font-semibold tabular", tone(-change))}>
+                  {signed(-change)}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-sm text-muted-foreground">
+            The result nobody expected says the most, so it moves the most.
+            A draw is not nothing either: the favourites were expected to do
+            better than that, so it costs them a little. Every player on a side
+            takes the same amount, whoever they are and however long they have
+            been playing.
+          </p>
+        </Section>
+
         {example && (
-          <Section title="Your last game, worked through">
+          <Section title="The last game, worked through">
             <div className="rounded-xl border border-border bg-surface-2/40 p-4 text-sm">
               <p className="text-muted-foreground">
                 <span className="font-medium text-foreground">
@@ -148,52 +217,66 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
                 <span className="tabular">{pct(example.expected)}</span> to win.
               </p>
               <p className="mt-2 text-muted-foreground">
-                {example.drawn ? "They drew" : "They won"}, and that result was
-                settled there and then. For{" "}
-                {example.winner.name}:
+                {example.drawn ? "They drew" : "They won"}, so everybody on{" "}
+                {example.winner.name} took{" "}
+                <span className={cn("font-semibold tabular", tone(example.winner.settled))}>
+                  {signed(example.winner.settled)}
+                </span>{" "}
+                and everybody on {example.loser.name}{" "}
+                <span className={cn("font-semibold tabular", tone(example.loser.settled))}>
+                  {signed(example.loser.settled)}
+                </span>
+                , settled there and then. On the same night every older game of
+                theirs counted a match less, which is why the totals differ.
+                For {example.winner.name}:
               </p>
 
-              <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
+              <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-x-3 gap-y-1.5 border-t border-border pt-3 tabular">
+                <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Player</span>
+                <span className="text-right text-[11px] uppercase tracking-wide text-muted-foreground">Result</span>
+                <span className="text-right text-[11px] uppercase tracking-wide text-muted-foreground">Fading</span>
+                <span className="text-right text-[11px] uppercase tracking-wide text-muted-foreground">Night</span>
                 {example.winner.players
                   .slice()
                   .sort((a, b) => b.change - a.change)
                   .map((p) => (
-                    <li key={p.playerId} className="flex items-center gap-2">
-                      <PlayerAvatar
-                        name={byId.get(p.playerId)?.name ?? "Unknown"}
-                        image={byId.get(p.playerId)?.image}
-                        size="xs"
-                      />
-                      <span className="min-w-0 flex-1 truncate">
-                        {byId.get(p.playerId)?.name ?? "Unknown"}
+                    <div key={p.playerId} className="contents">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <PlayerAvatar
+                          name={byId.get(p.playerId)?.name ?? "Unknown"}
+                          image={byId.get(p.playerId)?.image}
+                          size="xs"
+                        />
+                        <span className="min-w-0 truncate">
+                          {byId.get(p.playerId)?.name ?? "Unknown"}
+                          {p.counted === 0 && (
+                            <span className="text-xs text-muted-foreground"> · debut</span>
+                          )}
+                        </span>
                       </span>
-                      <span className="text-xs text-muted-foreground tabular">
-                        {p.counted === 0
-                          ? "debut"
-                          : `${p.counted} ${p.counted === 1 ? "game" : "games"} behind it`}
+                      <span className={cn("text-right", tone(example.winner.settled))}>
+                        {signed(example.winner.settled)}
                       </span>
-                      <span
-                        className={`w-10 text-right tabular ${
-                          p.change >= 0 ? "text-win" : "text-loss"
-                        }`}
-                      >
+                      <span className={cn("text-right", tone(p.faded))}>{signed(p.faded)}</span>
+                      <span className={cn("text-right font-semibold", tone(p.change))}>
                         {signed(p.change)}
                       </span>
-                    </li>
+                    </div>
                   ))}
-              </ul>
+              </div>
               <p className="mt-3 text-xs text-muted-foreground">
-                Everybody on {example.winner.name} took the same{" "}
-                <span className="tabular">
-                  {signed(ELO.k * ((example.drawn ? 0.5 : 1) - example.expected))}
-                </span>{" "}
-                for the result itself. The rest of each number is their older
-                games each counting a match less, which is why it differs from
-                one player to the next.
+                A debutant has nothing to fade, so takes the result alone.
+                Somebody above {ELO.start} gives a little back as their older
+                games age, and somebody below it gains a little. Rounding each
+                column can leave a total a point out.
               </p>
             </div>
           </Section>
         )}
+
+        <Section title="A rating, piece by piece">
+          <RatingBreakdown ratings={ratings} players={players} />
+        </Section>
 
         <Section title="Old games fade">
           {/* The weights themselves, newest on the left, so the shape of the
@@ -222,6 +305,17 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
             so you are back on {ELO.start} until you play again. A winter when
             nobody plays ages nothing.
           </p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Take a win settled at{" "}
+            <span className="tabular text-win">{signed(aWin)}</span>. It adds{" "}
+            <span className="tabular">{signed(aWin)}</span> the night it is
+            played. {ELO.halfLife / 2} matches later it adds{" "}
+            <span className="tabular">{signed(aWin * gameWeight(ELO.halfLife / 2))}</span>
+            , after {ELO.halfLife} it adds{" "}
+            <span className="tabular">{signed(aWin * gameWeight(ELO.halfLife))}</span>
+            , and once {ELO.window} have been played it adds nothing. The{" "}
+            {signed(aWin)} itself never changes.
+          </p>
         </Section>
 
         <Section title="Straight answers">
@@ -239,10 +333,12 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
             <div>
               <dt className="font-medium">Why did everyone&apos;s number change?</dt>
               <dd className="mt-0.5 text-muted-foreground">
-                Nothing is stored. The whole table is worked out from every
-                match, every time it is opened, so correcting a scoreline from
-                March re-rates everything after it — which is what should
-                happen.
+                Two reasons. Every match ages everybody&apos;s games by one, so
+                every rating drifts a touch towards {ELO.start} each week,
+                played or not. And nothing is stored: the table is worked out
+                from every match each time it is opened, so correcting a
+                scoreline from March re-settles that night and everything after
+                it — which is what should happen.
               </dd>
             </div>
             <div>

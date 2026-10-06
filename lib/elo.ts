@@ -8,8 +8,22 @@ interface RatingPoint {
   date: string;
   /** Rating after this match. */
   rating: number;
-  /** How far this night moved it. */
+  /**
+   * How far this night moved it: the result itself, plus every older game
+   * fading by one more match.
+   */
   change: number;
+  /**
+   * What the result alone was worth to them: `ELO.k` times what their side
+   * took less what it was expected to. The same for everybody on the side,
+   * fixed on the night, and only ever faded afterwards.
+   */
+  settled: number;
+  /**
+   * Which of the squad's matches this was, counting from its first, so the
+   * game's age — and so how much it still counts — can be read off later.
+   */
+  night: number;
   /** The mean rating of the side they faced, going in. */
   opponentRating: number;
   /**
@@ -278,6 +292,8 @@ function replay(matches: Match[]): Map<string, PlayerRating> {
         date: match.date,
         rating,
         change: rating - before[i],
+        settled: sideA.includes(playerId) ? delta : -delta,
+        night,
         opponentRating: sideA.includes(playerId) ? ratingB : ratingA,
         expected: sideA.includes(playerId)
           ? expectedScore(ratingA, ratingB)
