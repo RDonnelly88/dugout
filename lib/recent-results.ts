@@ -1,31 +1,31 @@
-import { FORM_LENGTH } from "./config";
-import type { Match, PlayerFormResult } from "@/types";
+import { RESULTS_SHOWN } from "./config";
+import type { Match, RecentResult } from "@/types";
 import { outcomeOf, resultFor } from "./match-result";
 
-export type FormResult = "win" | "draw" | "loss";
+export type Result = "win" | "draw" | "loss";
 
 /**
  * A run, newest first, with `dnp` for a night the squad played without them.
  *
- * One shape for form everywhere: what the table shows beside a name and what
+ * One shape for a run everywhere: what the table shows beside a name and what
  * a match card shows beside a result are the same list.
  */
-export type FormRun = readonly PlayerFormResult[];
+export type ResultRun = readonly RecentResult[];
 
-export interface RecentForm {
+export interface RecentResults {
   playerId: string;
   /** Of the window, the ones they actually turned out for. */
   games: number;
   /** Newest first, with `dnp` where they were not there. */
-  results: PlayerFormResult[];
+  results: RecentResult[];
 }
 
 /** Newest first, capped at the window — the shape the rest of this file uses. */
-export const rollForm = (
-  previous: FormRun,
-  result: PlayerFormResult,
-  windowSize: number = FORM_LENGTH
-): PlayerFormResult[] => [result, ...previous].slice(0, windowSize);
+export const rollResults = (
+  previous: ResultRun,
+  result: RecentResult,
+  windowSize: number = RESULTS_SHOWN
+): RecentResult[] => [result, ...previous].slice(0, windowSize);
 
 /**
  * Everyone's run of recent results: the W/D/L strip drawn beside a name.
@@ -38,10 +38,10 @@ export const rollForm = (
  * Derived from the matches, like everything else here, so it cannot fall out
  * of step with them.
  */
-export function recentForm(
+export function recentResults(
   matches: Match[],
-  windowSize: number = FORM_LENGTH
-): Map<string, RecentForm> {
+  windowSize: number = RESULTS_SHOWN
+): Map<string, RecentResults> {
   const played = matches
     .filter((m) => outcomeOf(m) !== null)
     // Newest first, so taking the window is just a slice.
@@ -66,10 +66,10 @@ export function recentForm(
     window.flatMap((match) => [...match.teamA.players, ...match.teamB.players])
   );
 
-  const byPlayer = new Map<string, RecentForm>();
+  const byPlayer = new Map<string, RecentResults>();
 
   for (const playerId of appeared) {
-    const results: PlayerFormResult[] = [];
+    const results: RecentResult[] = [];
     let games = 0;
 
     window.forEach((match, index) => {

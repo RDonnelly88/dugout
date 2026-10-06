@@ -1,11 +1,11 @@
 import Link from "next/link";
 import React from "react";
 
-import { Player, PlayerFormResult, PlayerRecord, SeasonPlayerStats } from "@/types";
+import { Player, RecentResult, PlayerRecord, SeasonPlayerStats } from "@/types";
 import { Edit, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
+import ResultStrip from "@/components/players/ResultStrip";
 import { usePlayerRank } from "@/hooks/usePlayerRank";
 import { usePermission } from "@/lib/permission-utils";
 import { winRate } from "@/lib/player-stats";
@@ -44,8 +44,8 @@ interface PlayerCardProps {
   rating: PlayerRating | undefined;
   /** Where that rating sits in the squad, nought to one. */
   standing: number | undefined;
-  formResults: PlayerFormResult[];
-  isLoadingForms: boolean;
+  recentRun: RecentResult[];
+  isLoadingResults: boolean;
   onDeleteClick: (player: Player) => void;
 }
 
@@ -81,8 +81,8 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
   record,
   rating,
   standing,
-  formResults,
-  isLoadingForms,
+  recentRun,
+  isLoadingResults,
   onDeleteClick,
 }) => {
   const { rank, hasPlayedCurrentSeason } = usePlayerRank(seasonId, player.id);
@@ -154,15 +154,15 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
                   : "Yet to play"}
               </p>
 
-              {/* Form is the point of a squad list — who is going well right
-                  now. Hidden entirely when there is none rather than printing
+              {/* The last few nights at a glance: who has been winning and
+                  who has been missing. Hidden entirely when there is none rather than printing
                   "no match data" across every card. */}
-              {(formResults.length > 0 || isLoadingForms) && (
+              {(recentRun.length > 0 || isLoadingResults) && (
                 <div className="mt-2">
-                  <PlayerFormDisplay
-                    results={formResults}
+                  <ResultStrip
+                    results={recentRun}
                     size="sm"
-                    isLoading={isLoadingForms && formResults.length === 0}
+                    isLoading={isLoadingResults && recentRun.length === 0}
                   />
                 </div>
               )}

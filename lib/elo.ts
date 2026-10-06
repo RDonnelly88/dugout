@@ -1,7 +1,7 @@
 import { ELO } from "./config";
-import { rollForm, type FormResult } from "./form";
+import { rollResults, type Result } from "./recent-results";
 import { outcomeOf } from "./match-result";
-import type { Match, PlayerFormResult } from "@/types";
+import type { Match, RecentResult } from "@/types";
 
 interface RatingPoint {
   matchId: string;
@@ -18,9 +18,9 @@ interface RatingPoint {
    * expected wins, the yardstick results are measured against.
    */
   expected: number;
-  result: FormResult;
+  result: Result;
   /** The run they walked in on, newest first, for showing beside the result. */
-  formBefore: PlayerFormResult[];
+  resultsBefore: RecentResult[];
   /**
    * How many of their games were still counting going in, which is most of
    * why two team-mates in the same result move by different amounts: one more
@@ -289,7 +289,7 @@ function replay(matches: Match[]): Map<string, PlayerRating> {
   // The run each player carries into the next match, newest first, with the
   // nights the squad played without them marked — the same strip the table
   // shows beside a name.
-  const form = new Map<string, PlayerFormResult[]>();
+  const runs = new Map<string, RecentResult[]>();
 
   played.forEach((match, night) => {
     const outcome = outcomeOf(match)!;
@@ -346,11 +346,11 @@ function replay(matches: Match[]): Map<string, PlayerRating> {
     solve(next, fitted);
     current = next;
 
-    const resultA: FormResult =
+    const resultA: Result =
       actualA === 1 ? "win" : actualA === 0.5 ? "draw" : "loss";
-    const resultB: FormResult =
+    const resultB: Result =
       actualA === 1 ? "loss" : actualA === 0.5 ? "draw" : "win";
-    const resultOf = new Map<string, FormResult>([
+    const resultOf = new Map<string, Result>([
       ...sideA.map((id) => [id, resultA] as const),
       ...sideB.map((id) => [id, resultB] as const),
     ]);
@@ -366,11 +366,11 @@ function replay(matches: Match[]): Map<string, PlayerRating> {
         entry.absent.push({ date: match.date, rating });
         // A night is only missed by somebody who was around to miss it,
         // which everyone in `ids` was: they joined on or before tonight.
-        form.set(playerId, rollForm(form.get(playerId) ?? [], "dnp"));
+        runs.set(playerId, rollResults(runs.get(playerId) ?? [], "dnp"));
         return;
       }
 
-      const run = form.get(playerId) ?? [];
+      const run = runs.get(playerId) ?? [];
       entry.games += 1;
       entry.unsettled = entry.games < ELO.settledAfter;
       entry.history.push({
@@ -383,10 +383,10 @@ function replay(matches: Match[]): Map<string, PlayerRating> {
           ? expectedScore(ratingA, ratingB)
           : expectedScore(ratingB, ratingA),
         result,
-        formBefore: run,
+        resultsBefore: run,
         countedBefore: countedBefore.get(playerId)!,
       });
-      form.set(playerId, rollForm(run, result));
+      runs.set(playerId, rollResults(run, result));
       lastPlayedIndex.set(playerId, night);
     });
 

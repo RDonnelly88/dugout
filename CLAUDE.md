@@ -26,7 +26,7 @@ was thirty-two thousand pixels tall on a phone.
 
 ## Non-negotiables
 
-**Derive, never cache.** A player's record, rating and form are all computed
+**Derive, never cache.** A player's record, rating and recent results are all computed
 from the matches on every read. Do not add a column, a table or a state
 variable that stores a tally — the app used to keep `players.stats` up to date
 by hand, and a card showed "No matches played" beside a season of twelve.
@@ -101,7 +101,7 @@ while animating will fail there.
 | `lib/config.ts` | Every tunable value. Points are NOT here — the views own them |
 | `lib/elo.ts` | The rating model, pure and tested |
 | `lib/team-balance.ts` | Splitting a group into two sides |
-| `lib/form.ts` | Recent form over a window |
+| `lib/recent-results.ts` | The W/D/L run over the squad's last few nights |
 | `lib/head-to-head.ts` | How two players do together and against |
 | `lib/player-stats.ts` | The all-time record, read through `usePlayerRecords` |
 | `lib/avatars.ts` | The avatar registry and what the `image` column can hold |

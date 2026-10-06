@@ -3,10 +3,10 @@ import React from 'react';
 import { Player } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { useSquadForm } from "@/hooks/useSquadForm";
+import { useRecentResults } from "@/hooks/useRecentResults";
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
-import PlayerFormDisplay from '@/components/players/PlayerFormDisplay';
+import ResultStrip from '@/components/players/ResultStrip';
 import { TrendingUp, Trophy, Flag } from "lucide-react";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
@@ -37,7 +37,7 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
 
   // The squad's recent nights rather than the season's: a card on the pitch
   // is not a season view. One map for the whole formation, not a query a head.
-  const { formFor, isLoading } = useSquadForm();
+  const { resultsFor, isLoading } = useRecentResults();
   
   // Get season stats
   const { data: seasonPlayerStats = [] } = useQuery({
@@ -55,7 +55,7 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
         .findIndex(stat => stat.playerId === player.id) + 1
     : null;
   
-  const recentForm = formFor(player.id);
+  const recentResults = resultsFor(player.id);
   
   return (
     <div className="player-formation-card">
@@ -150,8 +150,8 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
             <div className="flex space-x-1">
               {isLoading ? (
                 <div className="w-full text-center text-xs opacity-70">Loading form data...</div>
-              ) : recentForm.length > 0 ? (
-                <PlayerFormDisplay results={recentForm} size="sm" />
+              ) : recentResults.length > 0 ? (
+                <ResultStrip results={recentResults} size="sm" />
               ) : (
                 <div className="w-full text-center text-xs opacity-70">No recent matches</div>
               )}

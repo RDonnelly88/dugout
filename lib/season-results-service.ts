@@ -1,9 +1,9 @@
 
-import { Match, PlayerFormResult } from "@/types";
+import { Match, RecentResult } from "@/types";
 import { supabase } from "@/lib/supabase-browser";
 import { mapSupabaseMatchToMatch } from "@/lib/supabase-utils";
 import { resultFor } from "@/lib/match-result";
-import { FORM_LENGTH } from "@/lib/config";
+import { RESULTS_SHOWN } from "@/lib/config";
 
 /**
  * How a match went for one player, or `dnp` if they were not in it.
@@ -13,24 +13,24 @@ import { FORM_LENGTH } from "@/lib/config";
  * read every match nobody wrote the goals down for as a nil-nil draw, and put
  * a D on the card of a player who had won.
  */
-const formResult = (match: Match, playerId: string): PlayerFormResult =>
+const resultOf = (match: Match, playerId: string): RecentResult =>
   resultFor(match, playerId) ?? "dnp";
 
 /** Enough of a match row to read a result off. */
 const FORM_COLUMNS = "id, date, team_a, team_b, status, outcome";
 
-// Function to get a player's form data for a specific season
-export const getPlayerFormInSeason = async (
+// Function to get a player's recent results in a specific season
+export const getPlayerResultsInSeason = async (
   seasonId: string,
   playerId: string
-): Promise<PlayerFormResult[]> => {
+): Promise<RecentResult[]> => {
   try {
     // Get the current team ID from localStorage
     const currentTeamId = localStorage.getItem("currentTeamId");
     
     // If no team is selected, return empty array
     if (!currentTeamId) {
-      console.log("No team selected, returning empty player form");
+      console.log("No team selected, returning no results");
       return [];
     }
     
@@ -61,7 +61,7 @@ export const getPlayerFormInSeason = async (
       .eq("team_id", currentTeamId)
       .eq("status", "completed")
       .order("date", { ascending: false })
-      .limit(FORM_LENGTH);
+      .limit(RESULTS_SHOWN);
     
     if (matchesError) {
       console.error("Error fetching season matches:", matchesError);
@@ -73,19 +73,19 @@ export const getPlayerFormInSeason = async (
     }
     
     return matches.map((row) =>
-      formResult(mapSupabaseMatchToMatch(row), playerId)
+      resultOf(mapSupabaseMatchToMatch(row), playerId)
     );
   } catch (error) {
-    console.error("Error fetching player form:", error);
+    console.error("Error fetching player results:", error);
     return [];
   }
 };
 
-// Function to fetch a batch of player forms in a single request
-export const getPlayerFormBatch = async (
+// Function to fetch a batch of players' results in a single request
+export const getSeasonResultsBatch = async (
   seasonId: string,
   playerIds: string[]
-): Promise<Record<string, PlayerFormResult[]>> => {
+): Promise<Record<string, RecentResult[]>> => {
   if (!seasonId || !playerIds.length) {
     return {};
   }
@@ -95,11 +95,11 @@ export const getPlayerFormBatch = async (
     const currentTeamId = localStorage.getItem("currentTeamId");
     
     if (!currentTeamId) {
-      console.log("No team selected, returning empty player forms");
+      console.log("No team selected, returning no results");
       return {};
     }
     
-    console.log(`Fetching fresh batch form data for season ${seasonId} with ${playerIds.length} players at ${new Date().toISOString()}`);
+    console.log(`Fetching fresh batch results for season ${seasonId} with ${playerIds.length} players at ${new Date().toISOString()}`);
     
     // First verify this season belongs to current team
     const { data: seasonData, error: seasonError } = await supabase
@@ -127,7 +127,7 @@ export const getPlayerFormBatch = async (
       .eq("team_id", currentTeamId)
       .eq("status", "completed")
       .order("date", { ascending: false })
-      .limit(FORM_LENGTH);
+      .limit(RESULTS_SHOWN);
     
     if (matchesError) {
       console.error("Error fetching season matches:", matchesError);
@@ -139,7 +139,7 @@ export const getPlayerFormBatch = async (
     }
     
     // Initialize results for all players
-    const results: Record<string, PlayerFormResult[]> = {};
+    const results: Record<string, RecentResult[]> = {};
     playerIds.forEach(playerId => {
       results[playerId] = [];
     });
@@ -148,13 +148,13 @@ export const getPlayerFormBatch = async (
     for (const row of matches) {
       const match = mapSupabaseMatchToMatch(row);
       for (const playerId of playerIds) {
-        results[playerId].push(formResult(match, playerId));
+        results[playerId].push(resultOf(match, playerId));
       }
     }
     
     return results;
   } catch (error) {
-    console.error("Error loading batch player forms:", error);
+    console.error("Error loading batch player results:", error);
     return {};
   }
 };

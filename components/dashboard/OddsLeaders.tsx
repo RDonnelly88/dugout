@@ -11,11 +11,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
-import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
+import ResultStrip from "@/components/players/ResultStrip";
 import Verdict from "@/components/xw/Verdict";
 import { ELO } from "@/lib/config";
 import { matchExpectations, playerLedgers, signedWins } from "@/lib/expected-wins";
-import { recentForm } from "@/lib/form";
+import { recentResults } from "@/lib/recent-results";
 import { withinTimeline } from "@/lib/timeline";
 import type { Match, Player } from "@/types";
 
@@ -51,7 +51,7 @@ export default function OddsLeaders({
   }, [matches, byId, limit]);
 
   // The run beside each name: the same W/D/L strip as everywhere else.
-  const runs = useMemo(() => recentForm(matches), [matches]);
+  const runs = useMemo(() => recentResults(matches), [matches]);
 
   return (
     <Card>
@@ -99,7 +99,7 @@ export default function OddsLeaders({
                       <Verdict verdict={ledger.verdict} className="mt-0.5" />
                     </span>
                     <span className="hidden sm:block">
-                      <PlayerFormDisplay results={runs.get(playerId)?.results ?? []} size="xs" />
+                      <ResultStrip results={runs.get(playerId)?.results ?? []} size="xs" />
                     </span>
                     <span
                       className={`tabular w-12 shrink-0 text-right font-semibold ${

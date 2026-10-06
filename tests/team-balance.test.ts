@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { randomSplit, splitTeams } from "@/lib/team-balance";
+import { alternateSplit, leagueOrder, randomSplit, splitTeams } from "@/lib/team-balance";
 
 interface P {
   id: string;
@@ -124,5 +124,56 @@ describe("splitTeams", () => {
     const { difference } = splitTeams(players, "rating", weightOf);
 
     expect(difference).toBe(0);
+  });
+});
+
+describe("dealing down the league table", () => {
+  const row = (playerId: string, points: number, played = 5, wins = 0) => ({
+    playerId,
+    points,
+    played,
+    wins,
+  });
+
+  it("puts first, third, fifth… against second, fourth, sixth…", () => {
+    const table = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((points, i) => row(`p${i}`, points));
+    // Arriving in any order: the table decides, not the list.
+    const players = squad([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).reverse();
+
+    const { teamA, teamB } = alternateSplit(leagueOrder(players, table, weightOf), weightOf);
+
+    expect(teamA.map((p) => p.id)).toEqual(["p0", "p2", "p4", "p6", "p8"]);
+    expect(teamB.map((p) => p.id)).toEqual(["p1", "p3", "p5", "p7", "p9"]);
+  });
+
+  it("gives the odd player to A", () => {
+    const { teamA, teamB } = alternateSplit(squad([1, 2, 3, 4, 5]), weightOf);
+
+    expect(teamA).toHaveLength(3);
+    expect(teamB).toHaveLength(2);
+  });
+
+  it("ranks by the league's own rules, so points level goes to games played", () => {
+    const table = [row("p0", 9, 4), row("p1", 9, 6), row("p2", 12, 5)];
+
+    const order = leagueOrder(squad([0, 0, 0]), table, weightOf);
+
+    expect(order.map((p) => p.id)).toEqual(["p2", "p1", "p0"]);
+  });
+
+  it("puts anyone not yet in the table after it, strongest first", () => {
+    const players = squad([1100, 1300, 1200, 1000]);
+    const table = [row("p3", 3)];
+
+    const order = leagueOrder(players, table, weightOf);
+
+    expect(order.map((p) => p.id)).toEqual(["p3", "p1", "p2", "p0"]);
+  });
+
+  it("measures the gap by weight without letting it choose the sides", () => {
+    const split = alternateSplit(squad([1400, 1000, 1300, 1100]), weightOf);
+
+    expect(split.teamA.map((p) => p.id)).toEqual(["p0", "p2"]);
+    expect(split.difference).toBe(300);
   });
 });

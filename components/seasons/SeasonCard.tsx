@@ -12,17 +12,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
-import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
+import ResultStrip from "@/components/players/ResultStrip";
 import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
 import { winners } from "@/lib/podium";
-import { Season, SeasonChampion, PlayerFormResult } from "@/types";
+import { Season, SeasonChampion, RecentResult } from "@/types";
 
 interface SeasonCardProps {
   season: Season;
   champions?: SeasonChampion[];
   totalPlayers: number;
   totalMatches: number;
-  playerForms?: Record<string, PlayerFormResult[]>;
+  playerResults?: Record<string, RecentResult[]>;
 }
 
 /** The trophy or medal for a place, or the number when it is outside the top three. */
@@ -42,7 +42,7 @@ function Place({ rank }: { rank: number }) {
  * league table could disagree about who came second.
  *
  * It also drew its own avatars out of the lucide namespace and had its own copy
- * of the form squares. Both have one component apiece for a reason: the
+ * of the W/D/L squares. Both have one component apiece for a reason: the
  * hand-rolled avatar was how `icon:Ghost` ended up rendering as a broken image
  * in eight of the nine places that showed it.
  */
@@ -51,7 +51,7 @@ const SeasonCard = ({
   champions = [],
   totalPlayers,
   totalMatches,
-  playerForms = {},
+  playerResults = {},
 }: SeasonCardProps) => {
   const startDate = new Date(season.startDate).toLocaleDateString();
   const endDate = season.endDate
@@ -125,7 +125,7 @@ const SeasonCard = ({
                   <TableRow>
                     <TableHead className="w-10">#</TableHead>
                     <TableHead>Player</TableHead>
-                    <TableHead className="text-right">Form</TableHead>
+                    <TableHead className="text-right">Last 5</TableHead>
                     <TableHead className="w-12 text-right">Pts</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -150,8 +150,8 @@ const SeasonCard = ({
                       </TableCell>
                       <TableCell className="py-1.5">
                         <div className="flex justify-end">
-                          <PlayerFormDisplay
-                            results={playerForms[player.playerId] || []}
+                          <ResultStrip
+                            results={playerResults[player.playerId] || []}
                             size="xs"
                           />
                         </div>

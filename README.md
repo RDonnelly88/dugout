@@ -4,7 +4,7 @@
 
 **A league table for your five-a-side.**
 
-Every result, every season, who's on form, and who you actually play well with.
+Every result, every season, who's beating the odds, and who you actually play well with.
 
 [![CI](https://github.com/RDonnelly88/dugout/actions/workflows/ci.yml/badge.svg)](https://github.com/RDonnelly88/dugout/actions/workflows/ci.yml)
 [![Live](https://img.shields.io/badge/live-the--dugout--fives.vercel.app-000?logo=vercel&logoColor=white)](https://the-dugout-fives.vercel.app)
@@ -34,7 +34,8 @@ propping anybody up. A win is a win — a nine-nil is one team having a night,
 not nine times the evidence of a one-nil.
 
 **Picks the sides.** Say who turned up, then choose how to split them: a
-straight shuffle, evenly by rating, or by hand. The even split shows the gap it
+straight shuffle, evenly by rating, down the league table (first, third, fifth
+against second, fourth, sixth) or by hand. The rated splits show the gap they
 would leave between the two teams before you commit, and the cards are dealt
 out one at a time.
 
@@ -55,7 +56,7 @@ they beat the odds together and red where they fell short.
 then the half a league table can never show: how they do on the same team, and
 how they do against each other.
 
-**Tracks form and shape.** Last five results, current rank, and a chart of
+**Tracks results and shape.** Last five results, current rank, and a chart of
 where everyone sat in the table after every match of the season.
 
 **Runs seasons.** A season has a start, an end and a champion. Matches count
@@ -75,7 +76,7 @@ Supabase, deployed to Vercel with functions in London — the same region as the
 database, so a query doesn't cross an ocean to answer.
 
 **Nothing is counted twice.** A player's record, their rating and their recent
-form are all derived from the matches, every time. Nothing caches a tally, so
+results are all derived from the matches, every time. Nothing caches a tally, so
 correcting a scoreline from last month re-rates everything after it and no two
 screens can disagree about the same player.
 

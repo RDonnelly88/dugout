@@ -11,6 +11,7 @@ import { matchExpectations, signedWins, type Ledger } from "@/lib/expected-wins"
 import { lineupReport, LINEUP_MAX } from "@/lib/lineup";
 import { withinTimeline, type Timeline } from "@/lib/timeline";
 import { ringOrder, squadWeb } from "@/lib/squad-web";
+import { sideOf } from "@/lib/match-result";
 import SquadWeb from "@/components/lineups/SquadWeb";
 import PageHeader from "@/components/PageHeader";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
@@ -583,7 +584,11 @@ function LineupLab() {
                   <CardContent>
                     <Rail label="Nights together">
                       {nightsTogether.map((match) => (
-                        <MatchCard key={match.id} match={match} />
+                        <MatchCard
+                          key={match.id}
+                          match={match}
+                          side={sideOf(match, picked[0]) ?? undefined}
+                        />
                       ))}
                     </Rail>
                   </CardContent>

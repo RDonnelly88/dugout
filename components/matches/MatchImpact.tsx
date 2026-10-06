@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
-import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
+import ResultStrip from "@/components/players/ResultStrip";
 import { getMatches } from "@/lib/db";
 import { useTeam } from "@/contexts/TeamContext";
 import { useSideNames } from "@/hooks/useSideNames";
@@ -131,8 +131,8 @@ function Side({
               {/* The run they walked in on, with this night ringed on the end
                   of it so the five before stay distinct from the one being
                   read. */}
-              <PlayerFormDisplay
-                results={entry.form}
+              <ResultStrip
+                results={entry.results}
                 size="xs"
                 latest={resultFor(match, entry.playerId) ?? undefined}
               />

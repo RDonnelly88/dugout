@@ -15,8 +15,16 @@ import {
   DialogOverlay,
   DialogPortal,
 } from "@/components/ui/dialog";
-import { splitTeams, type Split } from "@/lib/team-balance";
+import { useQuery } from "@tanstack/react-query";
+import {
+  alternateSplit,
+  leagueOrder,
+  splitTeams,
+  type Split,
+} from "@/lib/team-balance";
+import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
+import { useTeam } from "@/contexts/TeamContext";
 import { ELO } from "@/lib/config";
 
 interface TeamRandomizerProps {
@@ -46,6 +54,20 @@ const TeamRandomizer = ({
 
   const { ratingFor } = usePlayerRatings();
 
+  // The same two queries, under the same keys, as the player list beside this,
+  // so the table is fetched once for both.
+  const { currentTeam } = useTeam();
+  const { data: currentSeason } = useQuery({
+    queryKey: ["currentSeason", currentTeam?.id],
+    queryFn: getCurrentSeason,
+  });
+  const { data: standings = [] } = useQuery({
+    queryKey: ["seasonStats", currentSeason?.id],
+    queryFn: () =>
+      currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
+    enabled: !!currentSeason,
+  });
+
   // Active players only, matching what the list shows by default. Selecting
   // everyone meant retired players were picked, hidden, and quietly dealt into
   // the teams — the button read "23 playing" above a list showing twelve.
@@ -70,6 +92,18 @@ const TeamRandomizer = ({
     [ratingFor]
   );
 
+  // Measured by rating, like "even by rating", so the two gaps can be read
+  // against each other: dealing down the table is fair by position, and this
+  // says how fair that turns out to be on the pitch.
+  const byStanding = useMemo(
+    () =>
+      alternateSplit(
+        leagueOrder(availablePlayers, standings, weightFor.rating),
+        weightFor.rating
+      ),
+    [availablePlayers, standings, weightFor]
+  );
+
   const preview = useMemo(
     () =>
       ({
@@ -78,8 +112,9 @@ const TeamRandomizer = ({
         rating: canRandomize
           ? splitTeams(availablePlayers, "rating", weightFor.rating)
           : null,
+        standing: canRandomize ? byStanding : null,
       }) as Record<PickMethod, Split<Player> | null>,
-    [availablePlayers, canRandomize, weightFor]
+    [availablePlayers, canRandomize, weightFor, byStanding]
   );
 
   // Recomputed when the dialog opens rather than held in state: a shuffle
@@ -88,12 +123,13 @@ const TeamRandomizer = ({
 
   const startDealing = () => {
     if (!canRandomize) return;
-    // Still dealt for the balance methods; the manual picker opens empty and
-    // ignores it.
+    // Still dealt for the manual picker, which opens empty and ignores it.
     setDealt(
       isBalanceMethod(method)
         ? splitTeams(availablePlayers, method, weightFor[method])
-        : splitTeams(availablePlayers, "random", weightFor.random)
+        : method === "standing"
+          ? byStanding
+          : splitTeams(availablePlayers, "random", weightFor.random)
     );
     setDealing(true);
   };

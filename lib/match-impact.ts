@@ -1,5 +1,5 @@
 import { computeRatings } from "./elo";
-import type { Match, PlayerFormResult } from "@/types";
+import type { Match, RecentResult } from "@/types";
 
 interface PlayerImpact {
   playerId: string;
@@ -8,7 +8,7 @@ interface PlayerImpact {
   after: number;
   change: number;
   /** The run they walked in on, newest first, with the nights they were not there marked. */
-  form: PlayerFormResult[];
+  results: RecentResult[];
   /**
    * How many of their games the rating rested on going in. Two team-mates in
    * the same result move by different amounts mostly because of this, so it
@@ -50,7 +50,7 @@ export function matchImpact(matches: Match[], match: Match): MatchImpact | null 
       before: moment.rating - moment.change,
       after: moment.rating,
       change: moment.change,
-      form: moment.formBefore,
+      results: moment.resultsBefore,
       counted: moment.countedBefore,
     };
   };

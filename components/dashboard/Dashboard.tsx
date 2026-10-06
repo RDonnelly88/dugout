@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, TrendingUp } from "lucide-react";
 import { useTeam } from "@/contexts/TeamContext";
 import { getCurrentSeason, getMatches, getPlayers, getSeasonPlayerStats } from "@/lib/db";
-import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
+import { useSeasonResults } from "@/hooks/useSeasonResults";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
 import { isActivePlayer } from "@/components/players/ActiveFilter";
 import { outcomeOf } from "@/lib/match-result";
@@ -88,7 +88,7 @@ const Dashboard = () => {
     [seasonPlayerStats]
   );
 
-  const { formData: topPlayerForms } = useBatchFormLoader(
+  const { seasonResults: topPlayerResults } = useSeasonResults(
     currentSeason?.id || null,
     topPlayerIds
   );
@@ -173,7 +173,7 @@ const Dashboard = () => {
             <SeasonLeaderboard
               stats={seasonPlayerStats}
               seasonId={currentSeason.id}
-              playerForms={topPlayerForms}
+              playerResults={topPlayerResults}
               limit={5}
               seasonName={currentSeason.name}
             />

@@ -85,7 +85,7 @@ sweep.
 ## Testing
 
 `npm run test` covers the pure logic in `lib/` — the ranking rules, the Elo
-model, team balancing, recent form, head-to-head records and CSV escaping.
+model, team balancing, recent results, head-to-head records and CSV escaping.
 Tests import as `@/lib/…`, the same path the app uses, via the alias in
 `vitest.config.ts`.
 

@@ -11,8 +11,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getSeasons, getSeasonChampions } from "@/lib/db";
 import SeasonCard from "@/components/seasons/SeasonCard";
 import SeasonsSummaryTable from "@/components/seasons/SeasonsSummaryTable";
-import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
-import { getPlayerFormBatch } from "@/lib/player-form-service";
+import { useSeasonResults } from "@/hooks/useSeasonResults";
+import { getSeasonResultsBatch } from "@/lib/season-results-service";
 import { useTeam } from "@/contexts/TeamContext";
 import PageHeader from "@/components/PageHeader";
 
@@ -54,7 +54,7 @@ const Seasons = () => {
     }
   }, [teamId, queryClient]);
 
-  // Prepare data for player forms for the current season
+  // Prepare recent results for the current season
   const currentSeason = seasons.find(s => s.isCurrent);
   const currentSeasonChampions = currentSeason 
     ? champions.filter(c => c.seasonId === currentSeason.id)
@@ -62,13 +62,13 @@ const Seasons = () => {
   
   const currentSeasonPlayerIds = currentSeasonChampions.map(p => p.playerId);
   
-  // Use the batch form loader for the current season's top players
-  const { formData: currentSeasonForms } = useBatchFormLoader(
+  // Use the season results loader for the current season's top players
+  const { seasonResults: currentSeasonForms } = useSeasonResults(
     currentSeason?.id || null,
     currentSeasonPlayerIds
   );
   
-  // Champion ids per season, for the batch form load below. Memoised because
+  // Champion ids per season, for the batch results load below. Memoised because
   // the effect that reads it depends on it, and a fresh object every render
   // would restart the load every render. React Query hands back the same
   // `seasons` and `champions` references while the data is unchanged, so this
@@ -83,48 +83,48 @@ const Seasons = () => {
     return byId;
   }, [seasons, champions]);
   
-  // Create a map to store form data for all seasons
-  const [allSeasonsForms, setAllSeasonsForms] = useState<Record<string, Record<string, any>>>({});
+  // Create a map to store recent results for all seasons
+  const [allSeasonsResults, setAllSeasonsResults] = useState<Record<string, Record<string, any>>>({});
   
   // Use separate hook calls for each season
   useEffect(() => {
-    const loadAllSeasonsForms = async () => {
-      const formsMap: Record<string, Record<string, any>> = {};
+    const loadAllSeasonsResults = async () => {
+      const runsMap: Record<string, Record<string, any>> = {};
       
-      // Use Promise.all to load form data for all seasons in parallel
+      // Use Promise.all to load recent results for all seasons in parallel
       await Promise.all(
         seasons.map(async (season) => {
           const playerIds = allChampionPlayerIds[season.id] || [];
           
           if (playerIds.length === 0) {
-            formsMap[season.id] = {};
+            runsMap[season.id] = {};
             return;
           }
           
           try {
             // Straight to the service. A `queryFn` is a plain callback, so
             // calling the hook here threw on every season and the catch below
-            // turned that into an empty form map — which is why every season
-            // but the current one showed no form at all.
+            // turned that into an empty map — which is why every season
+            // but the current one showed no results at all.
             const data = await queryClient.fetchQuery({
-              queryKey: ['batchPlayerForms', season.id, playerIds],
-              queryFn: () => getPlayerFormBatch(season.id, playerIds),
+              queryKey: ['seasonResults', season.id, playerIds],
+              queryFn: () => getSeasonResultsBatch(season.id, playerIds),
               staleTime: 0
             });
 
-            formsMap[season.id] = data || {};
+            runsMap[season.id] = data || {};
           } catch (error) {
-            console.error(`Error loading forms for season ${season.id}:`, error);
-            formsMap[season.id] = {};
+            console.error(`Error loading results for season ${season.id}:`, error);
+            runsMap[season.id] = {};
           }
         })
       );
       
-      setAllSeasonsForms(formsMap);
+      setAllSeasonsResults(runsMap);
     };
     
     if (seasons.length > 0 && Object.keys(allChampionPlayerIds).length > 0) {
-      loadAllSeasonsForms();
+      loadAllSeasonsResults();
     }
   }, [seasons, allChampionPlayerIds, queryClient]);
 
@@ -235,14 +235,14 @@ const Seasons = () => {
             const seasonChampions = champions.filter(c => c.seasonId === season.id);
             const stats = seasonStats[season.id] || { matchCount: 0, playerCount: 0 };
             
-            // Get form data for this specific season
-            let seasonPlayerForms = {};
+            // Get recent results for this specific season
+            let seasonPlayerResults = {};
             if (season.id === currentSeason?.id) {
-              // Use directly loaded current season forms
-              seasonPlayerForms = currentSeasonForms || {};
+              // Use directly loaded current season results
+              seasonPlayerResults = currentSeasonForms || {};
             } else {
-              // Use form data from the allSeasonsForms state
-              seasonPlayerForms = allSeasonsForms[season.id] || {};
+              // Use recent results from the allSeasonsResults state
+              seasonPlayerResults = allSeasonsResults[season.id] || {};
             }
             
             return (
@@ -252,7 +252,7 @@ const Seasons = () => {
                 champions={seasonChampions}
                 totalPlayers={stats.playerCount}
                 totalMatches={stats.matchCount}
-                playerForms={seasonPlayerForms}
+                playerResults={seasonPlayerResults}
               />
             );
           })}

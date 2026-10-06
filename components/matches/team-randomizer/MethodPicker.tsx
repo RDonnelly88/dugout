@@ -1,10 +1,15 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { Dices, Hand, Scale } from "lucide-react";
+import { Dices, Hand, ListOrdered, Scale } from "lucide-react";
 import type { Split } from "@/lib/team-balance";
 import type { PickMethod } from "./pick-method";
 import type { Player } from "@/types";
+
+function eloGap(difference: number): string {
+  if (difference < 0.05) return "dead even";
+  return `${difference < 10 ? difference.toFixed(1) : Math.round(difference)} Elo apart`;
+}
 
 const METHODS: {
   value: PickMethod;
@@ -38,7 +43,15 @@ const METHODS: {
     label: "Even by rating",
     blurb: "Uses Elo, so the two sides should be as close as they can be.",
     Icon: Scale,
-    gap: (d) => (d < 0.05 ? "dead even" : `${d < 10 ? d.toFixed(1) : Math.round(d)} Elo apart`),
+    gap: eloGap,
+  },
+  {
+    value: "standing",
+    label: "Down the table",
+    blurb:
+      "1st, 3rd, 5th… against 2nd, 4th, 6th… in this season's league. Anyone not in it yet goes in by rating.",
+    Icon: ListOrdered,
+    gap: eloGap,
   },
 ];
 
@@ -65,7 +78,7 @@ export default function MethodPicker({
   const reduced = useReducedMotion();
 
   return (
-    <fieldset disabled={disabled} className="grid gap-2 sm:grid-cols-3">
+    <fieldset disabled={disabled} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
       <legend className="sr-only">How to pick the teams</legend>
       {METHODS.map(({ value: method, label, blurb, Icon, gap }, i) => {
         const split = preview[method];

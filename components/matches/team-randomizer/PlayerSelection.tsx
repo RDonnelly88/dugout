@@ -6,8 +6,8 @@ import { Label } from "@/components/ui/label";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
-import { useSquadForm } from "@/hooks/useSquadForm";
-import PlayerFormDisplay from '@/components/players/PlayerFormDisplay';
+import { useRecentResults } from "@/hooks/useRecentResults";
+import ResultStrip from '@/components/players/ResultStrip';
 import { TrendingUp, Trophy, Flag } from "lucide-react";
 import { calculatePlayerRanks } from "@/lib/ranking-utils";
 import PlayerSelectionFilters from './PlayerSelectionFilters';
@@ -43,7 +43,7 @@ const PlayerSelection = ({
   
   // The squad's recent nights, worked out once for the whole list. Picking a
   // side is not a season view, and asking per player opened one request each.
-  const { formFor } = useSquadForm();
+  const { resultsFor } = useRecentResults();
 
   const { data: seasonPlayerStats = [] } = useQuery({
     queryKey: ['seasonStats', currentSeason?.id],
@@ -141,7 +141,7 @@ const PlayerSelection = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
         {filteredAndSortedPlayers.map(player => {
           const rating = ratingFor(player.id);
-          const formResults = formFor(player.id);
+          const recentRun = resultsFor(player.id);
           
           return (
             <div 
@@ -172,7 +172,7 @@ const PlayerSelection = ({
                               {displayRating(rating.rating)}
                             </span>
                           )}
-                          <PlayerFormDisplay results={formResults} size="xs" />
+                          <ResultStrip results={recentRun} size="xs" />
                         </div>
                       </div>
                     </HoverCardTrigger>
@@ -224,7 +224,7 @@ const PlayerHoverContent = ({
   seasonPlayerStats,
   playerRanks = {}
 }: PlayerHoverContentProps) => {
-  const { formFor, isLoading } = useSquadForm();
+  const { resultsFor, isLoading } = useRecentResults();
   const { recordFor } = usePlayerRecords();
   const record = recordFor(player.id, player.name);
 
@@ -234,7 +234,7 @@ const PlayerHoverContent = ({
   
   const playerRank = hasPlayedGames ? playerRanks[player.id] : null;
   
-  const recentForm = formFor(player.id);
+  const recentResults = resultsFor(player.id);
   
   return (
     <>
@@ -300,13 +300,13 @@ const PlayerHoverContent = ({
       <div className="mt-2 p-2 rounded-md bg-info/15 border border-border">
         <div className="flex items-center mb-1">
           <TrendingUp className="h-3 w-3 text-info mr-1" />
-          <h5 className="text-xs font-medium text-info">Recent Form</h5>
+          <h5 className="text-xs font-medium text-info">Last five</h5>
         </div>
         <div className="flex space-x-1">
           {isLoading ? (
-            <div className="w-full text-center text-xs opacity-70">Loading form data...</div>
-          ) : recentForm.length > 0 ? (
-            <PlayerFormDisplay results={recentForm} size="sm" />
+            <div className="w-full text-center text-xs opacity-70">Loading results…</div>
+          ) : recentResults.length > 0 ? (
+            <ResultStrip results={recentResults} size="sm" />
           ) : (
             <div className="w-full text-center text-xs opacity-70">No recent matches</div>
           )}

@@ -8,12 +8,12 @@ import {
   getSeasons,
   getSeasonPlayerStats, 
   getMatches,
-  getPlayerFormInSeason,
+  getPlayerResultsInSeason,
   updateSeason,
   deleteSeason
 } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
-import { PlayerFormResult } from "@/types";
+import { RecentResult } from "@/types";
 import { useTeam } from "@/contexts/TeamContext";
 
 export const useSeasonDetail = () => {
@@ -61,22 +61,22 @@ export const useSeasonDetail = () => {
   
   console.log("Season matches:", seasonMatches);
 
-  // Get form for each player
-  const [playerForms, setPlayerForms] = useState<Record<string, PlayerFormResult[]>>({});
+  // Get recent results for each player
+  const [playerResults, setPlayerResults] = useState<Record<string, RecentResult[]>>({});
 
-  // Load player forms
+  // Load player results
   useQuery({
-    queryKey: ['playerForms', id],
+    queryKey: ['playerResults', id],
     queryFn: async () => {
-      const forms: Record<string, PlayerFormResult[]> = {};
+      const runs: Record<string, RecentResult[]> = {};
       
       for (const player of playerStats) {
-        const form = await getPlayerFormInSeason(id!, player.playerId);
-        forms[player.playerId] = form;
+        const run = await getPlayerResultsInSeason(id!, player.playerId);
+        runs[player.playerId] = run;
       }
       
-      setPlayerForms(forms);
-      return forms;
+      setPlayerResults(runs);
+      return runs;
     },
     enabled: !!id && playerStats.length > 0,
     staleTime: 0 // Don't cache results
@@ -150,7 +150,7 @@ export const useSeasonDetail = () => {
   useEffect(() => {
     if (id) {
       queryClient.invalidateQueries({ queryKey: ['seasonPlayerStats', id] });
-      queryClient.invalidateQueries({ queryKey: ['playerForms', id] });
+      queryClient.invalidateQueries({ queryKey: ['playerResults', id] });
     }
   }, [id, queryClient]);
 
@@ -159,7 +159,7 @@ export const useSeasonDetail = () => {
     season,
     seasons,
     playerStats,
-    playerForms,
+    playerResults,
     seasonMatches,
     isLoadingSeason,
     isLoadingStats,

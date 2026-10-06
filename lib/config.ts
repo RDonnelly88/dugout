@@ -20,7 +20,7 @@
  * Tuned by replaying simulated seasons — five-a-side, picked roughly level,
  * irregular turnout, some players improving and some fading — and scoring
  * each setting on how well it called the next result and how closely it
- * ranked the true order. A shorter memory notices a change of form sooner
+ * ranked the true order. A shorter memory notices a player improving or slipping sooner
  * and ranks everybody else worse for it, because a five-a-side result says
  * very little about any one of the ten. Thirty matches is a choice
  * about what the table should describe — roughly the last season of games —
@@ -99,8 +99,8 @@ export const XW = {
   luckWidth: 2,
 } as const;
 
-/** How many results the form strip shows. */
-export const FORM_LENGTH = 5;
+/** How many results the W/D/L strip shows. */
+export const RESULTS_SHOWN = 5;
 
 /**
  * Points for a win and for a draw are deliberately NOT here. They live in the

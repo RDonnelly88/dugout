@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getPlayer, getMatches, getSeasons, getSeasonPlayerStats } from "@/lib/db";
 import { Match, SeasonPlayerStats } from "@/types";
 import { useTeam } from "@/contexts/TeamContext";
-import { resultFor } from "@/lib/match-result";
+import { resultFor, sideOf } from "@/lib/match-result";
 
 export const usePlayerDetail = () => {
   const { currentTeam } = useTeam();
@@ -77,16 +77,14 @@ export const usePlayerDetail = () => {
   /**
    * Which side the player was on, and how it went for them.
    *
-   * Read through `resultFor`, like everywhere else. This compared the two
-   * scores itself, so a result recorded without one — which is now most of
-   * them — came back as "no result" beside a match the table had counted.
+   * Read through `sideOf` and `resultFor`, like everywhere else, so a result
+   * recorded without a score still counts. Undefined for a match they were not
+   * in, which leaves the row to read as the squad's.
    */
-  const getPlayerMatchResult = (
-    match: Match
-  ): { team: "A" | "B"; result: "win" | "loss" | "draw" | null } => ({
-    team: match.teamA.players.includes(id!) ? "A" : "B",
-    result: id ? resultFor(match, id) : null,
-  });
+  const viewpointOf = (match: Match) => {
+    const side = id ? sideOf(match, id) : null;
+    return side ? { side, result: resultFor(match, id!) } : undefined;
+  };
 
   return {
     player,
@@ -99,7 +97,7 @@ export const usePlayerDetail = () => {
     setSelectedSeasonId,
     selectedSeason,
     selectedSeasonStats,
-    getPlayerMatchResult,
+    viewpointOf,
     isLoading: isLoadingPlayer || isLoadingMatches || isLoadingSeasons || isLoadingSeasonStats,
     router
   };

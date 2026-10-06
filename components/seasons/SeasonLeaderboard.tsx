@@ -5,9 +5,9 @@ import { Trophy, Medal } from "lucide-react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
-import { SeasonPlayerStats, PlayerFormResult } from "@/types";
-import { useBatchFormLoader } from "@/hooks/useBatchFormLoader";
+import ResultStrip from "@/components/players/ResultStrip";
+import { SeasonPlayerStats, RecentResult } from "@/types";
+import { useSeasonResults } from "@/hooks/useSeasonResults";
 import { calculatePlayerRanks, sortPlayersByRank } from "@/lib/ranking-utils";
 import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
@@ -15,7 +15,7 @@ import PlayerAvatar from "@/components/players/PlayerAvatar";
 interface SeasonLeaderboardProps {
   stats: SeasonPlayerStats[];
   seasonId?: string;
-  playerForms?: Record<string, PlayerFormResult[]>;
+  playerResults?: Record<string, RecentResult[]>;
   limit?: number;
   showTitle?: boolean;
   seasonName?: string;
@@ -25,7 +25,7 @@ interface SeasonLeaderboardProps {
 const SeasonLeaderboard = ({ 
   stats, 
   seasonId,
-  playerForms = {}, 
+  playerResults = {}, 
   limit, 
   showTitle = true,
   seasonName,
@@ -48,13 +48,13 @@ const SeasonLeaderboard = ({
   const playerIds = displayStats.map(player => player.playerId);
   
   // Use the batch loading hook for real-time data
-  const { formData, isLoading: isLoadingForms } = useBatchFormLoader(
+  const { seasonResults, isLoading: isLoadingResults } = useSeasonResults(
     seasonId || null, 
     seasonId ? playerIds : []
   );
   
-  // Combine provided forms with batch loaded forms - prioritize fresh data from the hook
-  const combinedForms = { ...playerForms, ...formData };
+  // Combine provided results with batch loaded results - prioritize fresh data from the hook
+  const combinedResults = { ...playerResults, ...seasonResults };
   
   const getRankBadge = (rank: number) => {
     if (rank === 1) {
@@ -115,7 +115,7 @@ const SeasonLeaderboard = ({
             <TableRow>
               <TableHead className="w-12">Rank</TableHead>
               <TableHead>Player</TableHead>
-              <TableHead className="hidden text-right sm:table-cell">Form</TableHead>
+              <TableHead className="hidden text-right sm:table-cell">Last 5</TableHead>
               <TableHead className="text-right">P</TableHead>
               <TableHead className="text-right">W</TableHead>
               <TableHead className="hidden text-right sm:table-cell">D</TableHead>
@@ -142,14 +142,14 @@ const SeasonLeaderboard = ({
                   </Link>
                 </TableCell>
                 <TableCell className="hidden text-right sm:table-cell">
-                  <PlayerFormDisplay 
-                    results={combinedForms[stat.playerId] || []} 
+                  <ResultStrip 
+                    results={combinedResults[stat.playerId] || []} 
                     size="sm" 
-                    isLoading={isLoadingForms && !combinedForms[stat.playerId]}
+                    isLoading={isLoadingResults && !combinedResults[stat.playerId]}
                   />
                 </TableCell>
                 {/* Won, drawn and lost carry the same colours here as they do
-                    on a player card and in the form squares. */}
+                    on a player card and in the W/D/L squares. */}
                 <TableCell className="tabular text-right">{stat.played}</TableCell>
                 <TableCell className="tabular text-right text-win">{stat.wins}</TableCell>
                 <TableCell className="tabular hidden text-right text-draw sm:table-cell">

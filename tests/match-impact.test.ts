@@ -70,11 +70,11 @@ describe("matchImpact", () => {
 
     const a = impact.A.players.find((p) => p.playerId === "a")!;
     // Newest first: two nights missed, then the win they opened with.
-    expect(a.form).toEqual(["dnp", "dnp", "win"]);
+    expect(a.results).toEqual(["dnp", "dnp", "win"]);
 
     // Somebody who played every one of them has no gaps at all.
     const c = impact.A.players.find((p) => p.playerId === "c")!;
-    expect(c.form).not.toContain("dnp");
+    expect(c.results).not.toContain("dnp");
   });
 
   it("is nothing for a fixture that was never played", () => {

@@ -473,7 +473,7 @@ describe("a result across a side", () => {
     ]);
 
     // Newest first: the two they missed sit between their two wins.
-    expect(ratings.get("away")!.history.at(-1)!.formBefore).toEqual([
+    expect(ratings.get("away")!.history.at(-1)!.resultsBefore).toEqual([
       "dnp",
       "dnp",
       "win",
@@ -488,6 +488,6 @@ describe("a result across a side", () => {
       match(["new", "alsoNew"], ["a", "b"], 1, 0),
     ]);
 
-    expect(ratings.get("new")!.history.at(-1)!.formBefore).toEqual([]);
+    expect(ratings.get("new")!.history.at(-1)!.resultsBefore).toEqual([]);
   });
 });

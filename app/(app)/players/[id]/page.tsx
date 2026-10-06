@@ -12,16 +12,16 @@ import { usePlayerDetail } from "@/hooks/usePlayerDetail";
 import { usePlayerRank } from "@/hooks/usePlayerRank";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import PlayerSeasonStats from "@/components/players/PlayerSeasonStats";
-import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
+import ResultStrip from "@/components/players/ResultStrip";
 import PlayerChemistry from "@/components/players/PlayerChemistry";
 import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
-import type { PlayerFormResult } from "@/types";
+import type { RecentResult } from "@/types";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import PlayerRatingCard from "@/components/players/PlayerRatingCard";
 import PageHeader from "@/components/PageHeader";
 import { AVATAR_TRANSITION } from "@/components/TransitionLink";
 import MatchListItem from "@/components/matches/MatchListItem";
-import { recentForm } from "@/lib/form";
+import { recentResults } from "@/lib/recent-results";
 import { ratingSwings } from "@/lib/match-impact";
 import { StatTile, StatTiles } from "@/components/StatTile";
 
@@ -38,7 +38,7 @@ const PlayerDetail = () => {
     seasonStats,
     setSelectedSeasonId,
     selectedSeason,
-    getPlayerMatchResult,
+    viewpointOf,
     isLoading,
     router
   } = usePlayerDetail();
@@ -52,6 +52,15 @@ const PlayerDetail = () => {
   // yields a record of zeroes rather than undefined.
   const { recordFor } = usePlayerRecords();
   const record = recordFor(player?.id ?? "", player?.name ?? "");
+
+  // The squad's last five nights, with the ones this player missed marked —
+  // the same run every other strip in the app draws. Their own last five
+  // results would close the gaps up and read as an unbroken run. Also above
+  // the early returns, for the same reason as the record.
+  const lastFive: RecentResult[] = React.useMemo(
+    () => recentResults(allMatches).get(player?.id ?? "")?.results ?? [],
+    [allMatches, player?.id]
+  );
 
   // Get current season
   const currentSeason = seasons.find(s => s.isCurrent);
@@ -101,15 +110,6 @@ const PlayerDetail = () => {
       </div>
     );
   }
-
-  // The run to show when there is no current season to read one from: the
-  // squad's recent nights, with the ones this player was missing marked, which
-  // is the same run every other strip in the app draws. Their own last five
-  // results would close the gaps up and read as an unbroken run.
-  const recentResults: PlayerFormResult[] = React.useMemo(
-    () => recentForm(allMatches).get(player?.id ?? "")?.results ?? [],
-    [allMatches, player?.id]
-  );
 
   const orderedMatches = [...playerMatches].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -161,9 +161,9 @@ const PlayerDetail = () => {
         }
       >
         <div className="flex items-center gap-3">
-          <span className="eyebrow">Recent form</span>
-          <PlayerFormDisplay
-            results={recentResults}
+          <span className="eyebrow">Last five</span>
+          <ResultStrip
+            results={lastFive}
           />
         </div>
       </PageHeader>
@@ -248,7 +248,7 @@ const PlayerDetail = () => {
                 <MatchListItem
                   key={match.id}
                   match={match}
-                  result={getPlayerMatchResult(match).result}
+                  viewpoint={viewpointOf(match)}
                   swing={swings.get(match.id)}
                 />
               ))}

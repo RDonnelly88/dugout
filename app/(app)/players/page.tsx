@@ -81,7 +81,7 @@ const Players = () => {
         title="Players"
         subtitle={
           <>
-            The squad, their records and their form
+            The squad, their records and their recent results
           </>
         }
       />

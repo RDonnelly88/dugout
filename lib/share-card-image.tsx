@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
-import { FORM_LENGTH } from "./config";
+import { RESULTS_SHOWN } from "./config";
 import {
   initials,
   type ShareCard,
@@ -9,7 +9,7 @@ import {
   type ShareRow,
   type ShareSide,
 } from "./share-card";
-import type { PlayerFormResult } from "@/types";
+import type { RecentResult } from "@/types";
 
 /**
  * A match drawn as a picture, for sending to people who are not in the app.
@@ -56,28 +56,28 @@ interface RowSize {
   chip: number;
   name: number;
   gap: number;
-  /** One square of the form strip. */
+  /** One square of the results strip. */
   box: number;
 }
 
 /**
  * How wide one side's list of names is.
  *
- * Fixed rather than fitted to the longest name, so both lists put their form
+ * Fixed rather than fitted to the longest name, so both lists put their results
  * and their places in the same columns and the eye can read straight down
  * them. A name longer than its share of the row is cut rather than allowed to
  * shove the run of results off the card.
  */
 const COLUMN = 500;
 
-const FORM_TINT: Record<PlayerFormResult, string> = {
+const FORM_TINT: Record<RecentResult, string> = {
   win: C.win,
   draw: C.draw,
   loss: C.loss,
   dnp: C.raised,
 };
 
-const FORM_LETTER: Record<PlayerFormResult, string> = {
+const FORM_LETTER: Record<RecentResult, string> = {
   win: "W",
   draw: "D",
   loss: "L",
@@ -95,7 +95,7 @@ const FORM_LETTER: Record<PlayerFormResult, string> = {
  * about. The list is never reversed for the away side: a mirrored run of
  * results would be a different story told backwards.
  */
-function FormRun({ results, size }: { results: PlayerFormResult[]; size: RowSize }) {
+function ResultRun({ results, size }: { results: RecentResult[]; size: RowSize }) {
   return (
     <div
       style={{
@@ -107,11 +107,11 @@ function FormRun({ results, size }: { results: PlayerFormResult[]; size: RowSize
         // and the column of placings after them came out ragged. Filled from
         // the right because the last square is this match on every row, so it
         // is the edge that has to line up.
-        width: FORM_LENGTH * size.box + (FORM_LENGTH - 1) * FORM_GAP,
+        width: RESULTS_SHOWN * size.box + (RESULTS_SHOWN - 1) * FORM_GAP,
         justifyContent: "flex-end",
       }}
     >
-      {[...results].slice(0, FORM_LENGTH).reverse().map((result, index) => (
+      {[...results].slice(0, RESULTS_SHOWN).reverse().map((result, index) => (
         <div
           key={index}
           style={{
@@ -233,7 +233,7 @@ function Chip({
           </div>
         )}
       </div>
-      {player.form && player.form.length > 0 && (
+      {player.results && player.results.length > 0 && (
         <div
           style={{
             display: "flex",
@@ -242,7 +242,7 @@ function Chip({
             marginRight: mirrored ? 14 : 0,
           }}
         >
-          <FormRun results={player.form} size={size} />
+          <ResultRun results={player.results} size={size} />
         </div>
       )}
       {player.rank !== undefined && (

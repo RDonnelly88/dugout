@@ -1,12 +1,12 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { PlayerFormResult } from "@/types";
+import { RecentResult } from "@/types";
 
 import { Loader2, UserX } from "lucide-react";
 
-interface PlayerFormDisplayProps {
-  results: Array<PlayerFormResult>;
+interface ResultStripProps {
+  results: Array<RecentResult>;
   size?: 'xs' | 'sm' | 'md' | 'lg';
   showLabel?: boolean;
   isLoading?: boolean;
@@ -17,23 +17,23 @@ interface PlayerFormDisplayProps {
    * is the subject. Kept apart from `results` so the ring cannot land on a
    * square that is simply the most recent one.
    */
-  latest?: PlayerFormResult;
+  latest?: RecentResult;
 }
 
-const PlayerFormDisplay = ({
+const ResultStrip = ({
   results = [],
   size = 'md',
   showLabel = false,
   isLoading = false,
   latest
-}: PlayerFormDisplayProps) => {
-  // Create empty form squares for loading state
+}: ResultStripProps) => {
+  // Create empty squares for loading state
   if (isLoading) {
     return (
       <div className="flex flex-col">
         {showLabel && (
           <div className="text-xs text-muted-foreground mb-1">
-            Recent Form
+            Last five
           </div>
         )}
         <div className="flex space-x-1 items-center">
@@ -45,13 +45,13 @@ const PlayerFormDisplay = ({
               "text-info animate-spin"
             )}
           />
-          <span className="text-xs text-muted-foreground ml-2">Loading form data...</span>
+          <span className="text-xs text-muted-foreground ml-2">Loading results…</span>
         </div>
       </div>
     );
   }
   
-  // Don't render anything if there's no form data or it's empty
+  // Don't render anything if there's no results or it's empty
   if ((!results || results.length === 0) && !latest) {
     return (
       <div className="text-xs text-muted-foreground">No match data</div>
@@ -60,9 +60,9 @@ const PlayerFormDisplay = ({
 
   // Only show the 5 most recent results
   // For display, we want most recent on the right
-  const recentResults = results.slice(0, 5).reverse();
+  const shown = results.slice(0, 5).reverse();
 
-  const getFormSquare = (result: PlayerFormResult, index: number, ringed = false) => {
+  const square = (result: RecentResult, index: number, ringed = false) => {
     let bgColor = "bg-surface-2";
     let textColor = "text-muted-foreground";
     let letter = "-";
@@ -131,15 +131,15 @@ const PlayerFormDisplay = ({
     <div className="flex flex-col">
       {showLabel && (
         <div className="text-xs text-muted-foreground mb-1">
-          Recent Form
+          Last five
         </div>
       )}
       <div className="flex space-x-1 items-center">
-        {recentResults.map((result, index) => getFormSquare(result, index))}
-        {latest !== undefined && getFormSquare(latest, recentResults.length, true)}
+        {shown.map((result, index) => square(result, index))}
+        {latest !== undefined && square(latest, shown.length, true)}
       </div>
     </div>
   );
 };
 
-export default PlayerFormDisplay;
+export default ResultStrip;

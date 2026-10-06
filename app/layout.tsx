@@ -27,7 +27,7 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "The Dugout",
-  description: "Five-a-side results, player form and season standings.",
+  description: "Five-a-side results, ratings and season standings.",
 };
 
 export const viewport: Viewport = {
