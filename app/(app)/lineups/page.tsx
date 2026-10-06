@@ -27,6 +27,7 @@ import { sideOf } from "@/lib/match-result";
 import { usePointValues } from "@/hooks/usePointValues";
 import SquadWeb from "@/components/lineups/SquadWeb";
 import PageHeader from "@/components/PageHeader";
+import StatsNav from "@/components/StatsNav";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import ActiveFilter, { isActivePlayer, type ActiveScope } from "@/components/players/ActiveFilter";
 import MatchCard from "@/components/matches/MatchCard";
@@ -388,7 +389,7 @@ function LineupLab() {
 
   const webCard = (
     <Card className={picked.length > 0 ? "reveal" : undefined}>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 sm:pb-3">
         <CardTitle className="flex items-center gap-2">
           <Network className="h-5 w-5 text-accent" />
           The squad web
@@ -458,16 +459,17 @@ function LineupLab() {
 
   return (
     <div className="page-container animate-slide-up">
+      <StatsNav />
       <PageHeader
         title="Line-up lab"
-        subtitle="Pick up to five players and see how they do on the same side: their record together, who is making the difference, and who would complete them — and, a tap away, the same games against the odds."
+        subtitle="Who plays well together. Pick up to five and see their record on the same side, or read the whole squad as a web."
       />
 
       {/* One column on a phone, held to the screen: an auto-sized column would
           stretch to the full width of the rail of match cards inside it. */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
         <Card className="h-fit lg:sticky lg:top-6">
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 sm:pb-3">
             <CardTitle className="flex items-center gap-2">
               <FlaskConical className="h-5 w-5 text-accent" />
               The line-up
@@ -577,7 +579,7 @@ function LineupLab() {
           ) : !report ? (
             <>
               <Card>
-                <CardContent className="py-12 text-center">
+                <CardContent className="py-12 text-center sm:py-12">
                   <Handshake className="mx-auto mb-3 h-8 w-8 text-accent" />
                   <p className="font-medium">Who plays well together?</p>
                   <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
@@ -603,7 +605,7 @@ function LineupLab() {
 
               {report.without.length > 0 && (
                 <Card className="reveal">
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-3 sm:pb-3">
                     <CardTitle>With and without</CardTitle>
                     <CardDescription>
                       The same group with one of them missing from the side, and each of them on
@@ -647,7 +649,7 @@ function LineupLab() {
 
               {additions.length > 0 && (
                 <Card className="reveal">
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-3 sm:pb-3">
                     <CardTitle className="flex items-center gap-2">
                       <UserPlus className="h-5 w-5 text-accent" />
                       Who completes {picked.length === 1 ? "them" : "the set"}?
@@ -707,7 +709,7 @@ function LineupLab() {
 
               {nightsTogether.length > 0 && (
                 <Card className="reveal">
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-3 sm:pb-3">
                     <CardTitle>
                       {picked.length === 1 ? "Their games" : "The nights together"}
                     </CardTitle>

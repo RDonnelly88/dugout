@@ -22,6 +22,7 @@ import {
   SegmentedControlItem,
 } from "@/components/ui/segmented-control";
 import { cn } from "@/lib/utils";
+import { shortNames } from "@/lib/short-names";
 import type { Player } from "@/types";
 
 /** The avatar is `xs`: 28px across. */
@@ -142,6 +143,7 @@ export default function SquadWeb({
 
   const touches = (link: WebLink, id: string | null) => id !== null && (link.a === id || link.b === id);
   const name = (id: string) => byId.get(id)?.name ?? "Unknown";
+  const shortName = useMemo(() => shortNames([...byId.values()]), [byId]);
 
   const path = (link: WebLink) => {
     const p = seat.get(link.a)!;
@@ -262,7 +264,7 @@ export default function SquadWeb({
           // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
           role="img"
           aria-label={`The squad as a web of who has played with whom, coloured by ${measure === "odds" ? "how they did against the odds" : "points a game together"}. The same links are listed below.`}
-          className="block"
+          className="block overflow-visible"
         >
           <circle
             cx={centre}
@@ -315,6 +317,9 @@ export default function SquadWeb({
               !web.links.some((l) => touches(l, focus) && touches(l, id));
             const cos = Math.cos(at.angle);
             const label = name(id);
+            // First names round the ring, where full ones ran off the edge
+            // of a phone; the full name is on the face's button.
+            const short = shortName.get(id) ?? label;
             return (
               <g key={id} opacity={dim ? 0.35 : 1} className="transition-opacity">
                 <text
@@ -326,7 +331,7 @@ export default function SquadWeb({
                     (focus === id || ringed) && "font-semibold"
                   )}
                 >
-                  {narrow && label.length > 8 ? `${label.slice(0, 7)}…` : label}
+                  {narrow && short.length > 9 ? `${short.slice(0, 8)}…` : short}
                 </text>
                 <foreignObject
                   x={at.x - NODE / 2 - 3}

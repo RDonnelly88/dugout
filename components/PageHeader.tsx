@@ -38,7 +38,10 @@ export default function PageHeader({
     <div className="page-header">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          {kicker && <p className="page-kicker mb-3">{kicker}</p>}
+          {/* The team's name is already in the bar above on a phone. */}
+          {kicker && (
+            <p className={`page-kicker mb-3 ${eyebrow ? "" : "hidden md:block"}`}>{kicker}</p>
+          )}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <h1 className="page-title">{title}</h1>
             {badges}

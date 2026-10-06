@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowLeftRight, Handshake, Swords } from "lucide-react";
@@ -35,6 +36,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import PageHeader from "@/components/PageHeader";
+import StatsNav from "@/components/StatsNav";
 
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 
@@ -149,7 +151,9 @@ function TallyLine({
   );
 }
 
-export default function ComparePage() {
+function Compare() {
+  // A pair can be opened straight from a player page: ?a=…&b=…
+  const params = useSearchParams();
   const { currentTeam } = useTeam();
 
   const { data: players = [] } = useQuery({
@@ -216,8 +220,8 @@ export default function ComparePage() {
     [players]
   );
 
-  const [aId, setAId] = useState<string>("");
-  const [bId, setBId] = useState<string>("");
+  const [aId, setAId] = useState<string>(() => params.get("a") ?? "");
+  const [bId, setBId] = useState<string>(() => params.get("b") ?? "");
 
   const a = sorted.find((p) => p.id === aId) ?? sorted[0];
   const b = sorted.find((p) => p.id === bId) ?? sorted[1];
@@ -230,8 +234,9 @@ export default function ComparePage() {
   if (sorted.length < 2) {
     return (
       <div className="page-container">
+        <StatsNav />
         <PageHeader
-          title="Compare"
+          title="Head to head"
           subtitle="Add a second player and you can put two of them side by side."
         />
       </div>
@@ -251,14 +256,10 @@ export default function ComparePage() {
 
   return (
     <div className="page-container animate-slide-up">
+      <StatsNav />
       <PageHeader
-        title="Compare"
-        subtitle={
-          <>
-            Two players side by side, and — the part a league table can never show
-          — how they get on with each other.
-          </>
-        }
+        title="Head to head"
+        subtitle="Two players side by side, and how they get on with each other."
       />
 
       <div className="mb-4">
@@ -405,5 +406,14 @@ export default function ComparePage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function ComparePage() {
+  // Reading the address needs a boundary, or the page cannot be prerendered.
+  return (
+    <Suspense>
+      <Compare />
+    </Suspense>
   );
 }
