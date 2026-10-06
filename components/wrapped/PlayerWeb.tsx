@@ -3,18 +3,10 @@
 import { useMemo, useState } from "react";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import { SegmentedControl, SegmentedControlItem } from "@/components/ui/segmented-control";
-import { signedWins, type Ledger } from "@/lib/expected-wins";
+import type { Ledger } from "@/lib/expected-wins";
 import type { PointValues } from "@/lib/season-positions";
 import type { WrappedPartner } from "@/lib/season-wrapped";
-import {
-  enoughGames,
-  firmness,
-  lean,
-  pointsPerGame,
-  ppg,
-  tone,
-  type WebMeasure,
-} from "@/lib/web-measure";
+import { enoughGames, firmness, lean, pointsPerGame, ppg, tone } from "@/lib/web-measure";
 import { cn } from "@/lib/utils";
 import type { Player } from "@/types";
 
@@ -39,11 +31,11 @@ const TEXT = { ahead: "text-win", behind: "text-loss", level: "text-muted-foregr
  * One player's season as a web: them in the middle, everybody they played
  * with — or against — round them, a spoke to each.
  *
- * On the record, a spoke is green where they took more points a game with
- * that player than they did across their whole season, and red where fewer;
- * against the odds, it is wins above or below what the ratings expected. A
- * thicker spoke is more games, and a faint one too few to say much. The ring
- * runs best first, clockwise from the top. Tap a face for the numbers.
+ * Read on the record, because a wrapped is about what happened: a spoke is
+ * green where they took more points a game with that player than they did
+ * across their whole season, and red where fewer. A thicker spoke is more
+ * games, and a faint one too few to say much. The ring runs best first,
+ * clockwise from the top. Tap a face for the numbers.
  */
 export default function PlayerWeb({
   player,
@@ -59,14 +51,12 @@ export default function PlayerWeb({
   mates: WrappedPartner[];
   opponents: WrappedPartner[];
   playerFor: (id: string) => Player | undefined;
-  /** What a win and a draw are worth; without them only the odds are offered. */
-  values: PointValues | null;
+  /** What a win and a draw were worth this season, read off its table. */
+  values: PointValues;
 }) {
   const [side, setSide] = useState<"with" | "against">("with");
-  const [chosen, setChosen] = useState<WebMeasure>("record");
-  const measure: WebMeasure = values ? chosen : "odds";
-  // Only read on the record, which is only offered with real values.
-  const points = useMemo(() => values ?? { win: 1, draw: 0.5 }, [values]);
+  const measure = "record";
+  const points = values;
   const baseline = pointsPerGame(own, points);
 
   const entries = side === "with" ? mates : opponents;
@@ -116,21 +106,6 @@ export default function PlayerWeb({
             Against
           </SegmentedControlItem>
         </SegmentedControl>
-        {values && (
-          <SegmentedControl
-            label="How to read the spokes"
-            value={measure}
-            onValueChange={(next) => setChosen(next as WebMeasure)}
-            className="h-8"
-          >
-            <SegmentedControlItem value="record" className="h-full px-3 text-xs font-medium">
-              Record
-            </SegmentedControlItem>
-            <SegmentedControlItem value="odds" className="h-full px-3 text-xs font-medium">
-              Odds
-            </SegmentedControlItem>
-          </SegmentedControl>
-        )}
       </div>
 
       <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="mx-auto w-full max-w-[360px] overflow-visible" aria-hidden>
@@ -205,22 +180,11 @@ export default function PlayerWeb({
           {selected.ledger.played} {side === "with" ? "together" : "against"} ·{" "}
           {selected.ledger.wins}W {selected.ledger.draws}D {selected.ledger.losses}L
           <br />
-          {measure === "record" ? (
-            <>
-              {first(player.id)} took{" "}
-              <span className={cn("font-semibold", TEXT[tone(selected.ledger, measure, points, baseline)])}>
-                {ppg(pointsPerGame(selected.ledger, points))} pts a game
-              </span>{" "}
-              {side === "with" ? "with them" : "against them"}, and {ppg(baseline)} across the season.
-            </>
-          ) : (
-            <>
-              <span className={cn("font-semibold", TEXT[tone(selected.ledger, measure, points, baseline)])}>
-                {signedWins(selected.ledger.above)}
-              </span>{" "}
-              against the odds {side === "with" ? "with them" : "against them"}.
-            </>
-          )}
+          {first(player.id)} took{" "}
+          <span className={cn("font-semibold", TEXT[tone(selected.ledger, measure, points, baseline)])}>
+            {ppg(pointsPerGame(selected.ledger, points))} pts a game
+          </span>{" "}
+          {side === "with" ? "with them" : "against them"}, and {ppg(baseline)} across the season.
           {!enoughGames(selected.ledger) && <span className="opacity-70"> Too few games to say much.</span>}
         </p>
       )}

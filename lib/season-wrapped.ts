@@ -1,6 +1,7 @@
 import { ELO } from "./config";
 import { computeRatings } from "./elo";
-import { chemistryFor, pick } from "./chemistry";
+import { chemistryFor } from "./chemistry";
+import { enoughGames, pointsPerGame } from "./web-measure";
 import { matchExpectations, type Ledger, type Night } from "./expected-wins";
 import { outcomeOf, resultFor, sideOf } from "./match-result";
 import { ratingSeries } from "./rating-series";
@@ -43,11 +44,18 @@ export interface Wrapped {
   } | null;
   /** The win the ratings least expected. */
   upset: { matchId: string; date: string; chance: number } | null;
-  /** Their best team-mate against the odds, once it is more than a few games. */
+  /**
+   * Their best team-mate on the record: most points a game together, over
+   * enough games to mean something.
+   */
   partner: WrappedPartner | null;
   /** Who they shared a side with most. */
   regular: { playerId: string; played: number; wins: number } | null;
-  /** The opponent they did worst against, against the odds. */
+  /**
+   * The opponent they took fewest points a game against, over enough games,
+   * and fewer than they took across the season — somebody they merely did
+   * averagely against is nobody's nemesis.
+   */
   nemesis: WrappedPartner | null;
   /**
    * Everybody they shared a side with, and everybody they faced, over the
@@ -157,10 +165,20 @@ export function seasonWrapped(
     .map(([id, tally]) => ({ playerId: id, ...tally }))
     .sort((a, b) => b.played - a.played || b.wins - a.wins)[0] ?? null;
 
-  // Past the early verdict, and on the right side of nought: a best mate
-  // who still fell short of the odds is not a story worth telling.
-  const partner = pick(chemistry.withPlayers, { count: 1 })[0];
-  const nemesis = pick(chemistry.againstPlayers, { count: 1, worst: true })[0];
+  // On the record, not the odds: a wrapped is about what happened, and "what
+  // was my record with him" is the question it answers. Points a game need
+  // the table's values; without them there is no record to rank by.
+  const byRecord = (entries: WrappedPartner[]) =>
+    values
+      ? entries
+          .filter((e) => enoughGames(e.ledger))
+          .map((e) => ({ entry: e, ppg: pointsPerGame(e.ledger, values) }))
+          .sort((x, y) => y.ppg - x.ppg || y.entry.ledger.played - x.entry.ledger.played)
+      : [];
+  const own = values ? pointsPerGame(record, values) : 0;
+  const partner = byRecord(chemistry.withPlayers)[0]?.entry ?? null;
+  const worst = byRecord(chemistry.againstPlayers).at(-1);
+  const nemesis = worst && worst.ppg < own ? worst.entry : null;
 
   const results = record.nights.map((night) => night.result);
 
@@ -173,9 +191,9 @@ export function seasonWrapped(
     journey,
     rating,
     upset: upset ? { matchId: upset.matchId, date: upset.date, chance: upset.expected } : null,
-    partner: partner && partner.ledger.above > 0 ? partner : null,
+    partner,
     regular,
-    nemesis: nemesis && nemesis.ledger.above < 0 ? nemesis : null,
+    nemesis,
     mates: chemistry.withPlayers,
     opponents: chemistry.againstPlayers,
     winRun: longestRun(results, (r) => r === "win"),

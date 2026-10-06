@@ -1,8 +1,9 @@
 import { ImageResponse } from "next/og";
 import { C, type ImageFont } from "./share-card-image";
 import { displayRating } from "./elo";
-import { signedWins } from "./expected-wins";
 import type { Wrapped } from "./season-wrapped";
+import type { PointValues } from "./season-positions";
+import { pointsPerGame, ppg } from "./web-measure";
 
 /**
  * A player's season wrapped, as one picture for the group chat.
@@ -22,19 +23,15 @@ const ordinal = (n: number) => {
   return `${n}${["th", "st", "nd", "rd"][n % 10] ?? "th"}`;
 };
 
-const VERDICT: Record<Wrapped["record"]["verdict"], string> = {
-  early: "too early to say",
-  luck: "could be luck",
-  above: "better than luck",
-  below: "worse than luck",
-};
-
 export interface WrappedCard {
   story: Wrapped;
   playerName: string;
   seasonName: string;
   finished: boolean;
   partnerName?: string;
+  nemesisName?: string;
+  /** What a win and a draw were worth, for points a game. */
+  values: PointValues | null;
 }
 
 function Tile({ label, value, tint }: { label: string; value: string; tint?: string }) {
@@ -64,7 +61,9 @@ function Tile({ label, value, tint }: { label: string; value: string; tint?: str
 export function wrappedImage(card: WrappedCard, fonts: ImageFont[]): ImageResponse {
   const { story } = card;
   const { record } = story;
-  const above = record.above;
+  const values = card.values;
+  const record3 = (l: { wins: number; draws: number; losses: number }) =>
+    `${l.wins}W ${l.draws}D ${l.losses}L`;
 
   return new ImageResponse(
     (
@@ -118,11 +117,7 @@ export function wrappedImage(card: WrappedCard, fonts: ImageFont[]): ImageRespon
             value={story.place ? `${ordinal(story.place.position)} of ${story.place.of}` : "—"}
             tint={story.place?.position === 1 ? C.win : undefined}
           />
-          <Tile
-            label={`Against xW · ${VERDICT[record.verdict]}`}
-            value={signedWins(above)}
-            tint={record.verdict === "above" ? C.win : record.verdict === "below" ? C.loss : undefined}
-          />
+          <Tile label="Points a game" value={values ? ppg(pointsPerGame(record, values)) : "—"} />
           <Tile
             label="Rating"
             value={
@@ -137,12 +132,12 @@ export function wrappedImage(card: WrappedCard, fonts: ImageFont[]): ImageRespon
         <div style={{ display: "flex", flexDirection: "column", marginTop: "auto", fontSize: 30, color: C.muted, gap: 10 }}>
           {card.partnerName && story.partner && (
             <div style={{ display: "flex" }}>
-              {`Best partnership: ${card.partnerName}, ${signedWins(story.partner.ledger.above)} against the odds`}
+              {`Best partnership: ${card.partnerName}, ${record3(story.partner.ledger)} together`}
             </div>
           )}
-          {story.upset && (
+          {card.nemesisName && story.nemesis && (
             <div style={{ display: "flex" }}>
-              {`Giant-killing: won a game their side was given ${Math.round(story.upset.chance * 100)}% to win`}
+              {`Nemesis: ${card.nemesisName}, ${record3(story.nemesis.ledger)} against`}
             </div>
           )}
         </div>

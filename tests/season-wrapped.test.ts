@@ -133,6 +133,44 @@ describe("seasonWrapped", () => {
     expect(story.nemesis).toBeNull();
   });
 
+  it("picks the best partnership on the record together", () => {
+    const five = (mate: string, results: ("a" | "b" | "draw")[], start: number) =>
+      results.map((r, i) => night(["x", mate], ["y"], r, day(start + i)));
+    const matches = [
+      // 4 wins and a loss with "good": 12 points from 5.
+      ...five("good", ["a", "a", "a", "a", "b"], 0),
+      // 2 wins, 3 losses with "poor": 6 from 5.
+      ...five("poor", ["a", "a", "b", "b", "b"], 5),
+    ];
+
+    const story = seasonWrapped(matches, "s1", "x", VALUES)!;
+    expect(story.partner?.playerId).toBe("good");
+    expect(story.partner?.ledger).toMatchObject({ wins: 4, losses: 1 });
+  });
+
+  it("names a nemesis only for somebody they did worse against than usual", () => {
+    const vs = (foe: string, results: ("a" | "b" | "draw")[], start: number) =>
+      results.map((r, i) => night(["x"], [foe], r, day(start + i)));
+
+    // Lost every game against "bogey", won most against everybody else.
+    const story = seasonWrapped(
+      [...vs("bogey", ["b", "b", "b", "b", "b"], 0), ...vs("easy", ["a", "a", "a", "a", "a"], 5)],
+      "s1",
+      "x",
+      VALUES
+    )!;
+    expect(story.nemesis?.playerId).toBe("bogey");
+
+    // Lost to everybody alike: nobody stands out as a nemesis.
+    const level = seasonWrapped(
+      [...vs("one", ["b", "b", "b", "b", "b"], 0), ...vs("two", ["b", "b", "b", "b", "b"], 5)],
+      "s1",
+      "x",
+      VALUES
+    )!;
+    expect(level.nemesis).toBeNull();
+  });
+
   it("has no place without a table to read the points from", () => {
     const story = seasonWrapped([night(["x"], ["y"], "a", day(0))], "s1", "x", null)!;
     expect(story.place).toBeNull();

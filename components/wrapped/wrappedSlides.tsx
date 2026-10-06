@@ -9,6 +9,7 @@ import Verdict from "@/components/xw/Verdict";
 import ShareImageButton from "@/components/ShareImageButton";
 import { displayRating } from "@/lib/elo";
 import { signedWins } from "@/lib/expected-wins";
+import { pointsPerGame, ppg } from "@/lib/web-measure";
 import type { Wrapped } from "@/lib/season-wrapped";
 import { cn } from "@/lib/utils";
 import type { Player, Season, SeasonPlayerStats } from "@/types";
@@ -126,6 +127,7 @@ export function wrappedSlides({
   const first = name.split(/\s+/)[0];
   const sofar = !season.isFinished;
   const { record } = story;
+  const ownPpg = values ? pointsPerGame(record, values) : 0;
   const slides: Slide[] = [];
 
   slides.push({
@@ -177,8 +179,9 @@ export function wrappedSlides({
         )}
         {row && (
           <p className={BODY}>
-            {plural(row.points, "point")}, winning {Math.round((record.wins / Math.max(1, record.played)) * 100)}% of
-            their games.
+            {plural(row.points, "point")}
+            {values && `, ${ppg(ownPpg)} a game`}, winning{" "}
+            {Math.round((record.wins / Math.max(1, record.played)) * 100)}% of their games.
           </p>
         )}
       </Card>
@@ -245,48 +248,6 @@ export function wrappedSlides({
     });
   }
 
-  slides.push({
-    key: "odds",
-    label: "Against the odds",
-    tone: "plain",
-    content: (
-      <Card label="Against the odds">
-        <h2 className={HEADLINE}>
-          {signedWins(record.above)} <span className="text-2xl font-bold">wins</span>
-        </h2>
-        <p className={BODY}>
-          Before every kick-off the ratings gave {first}&apos;s side a chance. Added up, they expected{" "}
-          {record.expected.toFixed(1)} wins; {first} came away with {record.actual.toFixed(1)}, a draw
-          counting half.
-        </p>
-        <LuckBar ledger={record} />
-        <Verdict verdict={record.verdict} />
-      </Card>
-    ),
-  });
-
-  if (story.upset) {
-    slides.push({
-      key: "upset",
-      label: "Giant-killing",
-      tone: "pitch",
-      content: (
-        <Card label="Giant-killing">
-          <h2 className="scoreboard text-8xl">{Math.round(story.upset.chance * 100)}%</h2>
-          <p className={BODY}>
-            The chance {first}&apos;s side was given on {day(story.upset.date)}. They won anyway.
-          </p>
-          <Link
-            href={`/matches/${story.upset.matchId}`}
-            className="focus-ring self-start rounded-full border border-chalk/50 px-4 py-2 text-sm font-medium hover:bg-chalk/10"
-          >
-            See the match
-          </Link>
-        </Card>
-      ),
-    });
-  }
-
   const mate = story.partner ? playerFor(story.partner.playerId) : undefined;
   const regular = story.regular ? playerFor(story.regular.playerId) : undefined;
   if (mate || regular) {
@@ -304,9 +265,15 @@ export function wrappedSlides({
               </div>
               <h2 className={HEADLINE}>{first} &amp; {mate.name.split(/\s+/)[0]}</h2>
               <p className={BODY}>
-                {signedWins(story.partner.ledger.above)} wins above the odds in{" "}
-                {plural(story.partner.ledger.played, "game")} together — the best pairing of{" "}
-                {first}&apos;s season.
+                {story.partner.ledger.wins}W {story.partner.ledger.draws}D {story.partner.ledger.losses}L in{" "}
+                {plural(story.partner.ledger.played, "game")} together
+                {values && (
+                  <>
+                    {" "}— {ppg(pointsPerGame(story.partner.ledger, values))} points a game, against{" "}
+                    {ppg(ownPpg)} across the season
+                  </>
+                )}
+                . The best record {first} had with anybody.
               </p>
               <Link
                 href={`/lineups?p=${player.id},${mate.id}&t=s:${season.id}`}
@@ -330,7 +297,9 @@ export function wrappedSlides({
     });
   }
 
-  if (story.mates.length + story.opponents.length > 0) {
+  // On the record only, which needs the table's points; the odds have a card
+  // of their own.
+  if (values && story.mates.length + story.opponents.length > 0) {
     slides.push({
       key: "web",
       label: `${first}'s web`,
@@ -361,9 +330,15 @@ export function wrappedSlides({
           <PlayerAvatar name={nemesis.name} image={nemesis.image} size="xl" />
           <h2 className={HEADLINE}>{nemesis.name}</h2>
           <p className={BODY}>
-            {plural(story.nemesis.ledger.played, "game")} on the other side, and {first} finished{" "}
-            {signedWins(story.nemesis.ledger.above)} against the odds in them. Nobody got the better of{" "}
-            {first} more.
+            {plural(story.nemesis.ledger.played, "game")} on the other side: {story.nemesis.ledger.wins}W{" "}
+            {story.nemesis.ledger.draws}D {story.nemesis.ledger.losses}L
+            {values && (
+              <>
+                , {ppg(pointsPerGame(story.nemesis.ledger, values))} points a game against{" "}
+                {ppg(ownPpg)} across the season
+              </>
+            )}
+            . Nobody got the better of {first} more.
           </p>
         </Card>
       ),
@@ -385,6 +360,41 @@ export function wrappedSlides({
     ),
   });
 
+  // The one card for the odds. Everything else in a wrapped is what
+  // happened; this is how that compares with what the ratings expected, for
+  // anybody who wants it, with the giant-killing that only the odds can see.
+  slides.push({
+    key: "odds",
+    label: "Against the odds",
+    tone: "plain",
+    content: (
+      <Card label="Against the odds">
+        <h2 className={HEADLINE}>
+          {signedWins(record.above)} <span className="text-2xl font-bold">wins</span>
+        </h2>
+        <p className={BODY}>
+          Before every kick-off the ratings gave {first}&apos;s side a chance. Added up, they expected{" "}
+          {record.expected.toFixed(1)} wins; {first} came away with {record.actual.toFixed(1)}, a draw
+          counting half.
+        </p>
+        <LuckBar ledger={record} />
+        <Verdict verdict={record.verdict} />
+        {story.upset && (
+          <p className={BODY}>
+            Biggest giant-killing: on {day(story.upset.date)} {first}&apos;s side was given{" "}
+            {Math.round(story.upset.chance * 100)}% and won.{" "}
+            <Link
+              href={`/matches/${story.upset.matchId}`}
+              className="focus-ring font-medium text-accent underline-offset-4 hover:underline"
+            >
+              See the match
+            </Link>
+          </p>
+        )}
+      </Card>
+    ),
+  });
+
   slides.push({
     key: "summary",
     label: "In one picture",
@@ -398,7 +408,7 @@ export function wrappedSlides({
             value={story.place ? ordinal(story.place.position) : "—"}
           />
           <Tile label="Won–drawn–lost" value={`${record.wins}–${record.draws}–${record.losses}`} />
-          <Tile label="Against xW" value={signedWins(record.above)} />
+          <Tile label="Points a game" value={values ? ppg(ownPpg) : "—"} />
           <Tile label="Rating" value={story.rating ? displayRating(story.rating.to) : "—"} />
           <Tile label="Best run" value={`${story.winRun}W`} />
         </div>

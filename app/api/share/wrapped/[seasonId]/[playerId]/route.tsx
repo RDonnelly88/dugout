@@ -42,17 +42,18 @@ export async function GET(
   ]);
 
   const names = new Map((squad ?? []).map((p) => [p.id, p.name]));
+  const values = pointValues(
+    (table ?? []).map((row) => ({
+      wins: row.wins ?? 0,
+      draws: row.draws ?? 0,
+      points: row.points ?? 0,
+    }))
+  );
   const story = seasonWrapped(
     (history ?? []).map(mapSupabaseMatchToMatch),
     seasonId,
     playerId,
-    pointValues(
-      (table ?? []).map((row) => ({
-        wins: row.wins ?? 0,
-        draws: row.draws ?? 0,
-        points: row.points ?? 0,
-      }))
-    )
+    values
   );
   if (!story) return new Response("They did not play in this season", { status: 404 });
 
@@ -63,6 +64,8 @@ export async function GET(
       seasonName: season.name,
       finished: season.is_finished ?? false,
       partnerName: story.partner ? names.get(story.partner.playerId) : undefined,
+      nemesisName: story.nemesis ? names.get(story.nemesis.playerId) : undefined,
+      values,
     },
     await cardFonts()
   );
