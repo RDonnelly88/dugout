@@ -6,7 +6,7 @@ import { HelpCircle } from "lucide-react";
 import { getMatches } from "@/lib/db";
 import { useTeam } from "@/contexts/TeamContext";
 import { useSideNames } from "@/hooks/useSideNames";
-import { ELO } from "@/lib/config";
+import { ELO, XW } from "@/lib/config";
 import { displayRating } from "@/lib/elo";
 import { workedExample, fadeCurve } from "@/lib/ratings-guide";
 import { Frac, Line, Sup, Var, Working } from "@/components/ratings/Formula";
@@ -225,7 +225,7 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
                 Does a higher rating mean I will win?
               </dt>
               <dd className="mt-0.5 text-muted-foreground">
-                Not really. Sides get picked to be even, so most Mondays are
+                Not really. Sides get picked to be even, so most nights are
                 close to a coin toss whatever the table says. The rating is
                 for picking fair teams, not for predicting the result.
               </dd>
@@ -253,13 +253,59 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
                 Why did my number move when I didn&apos;t play?
               </dt>
               <dd className="mt-0.5 text-muted-foreground">
-                Every match the squad plays makes your games a match older, so
-                they count for a little less and your rating eases back towards{" "}
-                {ELO.start}. The people from your games have also carried on
-                playing and may have been re-rated.
+                Nothing is given or taken away for missing a game. But every
+                match the squad plays makes your games a match older, so they
+                count for a little less and your rating eases back towards{" "}
+                {ELO.start} — up if you are below it, down if you are above. The
+                people from your games have also carried on playing and may
+                have been re-rated, which can move you either way. The rating
+                card says &ldquo;while away&rdquo; beside a change like that.
+              </dd>
+            </div>
+            <div>
+              <dt className="font-medium">Is the rating the same as the league table?</dt>
+              <dd className="mt-0.5 text-muted-foreground">
+                No. The table is points from this season&apos;s results, and
+                that decides the champion. The rating is how good the results
+                say you are, over the squad&apos;s last {ELO.window} matches
+                whichever season they fell in, and it is what evens up the
+                sides.
               </dd>
             </div>
           </dl>
+        </Section>
+
+        <Section title="Records first, the odds a tap away">
+          <div className="space-y-3 text-sm text-muted-foreground">
+            <p>
+              Wherever players are measured together — your chemistry, the
+              line-up lab, the squad web, a season wrapped — the first answer
+              is the record: won, drawn and lost, and points a game, set against
+              what you average anyway. That is the question most people are
+              asking.
+            </p>
+            <p>
+              Behind the{" "}
+              <span className="font-medium text-foreground">Against the odds</span>{" "}
+              switch is the same set of games measured another way. Before every
+              kick-off the ratings give each side a chance of winning; added up,
+              those chances are{" "}
+              <span className="font-medium text-foreground">expected wins</span>,
+              or xW. A side given 40% that wins has beaten the odds by 0.6 of a
+              win, with a draw counting half. Because the odds already allow for
+              everybody else on the pitch, beating your xW means you did better
+              than the sides you were in should have — not just that you were
+              picked into good ones.
+            </p>
+            <p>
+              Luck moves the gap too, so every xW comes with a band showing how
+              far luck alone could take it, and a verdict in words: too early to
+              say under {XW.minGames} games, could be luck inside the band,
+              better or worse than luck outside it. On a record, anything on
+              fewer than {XW.minGames} games together is listed last and left
+              uncoloured, so one good night cannot pass for a partnership.
+            </p>
+          </div>
         </Section>
 
         <Section title="The actual sums">

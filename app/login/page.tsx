@@ -3,6 +3,7 @@ import {
   Dices,
   Handshake,
   LineChart,
+  Sparkles,
   Trophy,
 } from "lucide-react";
 import LoginForm from "@/components/LoginForm";
@@ -11,7 +12,7 @@ const FEATURES = [
   {
     Icon: Dices,
     title: "Pick the sides",
-    body: "Shuffle them, even them up by rating, or sort them out yourself.",
+    body: "Shuffle them, even them up by rating, deal them down the league table, or sort them out yourself.",
   },
   {
     Icon: Trophy,
@@ -21,12 +22,17 @@ const FEATURES = [
   {
     Icon: LineChart,
     title: "Rate everyone",
-    body: "Elo adapted for five-a-side, so the ladder keeps up with who is actually turning out.",
+    body: "Elo adapted for five-a-side, fitted to the squad's recent matches, so the ladder keeps up with who is actually turning out.",
   },
   {
     Icon: Handshake,
     title: "Find out who works together",
-    body: "Who you win with and who you come unstuck against — measured against the odds you were given, not off one lucky night.",
+    body: "Your record with and against everybody, and a line-up lab for any two to five of you — with the same games against the odds a tap away for the fair comparison.",
+  },
+  {
+    Icon: Sparkles,
+    title: "Wrap up the season",
+    body: "Everybody's season as a story to tap through, and a picture of it to send to the group.",
   },
 ];
 
@@ -43,11 +49,13 @@ export default function LoginPage() {
     <main className="min-h-screen bg-bg px-4 py-10 md:py-16">
       <div className="mx-auto grid w-full max-w-5xl items-start gap-10 lg:grid-cols-2 lg:gap-16">
         <div className="order-2 lg:order-1">
-          <p className="eyebrow">The Dugout</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-            Five-a-side, settled.
+          <p className="page-kicker">The Dugout</p>
+          {/* Held together: at this size the column would otherwise break
+              the name of the game at its hyphens. */}
+          <h1 className="page-title mt-3">
+            <span className="whitespace-nowrap">Five-a-side,</span> settled.
           </h1>
-          <p className="mt-3 max-w-prose text-muted-foreground">
+          <p className="page-subtitle">
             Keep the results, split the teams fairly, and put an end to the
             argument about who is actually any good.
           </p>
