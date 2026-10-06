@@ -2,107 +2,107 @@
 
 import Link from "next/link";
 import React from "react";
-
-import { ArrowLeft, Edit, Trophy, Flag, Sparkles } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, Edit, Network } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { SegmentedControl, SegmentedControlItem } from "@/components/ui/segmented-control";
 import { usePlayerDetail } from "@/hooks/usePlayerDetail";
-import { usePlayerRank } from "@/hooks/usePlayerRank";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
-import PlayerSeasonStats from "@/components/players/PlayerSeasonStats";
-import ResultStrip from "@/components/players/ResultStrip";
-import PlayerChemistry from "@/components/players/PlayerChemistry";
-import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
-import type { RecentResult } from "@/types";
-import PlayerAvatar from "@/components/players/PlayerAvatar";
+import { usePlayerRatings } from "@/hooks/usePlayerRatings";
+import { usePointValues } from "@/hooks/usePointValues";
+import { usePermission } from "@/lib/permission-utils";
+import { useTeam } from "@/contexts/TeamContext";
+import { getPlayers } from "@/lib/db";
+import PlayerHero from "@/components/players/PlayerHero";
+import PlayerHighlights from "@/components/players/PlayerHighlights";
+import PlayerSeasonsList from "@/components/players/PlayerSeasonsList";
 import PlayerRatingCard from "@/components/players/PlayerRatingCard";
-import PageHeader from "@/components/PageHeader";
-import { AVATAR_TRANSITION } from "@/components/TransitionLink";
+import PlayerWeb from "@/components/wrapped/PlayerWeb";
 import MatchListItem from "@/components/matches/MatchListItem";
-import MatchCard from "@/components/matches/MatchCard";
-import { Rail } from "@/components/ui/rail";
-import { outcomeOf, sideOf } from "@/lib/match-result";
+import SectionHeading from "@/components/SectionHeading";
+import { matchExpectations } from "@/lib/expected-wins";
+import { highlightsFor } from "@/lib/player-highlights";
+import { playerSeasons } from "@/lib/player-seasons";
 import { recentResults } from "@/lib/recent-results";
 import { ratingSwings } from "@/lib/match-impact";
-import { StatTile, StatTiles } from "@/components/StatTile";
-import SectionHeading from "@/components/SectionHeading";
+import { pointsPerGame, ppg } from "@/lib/measure";
+import { cn } from "@/lib/utils";
+import type { RecentResult } from "@/types";
 
 /** How many of a player's matches to list before asking. */
 const MATCHES_SHOWN = 10;
-/** How many nights the rail at the top runs back. */
-const RECENT_NIGHTS = 10;
 
+type View = "overview" | "web" | "matches" | "seasons";
+
+const VIEWS: { value: View; label: string }[] = [
+  { value: "overview", label: "Overview" },
+  { value: "web", label: "Web" },
+  { value: "matches", label: "Matches" },
+  { value: "seasons", label: "Seasons" },
+];
+
+/**
+ * One player, from the top: who they are and where they stand, then four
+ * ways into the rest — the headline numbers, the web of who they play with
+ * and against, every match, and every season.
+ *
+ * A stretch picked at the top ("all time", or one season) applies to all of
+ * it but the seasons, which are the stretches themselves. Everything is read
+ * off the matches through the same pieces a season wrapped uses, so the two
+ * name the same best partner for the same games.
+ */
 const PlayerDetail = () => {
+  const [view, setView] = React.useState<View>("overview");
+  const [stretch, setStretch] = React.useState<string>("all");
   const [showAllMatches, setShowAllMatches] = React.useState(false);
-  const {
-    player,
-    playerMatches,
-    allMatches,
-    seasons,
-    seasonStats,
-    setSelectedSeasonId,
-    selectedSeason,
-    viewpointOf,
-    isLoading,
-    router
-  } = usePlayerDetail();
-
-  // From every match, not just this player's: what a side carried into a game
-  // depends on everything played before it.
-  const swings = React.useMemo(() => ratingSwings(allMatches), [allMatches]);
-
-  // The same all-time record every other surface reads. Resolved before the
-  // early returns below, because hooks cannot run conditionally; an unknown id
-  // yields a record of zeroes rather than undefined.
+  const { player, allMatches, seasons, viewpointOf, isLoading, router } = usePlayerDetail();
+  const { currentTeam } = useTeam();
+  const { canManage } = usePermission();
   const { recordFor } = usePlayerRecords();
-  const record = recordFor(player?.id ?? "", player?.name ?? "");
+  const { ratingFor, all: rated } = usePlayerRatings();
+  const values = usePointValues();
 
-  // The squad's last five nights, with the ones this player missed marked —
-  // the same run every other strip in the app draws. Their own last five
-  // results would close the gaps up and read as an unbroken run. Also above
-  // the early returns, for the same reason as the record.
+  const { data: players = [] } = useQuery({
+    queryKey: ["players", currentTeam?.id],
+    queryFn: getPlayers,
+    enabled: !!currentTeam,
+  });
+  const byId = React.useMemo(() => new Map(players.map((p) => [p.id, p])), [players]);
+  const playerFor = React.useCallback((id: string) => byId.get(id), [byId]);
+
+  const id = player?.id ?? "";
+  const swings = React.useMemo(() => ratingSwings(allMatches), [allMatches]);
+  const odds = React.useMemo(() => matchExpectations(allMatches), [allMatches]);
   const lastFive: RecentResult[] = React.useMemo(
-    () => recentResults(allMatches).get(player?.id ?? "")?.results ?? [],
-    [allMatches, player?.id]
+    () => recentResults(allMatches).get(id)?.results ?? [],
+    [allMatches, id]
+  );
+  const career = React.useMemo(
+    () => playerSeasons(allMatches, seasons, id, values),
+    [allMatches, seasons, id, values]
   );
 
-  // Every season, newest first: the run is about them, not the season picked.
-  const recentNights = React.useMemo(
+  const inStretch = React.useMemo(
+    () => (stretch === "all" ? allMatches : allMatches.filter((m) => m.seasonId === stretch)),
+    [allMatches, stretch]
+  );
+  const highlights = React.useMemo(
+    () => (id ? highlightsFor(inStretch, odds, id, values) : null),
+    [inStretch, odds, id, values]
+  );
+  const theirMatches = React.useMemo(
     () =>
-      allMatches
-        .filter((m) => outcomeOf(m) !== null && sideOf(m, player?.id ?? "") !== null)
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        .slice(0, RECENT_NIGHTS),
-    [allMatches, player?.id]
-  );
-
-  // Get current season
-  const currentSeason = seasons.find(s => s.isCurrent);
-  
-  // Get player's current season stats
-  const currentSeasonStats = currentSeason 
-    ? seasonStats.find(stat => stat.seasonId === currentSeason.id)
-    : null;
-
-  // Use the shared hook for consistent rank calculation
-  const { rank: playerRank, hasPlayedCurrentSeason } = usePlayerRank(
-    currentSeason?.id || null,
-    player?.id || null
+      inStretch
+        .filter((m) => viewpointOf(m))
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+    [inStretch, viewpointOf]
   );
 
   if (isLoading) {
     return (
       <div className="page-container">
-        <div className="flex items-center gap-2 mb-6">
-          <Button variant="ghost" size="sm" onClick={() => router.back()}>
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back
-          </Button>
-        </div>
-        <div className="sheen rounded-xl h-[200px] mb-8"></div>
-        <div className="sheen rounded-xl h-[400px]"></div>
+        <div className="sheen mb-6 h-[260px] rounded-2xl" />
+        <div className="sheen h-[400px] rounded-xl" />
       </div>
     );
   }
@@ -110,192 +110,180 @@ const PlayerDetail = () => {
   if (!player) {
     return (
       <div className="page-container">
-        <div className="flex items-center gap-2 mb-6">
-          <Button variant="ghost" size="sm" onClick={() => router.back()}>
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back
-          </Button>
-        </div>
         <div className="p-6 text-center">
           <h2 className="text-xl font-medium">Player not found</h2>
-          <p className="text-muted-foreground mt-2">This player may have been deleted.</p>
+          <p className="mt-2 text-muted-foreground">This player may have been deleted.</p>
           <Button className="mt-4" asChild>
-            <Link href="/players">View All Players</Link>
+            <Link href="/players">The squad</Link>
           </Button>
         </div>
       </div>
     );
   }
 
-  const orderedMatches = [...playerMatches].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
-  const shownMatches = showAllMatches
-    ? orderedMatches
-    : orderedMatches.slice(0, MATCHES_SHOWN);
+  const rating = ratingFor(player.id);
+  const squadRank = rating ? rated.findIndex((r) => r.playerId === player.id) + 1 : null;
+  const current = career.find((row) => row.season.isCurrent) ?? null;
+  const shownMatches = showAllMatches ? theirMatches : theirMatches.slice(0, MATCHES_SHOWN);
+  const stretchName =
+    stretch === "all" ? "all time" : (seasons.find((s) => s.id === stretch)?.name ?? "this season");
+  const first = player.name.split(/\s+/)[0];
 
   return (
     <div className="page-container animate-slide-up">
-      <div className="flex items-center justify-between mb-6">
-        <Button variant="ghost" size="sm" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4 mr-1" />
+      <div className="mb-4 flex items-center justify-between">
+        <Button variant="ghost" size="sm" onClick={() => router.back()} className="-ml-2">
+          <ArrowLeft className="mr-1 h-4 w-4" />
           Back
         </Button>
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/players/edit/${player.id}`}>
-            <Edit className="h-4 w-4 mr-1" />
-            Edit
-          </Link>
-        </Button>
-      </div>
-
-      <PageHeader
-        title={
-          <span className="flex items-center gap-3">
-            {/* The other half of the transition begun on the card that was
-                tapped: same name, so the browser carries one face across. */}
-            <PlayerAvatar
-              name={player.name}
-              image={player.image}
-              size="lg"
-              style={{ viewTransitionName: AVATAR_TRANSITION }}
-            />
-            {player.name}
-          </span>
-        }
-        badges={<PlayerSeasonStars playerId={player.id} size="lg" />}
-        subtitle={
-          <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            <span>{record.played} matches</span>
-            <span>
-              {seasons.length} {seasons.length === 1 ? "season" : "seasons"}
-            </span>
-            {currentSeason && hasPlayedCurrentSeason && playerRank && (
-              <span>#{playerRank} this season</span>
-            )}
-          </span>
-        }
-      >
-        <div className="flex items-center gap-3">
-          <span className="eyebrow">Last five</span>
-          <ResultStrip
-            results={lastFive}
-          />
-        </div>
-      </PageHeader>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <PlayerRatingCard playerId={player.id} playerName={player.name} />
-        {/* Current Season Stats */}
-        {currentSeasonStats && currentSeason && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trophy className="h-5 w-5 shrink-0 text-draw" />
-                {currentSeason.name}
-                {hasPlayedCurrentSeason && playerRank && (
-                  <Badge variant="outline">
-                    <Flag className="mr-1 h-3 w-3" />#{playerRank}
-                  </Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* The same tiles as everywhere else. These were a fourth style
-                  of the same four numbers. */}
-              <StatTiles>
-                <StatTile label="Played" value={currentSeasonStats.played} />
-                <StatTile label="Won" value={currentSeasonStats.wins} tone="win" />
-                <StatTile label="Drawn" value={currentSeasonStats.draws} tone="draw" />
-                <StatTile label="Lost" value={currentSeasonStats.losses} tone="loss" />
-              </StatTiles>
-              <p className="mt-4 text-sm text-muted-foreground">
-                {currentSeasonStats.points} points, winning{" "}
-                {Math.round(
-                  (currentSeasonStats.wins / Math.max(1, currentSeasonStats.played)) * 100
-                )}
-                % of them.
-              </p>
-            </CardContent>
-          </Card>
+        {canManage() && (
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/players/edit/${player.id}`}>
+              <Edit className="mr-1 h-4 w-4" />
+              Edit
+            </Link>
+          </Button>
         )}
-
       </div>
 
-      {/* Every season they played in, newest first, each opening their
-          story of it. */}
-      {seasonStats.some((stat) => stat.played > 0) && (
-        <div className="mb-8 flex flex-wrap items-center gap-2">
-          <span className="eyebrow mr-1 flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5 text-accent" />
-            Wrapped
-          </span>
-          {[...seasons]
-            .sort((x, y) => new Date(y.startDate).getTime() - new Date(x.startDate).getTime())
-            .filter((s) => seasonStats.some((stat) => stat.seasonId === s.id && stat.played > 0))
-            .map((s) => (
-              <Link
+      <PlayerHero
+        player={player}
+        rating={rating}
+        squadRank={squadRank}
+        squadSize={rated.length}
+        record={recordFor(player.id, player.name)}
+        current={current}
+        lastFive={lastFive}
+      />
+
+      {/* Sticky so the way between the four parts is always to hand on a
+          long page, without scrolling back to the top for it. */}
+      <div className="sticky top-[57px] z-10 -mx-4 mb-4 bg-background/90 px-4 py-2 backdrop-blur-md md:top-0 md:mx-0 md:px-0">
+        <SegmentedControl
+          label="Part of the page"
+          value={view}
+          onValueChange={(next) => setView(next as View)}
+          className="grid w-full grid-cols-4"
+        >
+          {VIEWS.map(({ value, label }) => (
+            <SegmentedControlItem key={value} value={value} className="justify-center py-1.5 text-sm font-medium">
+              {label}
+            </SegmentedControlItem>
+          ))}
+        </SegmentedControl>
+      </div>
+
+      {view !== "seasons" && career.length > 0 && (
+        <div className="-mx-4 mb-5 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
+          <fieldset aria-label="Over which stretch" className="flex w-max gap-1.5">
+            {[{ id: "all", name: "All time" }, ...career.map((row) => row.season)].map((s) => (
+              <button
                 key={s.id}
-                href={`/seasons/${s.id}/wrapped/${player.id}`}
-                className="focus-ring rounded-full border border-border bg-surface px-3 py-1 text-sm transition-colors hover:border-accent hover:text-accent"
+                type="button"
+                aria-pressed={stretch === s.id}
+                onClick={() => {
+                  setStretch(s.id);
+                  setShowAllMatches(false);
+                }}
+                className={cn(
+                  "focus-ring whitespace-nowrap rounded-full border px-3 py-1 text-sm transition-colors",
+                  stretch === s.id
+                    ? "border-accent bg-accent/15 text-foreground"
+                    : "border-border text-muted-foreground hover:text-foreground"
+                )}
               >
                 {s.name}
-              </Link>
+              </button>
             ))}
+          </fieldset>
         </div>
       )}
 
-      {/* Their latest nights as a run of small scoreboards, each lit in the
-          colour of how it went for them, before the full list further down. */}
-      {recentNights.length > 0 && (
-        <section className="mb-8">
-          <SectionHeading kicker={`The last ${recentNights.length}`} title="Recent nights" />
-          <Rail label={`${player.name}'s recent nights`}>
-            {recentNights.map((match) => (
-              <MatchCard key={match.id} match={match} side={sideOf(match, player.id) ?? undefined} />
-            ))}
-          </Rail>
-        </section>
+      {view === "overview" && (
+        <div className="space-y-8">
+          {highlights ? (
+            <section>
+              <SectionHeading
+                kicker={stretchName}
+                title={
+                  <span className="tabular">
+                    <span className="text-win">{highlights.record.wins}W</span>{" "}
+                    <span className="text-draw">{highlights.record.draws}D</span>{" "}
+                    <span className="text-loss">{highlights.record.losses}L</span>
+                  </span>
+                }
+                actions={
+                  values && (
+                    <span className="text-sm text-muted-foreground tabular">
+                      {ppg(pointsPerGame(highlights.record, values))} pts a game
+                    </span>
+                  )
+                }
+              />
+              <RecordBar
+                wins={highlights.record.wins}
+                draws={highlights.record.draws}
+                losses={highlights.record.losses}
+              />
+              <div className="mt-4">
+                <PlayerHighlights
+                  playerId={player.id}
+                  highlights={highlights}
+                  values={values}
+                  playerFor={playerFor}
+                />
+              </div>
+            </section>
+          ) : (
+            <Empty>{first} has not played {stretch === "all" ? "yet" : `in ${stretchName}`}.</Empty>
+          )}
+          <PlayerRatingCard playerId={player.id} playerName={player.name} />
+        </div>
       )}
 
-      <Tabs defaultValue="stats" className="mb-8">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="stats">All stats</TabsTrigger>
-          <TabsTrigger value="chemistry">Chemistry</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="stats">
-          <PlayerSeasonStats 
-            playerName={player.name}
-            overallStats={record}
-            seasonStats={seasonStats}
-            onSeasonSelect={setSelectedSeasonId}
-          />
-        </TabsContent>
-        
-        <TabsContent value="chemistry">
-          <PlayerChemistry playerId={player.id} playerName={player.name} />
-        </TabsContent>
-      </Tabs>
-
-      <div className="mt-8">
-        <SectionHeading
-          kicker={selectedSeason ? selectedSeason.name : "All time"}
-          title={`Every match${playerMatches.length ? ` · ${playerMatches.length}` : ""}`}
-        />
-
-        {playerMatches.length === 0 ? (
-          <div className="rounded-lg bg-surface-2/40 p-8 text-center">
-            <p className="text-muted-foreground">
-              {selectedSeason
-                ? `${player.name} did not play in ${selectedSeason.name}.`
-                : `${player.name} has not played yet.`}
+      {view === "web" &&
+        (highlights && values ? (
+          <section>
+            <SectionHeading
+              kicker={stretchName}
+              title={`${first}'s web`}
+              actions={
+                <Link
+                  href={`/lineups?p=${player.id}`}
+                  className="flex items-center gap-1 text-sm text-accent hover:underline"
+                >
+                  <Network className="h-4 w-4" />
+                  Line-up lab
+                </Link>
+              }
+            />
+            <p className="mb-4 text-sm text-muted-foreground">
+              Everybody {first} has played with or against, round them. Green
+              where they took more points a game than their own average, red
+              where fewer; thicker is more games. Tap a face for the numbers.
             </p>
-          </div>
+            <div className="rounded-2xl border border-border bg-surface p-4">
+              <PlayerWeb
+                player={player}
+                own={highlights.record}
+                mates={highlights.mates}
+                opponents={highlights.opponents}
+                playerFor={playerFor}
+                values={values}
+                across={stretch === "all" ? "all their games" : stretchName}
+              />
+            </div>
+          </section>
         ) : (
-          <>
-            {/* The same row as the matches page, rather than a second design
-                for the same list — with this player's own result on the end. */}
+          <Empty>Nothing to draw {stretch === "all" ? "yet" : `for ${stretchName}`}.</Empty>
+        ))}
+
+      {view === "matches" &&
+        (theirMatches.length === 0 ? (
+          <Empty>{first} has not played {stretch === "all" ? "yet" : `in ${stretchName}`}.</Empty>
+        ) : (
+          <section>
+            <SectionHeading kicker={stretchName} title={`Every match · ${theirMatches.length}`} />
             <ul className="space-y-2">
               {shownMatches.map((match) => (
                 <MatchListItem
@@ -306,26 +294,46 @@ const PlayerDetail = () => {
                 />
               ))}
             </ul>
-
-            {/* Somebody with two years behind them has fifty of these, which
-                is a great deal of scrolling past to reach nothing, and a page
-                too tall for the browser to photograph in one piece. */}
-            {playerMatches.length > MATCHES_SHOWN && (
+            {theirMatches.length > MATCHES_SHOWN && (
               <Button
                 variant="outline"
                 className="mt-3 w-full"
                 onClick={() => setShowAllMatches((shown) => !shown)}
               >
-                {showAllMatches
-                  ? "Show fewer"
-                  : `Show all ${playerMatches.length}`}
+                {showAllMatches ? "Show fewer" : `Show all ${theirMatches.length}`}
               </Button>
             )}
-          </>
-        )}
-      </div>
+          </section>
+        ))}
+
+      {view === "seasons" && (
+        <section>
+          <SectionHeading kicker="Season by season" title={`${career.length} ${career.length === 1 ? "season" : "seasons"}`} />
+          <PlayerSeasonsList playerId={player.id} seasons={career} />
+        </section>
+      )}
     </div>
   );
 };
+
+/** Wins, draws and defeats as one bar, in the app's three colours. */
+function RecordBar({ wins, draws, losses }: { wins: number; draws: number; losses: number }) {
+  const total = Math.max(1, wins + draws + losses);
+  return (
+    <div className="flex h-2.5 gap-0.5 overflow-hidden rounded-full" aria-hidden>
+      <div className="bg-win" style={{ width: `${(wins / total) * 100}%` }} />
+      <div className="bg-draw" style={{ width: `${(draws / total) * 100}%` }} />
+      <div className="bg-loss" style={{ width: `${(losses / total) * 100}%` }} />
+    </div>
+  );
+}
+
+function Empty({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+      {children}
+    </div>
+  );
+}
 
 export default PlayerDetail;

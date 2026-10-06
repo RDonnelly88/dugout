@@ -44,6 +44,7 @@ export default function PlayerWeb({
   opponents,
   playerFor,
   values,
+  across = "the season",
 }: {
   player: Player;
   /** Their own season, the baseline a spoke is read against. */
@@ -53,6 +54,8 @@ export default function PlayerWeb({
   playerFor: (id: string) => Player | undefined;
   /** What a win and a draw were worth this season, read off its table. */
   values: PointValues;
+  /** The stretch the baseline covers, as the caption names it. */
+  across?: string;
 }) {
   const [side, setSide] = useState<"with" | "against">("with");
   const measure = "record";
@@ -184,7 +187,7 @@ export default function PlayerWeb({
           <span className={cn("font-semibold", TEXT[tone(selected.ledger, measure, points, baseline)])}>
             {ppg(pointsPerGame(selected.ledger, points))} pts a game
           </span>{" "}
-          {side === "with" ? "with them" : "against them"}, and {ppg(baseline)} across the season.
+          {side === "with" ? "with them" : "against them"}, and {ppg(baseline)} across {across}.
           {!enoughGames(selected.ledger) && <span className="opacity-70"> Too few games to say much.</span>}
         </p>
       )}
