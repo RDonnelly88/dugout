@@ -20,14 +20,15 @@
  * Tuned by replaying simulated seasons — five-a-side, picked roughly level,
  * irregular turnout, some players improving and some fading — and scoring
  * each setting on how well it called the next result and how closely it
- * ranked the true order. A shorter memory notices a player improving or slipping sooner
- * and ranks everybody else worse for it, because a five-a-side result says
- * very little about any one of the ten. Thirty matches is a choice
- * about what the table should describe — roughly the last season of games —
- * rather than the sixty that ranked best in those tests. Counting the window in each player's
- * own games instead of the squad's matches ranked noticeably better in the
- * same tests, at the cost of an absent player's rating standing still rather
- * than easing back.
+ * ranked the true order. A shorter memory notices a player improving or
+ * slipping sooner and ranks everybody else worse for it, because a
+ * five-a-side result says very little about any one of the ten. A half-life
+ * of twenty and a window of forty beat fifteen and thirty on every measure in
+ * those tests — ranking, calling results and spotting a change — while still
+ * describing a recent stretch of games rather than the sixty that ranked
+ * best. Counting the window in each player's own games instead of the
+ * squad's matches ranked better again, at the cost of an absent player's
+ * rating standing still rather than easing back.
  */
 export const ELO = {
   /** Everyone starts level. The number is arbitrary; only differences matter. */
@@ -37,7 +38,7 @@ export const ELO = {
    * Matches the squad has played since a game, after which it counts half as
    * much towards a rating as the latest.
    */
-  halfLife: 15,
+  halfLife: 20,
 
   /**
    * Matches the squad has played since a game, after which it no longer
@@ -45,7 +46,7 @@ export const ELO = {
    * already counting for a quarter, so nobody's rating lurches the week an
    * old result leaves.
    */
-  window: 30,
+  window: 40,
 
   /**
    * How far apart the squad is assumed to be before any results come in, in
