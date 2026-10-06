@@ -79,12 +79,12 @@ export default function RatingsPage() {
         actions={<RatingsGuide players={players} />}
         subtitle={
           <>
-            Elo&apos;s scale, fitted to five-a-side. A side is rated at the
-            average of its players and beating a stronger team says more than
-            beating a weaker one. After every match the whole table is worked
-            out again from the squad&apos;s last {ELO.window} matches, the
-            newest counting most, so a good spell two years ago no longer
-            props anybody up. A win is a win — a thrashing counts the same as
+            Elo, adapted for five-a-side. A side is rated at the average of its
+            players and beating a stronger team says more than beating a
+            weaker one. Each result is settled on the night and never
+            revisited, and it fades as the squad plays on: only the last{" "}
+            {ELO.window} matches count, the newest most, so a good spell two
+            years ago no longer props anybody up. A win is a win — a thrashing counts the same as
             a scrape. Everybody has a rating from their first game, and one
             under {ELO.settledAfter} games is marked as a rough guess. Time
             away lets your games age, so a rating eases back towards{" "}

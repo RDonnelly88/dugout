@@ -103,7 +103,7 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
       }
     >
       <div className="space-y-6">
-        <Section title="After every match, in three steps">
+        <Section title="Every match, in three steps">
           <div className="space-y-4">
             <Step n={1} title="Each side is averaged">
               A team is worth the average of the players in it. Nothing else
@@ -114,11 +114,14 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
               newest counts in full, one {ELO.halfLife} matches back counts
               half, and anything older does not count at all.
             </Step>
-            <Step n={3} title="The whole table is worked out again">
-              Everybody&apos;s rating is set to whatever best explains who beat
-              whom, given who was on each side. Winning beside strong
-              team-mates says less about you than winning beside weak ones,
-              and as their ratings settle, so does what your results meant.
+            <Step n={3} title="The result is settled, once">
+              The two averages give each side a chance of winning, and
+              everybody on a side moves by {ELO.k} times the gap between that
+              chance and what they took: a win you were given 30% for is worth{" "}
+              {Math.round(ELO.k * 0.7)} points, one you were given 70% for is
+              worth {Math.round(ELO.k * 0.3)}. That amount is fixed on the
+              night. Nothing that happens later changes what a game was worth;
+              it only counts for less as it ages.
             </Step>
           </div>
         </Section>
@@ -145,8 +148,8 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
                 <span className="tabular">{pct(example.expected)}</span> to win.
               </p>
               <p className="mt-2 text-muted-foreground">
-                {example.drawn ? "They drew" : "They won"}, and the table was
-                worked out again with that result in it. For{" "}
+                {example.drawn ? "They drew" : "They won"}, and that result was
+                settled there and then. For{" "}
                 {example.winner.name}:
               </p>
 
@@ -180,10 +183,13 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
                   ))}
               </ul>
               <p className="mt-3 text-xs text-muted-foreground">
-                Same result, same side, different numbers. The fewer games a
-                rating rests on, the more one more result says about it — and
-                the ratings around each player in their older games matter
-                too.
+                Everybody on {example.winner.name} took the same{" "}
+                <span className="tabular">
+                  {signed(ELO.k * ((example.drawn ? 0.5 : 1) - example.expected))}
+                </span>{" "}
+                for the result itself. The rest of each number is their older
+                games each counting a match less, which is why it differs from
+                one player to the next.
               </p>
             </div>
           </Section>
@@ -242,10 +248,10 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
             <div>
               <dt className="font-medium">I am new. Am I treated differently?</dt>
               <dd className="mt-0.5 text-muted-foreground">
-                Only in that your first results move you further than they
-                would a regular — with little else to go on, each one says
-                more. The number is marked as a rough guess until{" "}
-                {ELO.settledAfter} games are behind it.
+                No. You start on {ELO.start} and your games count exactly as
+                anybody else&apos;s do. The number is marked as a rough guess
+                until {ELO.settledAfter} games are behind it, because a handful
+                of results says little about anybody.
               </dd>
             </div>
             <div>
@@ -253,16 +259,12 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
                 Why did my number move when I didn&apos;t play?
               </dt>
               <dd className="mt-0.5 text-muted-foreground">
-                Nothing is given or taken away for missing a game. But every
-                match the squad plays makes your games a match older, so they
-                count for a little less and your rating eases back towards{" "}
-                {ELO.start} — up if you are below it, down if you are above.
-                Your old results are also re-judged as the people in them move.
-                Beat somebody who has been winning since, and that win counts
-                for a bit more; win beside somebody who has been winning since,
-                and you had more help than it looked, so it counts for a bit
-                less. Those nudges are small. The rating card
-                says &ldquo;while away&rdquo; beside a change like that.
+                Nothing is given or taken away for missing a game, and no game
+                is ever re-judged. But every match the squad plays makes your
+                games a match older, so each counts for a little less and your
+                rating eases back towards {ELO.start} — up if you are below it,
+                down if you are above. The rating card says &ldquo;while
+                away&rdquo; beside a change like that.
               </dd>
             </div>
             <div>
@@ -346,19 +348,30 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
               </span>
             </Line>
 
-            <Line name="ratings">
+            <Line name="change">
+              <span>{ELO.k}</span>
+              <span className="mx-1 text-muted-foreground">×</span>
+              <span>(</span>
+              <Var>result</Var>
+              <span className="mx-1 text-muted-foreground">−</span>
+              <Var>expected</Var>
+              <span>)</span>
+              <span className="ml-2 text-xs text-muted-foreground">fixed on the night</span>
+            </Line>
+
+            <Line name="rating">
+              <span>{ELO.start}</span>
+              <span className="mx-1 text-muted-foreground">+</span>
               <span className="text-sm">
-                the set where, for every player, the weighted{" "}
-                <Var>expected</Var> adds up to the weighted <Var>result</Var>
+                every <Var>change</Var> × its <Var>weight</Var> now
               </span>
             </Line>
           </Working>
 
           <p className="mt-2 text-xs text-muted-foreground">
-            Result is 1 for a win, ½ for a draw, 0 for a defeat. Every rating
-            is also held towards {ELO.start} with a give of about{" "}
-            {ELO.spread} points, so it takes results to move one and a single
-            win cannot make anybody a world-beater.
+            Result is 1 for a win, ½ for a draw, 0 for a defeat, and the same
+            for everybody on the side. The most one game can move anybody is{" "}
+            {ELO.k} points, and only for a result nobody saw coming.
           </p>
         </Section>
       </div>

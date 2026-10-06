@@ -6,29 +6,26 @@
 /**
  * The rating model.
  *
- * Elo's scale — everyone starts on 1200, and 400 points between two sides
- * makes one about a ten-to-one favourite — but not Elo's arithmetic. Rather
- * than nudging a running total after every game, the table is fitted afresh
- * after every match from the squad's recent matches: the ratings that best
- * explain who beat whom, with a side worth the mean of its players.
+ * Elo's scale and Elo's arithmetic — everyone starts on 1200, 400 points
+ * between two sides makes one about a ten-to-one favourite, and each game
+ * moves a side by `k` times how far the result beat or fell short of what it
+ * was expected to take — with one change: a game's effect fades. Each
+ * game's verdict is settled on the night from the ratings as they stood and
+ * never revisited, and then counts for less with every match the squad plays,
+ * and for nothing once it is `window` matches old.
  *
- * A running total never forgets. A great spell two years ago went on holding
- * a rating up long after the player had stopped being that player. A window
- * over the squad's matches forgets on purpose, and ages everybody's games at
- * the same rate whether they played the matches since or not.
+ * A running total never forgets, so a great spell two years ago went on
+ * holding a rating up long after the player had stopped being that player.
+ * Fading forgets on purpose, and ages everybody's games at the same rate
+ * whether they played the matches since or not.
  *
  * Tuned by replaying simulated seasons — five-a-side, picked roughly level,
- * irregular turnout, some players improving and some fading — and scoring
- * each setting on how well it called the next result and how closely it
- * ranked the true order. A shorter memory notices a player improving or
- * slipping sooner and ranks everybody else worse for it, because a
- * five-a-side result says very little about any one of the ten. A half-life
- * of twenty and a window of forty beat fifteen and thirty on every measure in
- * those tests — ranking, calling results and spotting a change — while still
- * describing a recent stretch of games rather than the sixty that ranked
- * best. Counting the window in each player's own games instead of the
- * squad's matches ranked better again, at the cost of an absent player's
- * rating standing still rather than easing back.
+ * irregular turnout, some players improving and some fading. Settling each
+ * game on the night ranked players and called results a little behind
+ * refitting every rating from the recent matches each week in most of those
+ * squads, and a little ahead in one. It is chosen for the thing people expect
+ * of a rating: what a game was worth is decided when it is played, and later
+ * results cannot reach back and change it.
  */
 export const ELO = {
   /** Everyone starts level. The number is arbitrary; only differences matter. */
@@ -49,17 +46,13 @@ export const ELO = {
   window: 40,
 
   /**
-   * How far apart the squad is assumed to be before any results come in, in
-   * rating points.
-   *
-   * Every rating is pulled towards `start` with this much give, so it takes
-   * results to move one and a single win cannot make anybody a world-beater.
-   * Smaller, and the table is cautious and bunched; larger, and it believes
-   * every hot streak. It is also what a player with few games behind them
-   * leans on most, which is why a debutant's number moves further on one
-   * result than a regular's does.
+   * How far one game can move a side: the most it can take from a win
+   * nobody gave it a chance in, or give up in a defeat it was sure of. An
+   * even game is worth half this either way. Classic Elo's figure; in the
+   * simulations it called results a shade better than 24 and ranked about
+   * the same.
    */
-  spread: 200,
+  k: 32,
 
   /**
    * Games before a rating stops being flagged as a rough guess.

@@ -230,7 +230,12 @@ describe("old games fade", () => {
   const versus = (player: string, won: boolean, tag: string) =>
     won ? match([player], [`${tag}`], 1, 0) : match([`${tag}`], [player], 1, 0);
 
-  it("forgets a result once it is a window's worth of games old", () => {
+  /**
+   * The early run still shaped the verdicts after it — a player expected to
+   * win is paid less for winning — but its own points are gone, so it
+   * cannot leave anybody higher than the recent games alone would.
+   */
+  it("props nobody up with a result a window's worth of games old", () => {
     const recent = Array.from({ length: ELO.window }, (_, i) =>
       versus("a", i % 2 === 0, `recent${i}`)
     );
@@ -241,7 +246,8 @@ describe("old games fade", () => {
     const withThem = computeRatings([...flyingStart, ...recent]).get("a")!;
     const without = computeRatings(recent).get("a")!;
 
-    expect(withThem.rating).toBeCloseTo(without.rating, 6);
+    expect(withThem.rating).toBeLessThanOrEqual(without.rating);
+    expect(withThem.counted).toBe(without.counted);
   });
 
   it("weighs a recent run above an older one", () => {
@@ -349,20 +355,35 @@ describe("computeRatings and matches missed", () => {
   });
 
   /**
-   * Your rating rests on who you played with and against. When one of them
-   * plays on and is re-rated, what your old results meant moves with them.
+   * A result is settled on the night. What anybody in that game does next
+   * cannot reach back into it, so somebody away moves by the fade alone.
    */
-  it("re-rates somebody away when a team-mate from their games plays on", () => {
-    const ratings = computeRatings([
-      match(["a", "mate"], ["x", "y"], 1, 0, "2026-01-01"),
-      match(["mate"], ["z"], 1, 0, "2026-01-02"),
-    ]);
-    const a = ratings.get("a")!;
+  it("moves somebody away by the fade alone, whatever their team-mates do next", () => {
+    const together = match(["a", "mate"], ["x", "y"], 1, 0, "2026-01-01");
+    const mateWins = computeRatings([together, match(["mate"], ["z"], 1, 0, "2026-01-02")]).get("a")!;
+    const mateLoses = computeRatings([together, match(["z"], ["mate"], 1, 0, "2026-01-02")]).get("a")!;
+    const first = mateWins.history[0].change;
 
-    // Their team-mate has just won again, so the old win together looks a
-    // little more like the team-mate's doing.
-    expect(a.lastChange).toBeLessThan(0);
-    expect(Math.abs(a.lastChange)).toBeLessThan(Math.abs(a.history[0].change));
+    expect(mateWins.rating).toBe(mateLoses.rating);
+    expect(mateWins.rating).toBeCloseTo(ELO.start + first * gameWeight(1), 9);
+  });
+
+  it("never changes a result's verdict once later matches are played", () => {
+    const opener = [
+      match(["a", "b"], ["c", "d"], 1, 0, "2026-01-01"),
+      match(["a", "c"], ["b", "d"], 0, 1, "2026-01-02"),
+    ];
+    const later = [
+      match(["b", "c"], ["a", "d"], 3, 0, "2026-01-03"),
+      match(["d"], ["a"], 1, 0, "2026-01-04"),
+    ];
+
+    const early = computeRatings(opener);
+    const all = computeRatings([...opener, ...later]);
+
+    for (const id of ["a", "b", "c", "d"]) {
+      expect(all.get(id)!.history.slice(0, 2)).toEqual(early.get(id)!.history);
+    }
   });
 
   it("notes every match missed, with where the rating stood", () => {
@@ -395,23 +416,27 @@ describe("computeRatings and matches missed", () => {
 });
 
 describe("a result across a side", () => {
-  it("moves a debutant further than a regular on the same result", () => {
-    const regular = Array.from({ length: 20 }, (_, i) =>
-      match(["vet"], [`v${i}`], i % 2, 1 - (i % 2))
-    );
-
+  /**
+   * The same result is worth the same to everybody on the side: a debutant
+   * and a regular who win together both take K × (1 − the odds), on top of
+   * whatever their older games fade by.
+   */
+  it("pays everyone on a side the same for the result", () => {
+    const sideA = ["a1", "a2", "a3"];
+    const sideB = ["b1", "b2", "b3"];
     const ratings = computeRatings([
-      ...regular,
-      match(["vet", "debutant"], ["x", "y"], 1, 0),
+      match(["a1"], ["b1"], 1, 0, "2026-01-01"),
+      match(sideA, sideB, 1, 0, "2026-01-02"),
     ]);
 
-    const vet = ratings.get("vet")!.history.at(-1)!;
-    const debutant = ratings.get("debutant")!.history.at(-1)!;
-
-    expect(debutant.countedBefore).toBe(0);
-    expect(vet.countedBefore).toBe(20);
-    expect(debutant.change).toBeGreaterThan(vet.change);
-    expect(vet.change).toBeGreaterThan(0);
+    const fresh = ratings.get("a2")!.rating - ELO.start;
+    const regular = ratings.get("a1")!;
+    const first = regular.history[0].change;
+    expect(regular.rating - ELO.start - first * gameWeight(1)).toBeCloseTo(fresh, 9);
+    expect(ratings.get("a3")!.rating).toBeCloseTo(ratings.get("a2")!.rating, 9);
+    expect(ELO.start - ratings.get("b2")!.rating).toBeCloseTo(fresh, 9);
+    expect(fresh).toBeGreaterThan(0);
+    expect(fresh).toBeLessThan(ELO.k);
   });
 
   it("flags a debutant's rating as a rough guess", () => {
@@ -453,15 +478,15 @@ describe("a result across a side", () => {
     }
   });
 
-  it("moves an uneven side's players by more each, being fewer to share it", () => {
+  it("moves each player on an uneven side by as much as each on the other", () => {
     const teamA = ["a1", "a2", "a3", "a4"];
     const teamB = ["b1", "b2", "b3", "b4", "b5"];
     const ratings = computeRatings([match(teamA, teamB, 2, 1)]);
 
     const up = ratings.get("a1")!.rating - ELO.start;
     const down = ELO.start - ratings.get("b1")!.rating;
-    expect(up).toBeGreaterThan(down);
-    expect(down).toBeGreaterThan(0);
+    expect(up).toBeCloseTo(ELO.k / 2, 9);
+    expect(down).toBeCloseTo(up, 9);
   });
 
   it("marks the nights a player was not there in the run they walk in on", () => {

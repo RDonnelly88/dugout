@@ -11,8 +11,7 @@ export interface SeriesPoint {
   opponentRating?: number;
   /**
    * How far this moved them: what the result was worth, or for a week away
-   * the small re-rating that comes from the people in their games having
-   * moved.
+   * the drift towards the start as their games grow a match older.
    */
   change: number;
 }
