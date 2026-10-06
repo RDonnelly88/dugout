@@ -1,5 +1,7 @@
 import { computeRatings, expectedScore } from "./elo";
-import { ledger, matchExpectations, type Night } from "./expected-wins";
+import { XW } from "./config";
+import { pointsPerGame } from "./measure";
+import type { PointValues } from "./season-positions";
 import { outcomeOf } from "./match-result";
 import type { Match } from "@/types";
 
@@ -44,8 +46,10 @@ interface Upset {
 interface Partnership {
   playerIds: [string, string];
   played: number;
-  /** Wins together above what their sides were expected to take. */
-  above: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  pointsPerGame: number;
 }
 
 export interface SeasonWrap {
@@ -58,7 +62,7 @@ export interface SeasonWrap {
   everPresent: Turnout | null;
   /** The result the table least expected. */
   upset: Upset | null;
-  /** The two who win most when they are on the same side. */
+  /** The two with the best record on the same side. */
   partnership: Partnership | null;
 }
 
@@ -195,54 +199,51 @@ function biggestUpset(fixtures: Match[], ratings: RatingTable): Upset | null {
 }
 
 /**
- * The two who beat the odds by most when they were on the same side.
- *
- * Read from the pair itself rather than from either player's point of view,
- * and measured in expected wins, so a pair is not crowned for having been
- * put in strong teams: every game together counts against the chance their
- * side was given. A pair with too few games to say anything is passed over,
- * and so is the best of a season where no pair beat the odds at all.
+ * The two with the best record on the same side: most points a game
+ * together, over enough games to mean something, and more games first
+ * between two pairs level on points. A season where no pair has played
+ * enough together has no best pair yet.
  */
-function partnership(matches: Match[], odds: Map<string, number>): Partnership | null {
-  const together = new Map<string, Night[]>();
+function partnership(matches: Match[], values: PointValues): Partnership | null {
+  const together = new Map<string, { played: number; wins: number; draws: number; losses: number }>();
 
   for (const match of played(matches)) {
     const outcome = outcomeOf(match)!;
-    const chanceA = odds.get(match.id);
-    if (chanceA === undefined) continue;
     for (const [side, key] of [
       [match.teamA.players, "a"],
       [match.teamB.players, "b"],
     ] as const) {
       const result = outcome === "draw" ? "draw" : outcome === key ? "win" : "loss";
-      const night: Night = {
-        matchId: match.id,
-        date: match.date,
-        result,
-        actual: result === "win" ? 1 : result === "draw" ? 0.5 : 0,
-        expected: key === "a" ? chanceA : 1 - chanceA,
-      };
       const ordered = [...side].sort();
       for (let i = 0; i < ordered.length; i++) {
         for (let j = i + 1; j < ordered.length; j++) {
           const pair = `${ordered[i]}|${ordered[j]}`;
-          together.set(pair, [...(together.get(pair) ?? []), night]);
+          const tally = together.get(pair) ?? { played: 0, wins: 0, draws: 0, losses: 0 };
+          tally.played += 1;
+          if (result === "win") tally.wins += 1;
+          else if (result === "draw") tally.draws += 1;
+          else tally.losses += 1;
+          together.set(pair, tally);
         }
       }
     }
   }
 
   let best: Partnership | null = null;
-  for (const [pair, nights] of together) {
-    const sheet = ledger(nights);
-    if (sheet.verdict === "early") continue;
-    if (!best || sheet.above > best.above) {
+  for (const [pair, tally] of together) {
+    if (tally.played < XW.minGames) continue;
+    const perGame = pointsPerGame(tally, values);
+    if (
+      !best ||
+      perGame > best.pointsPerGame ||
+      (perGame === best.pointsPerGame && tally.played > best.played)
+    ) {
       const [one, two] = pair.split("|");
-      best = { playerIds: [one, two], played: sheet.played, above: sheet.above };
+      best = { playerIds: [one, two], ...tally, pointsPerGame: perGame };
     }
   }
 
-  return best && best.above > 0 ? best : null;
+  return best;
 }
 
 type RatingTable = ReturnType<typeof computeRatings>;
@@ -256,7 +257,9 @@ type RatingTable = ReturnType<typeof computeRatings>;
  */
 export function seasonWrap(
   history: Match[],
-  season: Match[] = history
+  season: Match[] = history,
+  /** What a win and a draw are worth, for the best pair's points a game. */
+  values: PointValues | null = null
 ): SeasonWrap {
   const fixtures = played(season);
   const ratings = computeRatings(history);
@@ -268,6 +271,6 @@ export function seasonWrap(
     streak: longestStreak(season),
     everPresent: everPresent(season),
     upset: biggestUpset(fixtures, ratings),
-    partnership: partnership(season, matchExpectations(history)),
+    partnership: values ? partnership(season, values) : null,
   };
 }

@@ -8,12 +8,23 @@ import { getMatches, getPlayers, getSeasons } from "@/lib/db";
 import { useTeam } from "@/contexts/TeamContext";
 import { ELO } from "@/lib/config";
 import { matchExpectations, signedWins, type Ledger } from "@/lib/expected-wins";
+import type { PointValues } from "@/lib/season-positions";
+import {
+  averagePointsPerGame,
+  enoughGames,
+  pointsPerGame,
+  ppg,
+  rankBy,
+  listTone,
+  type Measure,
+} from "@/lib/measure";
+import MeasureToggle from "@/components/MeasureToggle";
+import PointsBar from "@/components/PointsBar";
 import { lineupReport, LINEUP_MAX } from "@/lib/lineup";
 import { withinTimeline, type Timeline } from "@/lib/timeline";
 import { ringOrder, squadWeb } from "@/lib/squad-web";
 import { sideOf } from "@/lib/match-result";
-import { pointValues } from "@/lib/season-positions";
-import { usePlayerRecords } from "@/hooks/usePlayerRecords";
+import { usePointValues } from "@/hooks/usePointValues";
 import SquadWeb from "@/components/lineups/SquadWeb";
 import PageHeader from "@/components/PageHeader";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
@@ -80,24 +91,46 @@ function Record({ ledger }: { ledger: Ledger }) {
   );
 }
 
-/** The figure everything on this page is about, coloured by which way it went. */
-function Above({ ledger, className }: { ledger: Ledger; className?: string }) {
+/** How the page is being read, and the baseline a figure is set against. */
+interface Reading {
+  measure: Measure;
+  values: PointValues;
+  /** Points a game a figure is compared with, on the record. */
+  baseline: number;
+}
+
+const LEAN_TEXT = { ahead: "text-win", behind: "text-loss", level: "text-foreground" } as const;
+
+/**
+ * The figure a row is about, coloured by which way it went: points a game on
+ * the record, wins above expected against the odds.
+ */
+function Lean({ ledger, reading, className }: { ledger: Ledger; reading: Reading; className?: string }) {
   return (
     <span
       className={cn(
         "tabular font-semibold",
         ledger.played === 0
           ? "text-muted-foreground"
-          : ledger.above > 0.05
-            ? "text-win"
-            : ledger.above < -0.05
-              ? "text-loss"
-              : "text-foreground",
+          : LEAN_TEXT[listTone(ledger, reading.measure, reading.values, reading.baseline)],
         className
       )}
     >
-      {ledger.played === 0 ? "—" : signedWins(ledger.above)}
+      {ledger.played === 0
+        ? "—"
+        : reading.measure === "record"
+          ? ppg(pointsPerGame(ledger, reading.values))
+          : signedWins(ledger.above)}
     </span>
+  );
+}
+
+/** The bar beside a figure: points a game out of a win, or the luck band. */
+function Bar({ ledger, reading }: { ledger: Ledger; reading: Reading }) {
+  return reading.measure === "record" ? (
+    <PointsBar ledger={ledger} values={reading.values} baseline={reading.baseline} className="flex-1" />
+  ) : (
+    <LuckBar ledger={ledger} className="flex-1" />
   );
 }
 
@@ -106,11 +139,13 @@ function LedgerRow({
   label,
   faces,
   ledger,
+  reading,
   emphasis = false,
 }: {
   label: string;
   faces: Player[];
   ledger: Ledger;
+  reading: Reading;
   emphasis?: boolean;
 }) {
   return (
@@ -133,27 +168,41 @@ function LedgerRow({
               "Never happened"
             ) : (
               <>
-                {ledger.played} {ledger.played === 1 ? "game" : "games"} · <Record ledger={ledger} /> ·{" "}
-                <span className="tabular">
-                  {wins(ledger.actual)} won v {ledger.expected.toFixed(1)} xW
-                </span>
+                {ledger.played} {ledger.played === 1 ? "game" : "games"} · <Record ledger={ledger} />
+                {reading.measure === "odds" && (
+                  <span className="tabular">
+                    {" "}· {wins(ledger.actual)} won v {ledger.expected.toFixed(1)} xW
+                  </span>
+                )}
               </>
             )}
           </p>
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <LuckBar ledger={ledger} className="flex-1" />
-        <Above ledger={ledger} className="w-10 text-right text-sm" />
-        <Verdict verdict={ledger.verdict} className="hidden w-[7.5rem] justify-center sm:inline-flex" />
+        <Bar ledger={ledger} reading={reading} />
+        <Lean ledger={ledger} reading={reading} className="w-10 text-right text-sm" />
+        {reading.measure === "odds" && (
+          <Verdict verdict={ledger.verdict} className="hidden w-[7.5rem] justify-center sm:inline-flex" />
+        )}
       </div>
     </li>
   );
 }
 
-function Headline({ faces, ledger }: { faces: Player[]; ledger: Ledger }) {
+function Headline({
+  faces,
+  ledger,
+  reading,
+}: {
+  faces: Player[];
+  ledger: Ledger;
+  reading: Reading;
+}) {
   const who = names(faces.map((p) => p.name));
   const one = faces.length === 1;
+  const record = reading.measure === "record";
+  const box = "rounded-lg bg-surface-2/60 p-3";
 
   return (
     <Card className="grain overflow-hidden">
@@ -168,26 +217,64 @@ function Headline({ faces, ledger }: { faces: Player[]; ledger: Ledger }) {
             <p className="eyebrow">{one ? "On their own" : "On the same side"}</p>
             <h2 className="text-xl font-bold">{who}</h2>
           </div>
-          <Verdict verdict={ledger.verdict} className="ml-auto text-xs" />
+          {!record && <Verdict verdict={ledger.verdict} className="ml-auto text-xs" />}
         </div>
 
         {ledger.played === 0 ? (
           <p className="text-muted-foreground">
             {one ? "No games in this stretch." : "Never on the same side in this stretch."}
           </p>
+        ) : record ? (
+          <>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className={box}>
+                <p className="scoreboard text-4xl">{ledger.played}</p>
+                <p className="eyebrow mt-1">Played</p>
+              </div>
+              <div className={box}>
+                {/* Smaller on a phone: three two-figure counts and their
+                    dashes do not fit a third of the width at full size. */}
+                <p className="scoreboard whitespace-nowrap text-2xl sm:text-4xl">
+                  <span className="text-win">{ledger.wins}</span>
+                  <span className="text-muted-foreground">–</span>
+                  <span className="text-draw">{ledger.draws}</span>
+                  <span className="text-muted-foreground">–</span>
+                  <span className="text-loss">{ledger.losses}</span>
+                </p>
+                <p className="eyebrow mt-1">W–D–L</p>
+              </div>
+              <div className={box}>
+                <Lean ledger={ledger} reading={reading} className="scoreboard text-4xl" />
+                <p className="eyebrow mt-1">Pts a game</p>
+              </div>
+            </div>
+
+            <PointsBar ledger={ledger} values={reading.values} baseline={reading.baseline} />
+
+            <p className="text-sm text-muted-foreground">
+              {one
+                ? `${ppg(pointsPerGame(ledger, reading.values))} points a game over ${ledger.played} ${
+                    ledger.played === 1 ? "game" : "games"
+                  }, against the squad's ${ppg(reading.baseline)} — the tick on the bar.`
+                : `Together they took ${ppg(pointsPerGame(ledger, reading.values))} points a game. Each of them, whoever else was playing, averaged ${ppg(
+                    reading.baseline
+                  )} between them — the tick on the bar.`}{" "}
+              {!enoughGames(ledger) && "Too few games to read much into yet."}
+            </p>
+          </>
         ) : (
           <>
             <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-lg bg-surface-2/60 p-3">
+              <div className={box}>
                 <p className="scoreboard text-4xl">{wins(ledger.actual)}</p>
                 <p className="eyebrow mt-1">Won</p>
               </div>
-              <div className="rounded-lg bg-surface-2/60 p-3">
+              <div className={box}>
                 <p className="scoreboard text-4xl text-muted-foreground">{ledger.expected.toFixed(1)}</p>
                 <p className="eyebrow mt-1">xW</p>
               </div>
-              <div className="rounded-lg bg-surface-2/60 p-3">
-                <Above ledger={ledger} className="scoreboard text-4xl" />
+              <div className={box}>
+                <Lean ledger={ledger} reading={reading} className="scoreboard text-4xl" />
                 <p className="eyebrow mt-1">Above xW</p>
               </div>
             </div>
@@ -278,10 +365,7 @@ function LineupLab() {
 
   // Odds from the whole history; the stretch only decides which nights count.
   const odds = useMemo(() => matchExpectations(matches), [matches]);
-  // What a win and a draw are worth, read off the all-time table the views
-  // keep, for reading the web as a record.
-  const { records } = usePlayerRecords();
-  const values = useMemo(() => pointValues(records), [records]);
+  const values = usePointValues();
   const scoped = useMemo(() => withinTimeline(matches, timeline), [matches, timeline]);
 
   const candidates = useMemo(
@@ -340,6 +424,30 @@ function LineupLab() {
   const pickedPlayers = picked.map((id) => byId.get(id)!);
   const nameOf = (id: string) => byId.get(id)?.name ?? "Unknown";
 
+  // The record unless the address asks for the odds, and the odds alone
+  // until the table that says what a win is worth has loaded.
+  const measure: Measure = values && params.get("m") !== "odds" ? "record" : "odds";
+  const points = values ?? { win: 1, draw: 0.5 };
+  const squadAverage = averagePointsPerGame(web.players.map((p) => p.ledger), points);
+  // What the group is set against: on their own, each of them averages this
+  // between them, whoever else was playing. For one player, the squad.
+  const ownAverage = (() => {
+    const played = (report?.alone ?? []).filter((a) => a.ledger.played > 0);
+    if (picked.length < 2 || played.length === 0) return squadAverage;
+    return played.reduce((sum, a) => sum + pointsPerGame(a.ledger, points), 0) / played.length;
+  })();
+  const reading: Reading = { measure, values: points, baseline: ownAverage };
+  // A suggestion is read against the group as it stands: green if adding
+  // them took more points a game than the group takes already.
+  const additionReading: Reading = {
+    measure,
+    values: points,
+    baseline: report ? pointsPerGame(report.together, points) : 0,
+  };
+  const additions = report
+    ? rankBy(report.additions, measure, points, additionReading.baseline)
+    : [];
+
   const nightsTogether: Match[] = useMemo(() => {
     if (!report) return [];
     const ids = new Set(report.together.nights.map((n) => n.matchId));
@@ -352,7 +460,7 @@ function LineupLab() {
     <div className="page-container animate-slide-up">
       <PageHeader
         title="Line-up lab"
-        subtitle="Pick up to five players and see how they do on the same side: their results against what the ratings expected, who is making the difference, and who would complete them."
+        subtitle="Pick up to five players and see how they do on the same side: their record together, who is making the difference, and who would complete them — and, a tap away, the same games against the odds."
       />
 
       {/* One column on a phone, held to the screen: an auto-sized column would
@@ -473,9 +581,9 @@ function LineupLab() {
                   <Handshake className="mx-auto mb-3 h-8 w-8 text-accent" />
                   <p className="font-medium">Who plays well together?</p>
                   <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
-                    Pick two or three of the squad, or tap a line in the web below. Their results
-                    on the same side are measured against the odds the ratings gave each of those
-                    games, so the rest of the team is already taken into account.
+                    Pick two or three of the squad, or tap a line in the web below, for their record
+                    on the same side. Switch to against the odds to allow for who else was on each
+                    side.
                   </p>
                 </CardContent>
               </Card>
@@ -483,7 +591,15 @@ function LineupLab() {
             </>
           ) : (
             <>
-              <Headline faces={pickedPlayers} ledger={report.together} />
+              {values && (
+                <div className="flex items-center justify-end">
+                  <MeasureToggle
+                    value={measure}
+                    onChange={(next) => update({ m: next === "odds" ? "odds" : null })}
+                  />
+                </div>
+              )}
+              <Headline faces={pickedPlayers} ledger={report.together} reading={reading} />
 
               {report.without.length > 0 && (
                 <Card className="reveal">
@@ -500,6 +616,7 @@ function LineupLab() {
                         label={`All ${picked.length} together`}
                         faces={pickedPlayers}
                         ledger={report.together}
+                        reading={reading}
                         emphasis
                       />
                       {report.without.map(({ playerId, ledger }) => {
@@ -510,6 +627,7 @@ function LineupLab() {
                             label={`${names(rest.map(nameOf))}, without ${nameOf(playerId)}`}
                             faces={rest.map((id) => byId.get(id)!)}
                             ledger={ledger}
+                            reading={reading}
                           />
                         );
                       })}
@@ -519,6 +637,7 @@ function LineupLab() {
                           label={`${nameOf(playerId)}, whoever else`}
                           faces={[byId.get(playerId)!]}
                           ledger={ledger}
+                          reading={reading}
                         />
                       ))}
                     </ul>
@@ -526,7 +645,7 @@ function LineupLab() {
                 </Card>
               )}
 
-              {report.additions.length > 0 && (
+              {additions.length > 0 && (
                 <Card className="reveal">
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-2">
@@ -541,7 +660,7 @@ function LineupLab() {
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-2">
-                      {report.additions.slice(0, ADDITIONS_SHOWN).map(({ playerId, ledger }) => {
+                      {additions.slice(0, ADDITIONS_SHOWN).map(({ playerId, ledger }) => {
                         const player = byId.get(playerId);
                         if (!player) return null;
                         return (
@@ -564,12 +683,18 @@ function LineupLab() {
                                 </span>
                               </span>
                               <span className="flex items-center gap-3">
-                                <LuckBar ledger={ledger} className="flex-1" />
-                                <Above ledger={ledger} className="w-10 text-right text-sm" />
-                                <Verdict
-                                  verdict={ledger.verdict}
-                                  className="hidden w-[7.5rem] justify-center sm:inline-flex"
+                                <Bar ledger={ledger} reading={additionReading} />
+                                <Lean
+                                  ledger={ledger}
+                                  reading={additionReading}
+                                  className="w-10 text-right text-sm"
                                 />
+                                {measure === "odds" && (
+                                  <Verdict
+                                    verdict={ledger.verdict}
+                                    className="hidden w-[7.5rem] justify-center sm:inline-flex"
+                                  />
+                                )}
                               </span>
                             </button>
                           </li>

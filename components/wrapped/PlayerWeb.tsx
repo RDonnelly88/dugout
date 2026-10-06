@@ -6,7 +6,7 @@ import { SegmentedControl, SegmentedControlItem } from "@/components/ui/segmente
 import type { Ledger } from "@/lib/expected-wins";
 import type { PointValues } from "@/lib/season-positions";
 import type { WrappedPartner } from "@/lib/season-wrapped";
-import { enoughGames, firmness, lean, pointsPerGame, ppg, tone } from "@/lib/web-measure";
+import { enoughGames, firmness, lean, pointsPerGame, ppg, tone } from "@/lib/measure";
 import { cn } from "@/lib/utils";
 import type { Player } from "@/types";
 

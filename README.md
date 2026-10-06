@@ -4,7 +4,7 @@
 
 **A league table for your five-a-side.**
 
-Every result, every season, who's beating the odds, and who you actually play well with.
+Every result, every season, and who you actually play well with.
 
 [![CI](https://github.com/RDonnelly88/dugout/actions/workflows/ci.yml/badge.svg)](https://github.com/RDonnelly88/dugout/actions/workflows/ci.yml)
 [![Live](https://img.shields.io/badge/live-the--dugout--fives.vercel.app-000?logo=vercel&logoColor=white)](https://the-dugout-fives.vercel.app)
@@ -39,18 +39,21 @@ against second, fourth, sixth) or by hand. The rated splits show the gap they
 would leave between the two teams before you commit, and the cards are dealt
 out one at a time.
 
-**Measures everyone against the odds.** Before every match the ratings give
-each side a chance of winning; added up over a player's games, those chances
-are their expected wins, or xW. Winning more than your xW means you are doing
-better than the sides you were picked into should have, and the app says
-plainly whether the gap is more than luck would explain.
-
 **Finds out who works together.** The line-up lab takes any two to five
-players and shows how they do on the same side against their xW, how the rest
-of them do with each one missing, and who would complete the set — over all
-time, a season, the last few weeks or any dates you pick. The squad web draws
-everybody at once: a line for every pair who have shared a side, green where
-they beat the odds together and red where they fell short.
+players and shows their record on the same side, how the rest of them do with
+each one missing, and who would complete the set — over all time, a season, the
+last few weeks or any dates you pick. The squad web draws everybody at once: a
+line for every pair who have shared a side, green where they took more points a
+game together than the squad's average and red where fewer. A player's
+chemistry does the same from their side: who they take the most points with,
+and who they come unstuck against.
+
+**And, for anybody who wants it, against the odds.** Before every match the
+ratings give each side a chance of winning; added up over a player's games,
+those chances are their expected wins, or xW. Winning more than your xW means
+you are doing better than the sides you were picked into should have, and the
+app says plainly whether the gap is more than luck would explain. Every record
+above has the same games against the odds a tap away.
 
 **Compares any two players.** Rating, record and points per game side by side —
 then the half a league table can never show: how they do on the same team, and
@@ -64,9 +67,9 @@ towards the table once they're marked complete, so a fixture entered on Tuesday
 doesn't move anything until it's played.
 
 **Wraps them up.** Every player gets their season as a story to tap through —
-their record and place, how they moved up the table, their rating, how they did
-against the odds, their giant-killing, best partnership and nemesis — and a
-picture of it to send to the group.
+their record and place, how they moved up the table, their rating, their best
+partnership and nemesis, their web of everybody they played with, and one card
+on how they did against the odds — and a picture of it to send to the group.
 
 **Keeps groups apart.** A team owns its own players, matches and seasons.
 Members are admins, who can change things, or viewers, who can't. Share the

@@ -3,22 +3,23 @@ import type { Ledger } from "./expected-wins";
 import type { PointValues } from "./season-positions";
 
 /**
- * Two ways to read a link between players, for the webs that draw them.
+ * Two ways to read a set of games players shared — a pair on a web, a
+ * team-mate on a chemistry card, a line-up in the lab.
  *
- * `record` is what happened: points a game together, against a baseline — the
- * squad's own average across the stretch, or the player's own when the web is
- * about one player. It is the question most people are asking ("what's my
- * record with him?"), so it is the one a web opens on.
+ * `record` is what happened: points a game, against a baseline — the squad's
+ * average across the stretch, or the player's own when the question is about
+ * one player. It is the question most people are asking ("what's my record
+ * with him?"), so it is the one every page opens on.
  *
  * `odds` is the same games against the chance the ratings gave each side,
  * which strips out how good the rest of the team was. Fairer, and the one to
  * reach for when the question is whether a pairing is any good rather than
- * how it went.
+ * how it went, so it is always there behind a toggle.
  *
  * Points are what the views say a win and a draw are worth, read off a table
  * by `pointValues` rather than written down here a second time.
  */
-export type WebMeasure = "record" | "odds";
+export type Measure = "record" | "odds";
 
 type Games = Pick<Ledger, "played" | "wins" | "draws">;
 
@@ -42,7 +43,7 @@ export const enoughGames = (ledger: Ledger) => ledger.played >= XW.minGames;
  */
 export function lean(
   ledger: Ledger,
-  measure: WebMeasure,
+  measure: Measure,
   values: PointValues,
   baseline: number
 ): number {
@@ -57,7 +58,7 @@ export function lean(
  */
 export function tone(
   ledger: Ledger,
-  measure: WebMeasure,
+  measure: Measure,
   values: PointValues,
   baseline: number
 ): "ahead" | "behind" | "level" {
@@ -66,8 +67,22 @@ export function tone(
   return by > level ? "ahead" : by < -level ? "behind" : "level";
 }
 
+/**
+ * The colour a figure in a list takes: its tone once there are enough games
+ * to rank it, and level before that — a bright 3.00 on a single game together
+ * says more than one game can.
+ */
+export function listTone(
+  ledger: Ledger,
+  measure: Measure,
+  values: PointValues,
+  baseline: number
+): "ahead" | "behind" | "level" {
+  return enoughGames(ledger) ? tone(ledger, measure, values, baseline) : "level";
+}
+
 /** How firmly to draw a link, from nought to one. */
-export function firmness(ledger: Ledger, measure: WebMeasure, most: number): number {
+export function firmness(ledger: Ledger, measure: Measure, most: number): number {
   if (measure === "odds") {
     return { early: 0.08, luck: 0.22, above: 0.95, below: 0.95 }[ledger.verdict];
   }
@@ -78,3 +93,22 @@ export function firmness(ledger: Ledger, measure: WebMeasure, most: number): num
 
 /** Points a game to two places, which is how a table would print it. */
 export const ppg = (value: number) => value.toFixed(2);
+
+/**
+ * Best first by the measure, with anything on too few games after everything
+ * that has enough — so a single lucky night cannot top a list — and more
+ * games first among equals.
+ */
+export function rankBy<T extends { ledger: Ledger }>(
+  entries: T[],
+  measure: Measure,
+  values: PointValues,
+  baseline: number
+): T[] {
+  return [...entries].sort(
+    (x, y) =>
+      Number(enoughGames(y.ledger)) - Number(enoughGames(x.ledger)) ||
+      lean(y.ledger, measure, values, baseline) - lean(x.ledger, measure, values, baseline) ||
+      y.ledger.played - x.ledger.played
+  );
+}

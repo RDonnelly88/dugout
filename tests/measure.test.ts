@@ -3,10 +3,12 @@ import {
   averagePointsPerGame,
   enoughGames,
   firmness,
+  listTone,
   lean,
   pointsPerGame,
+  rankBy,
   tone,
-} from "@/lib/web-measure";
+} from "@/lib/measure";
 import type { Ledger } from "@/lib/expected-wins";
 
 const VALUES = { win: 3, draw: 1 };
@@ -65,5 +67,42 @@ describe("reading a link", () => {
     expect(enoughGames(sheet(2, 0, 0))).toBe(false);
     expect(firmness(sheet(2, 0, 0), "record", 10)).toBeLessThan(0.2);
     expect(firmness(sheet(8, 0, 2), "record", 10)).toBeGreaterThan(0.8);
+  });
+});
+
+describe("ranking by a measure", () => {
+  const entry = (id: string, ledger: Ledger) => ({ id, ledger });
+
+  it("ranks by points a game on the record, enough games first", () => {
+    const ranked = rankBy(
+      [
+        entry("lucky", sheet(2, 0, 0)),
+        entry("steady", sheet(4, 1, 1)),
+        entry("poor", sheet(1, 1, 4)),
+      ],
+      "record",
+      VALUES,
+      1.4
+    );
+
+    expect(ranked.map((e) => e.id)).toEqual(["steady", "poor", "lucky"]);
+  });
+
+  it("ranks the same games differently against the odds", () => {
+    const ranked = rankBy(
+      [entry("won-a-lot", sheet(5, 0, 1, -0.8)), entry("beat-the-odds", sheet(3, 0, 3, 1.2))],
+      "odds",
+      VALUES,
+      0
+    );
+
+    expect(ranked.map((e) => e.id)).toEqual(["beat-the-odds", "won-a-lot"]);
+  });
+});
+
+describe("the colour of a figure in a list", () => {
+  it("stays level on too few games, however good they were", () => {
+    expect(listTone(sheet(2, 0, 0), "record", VALUES, 1.4)).toBe("level");
+    expect(listTone(sheet(5, 0, 0), "record", VALUES, 1.4)).toBe("ahead");
   });
 });

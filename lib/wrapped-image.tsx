@@ -3,7 +3,7 @@ import { C, type ImageFont } from "./share-card-image";
 import { displayRating } from "./elo";
 import type { Wrapped } from "./season-wrapped";
 import type { PointValues } from "./season-positions";
-import { pointsPerGame, ppg } from "./web-measure";
+import { pointsPerGame, ppg } from "./measure";
 
 /**
  * A player's season wrapped, as one picture for the group chat.

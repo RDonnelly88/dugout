@@ -22,9 +22,22 @@ import {
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import { getSeasons } from "@/lib/db";
 import { useChemistry, type ChemistryScope } from "@/hooks/useChemistry";
-import { pick, type ChemistryEntry } from "@/lib/chemistry";
+import type { ChemistryEntry } from "@/lib/chemistry";
 import { signedWins } from "@/lib/expected-wins";
 import { XW } from "@/lib/config";
+import type { PointValues } from "@/lib/season-positions";
+import {
+  enoughGames,
+  pointsPerGame,
+  ppg,
+  rankBy,
+  listTone,
+  type Measure,
+} from "@/lib/measure";
+import { usePointValues } from "@/hooks/usePointValues";
+import MeasureToggle from "@/components/MeasureToggle";
+import PointsBar from "@/components/PointsBar";
+import { cn } from "@/lib/utils";
 import Verdict from "@/components/xw/Verdict";
 import LuckBar from "@/components/xw/LuckBar";
 import { useTeam } from "@/contexts/TeamContext";
@@ -32,12 +45,23 @@ import { useTeam } from "@/contexts/TeamContext";
 /** Wins with a draw as a half, to one place, dropping a needless ".0". */
 const wins = (value: number) => (Number.isInteger(value) ? String(value) : value.toFixed(1));
 
+const TEXT = { ahead: "text-win", behind: "text-loss", level: "text-muted-foreground" } as const;
+
+/** How the row is being read, and against what. */
+interface Reading {
+  measure: Measure;
+  values: PointValues;
+  /** The player's own points a game over the same games, on the record. */
+  baseline: number;
+}
+
 function ChemistryRow({
   entry,
   name,
   image,
   rank,
   href,
+  reading,
 }: {
   entry: ChemistryEntry;
   name: string;
@@ -45,8 +69,11 @@ function ChemistryRow({
   rank?: number;
   /** Where the row leads: the pair in the line-up lab, or the opponent's page. */
   href: string;
+  reading: Reading;
 }) {
   const { ledger } = entry;
+  const { measure, values, baseline } = reading;
+  const leaning = listTone(ledger, measure, values, baseline);
   return (
     <Link
       href={href}
@@ -61,27 +88,37 @@ function ChemistryRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-2">
           <span className="truncate text-sm font-medium">{name}</span>
-          <span
-            className={`tabular shrink-0 text-sm font-semibold ${
-              ledger.above > 0.05
-                ? "text-win"
-                : ledger.above < -0.05
-                  ? "text-loss"
-                  : "text-muted-foreground"
-            }`}
-          >
-            {signedWins(ledger.above)}
+          <span className={cn("tabular shrink-0 text-sm font-semibold", TEXT[leaning])}>
+            {measure === "record" ? (
+              <>
+                {ppg(pointsPerGame(ledger, values))}
+                <span className="ml-1 text-[10px] font-normal text-muted-foreground">pts a game</span>
+              </>
+            ) : (
+              signedWins(ledger.above)
+            )}
           </span>
         </div>
         <div className="mt-1.5">
-          <LuckBar ledger={ledger} className="h-2" />
+          {measure === "record" ? (
+            <PointsBar ledger={ledger} values={values} baseline={baseline} />
+          ) : (
+            <LuckBar ledger={ledger} className="h-2" />
+          )}
         </div>
         <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
           <p className="tabular text-[11px] text-muted-foreground">
             {ledger.played} {ledger.played === 1 ? "game" : "games"} · {ledger.wins}W{" "}
-            {ledger.draws}D {ledger.losses}L · {wins(ledger.actual)} v {ledger.expected.toFixed(1)} xW
+            {ledger.draws}D {ledger.losses}L
+            {measure === "odds" && ` · ${wins(ledger.actual)} v ${ledger.expected.toFixed(1)} xW`}
           </p>
-          <Verdict verdict={ledger.verdict} />
+          {measure === "odds" ? (
+            <Verdict verdict={ledger.verdict} />
+          ) : (
+            !enoughGames(ledger) && (
+              <span className="text-[11px] text-muted-foreground">Too few games to say</span>
+            )
+          )}
         </div>
       </div>
     </Link>
@@ -96,7 +133,9 @@ function Lineup({
   entries,
   playerFor,
   hrefFor,
+  reading,
 }: {
+  reading: Reading;
   title: string;
   description: string;
   Icon: typeof Sparkles;
@@ -131,6 +170,7 @@ function Lineup({
                   image={player?.image}
                   rank={i + 1}
                   href={hrefFor(entry.playerId)}
+                  reading={reading}
                 />
               );
             })}
@@ -165,10 +205,11 @@ function Tile({
 /**
  * Who a player wins with, and who they lose to.
  *
- * Every figure is measured against the player's own average rather than
- * against nothing, and pulled towards it by how few games it rests on. That is
- * the whole reason this replaced the old panel, which would tell you your best
- * team-mate of all time was somebody you had played beside once.
+ * On the record first — points a game with or against each player, against
+ * the player's own points a game over the same stretch — because that is what
+ * people are asking. The same games against the odds are a toggle away. Either
+ * way nobody makes a top four on fewer than five games together, so a best
+ * team-mate is never somebody played beside once.
  */
 export default function PlayerChemistry({
   playerId,
@@ -180,6 +221,8 @@ export default function PlayerChemistry({
   const { currentTeam } = useTeam();
   const [scope, setScope] = useState<ChemistryScope>("overall");
   const { report, playerFor, isLoading } = useChemistry(playerId, scope);
+  const values = usePointValues();
+  const [chosen, setChosen] = useState<Measure>("record");
 
   const { data: seasons = [] } = useQuery({
     queryKey: ["seasons", currentTeam?.id],
@@ -201,11 +244,24 @@ export default function PlayerChemistry({
     );
   }
 
-  const dreamTeam = pick(report.withPlayers);
+  // The record needs what a win and a draw are worth; until the table has
+  // loaded there are only the odds to read.
+  const measure: Measure = values ? chosen : "odds";
+  const reading: Reading = {
+    measure,
+    values: values ?? { win: 1, draw: 0.5 },
+    baseline: values ? pointsPerGame(report.own, values) : 0,
+  };
+  const ranked = (entries: ChemistryEntry[]) =>
+    rankBy(entries, reading.measure, reading.values, reading.baseline);
+  const alongside = ranked(report.withPlayers);
+  const opposite = ranked(report.againstPlayers);
+  const TOP = 4;
+  const dreamTeam = alongside.filter((e) => enoughGames(e.ledger)).slice(0, TOP);
+  const teamOfDeath = opposite.filter((e) => enoughGames(e.ledger)).reverse().slice(0, TOP);
   // A team-mate opens the pair in the line-up lab, where the two of them can
   // be taken apart; an opponent opens their own page.
   const pairHref = (id: string) => `/lineups?p=${playerId},${id}`;
-  const teamOfDeath = pick(report.againstPlayers, { worst: true });
 
   return (
     <Card>
@@ -217,11 +273,14 @@ export default function PlayerChemistry({
               Chemistry
             </CardTitle>
             <CardDescription>
-              Who {playerName} beats the odds with, and who they come unstuck
-              against — measured in wins above what the ratings expected
+              {measure === "record"
+                ? `Who ${playerName} takes the most points with, and who they come unstuck against`
+                : `Who ${playerName} beats the odds with, and who they come unstuck against — in wins above what the ratings expected`}
             </CardDescription>
           </div>
 
+          <div className="flex flex-col gap-2 sm:items-end">
+          {values && <MeasureToggle value={measure} onChange={setChosen} />}
           <Select value={scope} onValueChange={(value) => setScope(value)}>
             <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue />
@@ -235,6 +294,7 @@ export default function PlayerChemistry({
               ))}
             </SelectContent>
           </Select>
+          </div>
         </div>
       </CardHeader>
 
@@ -255,24 +315,43 @@ export default function PlayerChemistry({
                 Icon={Users}
                 hint={scope === "overall" ? "All time" : "This season"}
               />
-              <Tile
-                label="Won v xW"
-                value={`${wins(report.own.actual)} v ${report.own.expected.toFixed(1)}`}
-                Icon={Target}
-                hint="A draw counts a half"
-              />
-              <Tile
-                label="Above xW"
-                value={signedWins(report.own.above)}
-                Icon={Sparkles}
-                hint={
-                  report.own.verdict === "early"
-                    ? "Too early to say"
-                    : report.own.verdict === "luck"
-                      ? "Could be luck"
-                      : `${report.own.verdict === "above" ? "Better" : "Worse"} than luck`
-                }
-              />
+              {measure === "record" ? (
+                <>
+                  <Tile
+                    label="Record"
+                    value={`${report.own.wins}–${report.own.draws}–${report.own.losses}`}
+                    Icon={Target}
+                    hint="Won, drawn, lost"
+                  />
+                  <Tile
+                    label="Points a game"
+                    value={ppg(reading.baseline)}
+                    Icon={Sparkles}
+                    hint="What every row is set against"
+                  />
+                </>
+              ) : (
+                <>
+                  <Tile
+                    label="Won v xW"
+                    value={`${wins(report.own.actual)} v ${report.own.expected.toFixed(1)}`}
+                    Icon={Target}
+                    hint="A draw counts a half"
+                  />
+                  <Tile
+                    label="Above xW"
+                    value={signedWins(report.own.above)}
+                    Icon={Sparkles}
+                    hint={
+                      report.own.verdict === "early"
+                        ? "Too early to say"
+                        : report.own.verdict === "luck"
+                          ? "Could be luck"
+                          : `${report.own.verdict === "above" ? "Better" : "Worse"} than luck`
+                    }
+                  />
+                </>
+              )}
               <Tile
                 label="Team-mates"
                 value={String(report.withPlayers.length)}
@@ -284,19 +363,29 @@ export default function PlayerChemistry({
             <div className="grid gap-4 lg:grid-cols-2">
               <Lineup
                 title="Dream team"
-                description={`Beside these, ${playerName} beats the odds by the most`}
+                description={
+                  measure === "record"
+                    ? `Beside these, ${playerName} takes the most points a game`
+                    : `Beside these, ${playerName} beats the odds by the most`
+                }
                 Icon={Sparkles}
                 tone="win"
                 entries={dreamTeam}
+                reading={reading}
                 playerFor={playerFor}
                 hrefFor={pairHref}
               />
               <Lineup
                 title="Team of death"
-                description={`Against these, ${playerName} falls furthest short of the odds`}
+                description={
+                  measure === "record"
+                    ? `Against these, ${playerName} takes the fewest points a game`
+                    : `Against these, ${playerName} falls furthest short of the odds`
+                }
                 Icon={Skull}
                 tone="loss"
                 entries={teamOfDeath}
+                reading={reading}
                 playerFor={playerFor}
                 hrefFor={(id) => `/players/${id}`}
               />
@@ -316,8 +405,8 @@ export default function PlayerChemistry({
 
               {(
                 [
-                  ["with", report.withPlayers],
-                  ["against", report.againstPlayers],
+                  ["with", alongside],
+                  ["against", opposite],
                 ] as const
               ).map(([key, entries]) => (
                 <TabsContent key={key} value={key} className="mt-3 space-y-1">
@@ -330,6 +419,7 @@ export default function PlayerChemistry({
                         name={player?.name ?? "Unknown"}
                         image={player?.image}
                         href={key === "with" ? pairHref(entry.playerId) : `/players/${entry.playerId}`}
+                        reading={reading}
                       />
                     );
                   })}
@@ -339,10 +429,21 @@ export default function PlayerChemistry({
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs leading-relaxed text-muted-foreground">
-                The number beside each name is wins above or below what the ratings
-                expected from the games they shared, so the rest of each side is already
-                allowed for. The shaded band is how far luck alone could move it; under{" "}
-                {XW.minGames} games it is too early to say.
+                {measure === "record" ? (
+                  <>
+                    The number beside each name is the points a game {playerName} took in the games
+                    they shared, and the tick on each bar is {playerName}&apos;s own{" "}
+                    {ppg(reading.baseline)}. Under {XW.minGames} games together there is too little to
+                    rank. Switch to against the odds to allow for who else was on each side.
+                  </>
+                ) : (
+                  <>
+                    The number beside each name is wins above or below what the ratings expected
+                    from the games they shared, so the rest of each side is already allowed for. The
+                    shaded band is how far luck alone could move it; under {XW.minGames} games it is
+                    too early to say.
+                  </>
+                )}
               </p>
               <Link
                 href={`/lineups?p=${playerId}`}

@@ -11,10 +11,11 @@ import {
   pointsPerGame,
   ppg,
   tone,
-  type WebMeasure,
-} from "@/lib/web-measure";
+  type Measure,
+} from "@/lib/measure";
 import type { SquadWeb as Web, WebLink } from "@/lib/squad-web";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
+import MeasureToggle from "@/components/MeasureToggle";
 import Verdict from "@/components/xw/Verdict";
 import {
   SegmentedControl,
@@ -47,7 +48,7 @@ const wins = (value: number) => (Number.isInteger(value) ? String(value) : value
  * The squad as a web: everybody round a ring, a line wherever two of them
  * have shared a side.
  *
- * Read two ways (see `WebMeasure`). On the record, a line's colour is how
+ * Read two ways (see `Measure`). On the record, a line's colour is how
  * many points a game the pair took against the squad's average over the same
  * stretch, and it is drawn firmer the more games there were. Against the odds,
  * its colour is wins above or below expected and its firmness the verdict:
@@ -81,8 +82,8 @@ export default function SquadWeb({
   const [focus, setFocus] = useState<string | null>(null);
   const [hover, setHover] = useState<WebLink | null>(null);
   const [only, setOnly] = useState<"all" | "telling">("all");
-  const [chosen, setChosen] = useState<WebMeasure>("record");
-  const measure: WebMeasure = values ? chosen : "odds";
+  const [chosen, setChosen] = useState<Measure>("record");
+  const measure: Measure = values ? chosen : "odds";
   // Only read on the record, which is only offered with real values; the
   // stand-in keeps the odds reading free of a null check at every turn.
   const points = useMemo(() => values ?? { win: 1, draw: 0.5 }, [values]);
@@ -221,21 +222,7 @@ export default function SquadWeb({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        {values && (
-          <SegmentedControl
-            label="How to read the links"
-            value={measure}
-            onValueChange={(next) => setChosen(next as WebMeasure)}
-            className="h-9"
-          >
-            <SegmentedControlItem value="record" className="h-full px-3 text-xs font-medium">
-              Record
-            </SegmentedControlItem>
-            <SegmentedControlItem value="odds" className="h-full px-3 text-xs font-medium">
-              Against the odds
-            </SegmentedControlItem>
-          </SegmentedControl>
-        )}
+        {values && <MeasureToggle value={measure} onChange={setChosen} />}
         <SegmentedControl
           label="Which links to draw"
           value={only}

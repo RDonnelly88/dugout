@@ -7,10 +7,11 @@ import Link from "next/link";
 import { ArrowRight, Flame, Sparkles, TrendingUp, Users, Zap } from "lucide-react";
 import { seasonWrap } from "@/lib/season-wrap";
 import { seasonNights } from "@/lib/season-story";
-import { signedWins } from "@/lib/expected-wins";
 import { displayRating } from "@/lib/elo";
 import { getMatches } from "@/lib/db";
 import { useTeam } from "@/contexts/TeamContext";
+import { usePointValues } from "@/hooks/usePointValues";
+import { ppg } from "@/lib/measure";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import Stamp from "@/components/ui/stamp";
 import SeasonNights from "@/components/seasons/SeasonNights";
@@ -129,7 +130,8 @@ export default function SeasonWrap({
     enabled: !!currentTeam,
   });
 
-  const wrap = useMemo(() => seasonWrap(history, season), [history, season]);
+  const values = usePointValues();
+  const wrap = useMemo(() => seasonWrap(history, season, values), [history, season, values]);
   const nights = useMemo(
     () => seasonNights(season, { upsetMatchId: wrap.upset?.matchId, finished }),
     [season, wrap.upset?.matchId, finished]
@@ -189,8 +191,8 @@ export default function SeasonWrap({
                 .join(" & ")}
             </p>
             <p className="text-xs text-muted-foreground">
-              {signedWins(wrap.partnership.above)} wins above xW over{" "}
-              {wrap.partnership.played} games together
+              {wrap.partnership.wins}W {wrap.partnership.draws}D {wrap.partnership.losses}L in{" "}
+              {wrap.partnership.played} games together · {ppg(wrap.partnership.pointsPerGame)} pts a game
             </p>
           </div>
         </div>

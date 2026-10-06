@@ -1,7 +1,7 @@
 import { ELO } from "./config";
 import { computeRatings } from "./elo";
 import { chemistryFor } from "./chemistry";
-import { enoughGames, pointsPerGame } from "./web-measure";
+import { enoughGames, pointsPerGame } from "./measure";
 import { matchExpectations, type Ledger, type Night } from "./expected-wins";
 import { outcomeOf, resultFor, sideOf } from "./match-result";
 import { ratingSeries } from "./rating-series";

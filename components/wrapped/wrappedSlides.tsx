@@ -9,7 +9,7 @@ import Verdict from "@/components/xw/Verdict";
 import ShareImageButton from "@/components/ShareImageButton";
 import { displayRating } from "@/lib/elo";
 import { signedWins } from "@/lib/expected-wins";
-import { pointsPerGame, ppg } from "@/lib/web-measure";
+import { pointsPerGame, ppg } from "@/lib/measure";
 import type { Wrapped } from "@/lib/season-wrapped";
 import { cn } from "@/lib/utils";
 import type { Player, Season, SeasonPlayerStats } from "@/types";
