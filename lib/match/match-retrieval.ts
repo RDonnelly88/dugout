@@ -9,7 +9,6 @@ export const getMatches = async (): Promise<Match[]> => {
 
   // If no team is selected, return empty array
   if (!currentTeamId) {
-    console.log("No team selected, returning empty matches array");
     return [];
   }
 
@@ -35,7 +34,6 @@ export const getMatch = async (id: string): Promise<Match | undefined> => {
 
   // If no team is selected, there is nothing to find
   if (!currentTeamId) {
-    console.log("No team selected, cannot fetch match");
     return undefined;
   }
 

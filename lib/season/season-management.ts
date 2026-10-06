@@ -11,7 +11,6 @@ export const addSeason = async (season: Omit<Season, "id" | "createdAt" | "updat
   const supabaseSeason = mapSeasonToSupabase(season);
   
   try {
-    console.log("Adding season with data:", supabaseSeason);
     
     const { data, error } = await supabase
       .from("seasons")
@@ -28,7 +27,6 @@ export const addSeason = async (season: Omit<Season, "id" | "createdAt" | "updat
       throw error;
     }
     
-    console.log("Season added successfully:", data);
     
     // Map data to ensure it matches the Season type
     return mapSupabaseToSeason(data);

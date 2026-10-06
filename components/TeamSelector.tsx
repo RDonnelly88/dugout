@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const TeamSelector = () => {
   const { currentTeam, userTeams, userRole, switchTeam, createTeam } = useTeam();
-  const { signOut, user } = useAuth();
+  const { signOut } = useAuth();
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newTeamName, setNewTeamName] = useState("");
@@ -35,7 +35,6 @@ const TeamSelector = () => {
     
     try {
       // Log the current user ID for debugging
-      console.log("Creating team with user ID:", user?.id);
       
       const { error } = await createTeam(newTeamName);
       
@@ -48,7 +47,6 @@ const TeamSelector = () => {
           variant: "destructive",
         });
       } else {
-        console.log("Team creation successful in TeamSelector");
         setNewTeamName("");
         setIsCreateDialogOpen(false);
         setIsPopoverOpen(false);

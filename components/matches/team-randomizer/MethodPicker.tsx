@@ -8,7 +8,7 @@ import type { Player } from "@/types";
 
 function eloGap(difference: number): string {
   if (difference < 0.05) return "dead even";
-  return `${difference < 10 ? difference.toFixed(1) : Math.round(difference)} Elo apart`;
+  return `${difference < 10 ? difference.toFixed(1) : Math.round(difference)} rating points apart`;
 }
 
 const METHODS: {
@@ -41,7 +41,7 @@ const METHODS: {
   {
     value: "rating",
     label: "Even by rating",
-    blurb: "Uses Elo, so the two sides should be as close as they can be.",
+    blurb: "Uses the ratings, so the two sides should be as close as they can be.",
     Icon: Scale,
     gap: eloGap,
   },
@@ -90,9 +90,13 @@ export default function MethodPicker({
             type="button"
             onClick={() => onChange(method)}
             aria-pressed={selected}
-            initial={reduced ? false : { opacity: 0, y: 8 }}
+            // The same starting point whatever the motion setting, because
+            // this is drawn on the server, which cannot know it: skipping the
+            // entrance there and not here is a page that does not match the
+            // one it hydrates. Reduced motion takes the trip in no time.
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, delay: reduced ? 0 : i * 0.05 }}
+            transition={reduced ? { duration: 0 } : { duration: 0.25, delay: i * 0.05 }}
             // `flex flex-col`: a button centres its contents, so in a grid row
             // stretched to the tallest card the ones without a gap readout sat
             // their heading halfway down while the others sat at the top.

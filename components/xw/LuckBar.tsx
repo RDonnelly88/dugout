@@ -42,9 +42,11 @@ export default function LuckBar({
             "absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface",
             good ? "bg-win" : "bg-loss"
           )}
-          initial={reduced ? false : { left: "50%" }}
+          // The same start whatever the motion setting, which the server
+          // cannot know; reduced motion moves it at once.
+          initial={{ left: "50%" }}
           animate={{ left: `${at(ledger.above)}%` }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          transition={reduced ? { duration: 0 } : { duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         />
       )}
     </div>

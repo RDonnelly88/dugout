@@ -46,7 +46,6 @@ const SeasonDetail = () => {
     season,
     seasons,
     playerStats,
-    playerResults,
     seasonMatches,
     isLoadingSeason,
     isEditing,
@@ -238,7 +237,6 @@ const SeasonDetail = () => {
             <TabsContent value="leaderboard" className="space-y-4">
               <SeasonLeaderboard 
                 stats={playerStats}
-                playerResults={playerResults}
                 seasonName={season.name}
                 isFinished={season.isFinished}
                 seasonId={season.id}

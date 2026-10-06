@@ -35,12 +35,20 @@ export const rollResults = (
  * It is a record of what happened, not a measure of anybody; how a player is
  * going against the odds is expected wins' job.
  *
+ * `within` narrows the window to a stretch, such as a season, for a table of
+ * that stretch: its last few matches rather than the squad's. A first game is
+ * still a first game ever, so a regular who sat out the opening nights of a
+ * season is marked missing them, and everybody who played in the stretch has
+ * a run, not only those in its last few nights — a league table has a row for
+ * each of them.
+ *
  * Derived from the matches, like everything else here, so it cannot fall out
  * of step with them.
  */
 export function recentResults(
   matches: Match[],
-  windowSize: number = RESULTS_SHOWN
+  windowSize: number = RESULTS_SHOWN,
+  within?: (match: Match) => boolean
 ): Map<string, RecentResults> {
   const played = matches
     .filter((m) => outcomeOf(m) !== null)
@@ -57,13 +65,18 @@ export function recentResults(
     }
   });
 
-  const window = played.slice(0, windowSize);
+  const position = new Map(played.map((match, index) => [match.id, index]));
+  const scope = within ? played.filter(within) : played;
+  const window = scope.slice(0, windowSize);
 
   // Anybody who turned out at least once in the window. Somebody who has not
   // played in any of it has no recent run to show, rather than a stale one
   // carried forward from March.
   const appeared = new Set(
-    window.flatMap((match) => [...match.teamA.players, ...match.teamB.players])
+    (within ? scope : window).flatMap((match) => [
+      ...match.teamA.players,
+      ...match.teamB.players,
+    ])
   );
 
   const byPlayer = new Map<string, RecentResults>();
@@ -72,8 +85,8 @@ export function recentResults(
     const results: RecentResult[] = [];
     let games = 0;
 
-    window.forEach((match, index) => {
-      if (index > (debut.get(playerId) ?? 0)) return;
+    window.forEach((match) => {
+      if (position.get(match.id)! > (debut.get(playerId) ?? 0)) return;
 
       const result = resultFor(match, playerId);
       if (result === null) {

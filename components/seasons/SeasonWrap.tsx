@@ -56,9 +56,11 @@ function Award({
 
   return (
     <motion.div
-      initial={reduced ? false : { opacity: 0, y: 12 }}
+      // The same start whatever the motion setting, which the server cannot
+      // know; reduced motion arrives at once rather than skipping it.
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay: reduced ? 0 : index * 0.08 }}
+      transition={reduced ? { duration: 0 } : { duration: 0.35, delay: index * 0.08 }}
       className="rounded-xl border border-border bg-surface/70"
     >
       {href ? (

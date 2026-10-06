@@ -8,7 +8,7 @@ import { DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import type { Split } from "@/lib/team-balance";
 import type { Player } from "@/types";
-import { SIDE_NAMES } from "@/lib/config";
+import { useSideNames } from "@/hooks/useSideNames";
 
 /**
  * Dealing the sides out, one card at a time.
@@ -27,6 +27,8 @@ export default function CardPackRandomizer({
   onCancel: () => void;
 }) {
   const reduced = useReducedMotion();
+  // The team's own names for its sides, as on every match.
+  const sides = useSideNames();
 
   // Interleaved so the two sides fill up together; a run of five on one side
   // reads as the deal having gone wrong.
@@ -68,7 +70,7 @@ export default function CardPackRandomizer({
                   : "bg-accent/15 text-accent"
               }`}
             >
-              {SIDE_NAMES[side]}
+              {sides[side]}
             </div>
             <ul className="min-h-[180px] space-y-1 p-2">
               <AnimatePresence initial={false}>
@@ -76,8 +78,9 @@ export default function CardPackRandomizer({
                   <motion.li
                     key={player.id}
                     layout={!reduced}
-                    initial={reduced ? false : { opacity: 0, x: side === "A" ? -12 : 12 }}
+                    initial={{ opacity: 0, x: side === "A" ? -12 : 12 }}
                     animate={{ opacity: 1, x: 0 }}
+                    transition={reduced ? { duration: 0 } : undefined}
                     className="flex items-center gap-2 rounded-lg bg-surface px-2 py-1.5"
                   >
                     <PlayerAvatar name={player.name} image={player.image} size="xs" />
@@ -103,9 +106,11 @@ export default function CardPackRandomizer({
             {current && (
               <motion.div
                 key={current.player.id}
-                initial={reduced ? false : { scale: 0.6, opacity: 0 }}
+                initial={{ scale: 0.6, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: "spring", stiffness: 320, damping: 22 }}
+                transition={
+                  reduced ? { duration: 0 } : { type: "spring", stiffness: 320, damping: 22 }
+                }
                 className="flex items-center gap-3 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3"
               >
                 <PlayerAvatar
@@ -116,7 +121,7 @@ export default function CardPackRandomizer({
                 <div>
                   <p className="font-semibold">{current.player.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    to {SIDE_NAMES[current.side]}
+                    to {sides[current.side]}
                   </p>
                 </div>
               </motion.div>

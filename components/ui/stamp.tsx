@@ -41,9 +41,13 @@ export default function Stamp({
         INK[ink],
         className
       )}
-      initial={reduced ? false : { scale: 1.8, opacity: 0, rotate: tilt }}
+      // The same start whatever the motion setting, which the server cannot
+      // know; reduced motion lands it at once rather than skipping it.
+      initial={{ scale: 1.8, opacity: 0, rotate: tilt }}
       animate={{ scale: 1, opacity: 0.9, rotate: tilt }}
-      transition={{ type: "spring", stiffness: 520, damping: 24, delay: 0.25 }}
+      transition={
+        reduced ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 24, delay: 0.25 }
+      }
     >
       {children}
     </motion.span>

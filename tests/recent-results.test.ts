@@ -142,3 +142,46 @@ describe("a first game is not a missed one", () => {
     expect(runs.get("old")!.results).toHaveLength(5);
   });
 });
+
+describe("recent results within a season", () => {
+  const inSeason = (m: Match) => m.seasonId === "s2";
+  const seasonal = (m: Match, seasonId: string): Match => ({ ...m, seasonId });
+
+  it("takes the season's last few nights, not the squad's", () => {
+    const fixtures = [
+      seasonal(match(["a"], ["b"], 1, 0, "2026-01-01"), "s1"),
+      seasonal(match(["a"], ["b"], 0, 1, "2026-02-01"), "s2"),
+    ];
+
+    expect(recentResults(fixtures, 5, inSeason).get("a")!.results).toEqual(["loss"]);
+  });
+
+  it("marks a regular missing the season's opening nights", () => {
+    const fixtures = [
+      seasonal(match(["a"], ["b"], 1, 0, "2026-01-01"), "s1"),
+      seasonal(match(["c"], ["b"], 1, 0, "2026-02-01"), "s2"),
+      seasonal(match(["a"], ["b"], 1, 0, "2026-02-08"), "s2"),
+    ];
+
+    expect(recentResults(fixtures, 5, inSeason).get("a")!.results).toEqual(["win", "dnp"]);
+  });
+
+  it("does not mark nights before somebody's first game ever", () => {
+    const fixtures = [
+      seasonal(match(["c"], ["b"], 1, 0, "2026-02-01"), "s2"),
+      seasonal(match(["new"], ["b"], 1, 0, "2026-02-08"), "s2"),
+    ];
+
+    expect(recentResults(fixtures, 5, inSeason).get("new")!.results).toEqual(["win"]);
+  });
+
+  it("gives everybody who played in the season a run, even outside its last few", () => {
+    const fixtures = [
+      seasonal(match(["early"], ["b"], 1, 0, "2026-02-01"), "s2"),
+      seasonal(match(["c"], ["b"], 1, 0, "2026-02-08"), "s2"),
+      seasonal(match(["c"], ["b"], 1, 0, "2026-02-15"), "s2"),
+    ];
+
+    expect(recentResults(fixtures, 2, inSeason).get("early")!.results).toEqual(["dnp", "dnp"]);
+  });
+});

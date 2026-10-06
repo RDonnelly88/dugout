@@ -169,11 +169,11 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
             </div>
           </div>
 
-          {/* The two ways a player is measured that the tally below does not
-              show: what the results imply, and what a person decided. */}
+          {/* What the tally below does not show: the rating the results
+              imply, given who each game was with and against. */}
           <div className="flex items-center justify-between gap-4 border-t border-border px-5 py-2.5 text-sm">
             <span className="flex items-baseline gap-1.5">
-              <span className="eyebrow">Elo</span>
+              <span className="eyebrow">Rating</span>
               {rating ? (
                 <>
                   <span className={`tabular font-semibold ${ratingTone(standing)}`}>
@@ -187,7 +187,6 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
                 <span className="text-muted-foreground">—</span>
               )}
             </span>
-
           </div>
 
           <div className="mt-auto border-t border-border bg-surface-2/40 px-5 py-3">

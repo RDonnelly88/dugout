@@ -15,14 +15,14 @@ import PlayerAvatar from "@/components/players/PlayerAvatar";
 import ResultStrip from "@/components/players/ResultStrip";
 import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
 import { winners } from "@/lib/podium";
-import { Season, SeasonChampion, RecentResult } from "@/types";
+import { Season, SeasonChampion } from "@/types";
+import { useRecentResults } from "@/hooks/useRecentResults";
 
 interface SeasonCardProps {
   season: Season;
   champions?: SeasonChampion[];
   totalPlayers: number;
   totalMatches: number;
-  playerResults?: Record<string, RecentResult[]>;
 }
 
 /** The trophy or medal for a place, or the number when it is outside the top three. */
@@ -51,13 +51,13 @@ const SeasonCard = ({
   champions = [],
   totalPlayers,
   totalMatches,
-  playerResults = {},
 }: SeasonCardProps) => {
   const startDate = new Date(season.startDate).toLocaleDateString();
   const endDate = season.endDate
     ? new Date(season.endDate).toLocaleDateString()
     : "Ongoing";
 
+  const { resultsFor } = useRecentResults(season.id);
   const leaders = winners(champions);
   const top = [...champions].sort((a, b) => a.rank - b.rank).slice(0, 5);
 
@@ -151,7 +151,7 @@ const SeasonCard = ({
                       <TableCell className="py-1.5">
                         <div className="flex justify-end">
                           <ResultStrip
-                            results={playerResults[player.playerId] || []}
+                            results={resultsFor(player.playerId)}
                             size="xs"
                           />
                         </div>

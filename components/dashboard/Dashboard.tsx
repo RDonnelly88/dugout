@@ -6,7 +6,6 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, TrendingUp } from "lucide-react";
 import { useTeam } from "@/contexts/TeamContext";
 import { getCurrentSeason, getMatches, getPlayers, getSeasonPlayerStats } from "@/lib/db";
-import { useSeasonResults } from "@/hooks/useSeasonResults";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
 import { isActivePlayer } from "@/components/players/ActiveFilter";
 import { outcomeOf } from "@/lib/match-result";
@@ -79,19 +78,6 @@ const Dashboard = () => {
 
   const { ranked } = usePlayerRatings();
 
-  const topPlayerIds = useMemo(
-    () =>
-      [...seasonPlayerStats]
-        .sort((a, b) => b.points - a.points)
-        .slice(0, 5)
-        .map((player) => player.playerId),
-    [seasonPlayerStats]
-  );
-
-  const { seasonResults: topPlayerResults } = useSeasonResults(
-    currentSeason?.id || null,
-    topPlayerIds
-  );
 
   const played = useMemo(() => matches.filter((m) => outcomeOf(m) !== null), [matches]);
 
@@ -173,7 +159,6 @@ const Dashboard = () => {
             <SeasonLeaderboard
               stats={seasonPlayerStats}
               seasonId={currentSeason.id}
-              playerResults={topPlayerResults}
               limit={5}
               seasonName={currentSeason.name}
             />
@@ -192,7 +177,7 @@ const Dashboard = () => {
                   <TrendingUp className="h-5 w-5 text-accent" />
                   Top rated
                 </CardTitle>
-                <CardDescription>Elo, once a rating has settled</CardDescription>
+                <CardDescription>Once a rating has settled</CardDescription>
               </div>
               <More href="/ratings">The table</More>
             </div>

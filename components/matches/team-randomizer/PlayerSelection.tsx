@@ -46,7 +46,7 @@ const PlayerSelection = ({
   const { resultsFor } = useRecentResults();
 
   const { data: seasonPlayerStats = [] } = useQuery({
-    queryKey: ['seasonStats', currentSeason?.id],
+    queryKey: ['seasonPlayerStats', currentSeason?.id],
     queryFn: () => currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
     enabled: !!currentSeason
   });

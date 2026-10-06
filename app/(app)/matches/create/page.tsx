@@ -61,7 +61,6 @@ const CreateMatch = () => {
     select: (data) => {
       // Filter players by current team ID
       if (currentTeam) {
-        console.log("Filtering players for team:", currentTeam.id);
         return data.filter(player => player.teamId === currentTeam.id);
       }
       return data;
@@ -70,13 +69,11 @@ const CreateMatch = () => {
   
   // Initialize selected players with all team players
   useEffect(() => {
-    console.log("CreateMatch: Setting initial selected players from", players.length, "players");
     setSelectedPlayers(players.map(player => player.id));
   }, [players]);
 
   // Handle player selection from the TeamRandomizer
   const handlePlayerSelectionChange = (playerIds: string[]) => {
-    console.log("CreateMatch: Player selection changed to", playerIds.length, "players");
     setSelectedPlayers(playerIds);
   };
 

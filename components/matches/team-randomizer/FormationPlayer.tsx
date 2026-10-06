@@ -11,6 +11,7 @@ import { TrendingUp, Trophy, Flag } from "lucide-react";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import { useTeam } from "@/contexts/TeamContext";
+import { calculatePlayerRanks } from "@/lib/ranking-utils";
 
 interface FormationPlayerProps {
   player: Player;
@@ -24,7 +25,6 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
   const { recordFor } = usePlayerRecords();
   const record = recordFor(player.id, player.name);
 
-  console.log(`Rendering FormationPlayer for ${player.name} at index ${index} and team ${teamColor}`);
   
   const bgColor = teamColor === 'red' ? 'bg-destructive' : 'bg-win';
   const textColor = 'text-foreground';
@@ -41,18 +41,17 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
   
   // Get season stats
   const { data: seasonPlayerStats = [] } = useQuery({
-    queryKey: ['seasonStats', currentSeason?.id],
+    queryKey: ['seasonPlayerStats', currentSeason?.id],
     queryFn: () => currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
     enabled: !!currentSeason
   });
   
   const playerSeasonStats = seasonPlayerStats.find(stat => stat.playerId === player.id);
   
-  // Calculate player's rank in current season
+  // By the league's own rules, so a tie on points is settled the way the
+  // table settles it and two players level share a place.
   const playerRank = playerSeasonStats && playerSeasonStats.played > 0
-    ? seasonPlayerStats
-        .sort((a, b) => b.points - a.points)
-        .findIndex(stat => stat.playerId === player.id) + 1
+    ? calculatePlayerRanks(seasonPlayerStats)[player.id] ?? null
     : null;
   
   const recentResults = resultsFor(player.id);

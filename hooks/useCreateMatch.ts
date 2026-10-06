@@ -126,7 +126,6 @@ export const useCreateMatch = () => {
       return;
     }
 
-    console.log(`Creating match for team: ${currentTeam.id}`);
     
     // No score. Nobody has played, and nought is a scoreline: a fixture
     // created nil-nil arrives at the recording screen with a complete score

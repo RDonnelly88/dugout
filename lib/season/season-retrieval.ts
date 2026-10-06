@@ -11,11 +11,9 @@ export const getSeasons = async (): Promise<Season[]> => {
     
     // If no team is selected, return empty array
     if (!currentTeamId) {
-      console.log("No team selected, returning empty seasons array");
       return [];
     }
     
-    console.log("Fetching seasons for team:", currentTeamId);
     
     const { data, error } = await supabase
       .from("seasons")
@@ -26,12 +24,6 @@ export const getSeasons = async (): Promise<Season[]> => {
     if (error) {
       console.error("Error fetching seasons:", error);
       return [];
-    }
-    
-    if (!data || data.length === 0) {
-      console.log("No seasons found for team:", currentTeamId);
-    } else {
-      console.log(`Found ${data.length} seasons for team ${currentTeamId}`);
     }
     
     // Map data to ensure it matches the Season type
@@ -50,7 +42,6 @@ export const getSeason = async (id: string): Promise<Season | undefined> => {
     
     // If no team is selected, return undefined
     if (!currentTeamId) {
-      console.log("No team selected, cannot fetch season");
       return undefined;
     }
     
@@ -67,7 +58,6 @@ export const getSeason = async (id: string): Promise<Season | undefined> => {
     }
     
     if (!data) {
-      console.log(`Season ${id} not found for team ${currentTeamId}`);
       return undefined;
     }
     
@@ -87,7 +77,6 @@ export const getCurrentSeason = async (): Promise<Season | undefined> => {
     
     // If no team is selected, return undefined
     if (!currentTeamId) {
-      console.log("No team selected, cannot fetch current season");
       return undefined;
     }
     
@@ -110,7 +99,6 @@ export const getCurrentSeason = async (): Promise<Season | undefined> => {
     }
     
     // If no season is marked as current, get the most recent one
-    console.log("No current season found for team:", currentTeamId);
     
     // Fall back to most recent season for this team
     const { data: recentData, error: recentError } = await supabase
@@ -127,7 +115,6 @@ export const getCurrentSeason = async (): Promise<Season | undefined> => {
     }
     
     if (!recentData) {
-      console.log("No seasons found for team:", currentTeamId);
       return undefined;
     }
     
@@ -147,7 +134,6 @@ export const getSeasonPlayerStats = async (seasonId: string): Promise<SeasonPlay
     
     // If no team is selected, return empty array
     if (!currentTeamId) {
-      console.log("No team selected, returning empty season player stats");
       return [];
     }
     
@@ -166,7 +152,6 @@ export const getSeasonPlayerStats = async (seasonId: string): Promise<SeasonPlay
     
     // If season doesn't belong to current team, return empty array
     if (seasonData.team_id !== currentTeamId) {
-      console.log("Season doesn't belong to current team");
       return [];
     }
     
@@ -217,7 +202,6 @@ export const getSeasonChampions = async (seasonId?: string): Promise<SeasonChamp
     
     // If no team is selected, return empty array
     if (!currentTeamId) {
-      console.log("No team selected, returning empty season champions");
       return [];
     }
     
@@ -236,7 +220,6 @@ export const getSeasonChampions = async (seasonId?: string): Promise<SeasonChamp
     
     if (teamSeasonIds.length === 0) {
       // If no seasons exist for this team, return empty array
-      console.log("No seasons found for current team");
       return [];
     }
     
@@ -251,7 +234,6 @@ export const getSeasonChampions = async (seasonId?: string): Promise<SeasonChamp
     if (seasonId) {
       // Make sure the season belongs to current team
       if (!teamSeasonIds.includes(seasonId)) {
-        console.log("Requested season doesn't belong to current team");
         return [];
       }
       query = query.eq("season_id", seasonId);

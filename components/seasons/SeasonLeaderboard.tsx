@@ -6,8 +6,8 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import ResultStrip from "@/components/players/ResultStrip";
-import { SeasonPlayerStats, RecentResult } from "@/types";
-import { useSeasonResults } from "@/hooks/useSeasonResults";
+import { SeasonPlayerStats } from "@/types";
+import { useRecentResults } from "@/hooks/useRecentResults";
 import { calculatePlayerRanks, sortPlayersByRank } from "@/lib/ranking-utils";
 import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
@@ -15,7 +15,6 @@ import PlayerAvatar from "@/components/players/PlayerAvatar";
 interface SeasonLeaderboardProps {
   stats: SeasonPlayerStats[];
   seasonId?: string;
-  playerResults?: Record<string, RecentResult[]>;
   limit?: number;
   showTitle?: boolean;
   seasonName?: string;
@@ -25,7 +24,6 @@ interface SeasonLeaderboardProps {
 const SeasonLeaderboard = ({ 
   stats, 
   seasonId,
-  playerResults = {}, 
   limit, 
   showTitle = true,
   seasonName,
@@ -44,17 +42,9 @@ const SeasonLeaderboard = ({
   // Limit the number of players shown if requested
   const displayStats = limit ? sortedStats.slice(0, limit) : sortedStats;
   
-  // Get player IDs for batch loading
-  const playerIds = displayStats.map(player => player.playerId);
-  
-  // Use the batch loading hook for real-time data
-  const { seasonResults, isLoading: isLoadingResults } = useSeasonResults(
-    seasonId || null, 
-    seasonId ? playerIds : []
-  );
-  
-  // Combine provided results with batch loaded results - prioritize fresh data from the hook
-  const combinedResults = { ...playerResults, ...seasonResults };
+  // The season's own last few nights, worked out from the matches like every
+  // other strip in the app.
+  const { resultsFor, isLoading: isLoadingResults } = useRecentResults(seasonId);
   
   const getRankBadge = (rank: number) => {
     if (rank === 1) {
@@ -143,9 +133,9 @@ const SeasonLeaderboard = ({
                 </TableCell>
                 <TableCell className="hidden text-right sm:table-cell">
                   <ResultStrip 
-                    results={combinedResults[stat.playerId] || []} 
-                    size="sm" 
-                    isLoading={isLoadingResults && !combinedResults[stat.playerId]}
+                    results={resultsFor(stat.playerId)}
+                    size="sm"
+                    isLoading={isLoadingResults}
                   />
                 </TableCell>
                 {/* Won, drawn and lost carry the same colours here as they do

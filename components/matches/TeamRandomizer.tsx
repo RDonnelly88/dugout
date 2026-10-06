@@ -62,7 +62,7 @@ const TeamRandomizer = ({
     queryFn: getCurrentSeason,
   });
   const { data: standings = [] } = useQuery({
-    queryKey: ["seasonStats", currentSeason?.id],
+    queryKey: ["seasonPlayerStats", currentSeason?.id],
     queryFn: () =>
       currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
     enabled: !!currentSeason,

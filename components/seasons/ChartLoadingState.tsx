@@ -10,7 +10,7 @@ const ChartLoadingState: React.FC<ChartLoadingStateProps> = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Position Tracking</CardTitle>
+        <CardTitle>Position after each match</CardTitle>
         <CardDescription>
           Loading position history...
         </CardDescription>

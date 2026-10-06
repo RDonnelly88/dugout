@@ -13,8 +13,6 @@ import {
   deleteSeason
 } from "./season-service";
 
-// Export the season results functions from season-results-service
-import { getPlayerResultsInSeason } from "./season-results-service";
 
 export {
   // Player functions
@@ -41,6 +39,4 @@ export {
   updateSeason,
   deleteSeason,
   
-  // Season results functions
-  getPlayerResultsInSeason,
 };

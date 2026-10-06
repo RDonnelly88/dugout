@@ -8,16 +8,17 @@ import type { RecentResult } from "@/types";
 /**
  * How the squad has been going lately, over their recent nights together.
  *
- * The run to show anywhere that is not scoped to a season: the squad list,
- * a player's own page, the randomiser. A season page shows that season's
- * run instead, which is a different question with its own answer.
+ * Without a season, the squad's last few nights: the squad list, a player's
+ * own page, the randomiser. With one, that season's last few, for its table —
+ * by the same rules, so a newcomer is never marked missing nights from before
+ * they arrived in either.
  *
  * Computed from the matches rather than fetched, like the ratings beside it,
  * and off the same query — so a grid of thirty players costs nothing beyond
  * the matches every page already has. Asking per player opened one request
  * each and let them arrive at different moments.
  */
-export const useRecentResults = () => {
+export const useRecentResults = (seasonId?: string) => {
   const { currentTeam } = useTeam();
 
   const { data: matches = [], isLoading } = useQuery({
@@ -26,7 +27,17 @@ export const useRecentResults = () => {
     enabled: !!currentTeam,
   });
 
-  const runs = useMemo(() => recentResults(matches), [matches]);
+  // A season's table reads that season's last few nights; everywhere else
+  // reads the squad's.
+  const runs = useMemo(
+    () =>
+      recentResults(
+        matches,
+        undefined,
+        seasonId ? (m) => m.seasonId === seasonId : undefined
+      ),
+    [matches, seasonId]
+  );
 
   return {
     runs,

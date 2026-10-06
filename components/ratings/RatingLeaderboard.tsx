@@ -87,13 +87,15 @@ export default function RatingLeaderboard({
               <motion.span
                 aria-hidden
                 className="absolute inset-y-0 left-0 bg-accent/10"
-                initial={reduced ? false : { width: 0 }}
+                // The same start whatever the motion setting, which the
+                // server cannot know; reduced motion fills it at once.
+                initial={{ width: 0 }}
                 animate={{ width: `${12 + share * 88}%` }}
-                transition={{
-                  duration: 0.7,
-                  delay: reduced ? 0 : index * 0.04,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
+                transition={
+                  reduced
+                    ? { duration: 0 }
+                    : { duration: 0.7, delay: index * 0.04, ease: [0.22, 1, 0.36, 1] }
+                }
               />
 
               <span className="relative w-6 shrink-0 text-center text-sm font-semibold tabular text-muted-foreground">

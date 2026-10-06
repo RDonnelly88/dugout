@@ -11,7 +11,7 @@ const ChartEmptyState: React.FC<ChartEmptyStateProps> = ({ seasonName }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Position Tracking</CardTitle>
+        <CardTitle>Position after each match</CardTitle>
         <CardDescription>
           {seasonName ? `Player position changes in ${seasonName}` : 'Player position changes'}
         </CardDescription>
