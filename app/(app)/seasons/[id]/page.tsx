@@ -36,6 +36,7 @@ import { useSeasonDetail } from "@/hooks/useSeasonDetail";
 import { calculatePlayerRanks } from "@/lib/ranking-utils";
 import PageHeader from "@/components/PageHeader";
 import { StatTile, StatTiles } from "@/components/StatTile";
+import SectionHeading from "@/components/SectionHeading";
 
 /** How many of the season's latest results the rail at the top shows. */
 const LATEST_NIGHTS = 8;
@@ -245,7 +246,7 @@ const SeasonDetail = () => {
 
           {latestNights.length > 0 && (
             <section className="mb-6">
-              <h2 className="section-title mb-3">Latest nights</h2>
+              <SectionHeading kicker={season.name} title="Latest nights" />
               <Rail label={`The latest nights of ${season.name}`}>
                 {latestNights.map((match) => (
                   <MatchCard key={match.id} match={match} />

@@ -25,6 +25,7 @@ import MatchCard from "@/components/matches/MatchCard";
 import { Rail } from "@/components/ui/rail";
 import QuickActions from "./QuickActions";
 import OddsLeaders from "./OddsLeaders";
+import SectionHeading from "@/components/SectionHeading";
 
 /** A card heading that is also the way through to the whole thing. */
 function More({ href, children }: { href: string; children: React.ReactNode }) {
@@ -150,7 +151,7 @@ const Dashboard = () => {
       </PageHeader>
 
       <section className="mb-8">
-        <h2 className="eyebrow mb-3">Get on with it</h2>
+        <SectionHeading kicker="This week" title="Get on with it" />
         <QuickActions />
       </section>
 

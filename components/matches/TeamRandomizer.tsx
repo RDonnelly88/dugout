@@ -27,6 +27,7 @@ import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
 import { useTeam } from "@/contexts/TeamContext";
 import { ELO } from "@/lib/config";
+import SectionHeading from "@/components/SectionHeading";
 
 interface TeamRandomizerProps {
   players: Player[];
@@ -161,7 +162,7 @@ const TeamRandomizer = ({
   return (
     <div className="space-y-5">
       <section>
-        <h3 className="eyebrow mb-2">1 · Who&apos;s playing</h3>
+        <SectionHeading number={1} kicker="Pick them" title="Who's playing" as="h3" />
         <PlayerSelection
           players={players}
           selectedPlayers={selectedPlayers}
@@ -172,7 +173,7 @@ const TeamRandomizer = ({
       </section>
 
       <section>
-        <h3 className="eyebrow mb-2">2 · How to split them</h3>
+        <SectionHeading number={2} kicker="Then" title="How to split them" as="h3" />
         <MethodPicker
           value={method}
           onChange={setMethod}

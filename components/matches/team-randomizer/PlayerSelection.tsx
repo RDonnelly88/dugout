@@ -86,8 +86,8 @@ const PlayerSelection = ({
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
       <div className="mb-4">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="text-sm font-medium">Select Available Players</h3>
+        {/* No heading of its own: "Who's playing" above it already says it. */}
+        <div className="mb-3 flex items-center justify-end">
           <div className="flex gap-2">
             <Button 
               variant="outline" 

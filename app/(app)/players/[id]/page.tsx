@@ -27,6 +27,7 @@ import { outcomeOf, sideOf } from "@/lib/match-result";
 import { recentResults } from "@/lib/recent-results";
 import { ratingSwings } from "@/lib/match-impact";
 import { StatTile, StatTiles } from "@/components/StatTile";
+import SectionHeading from "@/components/SectionHeading";
 
 /** How many of a player's matches to list before asking. */
 const MATCHES_SHOWN = 10;
@@ -248,7 +249,7 @@ const PlayerDetail = () => {
           colour of how it went for them, before the full list further down. */}
       {recentNights.length > 0 && (
         <section className="mb-8">
-          <h2 className="section-title mb-3">Recent nights</h2>
+          <SectionHeading kicker={`The last ${recentNights.length}`} title="Recent nights" />
           <Rail label={`${player.name}'s recent nights`}>
             {recentNights.map((match) => (
               <MatchCard key={match.id} match={match} side={sideOf(match, player.id) ?? undefined} />
@@ -278,9 +279,10 @@ const PlayerDetail = () => {
       </Tabs>
 
       <div className="mt-8">
-        <h2 className="section-title mb-4">
-          {selectedSeason ? `Matches in ${selectedSeason.name}` : "Matches"}
-        </h2>
+        <SectionHeading
+          kicker={selectedSeason ? selectedSeason.name : "All time"}
+          title={`Every match${playerMatches.length ? ` · ${playerMatches.length}` : ""}`}
+        />
 
         {playerMatches.length === 0 ? (
           <div className="rounded-lg bg-surface-2/40 p-8 text-center">

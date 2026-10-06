@@ -609,9 +609,29 @@ html[data-theme="dark"] {
   @apply mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg;
 }
 
-/* A heading inside a page: a card's title, or a band within one. */
+/* A card's title, or a band within one: the display face, narrowed like the
+   page title but a size it can share a card with. */
 @utility section-title {
-  @apply text-lg font-semibold leading-none tracking-tight text-foreground;
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 1rem + 0.8vw, 1.55rem);
+  font-stretch: 84%;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.005em;
+  color: hsl(var(--foreground));
+}
+
+/* A heading between cards, opening a part of the page: the size of a chapter
+   heading in a programme, a step down from the page title. */
+@utility section-heading {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4.5vw, 2.75rem);
+  font-stretch: 78%;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: hsl(var(--foreground));
+  text-wrap: balance;
 }
 
 @utility stat-item {
