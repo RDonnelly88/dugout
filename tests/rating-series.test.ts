@@ -66,8 +66,7 @@ describe("ratingSeries", () => {
     expect(series).toHaveLength(1 + 6);
   });
 
-  /** Being away is not evidence about anybody, and the line should say so. */
-  it("stays flat through weeks away from everyone in their games", () => {
+  it("eases down through weeks away as their games age", () => {
     const ratings = computeRatings([
       match(["a"], ["b"], 5, 0, "2026-01-01"),
       ...withoutThem(8),
@@ -76,8 +75,7 @@ describe("ratingSeries", () => {
 
     for (const away of series.slice(1)) {
       expect(away.played).toBe(false);
-      expect(away.change).toBeCloseTo(0, 6);
-      expect(away.rating).toBeCloseTo(series[0].rating, 6);
+      expect(away.change).toBeLessThan(0);
     }
   });
 

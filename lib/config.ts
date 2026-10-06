@@ -9,38 +9,41 @@
  * Elo's scale — everyone starts on 1200, and 400 points between two sides
  * makes one about a ten-to-one favourite — but not Elo's arithmetic. Rather
  * than nudging a running total after every game, the table is fitted afresh
- * after every match from each player's own recent results: the ratings that
- * best explain who beat whom, with a side worth the mean of its players.
+ * after every match from the squad's recent matches: the ratings that best
+ * explain who beat whom, with a side worth the mean of its players.
  *
  * A running total never forgets. A great spell two years ago went on holding
- * a rating up long after the player had stopped being that player, and the
- * only cure was to drag absent ratings back towards the start, which punished
- * a holiday as though it were a loss of form. A window over each player's own
- * games forgets on purpose and needs no such thing.
+ * a rating up long after the player had stopped being that player. A window
+ * over the squad's matches forgets on purpose, and ages everybody's games at
+ * the same rate whether they played the matches since or not.
  *
  * Tuned by replaying simulated seasons — five-a-side, picked roughly level,
  * irregular turnout, some players improving and some fading — and scoring
  * each setting on how well it called the next result and how closely it
- * ranked the true order. A shorter memory notices a change of form sooner and
- * ranks everybody else worse for it, because a five-a-side result says very
- * little about any one of the ten.
+ * ranked the true order. A shorter memory notices a change of form sooner
+ * and ranks everybody else worse for it, because a five-a-side result says
+ * very little about any one of the ten. Counting the window in each player's
+ * own games instead of the squad's matches ranked noticeably better in the
+ * same tests, at the cost of an absent player's rating standing still rather
+ * than easing back.
  */
 export const ELO = {
   /** Everyone starts level. The number is arbitrary; only differences matter. */
   start: 1200,
 
   /**
-   * Games of their own, newest first, after which a game counts half as much
-   * towards a player's rating as their latest.
+   * Matches the squad has played since a game, after which it counts half as
+   * much towards a rating as the latest.
    */
-  halfLife: 20,
+  halfLife: 30,
 
   /**
-   * Games of their own after which a result no longer counts at all. Paired
-   * with `halfLife`: by the time a game drops out it is already counting for
-   * a quarter, so nobody's rating lurches the week an old result leaves.
+   * Matches the squad has played since a game, after which it no longer
+   * counts at all. Paired with `halfLife`: by the time a game drops out it is
+   * already counting for a quarter, so nobody's rating lurches the week an
+   * old result leaves.
    */
-  window: 40,
+  window: 60,
 
   /**
    * How far apart the squad is assumed to be before any results come in, in
@@ -64,7 +67,8 @@ export const ELO = {
 
   /**
    * Matches missed in a row before the table notes that somebody has been
-   * away. Only a note: their rating stays where they left it.
+   * away, and that their rating is easing back towards `start` as their games
+   * age.
    */
   awayAfter: 4,
 } as const;

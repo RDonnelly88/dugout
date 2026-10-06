@@ -90,7 +90,7 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
       description={
         <>
           Everyone starts on {ELO.start}. Beat a side rated above you and it
-          says more about you than beating one below. Recent games count most,
+          says more about you than beating one below. Recent matches count most,
           and old ones stop counting altogether. A win is a win — a thrashing
           counts the same as a scrape.
         </>
@@ -109,11 +109,10 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
               A team is worth the average of the players in it. Nothing else
               goes in — not the score, not who is in goal.
             </Step>
-            <Step n={2} title="Your games are weighed by age">
-              Your rating answers for your own last {ELO.window} games. The
-              newest counts in full, one {ELO.halfLife} games back counts
-              half, and anything older than {ELO.window} does not count at
-              all.
+            <Step n={2} title="Games are weighed by age">
+              Only the squad&apos;s last {ELO.window} matches count. The
+              newest counts in full, one {ELO.halfLife} matches back counts
+              half, and anything older does not count at all.
             </Step>
             <Step n={3} title="The whole table is worked out again">
               Everybody&apos;s rating is set to whatever best explains who beat
@@ -204,16 +203,18 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
             ))}
           </div>
           <div className="mt-1 flex justify-between text-[11px] text-muted-foreground">
-            <span>Your latest game</span>
-            <span>{ELO.window} games back</span>
+            <span>The latest match</span>
+            <span>{ELO.window} matches back</span>
           </div>
           <p className="mt-3 text-sm text-muted-foreground">
-            Your newest game counts in full, one {ELO.halfLife} games back
+            The newest match counts in full, one {ELO.halfLife} matches back
             counts half, and nothing older than {ELO.window} counts at all.
-            That is counted in your own games, not weeks on the calendar, so a
-            holiday or an injury costs nothing. Come back and your rating is
-            where you left it; your next results start to replace the old
-            ones.
+            It is counted in the squad&apos;s matches, whether you played in
+            them or not, so a game ages at the same rate for everybody. Miss a
+            few weeks and your last games are that much older when you come
+            back; miss {ELO.window} and there is nothing left to rate you on,
+            so you are back on {ELO.start} until you play again. A winter when
+            nobody plays ages nothing.
           </p>
         </Section>
 
@@ -252,9 +253,10 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
                 Why did my number move when I didn&apos;t play?
               </dt>
               <dd className="mt-0.5 text-muted-foreground">
-                Your rating depends on how good the people in your games were,
-                and they have carried on playing. It is usually a point or
-                two.
+                Every match the squad plays makes your games a match older, so
+                they count for a little less and your rating eases back towards{" "}
+                {ELO.start}. The people from your games have also carried on
+                playing and may have been re-rated.
               </dd>
             </div>
           </dl>
@@ -288,10 +290,10 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
             <Line name="weight">
               <span>½</span>
               <Sup>
-                <Frac over={<Var>games since</Var>} under={<>{ELO.halfLife}</>} />
+                <Frac over={<Var>matches since</Var>} under={<>{ELO.halfLife}</>} />
               </Sup>
               <span className="ml-2 text-xs text-muted-foreground">
-                for your last {ELO.window}, then 0
+                for the last {ELO.window} matches, then 0
               </span>
             </Line>
 

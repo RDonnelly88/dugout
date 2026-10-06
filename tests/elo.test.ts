@@ -274,26 +274,58 @@ describe("old games fade", () => {
 });
 
 describe("computeRatings and matches missed", () => {
-  it("leaves a rating where it was while the squad plays on without them", () => {
-    const opener = match(["a"], ["b"], 5, 0, "2026-01-01");
+  /**
+   * A game ages by the squad's matches, not the player's own. Somebody who
+   * played, sat out five and played again has a first game six matches old,
+   * not two, so it counts for less than it does for somebody who played the
+   * same two games in consecutive weeks.
+   */
+  it("ages a game by the matches the squad has played since, not your own", () => {
+    const away = computeRatings([
+      match(["a"], ["opp1"], 1, 0, "2026-01-01"),
+      ...withoutThem(5),
+      match(["a"], ["opp2"], 1, 1, "2026-03-01"),
+    ]).get("a")!;
+    const regular = computeRatings([
+      match(["b"], ["opp3"], 1, 0, "2026-01-01"),
+      match(["b"], ["opp4"], 1, 1, "2026-01-02"),
+    ]).get("b")!;
 
-    const straight = computeRatings([opener]).get("a")!;
-    const away = computeRatings([opener, ...withoutThem(25)]).get("a")!;
-
-    expect(away.rating).toBeCloseTo(straight.rating, 6);
-    expect(away.missed).toBe(25);
+    expect(away.rating).toBeGreaterThan(ELO.start);
+    expect(away.rating).toBeLessThan(regular.rating);
   });
 
-  it("does not pull a strong player back towards the start for a long break", () => {
+  it("eases an absent player back towards the start as their games age", () => {
     const strong = Array.from({ length: 8 }, (_, i) =>
       match(["a"], [`opp${i}`], 1, 0, `2026-01-${String(i + 1).padStart(2, "0")}`)
     );
 
     const before = computeRatings(strong).get("a")!.rating;
-    const after = computeRatings([...strong, ...withoutThem(30)]).get("a")!.rating;
+    const after = computeRatings([...strong, ...withoutThem(10)]).get("a")!;
 
     expect(before).toBeGreaterThan(ELO.start);
-    expect(after).toBeCloseTo(before, 6);
+    expect(after.rating).toBeLessThan(before);
+    // Easing, never crossing: time away makes nobody worse than average.
+    expect(after.rating).toBeGreaterThan(ELO.start);
+    expect(after.missed).toBe(10);
+    expect(after.lastChange).toBeLessThan(0);
+  });
+
+  it("has nothing left to rate somebody on once a window has passed without them", () => {
+    const opener = match(["a"], ["b"], 5, 0, "2026-01-01");
+    const away = Array.from({ length: ELO.window }, (_, i) =>
+      match(
+        [`x${i}`],
+        [`y${i}`],
+        1,
+        0,
+        new Date(Date.UTC(2026, 1, 1 + i)).toISOString().slice(0, 10)
+      )
+    );
+    const a = computeRatings([opener, ...away]).get("a")!;
+
+    expect(a.counted).toBe(0);
+    expect(a.rating).toBeCloseTo(ELO.start, 6);
   });
 
   it("counts nothing missed for somebody who played the last match", () => {
@@ -314,17 +346,6 @@ describe("computeRatings and matches missed", () => {
 
     expect(a.lastChange).toBeCloseTo(a.history.at(-1)!.change);
     expect(a.lastChange).toBeGreaterThan(0);
-  });
-
-  it("gives nothing for the last match to somebody whose games it did not touch", () => {
-    const ratings = computeRatings([
-      match(["a"], ["b"], 1, 0, "2026-01-01"),
-      match(["x"], ["y"], 1, 0, "2026-01-02"),
-    ]);
-    const a = ratings.get("a")!;
-
-    expect(a.missed).toBe(1);
-    expect(a.lastChange).toBeCloseTo(0, 6);
   });
 
   /**

@@ -116,16 +116,18 @@ export default function RatingLeaderboard({
                   rough
                 </span>
               )}
-              {/* Said in words, not just an icon and a number. Being away
-                  costs nothing, so this is only a note on how fresh the
-                  number is. */}
+              {/* Said in words, not just an icon and a number. */}
               {rating.missed >= ELO.awayAfter && (
                 <span
                   className="relative hidden items-center gap-1 whitespace-nowrap text-xs text-muted-foreground sm:inline-flex"
-                  title={`Not played in the squad's last ${rating.missed} matches. The rating is where they left it.`}
+                  title={
+                    rating.counted === 0
+                      ? `None of their games are in the squad's last ${ELO.window} matches, so there is nothing to rate them on.`
+                      : `Not played in the squad's last ${rating.missed} matches. Their games are ageing, so the rating is easing back towards ${ELO.start}.`
+                  }
                 >
                   <Hourglass className="h-3 w-3 shrink-0" />
-                  away {rating.missed}
+                  {rating.counted === 0 ? "no recent games" : `away ${rating.missed}`}
                 </span>
               )}
               <span
@@ -135,7 +137,7 @@ export default function RatingLeaderboard({
                 title={
                   played
                     ? "Change from the last match"
-                    : "Missed the last match. Anything here is the people in their games being re-rated."
+                    : "Missed the last match, so their games are a match older."
                 }
               >
                 <Delta change={rating.lastChange} />

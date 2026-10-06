@@ -16,10 +16,10 @@ interface RatingPoint {
   /** The run they walked in on, newest first, for showing beside the result. */
   formBefore: PlayerFormResult[];
   /**
-   * How many of their games the rating rested on going in, which is most of
+   * How many of their games were still counting going in, which is most of
    * why two team-mates in the same result move by different amounts: one more
-   * result says more about somebody with four games behind them than about
-   * somebody with forty.
+   * result says more about somebody with four recent games behind them than
+   * about somebody with forty.
    */
   countedBefore: number;
 }
@@ -38,13 +38,19 @@ export interface PlayerRating {
   /** Matches the squad has played since this player last turned out. */
   missed: number;
   /**
+   * Their games still inside the window. Nought means the rating rests on
+   * nothing but the pull towards `ELO.start`, and says nothing about them.
+   */
+  counted: number;
+  /**
    * How the rating moved over the squad's most recent match, whether or not
    * this player was in it.
    *
    * Not the same as the last entry in `history`, which is the last match they
-   * played — possibly months ago. For anyone who missed the game this is
-   * usually a point or two at most: their own results do not change, but the
-   * people they played with and against in them may have been re-rated.
+   * played — possibly months ago. For anyone who missed the game this is the
+   * small easing back towards `ELO.start` that comes from every one of their
+   * games being a match older, plus any re-rating of the people they played
+   * with and against.
    */
   lastChange: number;
   history: RatingPoint[];
@@ -54,20 +60,22 @@ export interface PlayerRating {
    *
    * `history` only holds matches they were in, so a chart drawn from it alone
    * stops dead at whenever they last turned out. This carries the line on
-   * through the weeks away, nearly flat, which is what being away does.
+   * through the weeks away, easing back towards the start as their games age.
    */
   absent: { date: string; rating: number }[];
 }
 
 /**
- * How much a game counts towards a rating, by how many of that player's own
- * games have been played since it. The newest counts in full, each one older
- * counts a little less, halving every `ELO.halfLife` games, and from
- * `ELO.window` back it counts for nothing at all.
+ * How much a game counts towards a rating, by how many matches the squad has
+ * played since it. The newest counts in full, each one older counts a little
+ * less, halving every `ELO.halfLife` matches, and from `ELO.window` back it
+ * counts for nothing at all.
  *
- * Counted in the player's own games, not the squad's nights, so a month away
- * ages nothing: the last thing somebody did is still the freshest evidence
- * about them when they come back.
+ * Counted in the squad's matches, whoever played in them, so a game ages the
+ * same for everybody: somebody back after five weeks away finds their last
+ * game five matches older, not one. A long absence therefore leaves less and
+ * less evidence behind, and the rating eases back towards `ELO.start` until
+ * they play again.
  */
 export function gameWeight(age: number): number {
   if (age < 0 || age >= ELO.window) return 0;
@@ -111,19 +119,18 @@ interface Night {
   players: Int32Array;
   /** Each player's part in the gap between the sides: plus or minus one over side size. */
   share: Float64Array;
-  /** How much the night counts for each of them, in the fit being solved. */
-  weight: Float64Array;
+  /** How much the night counts, in the fit being solved. The same for everyone in it. */
+  weight: number;
   /** 1 if the first side won, ½ for a draw, 0 if it lost. */
   actual: number;
-  /** The last night whose fit this one was part of, so it is only added once. */
-  fittedOn: number;
 }
 
 /**
  * The ratings that best explain everybody's recent results, all at once.
  *
- * Each player's rating has to answer for their own last `ELO.window` games,
- * the recent ones counting most, given the ratings of the people they played
+ * Each player's rating has to answer for their games in the squad's last
+ * `ELO.window` matches, the recent ones counting most, given the ratings of
+ * the people they played
  * with and against. Those people are being fitted at the same time, which is
  * what credits a win alongside a strong team-mate less than a win alongside
  * a weak one — and goes on doing so as the team-mate's own rating settles.
@@ -131,10 +138,8 @@ interface Night {
  * Everybody is also pulled gently towards `ELO.start`, so a rating has to be
  * argued for by results; without it a single win would be an infinite one.
  *
- * Solved by Newton's method from `ratings`, which it overwrites. The weights
- * differ from player to player, so this is a set of equations rather than a
- * single likelihood, but each is a weighted logistic regression and they
- * settle together in a handful of steps from a warm start.
+ * Solved by Newton's method from `ratings`, which it overwrites: a weighted
+ * logistic regression, settling in a handful of steps from a warm start.
  */
 function solve(ratings: Float64Array, nights: Night[]) {
   const n = ratings.length;
@@ -151,7 +156,7 @@ function solve(ratings: Float64Array, nights: Night[]) {
     }
 
     for (const night of nights) {
-      const { players, share, weight } = night;
+      const { players, share, weight: w } = night;
       let gap = 0;
       for (let k = 0; k < players.length; k++) gap += share[k] * ratings[players[k]];
       const expected = 1 / (1 + Math.exp(-SCALE * gap));
@@ -159,8 +164,6 @@ function solve(ratings: Float64Array, nights: Night[]) {
       const slope = SCALE * SCALE * expected * (1 - expected);
 
       for (let k = 0; k < players.length; k++) {
-        const w = weight[k];
-        if (w === 0) continue;
         const row = players[k] * width;
         const wx = w * share[k];
         system[row + n] -= wx * surprise;
@@ -226,12 +229,11 @@ function gaussianSolve(m: Float64Array, n: number): Float64Array {
  *
  * Only completed matches with a result count. Anything else is a fixture.
  *
- * After every match the whole table is fitted afresh from each player's own
- * recent games (see `solve` and `gameWeight`), so a rating is always "what
- * the last few months say", never a running total that a good spell two
- * years ago is still propping up. Missing a match changes none of a player's
- * own evidence, so their rating barely moves while they are away and is
- * waiting for them, unchanged in meaning, when they come back.
+ * Runs over the whole history, from the squad's first match, never reset by
+ * a season. After every match the whole table is fitted afresh from the
+ * squad's recent matches (see `solve` and `gameWeight`), so a rating is
+ * always "what the last year or so says", never a running total that a good
+ * spell two years ago is still propping up.
  *
  * Depends on nothing outside the matches, so the same history always gives
  * the same table.
@@ -267,15 +269,16 @@ function replay(matches: Match[]): Map<string, PlayerRating> {
   const ids: string[] = [];
   let current = new Float64Array(0);
 
-  // The nights each player turned out for, oldest first, and where in each
-  // night's line-up they stood. Only the last `ELO.window` of them matter.
-  const appearances: { night: number; slot: number }[][] = [];
+  // The nights each player turned out for, oldest first.
+  const appearances: number[][] = [];
   const lastPlayedIndex = new Map<string, number>();
 
   // Built as each night is reached, since a fit position is only handed out
   // on a player's debut.
   const nights: Night[] = [];
-  let fitted: Night[] = [];
+  // Of a player's nights, the ones still inside the window after `night`.
+  const inWindow = (player: number, night: number) =>
+    appearances[player].filter((g) => night - g < ELO.window).length;
 
   // The run each player carries into the next match, newest first, with the
   // nights the squad played without them marked — the same strip the table
@@ -300,6 +303,7 @@ function replay(matches: Match[]): Map<string, PlayerRating> {
         unsettled: true,
         peak: ELO.start,
         missed: 0,
+        counted: 0,
         lastChange: 0,
         history: [],
         absent: [],
@@ -313,10 +317,7 @@ function replay(matches: Match[]): Map<string, PlayerRating> {
     const ratingA = mean(sideA.map(at));
     const ratingB = mean(sideB.map(at));
     const countedBefore = new Map(
-      [...sideA, ...sideB].map((id) => [
-        id,
-        Math.min(appearances[index.get(id)!].length, ELO.window),
-      ])
+      [...sideA, ...sideB].map((id) => [id, inWindow(index.get(id)!, night - 1)])
     );
 
     const lineUp = [...sideA, ...sideB];
@@ -325,30 +326,15 @@ function replay(matches: Match[]): Map<string, PlayerRating> {
       share: Float64Array.from(lineUp, (_, k) =>
         k < sideA.length ? 1 / sideA.length : -1 / sideB.length
       ),
-      weight: new Float64Array(lineUp.length),
+      weight: 0,
       actual: actualA,
-      fittedOn: -1,
     });
-    lineUp.forEach((playerId, slot) => {
-      appearances[index.get(playerId)!].push({ night, slot });
-    });
+    for (const playerId of lineUp) appearances[index.get(playerId)!].push(night);
 
-    // Every night still inside somebody's window, weighted for each of them
-    // by how many of their own games have come since.
-    for (const old of fitted) old.weight.fill(0);
-    fitted = [];
-    for (const games of appearances) {
-      const from = Math.max(0, games.length - ELO.window);
-      for (let k = from; k < games.length; k++) {
-        const { night: g, slot } = games[k];
-        const entry = nights[g];
-        if (entry.fittedOn !== night) {
-          entry.fittedOn = night;
-          fitted.push(entry);
-        }
-        entry.weight[slot] = WEIGHTS[games.length - 1 - k];
-      }
-    }
+    // The squad's last `ELO.window` matches, each weighted by how many have
+    // been played since.
+    const fitted = nights.slice(Math.max(0, night - ELO.window + 1));
+    fitted.forEach((entry, k) => (entry.weight = WEIGHTS[fitted.length - 1 - k]));
 
     const next = Float64Array.from(before);
     solve(next, fitted);
@@ -404,6 +390,7 @@ function replay(matches: Match[]): Map<string, PlayerRating> {
 
   for (const player of ratings.values()) {
     player.missed = played.length - 1 - lastPlayedIndex.get(player.playerId)!;
+    player.counted = inWindow(index.get(player.playerId)!, played.length - 1);
   }
 
   return ratings;

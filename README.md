@@ -28,10 +28,10 @@ by a fourth.
 
 **Rates everyone.** On Elo's scale, fitted for a team game: a side is rated at
 the mean of its players, and beating a stronger team is worth more than beating
-a weaker one. Each player is rated on their own recent games, the newest
-counting most and old ones dropping out, so missing a week costs nothing. A win
-is a win — a nine-nil is one team having a night, not nine times the evidence
-of a one-nil.
+a weaker one. Ratings are fitted from the squad's recent matches, the newest
+counting most and old ones dropping out, so a hot spell two years ago stops
+propping anybody up. A win is a win — a nine-nil is one team having a night,
+not nine times the evidence of a one-nil.
 
 **Picks the sides.** Say who turned up, then choose how to split them: a
 straight shuffle, evenly by rating, or evenly by recent form. Each option shows

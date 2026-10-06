@@ -53,8 +53,8 @@ export default function PlayerRatingCard({
     );
   }
 
-  // What the squad's most recent match did to this rating, which is next to
-  // nothing if they were not in it. Their own last game is a different
+  // What the squad's most recent match did to this rating, which is a small
+  // easing back towards the start if they were not in it. Their own last game is a different
   // question, and answering that one here made a rating look freshly earned
   // months after it was.
   const change = Math.round(rating.lastChange);
