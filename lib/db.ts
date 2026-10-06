@@ -13,8 +13,6 @@ import {
   deleteSeason
 } from "./season-service";
 
-// Export the player form functions from player-form-service
-import { getPlayerFormInSeason } from "./player-form-service";
 
 export {
   // Player functions
@@ -41,6 +39,4 @@ export {
   updateSeason,
   deleteSeason,
   
-  // Player form functions
-  getPlayerFormInSeason,
 };

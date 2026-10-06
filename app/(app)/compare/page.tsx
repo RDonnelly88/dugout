@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
@@ -10,7 +11,11 @@ import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
 import { headToHead, rate, type Tally } from "@/lib/head-to-head";
 import { winRate } from "@/lib/player-stats";
-import { computeRatings, displayRating } from "@/lib/elo";
+import { displayRating } from "@/lib/elo";
+import { ratingSeries } from "@/lib/rating-series";
+import { outcomeOf } from "@/lib/match-result";
+import { ledger, matchExpectations, nightsFor, signedWins, type Ledger } from "@/lib/expected-wins";
+import Verdict from "@/components/xw/Verdict";
 import { emptyRecord } from "@/lib/player-stats";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import RatingHistoryChart from "@/components/ratings/RatingHistoryChart";
@@ -74,9 +79,11 @@ function CompareRow({
         <div className="flex h-2 overflow-hidden rounded-full bg-surface-2">
           <motion.span
             className="bg-accent/70"
-            initial={reduced ? false : { width: "50%" }}
+            // The same start whatever the motion setting, which the server
+            // cannot know; reduced motion moves it at once.
+            initial={{ width: "50%" }}
             animate={{ width: `${shareA}%` }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            transition={reduced ? { duration: 0 } : { duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           />
           <span className="flex-1 bg-info/50" />
         </div>
@@ -96,12 +103,19 @@ function TallyLine({
   tally,
   Icon,
   unit,
+  xw,
 }: {
   label: string;
   tally: Tally;
   Icon: typeof Swords;
   /** "8 together" reads wrong under a tally of games spent opposing. */
   unit: string;
+  /**
+   * The same games against the odds. The record says what happened; this
+   * says whether it was more than the ratings of everyone on the pitch would
+   * have had happen anyway.
+   */
+  xw: Ledger;
 }) {
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
@@ -122,6 +136,12 @@ function TallyLine({
           </p>
           <p className="text-xs text-muted-foreground">
             {tally.played} {unit} · {pct(rate(tally))} win rate
+          </p>
+          <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+            <span className="tabular">
+              {signedWins(xw.above)} against xW
+            </span>
+            <Verdict verdict={xw.verdict} />
           </p>
         </>
       )}
@@ -171,15 +191,25 @@ export default function ComparePage() {
     return found ? { ...emptyRecord(playerId, name), ...found } : emptyRecord(playerId, name);
   };
 
-  // Elo has no per-season figure to look up, so a season is rated by replaying
-  // only that season's results. Everyone starts level again, which is the
-  // honest reading of "how did this season go".
-  const seasonRatings = useMemo(
-    () => (scope === "overall" ? null : computeRatings(scopedMatches)),
-    [scope, scopedMatches]
-  );
-  const rating = (playerId: string) =>
-    seasonRatings ? seasonRatings.get(playerId) : ratingFor(playerId);
+  // A rating is never reset at a season boundary, so a season's figure is
+  // the one rating, read where it stood after that season's last night —
+  // the same number the ratings page showed on that date.
+  const seasonEnd = useMemo(() => {
+    if (scope === "overall") return null;
+    const dates = scopedMatches.filter((m) => outcomeOf(m) !== null).map((m) => m.date);
+    return dates.length ? dates.sort().at(-1)! : null;
+  }, [scope, scopedMatches]);
+  const ratingNow = (playerId: string): number | undefined => {
+    const line = ratingFor(playerId);
+    if (!line) return undefined;
+    if (scope === "overall") return line.rating;
+    if (!seasonEnd) return undefined;
+    return ratingSeries(line).filter((point) => point.date <= seasonEnd).at(-1)?.rating;
+  };
+
+  // Against the odds from the whole history, like the line-up lab, so the
+  // pair reads the same here and there.
+  const odds = useMemo(() => matchExpectations(matches), [matches]);
 
   const sorted = useMemo(
     () => [...players].sort((a, b) => a.name.localeCompare(b.name)),
@@ -200,18 +230,20 @@ export default function ComparePage() {
   if (sorted.length < 2) {
     return (
       <div className="page-container">
-        <h1 className="page-title">Compare</h1>
-        <p className="page-subtitle">
-          Add a second player and you can put two of them side by side.
-        </p>
+        <PageHeader
+          title="Compare"
+          subtitle="Add a second player and you can put two of them side by side."
+        />
       </div>
     );
   }
 
   const recordA = record(a.id, a.name);
   const recordB = record(b.id, b.name);
-  const ratingA = rating(a.id);
-  const ratingB = rating(b.id);
+  const ratingA = ratingNow(a.id);
+  const ratingB = ratingNow(b.id);
+  const togetherXw = ledger(nightsFor(scopedMatches, odds, { together: [a.id, b.id] }));
+  const againstXw = ledger(nightsFor(scopedMatches, odds, { together: [a.id], against: [b.id] }));
   const scopeName =
     scope === "overall"
       ? "all time"
@@ -307,9 +339,9 @@ export default function ComparePage() {
 
           <div className="divide-y divide-border">
             <CompareRow
-              label={scope === "overall" ? "Rating" : "Rating this season"}
-              a={ratingA?.rating ?? 0}
-              b={ratingB?.rating ?? 0}
+              label={scope === "overall" ? "Rating" : `Rating at the end of ${scopeName}`}
+              a={ratingA ?? 0}
+              b={ratingB ?? 0}
               format={(n) => String(displayRating(n))}
             />
             <CompareRow label="Played" a={recordA.played} b={recordB.played} />
@@ -336,7 +368,7 @@ export default function ComparePage() {
         <CardContent>
           <RatingHistoryChart
             players={[a, b].flatMap((player) => {
-              const line = rating(player.id);
+              const line = ratingFor(player.id);
               return line
                 ? [{ playerId: player.id, name: player.name, rating: line }]
                 : [];
@@ -349,7 +381,10 @@ export default function ComparePage() {
         <CardHeader>
           <CardTitle>When they meet</CardTitle>
           <CardDescription>
-            Counted from {a.name}&apos;s side, over {scopeName}.
+            Counted from {a.name}&apos;s side, over {scopeName}.{" "}
+            <Link href={`/lineups?p=${a.id},${b.id}`} className="text-accent underline-offset-4 hover:underline">
+              Open the pair in the line-up lab
+            </Link>
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
@@ -358,12 +393,14 @@ export default function ComparePage() {
             tally={h2h!.together}
             Icon={Handshake}
             unit="together"
+            xw={togetherXw}
           />
           <TallyLine
             label="Against each other"
             tally={h2h!.against}
             Icon={Swords}
             unit="meetings"
+            xw={againstXw}
           />
         </CardContent>
       </Card>

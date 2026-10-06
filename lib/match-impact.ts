@@ -1,7 +1,5 @@
 import { computeRatings } from "./elo";
-import { recentForm } from "./form";
-import { SKILL } from "./config";
-import type { Match, Player, PlayerFormResult } from "@/types";
+import type { Match, RecentResult } from "@/types";
 
 interface PlayerImpact {
   playerId: string;
@@ -9,27 +7,20 @@ interface PlayerImpact {
   before: number;
   after: number;
   change: number;
+  /** The run they walked in on, newest first, with the nights they were not there marked. */
+  results: RecentResult[];
   /**
-   * The run they walked in on, newest first, with the nights they were not
-   * there marked. Two team-mates in the same result take different numbers
-   * because of this, so it is shown beside them rather than left to be
-   * guessed at.
+   * How many of their games the rating rested on going in. Two team-mates in
+   * the same result move by different amounts mostly because of this, so it
+   * is carried here rather than left to be guessed at.
    */
-  form: PlayerFormResult[];
+  counted: number;
 }
 
 export interface SideImpact {
   /** Mean rating of the side, going in and coming out. */
   ratingBefore: number;
   ratingAfter: number;
-  /** Mean points a game over the recent window, before and after this result. */
-  formBefore: number;
-  formAfter: number;
-  /**
-   * Mean hand-set level. Has no before and after — it is set by a person and
-   * a result never moves it.
-   */
-  skill: number;
   /** Biggest mover first. */
   players: PlayerImpact[];
 }
@@ -48,16 +39,8 @@ const mean = (xs: number[], fallback = 0) =>
  * Read out of the rating history rather than recomputed, so the numbers here
  * are the ones the match was actually rated on — including for a result that
  * has since been edited, which re-rates everything after it.
- *
- * Form is worked out twice over, from the matches up to this one and from the
- * matches up to and including it, because "form" is a window over recent
- * results and there is no other way to say what it was at the time.
  */
-export function matchImpact(
-  matches: Match[],
-  match: Match,
-  players: Player[]
-): MatchImpact | null {
+export function matchImpact(matches: Match[], match: Match): MatchImpact | null {
   const point = (playerId: string): PlayerImpact | null => {
     const entry = ratings.get(playerId);
     const moment = entry?.history.find((h) => h.matchId === match.id);
@@ -67,27 +50,16 @@ export function matchImpact(
       before: moment.rating - moment.change,
       after: moment.rating,
       change: moment.change,
-      form: moment.formBefore,
+      results: moment.resultsBefore,
+      counted: moment.countedBefore,
     };
   };
 
-  // The clock does not matter: every figure below comes from the history,
-  // which holds what the ratings were at the time, not what they have drifted
-  // to since.
+  // Every figure below comes from the history, which holds what the ratings
+  // were at the time, not what they have become since.
   const ratings = computeRatings(matches);
 
-  const ordered = [...matches].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-  );
-  const index = ordered.findIndex((m) => m.id === match.id);
-  if (index === -1) return null;
-
-  const formBefore = recentForm(ordered.slice(0, index));
-  const formAfter = recentForm(ordered.slice(0, index + 1));
-
-  const skillOf = new Map(
-    players.map((p) => [p.id, p.skillLevel ?? SKILL.default])
-  );
+  if (!matches.some((m) => m.id === match.id)) return null;
 
   const side = (playerIds: string[]): SideImpact => {
     const impacts = playerIds
@@ -98,13 +70,6 @@ export function matchImpact(
     return {
       ratingBefore: mean(impacts.map((p) => p.before)),
       ratingAfter: mean(impacts.map((p) => p.after)),
-      formBefore: mean(
-        playerIds.map((id) => formBefore.get(id)?.pointsPerGame ?? 0)
-      ),
-      formAfter: mean(
-        playerIds.map((id) => formAfter.get(id)?.pointsPerGame ?? 0)
-      ),
-      skill: mean(playerIds.map((id) => skillOf.get(id) ?? SKILL.default)),
       players: impacts,
     };
   };

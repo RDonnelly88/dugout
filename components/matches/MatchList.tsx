@@ -26,7 +26,7 @@ const MatchList = ({ matches, isLoading, searchTerm, onDeleteClick, swings }: Ma
     return (
       <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
-          <Card key={i} className="shimmer h-[150px] border-accent/20" />
+          <Card key={i} className="sheen h-[150px] border-accent/20" />
         ))}
       </div>
     );

@@ -63,6 +63,25 @@
   --grid: 214 28% 90%;
   --glow: 174 84% 30%;
 
+  /* The pitch and its markings. Two greens a step apart make the mowing
+     stripes; chalk is drawn over them, and is the only colour of writing
+     that goes straight on the grass. */
+  --pitch: 140 38% 36%;
+  --pitch-stripe: 140 38% 32%;
+  --chalk: 0 0% 100%;
+
+  /* Lines on a chart with one per player. Eight hues far enough apart to
+     tell neighbours on a line chart, dark enough to read on a white card;
+     a ninth player repeats the first, dashed. */
+  --series-1: 174 84% 30%;
+  --series-2: 217 75% 45%;
+  --series-3: 28 85% 45%;
+  --series-4: 270 55% 50%;
+  --series-5: 330 65% 45%;
+  --series-6: 80 60% 32%;
+  --series-7: 195 80% 38%;
+  --series-8: 10 60% 40%;
+
   --radius: 0.65rem;
 }
 
@@ -107,6 +126,19 @@
     --info: 213 85% 70%;
     --grid: 216 26% 18%;
     --glow: 168 78% 54%;
+
+    --pitch: 145 34% 18%;
+    --pitch-stripe: 145 34% 15%;
+    --chalk: 140 20% 88%;
+
+    --series-1: 168 70% 55%;
+    --series-2: 213 85% 70%;
+    --series-3: 30 90% 62%;
+    --series-4: 270 75% 75%;
+    --series-5: 330 80% 72%;
+    --series-6: 80 55% 58%;
+    --series-7: 195 80% 62%;
+    --series-8: 10 75% 68%;
   }
 }
 
@@ -151,6 +183,19 @@
   --info: 213 85% 70%;
   --grid: 216 26% 18%;
   --glow: 168 78% 54%;
+
+  --pitch: 145 34% 18%;
+  --pitch-stripe: 145 34% 15%;
+  --chalk: 140 20% 88%;
+
+  --series-1: 168 70% 55%;
+  --series-2: 213 85% 70%;
+  --series-3: 30 90% 62%;
+  --series-4: 270 75% 75%;
+  --series-5: 330 80% 72%;
+  --series-6: 80 55% 58%;
+  --series-7: 195 80% 62%;
+  --series-8: 10 75% 68%;
 }
 
 /*
@@ -195,6 +240,8 @@
   --color-loss-foreground: hsl(var(--loss-foreground));
   --color-info: hsl(var(--info));
   --color-grid: hsl(var(--grid));
+  --color-pitch: hsl(var(--pitch));
+  --color-chalk: hsl(var(--chalk));
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -426,6 +473,96 @@ html[data-theme="dark"] {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Matchday
+
+   The few materials the app is made of besides cards: a mown pitch, the
+   paper a programme is printed on, a scoreboard, the ink of a referee's
+   stamp, and the light a result throws. Each is built from the tokens above,
+   so both themes get it without a second definition.
+   ───────────────────────────────────────────────────────────── */
+
+/* Figures on a stadium board: the display face at its narrowest, heavy, and
+   every digit the same width so a score never shuffles sideways as it
+   changes. */
+@utility scoreboard {
+  font-family: var(--font-display);
+  font-stretch: 68%;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+/* Mowing stripes, across the width of the pitch as they would be seen from
+   the stand. */
+@utility pitch {
+  background-color: hsl(var(--pitch));
+  background-image: repeating-linear-gradient(
+    180deg,
+    hsl(var(--pitch)) 0 28px,
+    hsl(var(--pitch-stripe)) 28px 56px
+  );
+}
+
+/* A faint grain over a sheet, so a season's write-up reads as a printed
+   programme rather than a flat panel. Monochrome noise at low alpha: it
+   darkens a light theme and lightens a dark one by the same small amount,
+   and never sits under text heavily enough to touch its contrast. */
+@utility grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+
+/* Ink worn away in specks where the stamp missed the paper. */
+@utility stamp-worn {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.2 1.75'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E");
+  mask-size: 120px 120px;
+}
+
+/* The light a result throws: a soft halo in its own colour. Decoration on
+   top of a colour and a word that already say it, never instead of them. */
+@utility glow-win {
+  box-shadow: 0 0 18px 2px hsl(var(--win) / 0.35);
+}
+@utility glow-draw {
+  box-shadow: 0 0 18px 2px hsl(var(--draw) / 0.35);
+}
+@utility glow-loss {
+  box-shadow: 0 0 18px 2px hsl(var(--loss) / 0.3);
+}
+@utility glow-accent {
+  box-shadow: 0 0 22px 2px hsl(var(--accent) / 0.3);
+}
+
+/* Rises into place as it scrolls into view, driven by the scroll itself
+   rather than a script. Where the browser can't, or the reader would rather
+   it didn't, it is simply there — the resting state is the visible one, so
+   nothing waits on an animation to be read. */
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: reveal ease-out both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 30%;
+    }
+  }
+}
+
+/* A horizontal run of cards that snaps as it scrolls, with no scrollbar
+   track drawn under it. */
+@utility rail-track {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
    Composites
    ───────────────────────────────────────────────────────────── */
 
@@ -445,22 +582,56 @@ html[data-theme="dark"] {
 }
 
 @utility page-header {
-  @apply mb-6 md:mb-8;
+  @apply mb-8 pt-2 md:mb-10 md:pt-6;
 }
 
-/* The one h1 on the page. */
+/* The small tracked line above a title: whose app this is. */
+@utility page-kicker {
+  @apply font-mono text-[11px] font-semibold uppercase tracking-[0.28em] text-accent;
+}
+
+/* The one h1 on the page, at the size of a programme cover: the display face
+   narrowed on its width axis, so a long name still fits a phone at this size,
+   and scaled to the screen rather than stepped at breakpoints. */
 @utility page-title {
-  @apply text-2xl font-bold tracking-tight text-foreground md:text-3xl;
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 7vw, 4.25rem);
+  font-stretch: 78%;
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  color: hsl(var(--foreground));
+  text-wrap: balance;
 }
 
 /* The sentence under it, explaining what the page is for. */
 @utility page-subtitle {
-  @apply mt-2 max-w-prose text-sm text-muted-foreground md:text-base;
+  @apply mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg;
 }
 
-/* A heading inside a page: a card's title, or a band within one. */
+/* A card's title, or a band within one: the display face, narrowed like the
+   page title but a size it can share a card with. */
 @utility section-title {
-  @apply text-lg font-semibold leading-none tracking-tight text-foreground;
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 1rem + 0.8vw, 1.55rem);
+  font-stretch: 84%;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.005em;
+  color: hsl(var(--foreground));
+}
+
+/* A heading between cards, opening a part of the page: the size of a chapter
+   heading in a programme, a step down from the page title. */
+@utility section-heading {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4.5vw, 2.75rem);
+  font-stretch: 78%;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: hsl(var(--foreground));
+  text-wrap: balance;
 }
 
 @utility stat-item {

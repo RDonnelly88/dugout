@@ -23,24 +23,39 @@ const TOKENS = [
   "foreground",
 ] as const;
 
+/** How many `--series-N` colours globals.css defines. */
+const SERIES = 8;
+
 type Token = (typeof TOKENS)[number];
-export type ChartTheme = Record<Token, string>;
+export type ChartTheme = Record<Token, string> & {
+  /** One colour per line, for a chart with a line a player. */
+  series: string[];
+};
+
+/** What a chart is drawn in until the document can be read. */
+const placeholder = (): ChartTheme => ({
+  ...(Object.fromEntries(TOKENS.map((t) => [t, "#888"])) as Record<Token, string>),
+  series: Array.from({ length: SERIES }, () => "#888"),
+});
 
 function read(): ChartTheme {
-  if (typeof window === "undefined") {
-    return Object.fromEntries(TOKENS.map((t) => [t, "#888"])) as ChartTheme;
-  }
   const styles = getComputedStyle(document.documentElement);
-  return Object.fromEntries(
-    TOKENS.map((t) => {
-      const channels = styles.getPropertyValue(`--${t}`).trim();
-      return [t, channels ? `hsl(${channels})` : "#888"];
-    })
-  ) as ChartTheme;
+  const resolve = (name: string) => {
+    const channels = styles.getPropertyValue(`--${name}`).trim();
+    return channels ? `hsl(${channels})` : "#888";
+  };
+  return {
+    ...(Object.fromEntries(TOKENS.map((t) => [t, resolve(t)])) as Record<Token, string>),
+    series: Array.from({ length: SERIES }, (_, i) => resolve(`series-${i + 1}`)),
+  };
 }
 
 export function useChartTheme(): ChartTheme {
-  const [theme, setTheme] = useState<ChartTheme>(read);
+  // The placeholder on the first render in the browser too, not a reading:
+  // the server cannot read the document, and a first render that differs
+  // from the page it hydrates is a mismatch. The effect reads it straight
+  // after.
+  const [theme, setTheme] = useState<ChartTheme>(placeholder);
 
   useEffect(() => {
     const update = () => setTheme(read());

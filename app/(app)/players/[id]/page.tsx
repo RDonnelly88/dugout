@@ -3,7 +3,7 @@
 import Link from "next/link";
 import React from "react";
 
-import { ArrowLeft, Edit, Trophy, Flag } from "lucide-react";
+import { ArrowLeft, Edit, Trophy, Flag, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,21 +12,27 @@ import { usePlayerDetail } from "@/hooks/usePlayerDetail";
 import { usePlayerRank } from "@/hooks/usePlayerRank";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import PlayerSeasonStats from "@/components/players/PlayerSeasonStats";
-import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
+import ResultStrip from "@/components/players/ResultStrip";
 import PlayerChemistry from "@/components/players/PlayerChemistry";
 import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
-import type { PlayerFormResult } from "@/types";
+import type { RecentResult } from "@/types";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import PlayerRatingCard from "@/components/players/PlayerRatingCard";
 import PageHeader from "@/components/PageHeader";
 import { AVATAR_TRANSITION } from "@/components/TransitionLink";
 import MatchListItem from "@/components/matches/MatchListItem";
-import { recentForm } from "@/lib/form";
+import MatchCard from "@/components/matches/MatchCard";
+import { Rail } from "@/components/ui/rail";
+import { outcomeOf, sideOf } from "@/lib/match-result";
+import { recentResults } from "@/lib/recent-results";
 import { ratingSwings } from "@/lib/match-impact";
 import { StatTile, StatTiles } from "@/components/StatTile";
+import SectionHeading from "@/components/SectionHeading";
 
 /** How many of a player's matches to list before asking. */
 const MATCHES_SHOWN = 10;
+/** How many nights the rail at the top runs back. */
+const RECENT_NIGHTS = 10;
 
 const PlayerDetail = () => {
   const [showAllMatches, setShowAllMatches] = React.useState(false);
@@ -38,7 +44,7 @@ const PlayerDetail = () => {
     seasonStats,
     setSelectedSeasonId,
     selectedSeason,
-    getPlayerMatchResult,
+    viewpointOf,
     isLoading,
     router
   } = usePlayerDetail();
@@ -52,6 +58,25 @@ const PlayerDetail = () => {
   // yields a record of zeroes rather than undefined.
   const { recordFor } = usePlayerRecords();
   const record = recordFor(player?.id ?? "", player?.name ?? "");
+
+  // The squad's last five nights, with the ones this player missed marked —
+  // the same run every other strip in the app draws. Their own last five
+  // results would close the gaps up and read as an unbroken run. Also above
+  // the early returns, for the same reason as the record.
+  const lastFive: RecentResult[] = React.useMemo(
+    () => recentResults(allMatches).get(player?.id ?? "")?.results ?? [],
+    [allMatches, player?.id]
+  );
+
+  // Every season, newest first: the run is about them, not the season picked.
+  const recentNights = React.useMemo(
+    () =>
+      allMatches
+        .filter((m) => outcomeOf(m) !== null && sideOf(m, player?.id ?? "") !== null)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, RECENT_NIGHTS),
+    [allMatches, player?.id]
+  );
 
   // Get current season
   const currentSeason = seasons.find(s => s.isCurrent);
@@ -76,8 +101,8 @@ const PlayerDetail = () => {
             Back
           </Button>
         </div>
-        <div className="shimmer rounded-xl h-[200px] mb-8"></div>
-        <div className="shimmer rounded-xl h-[400px]"></div>
+        <div className="sheen rounded-xl h-[200px] mb-8"></div>
+        <div className="sheen rounded-xl h-[400px]"></div>
       </div>
     );
   }
@@ -101,15 +126,6 @@ const PlayerDetail = () => {
       </div>
     );
   }
-
-  // The run to show when there is no current season to read one from: the
-  // squad's recent nights, with the ones this player was missing marked, which
-  // is the same run every other strip in the app draws. Their own last five
-  // results would close the gaps up and read as an unbroken run.
-  const recentResults: PlayerFormResult[] = React.useMemo(
-    () => recentForm(allMatches).get(player?.id ?? "")?.results ?? [],
-    [allMatches, player?.id]
-  );
 
   const orderedMatches = [...playerMatches].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -161,9 +177,9 @@ const PlayerDetail = () => {
         }
       >
         <div className="flex items-center gap-3">
-          <span className="eyebrow">Recent form</span>
-          <PlayerFormDisplay
-            results={recentResults}
+          <span className="eyebrow">Last five</span>
+          <ResultStrip
+            results={lastFive}
           />
         </div>
       </PageHeader>
@@ -206,6 +222,42 @@ const PlayerDetail = () => {
 
       </div>
 
+      {/* Every season they played in, newest first, each opening their
+          story of it. */}
+      {seasonStats.some((stat) => stat.played > 0) && (
+        <div className="mb-8 flex flex-wrap items-center gap-2">
+          <span className="eyebrow mr-1 flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-accent" />
+            Wrapped
+          </span>
+          {[...seasons]
+            .sort((x, y) => new Date(y.startDate).getTime() - new Date(x.startDate).getTime())
+            .filter((s) => seasonStats.some((stat) => stat.seasonId === s.id && stat.played > 0))
+            .map((s) => (
+              <Link
+                key={s.id}
+                href={`/seasons/${s.id}/wrapped/${player.id}`}
+                className="focus-ring rounded-full border border-border bg-surface px-3 py-1 text-sm transition-colors hover:border-accent hover:text-accent"
+              >
+                {s.name}
+              </Link>
+            ))}
+        </div>
+      )}
+
+      {/* Their latest nights as a run of small scoreboards, each lit in the
+          colour of how it went for them, before the full list further down. */}
+      {recentNights.length > 0 && (
+        <section className="mb-8">
+          <SectionHeading kicker={`The last ${recentNights.length}`} title="Recent nights" />
+          <Rail label={`${player.name}'s recent nights`}>
+            {recentNights.map((match) => (
+              <MatchCard key={match.id} match={match} side={sideOf(match, player.id) ?? undefined} />
+            ))}
+          </Rail>
+        </section>
+      )}
+
       <Tabs defaultValue="stats" className="mb-8">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="stats">All stats</TabsTrigger>
@@ -227,9 +279,10 @@ const PlayerDetail = () => {
       </Tabs>
 
       <div className="mt-8">
-        <h2 className="section-title mb-4">
-          {selectedSeason ? `Matches in ${selectedSeason.name}` : "Matches"}
-        </h2>
+        <SectionHeading
+          kicker={selectedSeason ? selectedSeason.name : "All time"}
+          title={`Every match${playerMatches.length ? ` · ${playerMatches.length}` : ""}`}
+        />
 
         {playerMatches.length === 0 ? (
           <div className="rounded-lg bg-surface-2/40 p-8 text-center">
@@ -248,7 +301,7 @@ const PlayerDetail = () => {
                 <MatchListItem
                   key={match.id}
                   match={match}
-                  result={getPlayerMatchResult(match).result}
+                  viewpoint={viewpointOf(match)}
                   swing={swings.get(match.id)}
                 />
               ))}

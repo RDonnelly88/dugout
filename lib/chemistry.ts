@@ -1,148 +1,105 @@
 import type { Match } from "@/types";
-import type { Tally } from "./head-to-head";
+import { ledger, type Ledger, type Night } from "./expected-wins";
 import { outcomeOf, sideOf } from "./match-result";
 
 /**
- * Who you actually play well with.
+ * Who a player does well with, and against — measured in expected wins.
  *
- * The hard part is not counting the games, it is refusing to be impressed by
- * three of them. "100% with Dave" off a single Tuesday is not chemistry, it is
- * a coin landing heads, and the old version of this put exactly that on the
- * front of a card. Everything here is pulled back towards the player's own
- * average by how little evidence there is.
+ * Every game shared with a team-mate is set against the chance the ratings
+ * gave their side before kick-off, so a pairing is judged on how far it beat
+ * or fell short of the odds, not on how good the rest of the team happened
+ * to be. Whether the gap means anything is the ledger's verdict: too few
+ * games, the kind of gap luck makes, or more than luck usually manages.
  */
-
-/**
- * Games of evidence needed before a result is worth half of what it claims.
- *
- * Four is deliberately blunt: one game together moves the number a fifth of the
- * way, five games move it a little over half, twenty move it most of the way.
- * Nothing about a kickabout justifies pretending to more precision.
- */
-export const SHRINKAGE = 4;
-
-/** Below this a pairing is listed but never ranked or called a favourite. */
-export const MIN_GAMES = 3;
-
-/**
- * A result as a single number: a win is one, a draw is a half, a loss nought.
- *
- * Deliberately not points. The points a win is worth belong to the league
- * table, and the SQL views own that — duplicating the scheme here would mean
- * two places to change it and one of them would get missed.
- */
-export const share = (tally: Tally): number =>
-  tally.played > 0 ? (tally.wins + tally.draws * 0.5) / tally.played : 0;
 
 export interface ChemistryEntry {
   playerId: string;
-  tally: Tally;
-  /** What actually happened, unadjusted. */
-  observed: number;
-  /** Pulled towards the subject's own average by the weight of evidence. */
-  adjusted: number;
-  /** How far above or below the subject's own average, after adjustment. */
-  lift: number;
-  /** Nought to one. How much of the raw result survived the adjustment. */
-  confidence: number;
+  ledger: Ledger;
 }
 
 export interface ChemistryReport {
-  /** The subject's own result share across every game counted. */
-  baseline: number;
-  played: number;
-  /** Best lift first. */
+  /** The subject's own games over the same stretch. */
+  own: Ledger;
+  /** Best against the odds first. */
   withPlayers: ChemistryEntry[];
-  /** Best lift first — a high lift here means you tend to beat them. */
+  /**
+   * The subject's results with this player on the other side, best first —
+   * a high figure here means the subject tends to get the better of them.
+   */
   againstPlayers: ChemistryEntry[];
 }
-
-const empty = (): Tally => ({ played: 0, wins: 0, draws: 0, losses: 0 });
-
-const add = (tally: Tally, result: "win" | "draw" | "loss") => {
-  tally.played += 1;
-  if (result === "win") tally.wins += 1;
-  else if (result === "draw") tally.draws += 1;
-  else tally.losses += 1;
-};
-
-const entry = (playerId: string, tally: Tally, baseline: number): ChemistryEntry => {
-  // Standard shrinkage: with no games the estimate *is* the baseline, and it
-  // approaches what was observed only as the games pile up.
-  const confidence = tally.played / (tally.played + SHRINKAGE);
-  const observed = share(tally);
-  const adjusted = baseline + (observed - baseline) * confidence;
-  return { playerId, tally, observed, adjusted, lift: adjusted - baseline, confidence };
-};
 
 /**
  * Every pairing the subject has, in one pass.
  *
- * Filter `matches` before calling to scope it to a season — this deliberately
- * knows nothing about seasons, so there is one code path whatever is asked.
+ * `matches` is the stretch being asked about; `odds` comes from the whole
+ * history, since the chance a side was given depends on everything before.
  */
-export function chemistryFor(matches: Match[], playerId: string): ChemistryReport {
-  const own = empty();
-  const withTally = new Map<string, Tally>();
-  const againstTally = new Map<string, Tally>();
+export function chemistryFor(
+  matches: Match[],
+  odds: Map<string, number>,
+  playerId: string
+): ChemistryReport {
+  const own: Night[] = [];
+  const withNights = new Map<string, Night[]>();
+  const againstNights = new Map<string, Night[]>();
 
-  const bump = (map: Map<string, Tally>, id: string, result: "win" | "draw" | "loss") => {
-    let tally = map.get(id);
-    if (!tally) {
-      tally = empty();
-      map.set(id, tally);
-    }
-    add(tally, result);
+  const push = (map: Map<string, Night[]>, id: string, night: Night) => {
+    const list = map.get(id);
+    if (list) list.push(night);
+    else map.set(id, [night]);
   };
 
-  for (const match of matches) {
+  const ordered = [...matches].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+
+  for (const match of ordered) {
     const outcome = outcomeOf(match);
-    if (!outcome) continue;
+    const chanceA = odds.get(match.id);
+    if (!outcome || chanceA === undefined) continue;
 
     const side = sideOf(match, playerId);
     if (!side) continue;
 
-    const inA = side === "a";
-    const result =
-      outcome === "draw" ? "draw" : outcome === side ? "win" : "loss";
+    const result = outcome === "draw" ? "draw" : outcome === side ? "win" : "loss";
+    const night: Night = {
+      matchId: match.id,
+      date: match.date,
+      result,
+      actual: result === "win" ? 1 : result === "draw" ? 0.5 : 0,
+      expected: side === "a" ? chanceA : 1 - chanceA,
+    };
+    own.push(night);
 
-    add(own, result);
-
-    const mine = inA ? match.teamA.players : match.teamB.players;
-    const theirs = inA ? match.teamB.players : match.teamA.players;
-
-    for (const id of mine) {
-      if (id !== playerId) bump(withTally, id, result);
-    }
-    for (const id of theirs) {
-      bump(againstTally, id, result);
-    }
+    const mine = side === "a" ? match.teamA.players : match.teamB.players;
+    const theirs = side === "a" ? match.teamB.players : match.teamA.players;
+    for (const id of mine) if (id !== playerId) push(withNights, id, night);
+    for (const id of theirs) push(againstNights, id, night);
   }
 
-  const baseline = share(own);
-  const rank = (map: Map<string, Tally>) =>
+  const rank = (map: Map<string, Night[]>) =>
     [...map.entries()]
-      .map(([id, tally]) => entry(id, tally, baseline))
-      .sort((a, b) => b.lift - a.lift || b.tally.played - a.tally.played);
+      .map(([id, nights]) => ({ playerId: id, ledger: ledger(nights) }))
+      .sort((a, b) => b.ledger.above - a.ledger.above || b.ledger.played - a.ledger.played);
 
   return {
-    baseline,
-    played: own.played,
-    withPlayers: rank(withTally),
-    againstPlayers: rank(againstTally),
+    own: ledger(own),
+    withPlayers: rank(withNights),
+    againstPlayers: rank(againstNights),
   };
 }
 
 /**
- * The best few, only where there is enough to go on.
+ * The best few, only where there are games enough to say anything.
  *
  * `worst` flips the order rather than sorting separately, so the two ends of
- * the same list can never disagree about what counts as enough evidence.
+ * the same list can never disagree about what counts as enough.
  */
 export const pick = (
   entries: ChemistryEntry[],
-  { count = 4, worst = false, minGames = MIN_GAMES } = {}
+  { count = 4, worst = false } = {}
 ): ChemistryEntry[] => {
-  const eligible = entries.filter((e) => e.tally.played >= minGames);
+  const eligible = entries.filter((e) => e.ledger.verdict !== "early");
   return (worst ? [...eligible].reverse() : eligible).slice(0, count);
 };

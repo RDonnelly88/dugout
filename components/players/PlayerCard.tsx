@@ -1,20 +1,19 @@
 import Link from "next/link";
 import React from "react";
 
-import { Player, PlayerFormResult, PlayerRecord, SeasonPlayerStats } from "@/types";
+import { Player, RecentResult, PlayerRecord, SeasonPlayerStats } from "@/types";
 import { Edit, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
+import ResultStrip from "@/components/players/ResultStrip";
 import { usePlayerRank } from "@/hooks/usePlayerRank";
 import { usePermission } from "@/lib/permission-utils";
 import { winRate } from "@/lib/player-stats";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
+import ActiveSwitch from "@/components/players/ActiveSwitch";
 import TransitionLink from "@/components/TransitionLink";
 import { isActivePlayer } from "@/components/players/ActiveFilter";
 import { displayRating, type PlayerRating } from "@/lib/elo";
-import { SKILL } from "@/lib/config";
-import SkillScale from "@/components/players/SkillScale";
 import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
 
 /**
@@ -46,8 +45,8 @@ interface PlayerCardProps {
   rating: PlayerRating | undefined;
   /** Where that rating sits in the squad, nought to one. */
   standing: number | undefined;
-  formResults: PlayerFormResult[];
-  isLoadingForms: boolean;
+  recentRun: RecentResult[];
+  isLoadingResults: boolean;
   onDeleteClick: (player: Player) => void;
 }
 
@@ -83,8 +82,8 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
   record,
   rating,
   standing,
-  formResults,
-  isLoadingForms,
+  recentRun,
+  isLoadingResults,
   onDeleteClick,
 }) => {
   const { rank, hasPlayedCurrentSeason } = usePlayerRank(seasonId, player.id);
@@ -103,7 +102,10 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
           whole card being the link is what makes a player reachable from
           anywhere they are named. Hidden for anyone who cannot act on them —
           a viewer, or anybody looking round the demo team. */}
-      <div className={`absolute right-2 top-2 z-10 flex gap-1 ${editable ? "" : "hidden"}`}>
+      <div className={`absolute right-2 top-2 z-10 flex items-center gap-1 ${editable ? "" : "hidden"}`}>
+        {/* Active or not without opening the edit form: it is the one thing
+            about a player that changes from week to week. */}
+        <ActiveSwitch player={player} className="mr-1" />
         <Link
           href={`/players/edit/${player.id}`}
           aria-label={`Edit ${player.name}`}
@@ -127,7 +129,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
         shareAvatar
       >
         <CardContent className="flex h-full flex-col p-0">
-          <div className="flex items-center gap-4 p-5 pr-20">
+          <div className={`flex items-center gap-4 p-5 ${editable ? "pr-32" : "pr-5"}`}>
             <PlayerAvatar name={player.name} image={player.image} size="lg" />
 
             <div className="min-w-0 flex-1">
@@ -156,26 +158,26 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
                   : "Yet to play"}
               </p>
 
-              {/* Form is the point of a squad list — who is going well right
-                  now. Hidden entirely when there is none rather than printing
+              {/* The last few nights at a glance: who has been winning and
+                  who has been missing. Hidden entirely when there is none rather than printing
                   "no match data" across every card. */}
-              {(formResults.length > 0 || isLoadingForms) && (
+              {(recentRun.length > 0 || isLoadingResults) && (
                 <div className="mt-2">
-                  <PlayerFormDisplay
-                    results={formResults}
+                  <ResultStrip
+                    results={recentRun}
                     size="sm"
-                    isLoading={isLoadingForms && formResults.length === 0}
+                    isLoading={isLoadingResults && recentRun.length === 0}
                   />
                 </div>
               )}
             </div>
           </div>
 
-          {/* The two ways a player is measured that the tally below does not
-              show: what the results imply, and what a person decided. */}
+          {/* What the tally below does not show: the rating the results
+              imply, given who each game was with and against. */}
           <div className="flex items-center justify-between gap-4 border-t border-border px-5 py-2.5 text-sm">
             <span className="flex items-baseline gap-1.5">
-              <span className="eyebrow">Elo</span>
+              <span className="eyebrow">Rating</span>
               {rating ? (
                 <>
                   <span className={`tabular font-semibold ${ratingTone(standing)}`}>
@@ -188,11 +190,6 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
               ) : (
                 <span className="text-muted-foreground">—</span>
               )}
-            </span>
-
-            <span className="flex items-center gap-1.5">
-              <span className="eyebrow">Skill</span>
-              <SkillScale level={player.skillLevel ?? SKILL.default} />
             </span>
           </div>
 

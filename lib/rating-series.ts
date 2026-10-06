@@ -10,8 +10,9 @@ export interface SeriesPoint {
   /** The mean rating of the side they faced. Only for a match they played. */
   opponentRating?: number;
   /**
-   * How far this moved them: what the result was worth, or what the week away
-   * cost. Nought while a missed week is still inside the grace.
+   * How far this moved them: what the result was worth, or for a week away
+   * the small re-rating that comes from the people in their games having
+   * moved.
    */
   change: number;
 }
@@ -35,7 +36,7 @@ export function ratingSeries(rating: PlayerRating): SeriesPoint[] {
     change: point.change,
   }));
 
-  const missed: SeriesPoint[] = rating.drifted.map((point) => ({
+  const missed: SeriesPoint[] = rating.absent.map((point) => ({
     date: point.date,
     rating: point.rating,
     played: false,

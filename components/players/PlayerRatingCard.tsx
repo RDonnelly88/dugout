@@ -7,6 +7,7 @@ import RatingHistoryChart from "@/components/ratings/RatingHistoryChart";
 import Counter from "@/components/Counter";
 import { displayRating } from "@/lib/elo";
 import { ELO } from "@/lib/config";
+import { awayExplanation } from "@/components/ratings/away";
 import {
   Card,
   CardContent,
@@ -53,10 +54,9 @@ export default function PlayerRatingCard({
     );
   }
 
-  // What the squad's most recent match did to this rating, which is a drift
-  // downwards if they were not in it. Their own last game is a different
-  // question, and answering that one here made a rating look freshly earned
-  // months after it was.
+  // What the squad's most recent match did to this rating, whether or not they
+  // were in it. Their own last game is a different question, and answering
+  // that one here made a rating look freshly earned months after it was.
   const change = Math.round(rating.lastChange);
   return (
     <Card>
@@ -88,14 +88,16 @@ export default function PlayerRatingCard({
             ) : (
               <Minus className="h-4 w-4" />
             )}
-            {Math.abs(change)}{" "}
-            {rating.missed === 0
-              ? "last game"
-              : rating.missed === 1
-                ? "missed one"
-                : `missed ${rating.missed}`}
+            {Math.abs(change)} {rating.missed === 0 ? "last game" : "while away"}
           </p>
         </div>
+        {/* Said in words under the number: a rise beside "missed one" read
+            as a reward for not turning up. */}
+        {rating.missed > 0 && (
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            {awayExplanation(rating.missed)}
+          </p>
+        )}
 
         <div className="mt-2">
           <RatingHistoryChart

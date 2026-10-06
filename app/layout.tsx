@@ -8,9 +8,12 @@ import "./globals.css";
 
 // Self-hosted at build time by next/font — no runtime request to Google, no
 // render-blocking @import, and no third party learning a visitor's IP.
+//
+// The variable cut, with its width axis, so the scoreboard figures can be the
+// same family squeezed tall and narrow rather than a second typeface to load.
 const archivo = Archivo({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  axes: ["wdth"],
   variable: "--font-archivo",
   display: "swap",
 });
@@ -24,7 +27,7 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "The Dugout",
-  description: "Five-a-side results, player form and season standings.",
+  description: "Five-a-side results, ratings and season standings.",
 };
 
 export const viewport: Viewport = {

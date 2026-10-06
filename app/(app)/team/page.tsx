@@ -35,7 +35,6 @@ const TeamManagement = () => {
       if (!currentTeam) return [];
       
       try {
-        console.log("Fetching team members for team:", currentTeam.id);
         
         // First try using the RPC function which has been tested to work
         try {
@@ -47,7 +46,6 @@ const TeamManagement = () => {
             throw rpcError;
           }
           
-          console.log("Team members via RPC:", rpcData);
           
           return (rpcData || []).map((member: any) => ({
             id: member.id,
@@ -102,8 +100,6 @@ const TeamManagement = () => {
           return acc;
         }, {} as Record<string, any>);
         
-        console.log("Raw team members data:", data);
-        console.log("Profiles data:", profilesData);
         
         // Map team members with their profiles
         return (data || []).map(member => {

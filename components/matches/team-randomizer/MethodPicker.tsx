@@ -1,10 +1,15 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { Dices, Hand, Scale, Star, TrendingUp } from "lucide-react";
+import { Dices, Hand, ListOrdered, Scale } from "lucide-react";
 import type { Split } from "@/lib/team-balance";
 import type { PickMethod } from "./pick-method";
 import type { Player } from "@/types";
+
+function eloGap(difference: number): string {
+  if (difference < 0.05) return "dead even";
+  return `${difference < 10 ? difference.toFixed(1) : Math.round(difference)} rating points apart`;
+}
 
 const METHODS: {
   value: PickMethod;
@@ -36,23 +41,17 @@ const METHODS: {
   {
     value: "rating",
     label: "Even by rating",
-    blurb: "Uses Elo, so the two sides should be as close as they can be.",
+    blurb: "Uses the ratings, so the two sides should be as close as they can be.",
     Icon: Scale,
-    gap: (d) => (d < 0.05 ? "dead even" : `${d < 10 ? d.toFixed(1) : Math.round(d)} Elo apart`),
+    gap: eloGap,
   },
   {
-    value: "form",
-    label: "Even by form",
-    blurb: "Uses the last few results, so tonight's shape counts more than history.",
-    Icon: TrendingUp,
-    gap: (d) => (d < 0.005 ? "dead even" : `${d.toFixed(2)} pts a game apart`),
-  },
-  {
-    value: "skill",
-    label: "Even by skill",
-    blurb: "Uses the level you set on each player, so a debutant still counts.",
-    Icon: Star,
-    gap: (d) => (d < 0.005 ? "dead even" : `${d.toFixed(2)} levels apart`),
+    value: "standing",
+    label: "Down the table",
+    blurb:
+      "1st, 3rd, 5th… against 2nd, 4th, 6th… in this season's league. Anyone not in it yet goes in by rating.",
+    Icon: ListOrdered,
+    gap: eloGap,
   },
 ];
 
@@ -68,21 +67,18 @@ export default function MethodPicker({
   value,
   onChange,
   preview,
-  notes,
   disabled,
 }: {
   value: PickMethod;
   onChange: (method: PickMethod) => void;
   /** The split each method would produce, for the gap readout. */
   preview: Record<PickMethod, Split<Player> | null>;
-  /** Why a method can't tell anyone apart, when that is worth explaining. */
-  notes?: Partial<Record<PickMethod, string>>;
   disabled?: boolean;
 }) {
   const reduced = useReducedMotion();
 
   return (
-    <fieldset disabled={disabled} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    <fieldset disabled={disabled} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
       <legend className="sr-only">How to pick the teams</legend>
       {METHODS.map(({ value: method, label, blurb, Icon, gap }, i) => {
         const split = preview[method];
@@ -94,9 +90,13 @@ export default function MethodPicker({
             type="button"
             onClick={() => onChange(method)}
             aria-pressed={selected}
-            initial={reduced ? false : { opacity: 0, y: 8 }}
+            // The same starting point whatever the motion setting, because
+            // this is drawn on the server, which cannot know it: skipping the
+            // entrance there and not here is a page that does not match the
+            // one it hydrates. Reduced motion takes the trip in no time.
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, delay: reduced ? 0 : i * 0.05 }}
+            transition={reduced ? { duration: 0 } : { duration: 0.25, delay: i * 0.05 }}
             // `flex flex-col`: a button centres its contents, so in a grid row
             // stretched to the tallest card the ones without a gap readout sat
             // their heading halfway down while the others sat at the top.
@@ -115,11 +115,6 @@ export default function MethodPicker({
             </span>
             {split && gap && (
               <span className="eyebrow mt-2 block">{gap(split.difference)}</span>
-            )}
-            {notes?.[method] && (
-              <span className="mt-1 block text-xs text-muted-foreground">
-                {notes[method]}
-              </span>
             )}
           </motion.button>
         );

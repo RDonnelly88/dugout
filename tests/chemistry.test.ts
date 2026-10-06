@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { chemistryFor, pick, share, SHRINKAGE } from "@/lib/chemistry";
+import { chemistryFor, pick } from "@/lib/chemistry";
+import { ledger, matchExpectations, type Night } from "@/lib/expected-wins";
+import { XW } from "@/lib/config";
 import type { Match } from "@/types";
 
 let n = 0;
 function match(a: string[], b: string[], scoreA: number, scoreB: number): Match {
   n++;
-  const date = `2026-01-${String(n).padStart(2, "0")}`;
+  const date = new Date(Date.UTC(2026, 0, n)).toISOString().slice(0, 10);
   return {
     id: `m${n}`,
     date,
@@ -17,82 +19,50 @@ function match(a: string[], b: string[], scoreA: number, scoreB: number): Match 
   };
 }
 
+const report = (all: Match[], id: string) => chemistryFor(all, matchExpectations(all), id);
+
 const find = <T extends { playerId: string }>(entries: T[], id: string): T =>
   entries.find((e) => e.playerId === id)!;
 
-describe("share", () => {
-  it("counts a draw as half a win", () => {
-    expect(share({ played: 2, wins: 1, draws: 0, losses: 1 })).toBe(0.5);
-    expect(share({ played: 2, wins: 0, draws: 2, losses: 0 })).toBe(0.5);
-  });
-
-  it("is nought for nobody, not a divide by zero", () => {
-    expect(share({ played: 0, wins: 0, draws: 0, losses: 0 })).toBe(0);
-  });
-});
-
 describe("chemistryFor", () => {
   it("splits teammates from opponents", () => {
-    const report = chemistryFor([match(["a", "b"], ["c"], 3, 1)], "a");
+    const result = report([match(["a", "b"], ["c"], 3, 1)], "a");
 
-    expect(report.withPlayers.map((e) => e.playerId)).toEqual(["b"]);
-    expect(report.againstPlayers.map((e) => e.playerId)).toEqual(["c"]);
+    expect(result.withPlayers.map((e) => e.playerId)).toEqual(["b"]);
+    expect(result.againstPlayers.map((e) => e.playerId)).toEqual(["c"]);
   });
 
   it("counts the same pair on both sides of the pitch", () => {
-    const report = chemistryFor(
-      [match(["a", "b"], ["c"], 3, 1), match(["a"], ["b"], 1, 2)],
-      "a"
-    );
+    const result = report([match(["a", "b"], ["c"], 3, 1), match(["a"], ["b"], 1, 2)], "a");
 
-    expect(find(report.withPlayers, "b").tally.played).toBe(1);
-    expect(find(report.againstPlayers, "b").tally).toEqual({
-      played: 1,
-      wins: 0,
-      draws: 0,
-      losses: 1,
-    });
+    expect(find(result.withPlayers, "b").ledger.played).toBe(1);
+    const against = find(result.againstPlayers, "b").ledger;
+    expect([against.played, against.losses]).toEqual([1, 1]);
   });
 
   it("ignores matches that never finished", () => {
     const unplayed: Match = { ...match(["a", "b"], ["c"], 0, 0), status: "scheduled" };
-    expect(chemistryFor([unplayed], "a").played).toBe(0);
+    expect(report([unplayed], "a").own.played).toBe(0);
   });
 
-  /**
-   * The whole point. One game together used to read as a hundred per cent and
-   * be presented as the player's best partnership.
-   */
-  it("barely moves off the baseline for a single game together", () => {
-    const report = chemistryFor(
-      [
-        match(["a", "b"], ["c"], 3, 1), // a and b together, won
-        match(["a"], ["c"], 0, 1),
-        match(["a"], ["c"], 0, 1), // a wins 1 of 3 overall
-      ],
-      "a"
-    );
+  it("measures a partnership against the odds, not against nothing", () => {
+    // Even sides, so every game together was a coin flip the pair kept winning.
+    const together = Array.from({ length: 6 }, () => match(["a", "b"], ["c", "d"], 1, 0));
+    const pair = find(report(together, "a").withPlayers, "b").ledger;
 
-    const b = find(report.withPlayers, "b");
-    expect(b.observed).toBe(1);
-    expect(report.baseline).toBeCloseTo(1 / 3);
-    // One game of evidence against four of prior: a fifth of the way up.
-    expect(b.confidence).toBeCloseTo(1 / (1 + SHRINKAGE));
-    expect(b.adjusted).toBeCloseTo(1 / 3 + (1 - 1 / 3) * 0.2);
-    expect(b.adjusted).toBeLessThan(0.5);
+    expect(pair.actual).toBe(6);
+    expect(pair.expected).toBeLessThan(pair.actual);
+    expect(pair.above).toBeGreaterThan(0);
   });
 
-  it("lets a well-evidenced partnership move most of the way", () => {
-    const together = Array.from({ length: 12 }, () => match(["a", "b"], ["c"], 3, 1));
-    const alone = Array.from({ length: 12 }, () => match(["a"], ["c"], 0, 1));
-    const b = find(chemistryFor([...together, ...alone], "a").withPlayers, "b");
-
-    expect(b.confidence).toBeCloseTo(12 / 16);
-    expect(b.adjusted).toBeGreaterThan(0.8);
+  /** One lucky night used to be presented as a player's best partnership. */
+  it("calls a single game together too early to say", () => {
+    const result = report([match(["a", "b"], ["c"], 3, 1)], "a");
+    expect(find(result.withPlayers, "b").ledger.verdict).toBe("early");
   });
 
-  it("orders teammates by lift, best first", () => {
-    const report = chemistryFor(
+  it("orders teammates by how far they beat the odds, best first", () => {
+    const result = report(
       [
         match(["a", "good"], ["x"], 3, 0),
         match(["a", "good"], ["x"], 3, 0),
@@ -102,27 +72,32 @@ describe("chemistryFor", () => {
       "a"
     );
 
-    expect(report.withPlayers.map((e) => e.playerId)).toEqual(["good", "bad"]);
-    expect(find(report.withPlayers, "good").lift).toBeGreaterThan(0);
-    expect(find(report.withPlayers, "bad").lift).toBeLessThan(0);
+    expect(result.withPlayers.map((e) => e.playerId)).toEqual(["good", "bad"]);
+    expect(find(result.withPlayers, "good").ledger.above).toBeGreaterThan(0);
+    expect(find(result.withPlayers, "bad").ledger.above).toBeLessThan(0);
   });
 });
 
 describe("pick", () => {
+  const night = (actual: number): Night => ({
+    matchId: `p${++n}`,
+    date: "2026-01-01",
+    result: actual === 1 ? "win" : "loss",
+    actual,
+    expected: 0.5,
+  });
+  const games = (count: number, actual: number) => Array.from({ length: count }, () => night(actual));
   const entries = [
-    { playerId: "plenty", tally: { played: 6, wins: 6, draws: 0, losses: 0 } },
-    { playerId: "some", tally: { played: 3, wins: 1, draws: 0, losses: 2 } },
-    { playerId: "barely", tally: { played: 1, wins: 1, draws: 0, losses: 0 } },
-  ] as Parameters<typeof pick>[0];
+    { playerId: "plenty", ledger: ledger(games(XW.minGames + 2, 1)) },
+    { playerId: "some", ledger: ledger(games(XW.minGames, 0)) },
+    { playerId: "barely", ledger: ledger(games(1, 1)) },
+  ];
 
-  it("drops anyone without enough games", () => {
+  it("drops anyone with too few games to say", () => {
     expect(pick(entries).map((e) => e.playerId)).toEqual(["plenty", "some"]);
   });
 
   it("takes the other end of the same eligible list", () => {
-    expect(pick(entries, { worst: true }).map((e) => e.playerId)).toEqual([
-      "some",
-      "plenty",
-    ]);
+    expect(pick(entries, { worst: true }).map((e) => e.playerId)).toEqual(["some", "plenty"]);
   });
 });

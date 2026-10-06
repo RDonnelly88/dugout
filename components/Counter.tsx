@@ -25,11 +25,14 @@ export default function Counter({
   duration?: number;
 }) {
   const reduced = useReducedMotion();
-  const [shown, setShown] = useState(reduced ? value : from);
+  // From `from` whatever the motion setting, which the server cannot know: a
+  // first render that differs from the page it hydrates is a mismatch. Under
+  // reduced motion the effect lands on the value straight away.
+  const [shown, setShown] = useState(from);
   // What is on screen, not what was last asked for: a value that changes
   // mid-count has to be picked up from where the count had got to, or the
   // number jumps backwards before setting off again.
-  const at = useRef(reduced ? value : from);
+  const at = useRef(from);
 
   useEffect(() => {
     if (reduced) {

@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { useTeam } from "@/contexts/TeamContext";
 
 /**
  * The top of a page: what it is, what it is for, and what you can do here.
@@ -10,12 +13,15 @@ import type { ReactNode } from "react";
  * in a box no other page had.
  */
 export default function PageHeader({
+  eyebrow,
   title,
   subtitle,
   badges,
   actions,
   children,
 }: {
+  /** The line above the title. The team's own name unless a page says otherwise. */
+  eyebrow?: ReactNode;
   title: ReactNode;
   subtitle?: ReactNode;
   /** Status pills, shown beside the title. */
@@ -25,11 +31,15 @@ export default function PageHeader({
   /** Anything else, under the subtitle. Stat tiles, usually. */
   children?: ReactNode;
 }) {
+  const { currentTeam } = useTeam();
+  const kicker = eyebrow ?? currentTeam?.name;
+
   return (
     <div className="page-header">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
+          {kicker && <p className="page-kicker mb-3">{kicker}</p>}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <h1 className="page-title">{title}</h1>
             {badges}
           </div>

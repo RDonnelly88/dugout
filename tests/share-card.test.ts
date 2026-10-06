@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { initials, shareCard } from "@/lib/share-card";
-import type { Match, PlayerFormResult } from "@/types";
+import type { Match, RecentResult } from "@/types";
 
 const sides = { A: "Bibs", B: "No bibs" };
 const nameOf = (id: string) => ({ p1: "Ross Donnelly", p2: "Sam" })[id] ?? id;
@@ -371,20 +371,20 @@ describe("the tables under the result", () => {
 });
 
 describe("the run each player is on", () => {
-  const run: PlayerFormResult[] = ["win", "dnp", "loss", "win", "draw"];
+  const run: RecentResult[] = ["win", "dnp", "loss", "win", "draw"];
 
   it("puts it beside them, newest first", () => {
     const card = shareCard(match(), sides, nameOf, {
-      form: new Map([["p1", run]]),
+      results: new Map([["p1", run]]),
     })!;
 
-    expect(card.a.players[0].form).toEqual(run);
+    expect(card.a.players[0].results).toEqual(run);
   });
 
   /** Nothing to draw for somebody the window has no record of. */
   it("leaves it off anybody with no recent nights", () => {
-    const card = shareCard(match(), sides, nameOf, { form: new Map() })!;
+    const card = shareCard(match(), sides, nameOf, { results: new Map() })!;
 
-    expect(card.a.players[0].form).toBeUndefined();
+    expect(card.a.players[0].results).toBeUndefined();
   });
 });

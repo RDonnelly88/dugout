@@ -32,7 +32,6 @@ const JoinTeamForm = () => {
     setIsJoining(true);
     
     try {
-      console.log("Attempting to join team with ID:", teamId);
       const { error, success } = await joinTeamById(teamId);
       
       if (error) {
@@ -44,7 +43,6 @@ const JoinTeamForm = () => {
           variant: "destructive",
         });
       } else if (success) {
-        console.log("Successfully joined team");
         toast({
           title: "Team joined",
           description: "You have successfully joined the team",

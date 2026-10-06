@@ -9,7 +9,7 @@ import type { ReactNode } from "react";
  * has to be parsed rather than read; stacked, the division is the thing you
  * see first.
  *
- * Drawn rather than typeset by a library: this is four sums in a side panel,
+ * Drawn rather than typeset by a library: this is a few sums in a side panel,
  * and MathML is not in the JSX types, so the choice was a stack of element
  * declarations or a stack of spans.
  */
@@ -37,11 +37,6 @@ export function Sup({ children }: { children: ReactNode }) {
   return (
     <sup className="ml-px align-super text-[0.7em] leading-none">{children}</sup>
   );
-}
-
-/** Multiplication, spaced as an operator rather than jammed against a name. */
-export function Times() {
-  return <span className="mx-1.5 text-muted-foreground">×</span>;
 }
 
 /**

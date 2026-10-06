@@ -11,13 +11,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
-import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
+import ResultStrip from "@/components/players/ResultStrip";
 import { getMatches } from "@/lib/db";
 import { useTeam } from "@/contexts/TeamContext";
 import { useSideNames } from "@/hooks/useSideNames";
 import { matchImpact, type SideImpact } from "@/lib/match-impact";
-import { resultFor } from "@/lib/match-result";
-import { displayRating } from "@/lib/elo";
+import { outcomeOf, resultFor } from "@/lib/match-result";
+import { displayRating, expectedScore } from "@/lib/elo";
+import { signedWins } from "@/lib/expected-wins";
 import type { Match, Player } from "@/types";
 
 function Change({ value, digits = 0 }: { value: number; digits?: number }) {
@@ -42,34 +43,39 @@ function Change({ value, digits = 0 }: { value: number; digits?: number }) {
 }
 
 /** One measure, as it stood before the match and after it. */
-function Row({
-  label,
-  before,
-  after,
-  digits = 0,
-  changed = true,
-}: {
-  label: string;
-  before: number;
-  after: number;
-  digits?: number;
-  /** False for a measure a result cannot move, like the hand-set level. */
-  changed?: boolean;
-}) {
+function Row({ label, before, after }: { label: string; before: number; after: number }) {
   return (
     <div className="flex items-baseline justify-between gap-2 py-1.5">
       <span className="eyebrow">{label}</span>
       <span className="tabular flex items-baseline gap-2 text-sm">
-        {changed ? (
-          <>
-            <span className="text-muted-foreground">{before.toFixed(digits)}</span>
-            <span className="text-muted-foreground">→</span>
-            <span className="font-semibold">{after.toFixed(digits)}</span>
-            <Change value={after - before} digits={digits} />
-          </>
-        ) : (
-          <span className="font-semibold">{after.toFixed(digits)}</span>
-        )}
+        <span className="text-muted-foreground">{before}</span>
+        <span className="text-muted-foreground">→</span>
+        <span className="font-semibold">{after}</span>
+        <Change value={after - before} />
+      </span>
+    </div>
+  );
+}
+
+/**
+ * The chance the ratings gave the side before kick-off, and what the result
+ * made of it: a side given 40% that won took 0.6 of a win more than expected.
+ */
+function Odds({ chance, actual }: { chance: number; actual: number }) {
+  const above = actual - chance;
+  return (
+    <div className="flex items-baseline justify-between gap-2 py-1.5">
+      <span className="eyebrow">Win chance</span>
+      <span className="tabular flex items-baseline gap-2 text-sm">
+        <span className="font-semibold">{Math.round(chance * 100)}%</span>
+        <span
+          className={
+            above > 0.005 ? "text-win" : above < -0.005 ? "text-loss" : "text-muted-foreground"
+          }
+          title="Wins above what was expected: one for a win, a half for a draw, less the chance"
+        >
+          {signedWins(above)} xW
+        </span>
       </span>
     </div>
   );
@@ -80,30 +86,30 @@ function Side({
   impact,
   players,
   match,
+  chance,
+  actual,
 }: {
   name: string;
   impact: SideImpact;
   players: Map<string, Player>;
   /** The night in question, to pick this result out of the run. */
   match: Match;
+  /** What the ratings gave this side before kick-off. */
+  chance: number;
+  /** One for a win, a half for a draw. */
+  actual: number;
 }) {
   return (
     <div className="rounded-xl border border-border bg-surface-2/40 p-4">
       <h4 className="mb-2 font-semibold">{name}</h4>
 
       <div className="divide-y divide-border">
+        <Odds chance={chance} actual={actual} />
         <Row
           label="Rating"
           before={displayRating(impact.ratingBefore)}
           after={displayRating(impact.ratingAfter)}
         />
-        <Row
-          label="Form"
-          before={impact.formBefore}
-          after={impact.formAfter}
-          digits={2}
-        />
-        <Row label="Skill" before={impact.skill} after={impact.skill} digits={1} changed={false} />
       </div>
 
       <ul className="mt-3 space-y-1 border-t border-border pt-3">
@@ -122,13 +128,11 @@ function Side({
               <span className="min-w-0 flex-1 truncate">
                 {player?.name ?? "Unknown"}
               </span>
-              {/* The run they walked in on, which is why two team-mates in
-                  the same result took different numbers. Without it the card
-                  looks arbitrary. This night is ringed on the end of it, so
-                  the five that decided the weighting stay distinct from the
-                  one being read. */}
-              <PlayerFormDisplay
-                results={entry.form}
+              {/* The run they walked in on, with this night ringed on the end
+                  of it so the five before stay distinct from the one being
+                  read. */}
+              <ResultStrip
+                results={entry.results}
                 size="xs"
                 latest={resultFor(match, entry.playerId) ?? undefined}
               />
@@ -169,8 +173,8 @@ export default function MatchImpact({
   });
 
   const impact = useMemo(
-    () => matchImpact(matches, match, players),
-    [matches, match, players]
+    () => matchImpact(matches, match),
+    [matches, match]
   );
 
   const byId = useMemo(
@@ -180,6 +184,10 @@ export default function MatchImpact({
 
   if (!impact) return null;
 
+  const outcome = outcomeOf(match);
+  const chanceA = expectedScore(impact.A.ratingBefore, impact.B.ratingBefore);
+  const actualA = outcome === "a" ? 1 : outcome === "draw" ? 0.5 : 0;
+
   return (
     <Card className="mt-8">
       <CardHeader>
@@ -188,13 +196,27 @@ export default function MatchImpact({
           What this match changed
         </CardTitle>
         <CardDescription>
-          Each side&apos;s average going in and coming out. Skill is set by hand,
-          so a result never moves it.
+          Each side&apos;s chance before kick-off and what the result made of
+          it, and their average rating going in and coming out.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-2">
-        <Side name={sides.A} impact={impact.A} players={byId} match={match} />
-        <Side name={sides.B} impact={impact.B} players={byId} match={match} />
+        <Side
+          name={sides.A}
+          impact={impact.A}
+          players={byId}
+          match={match}
+          chance={chanceA}
+          actual={actualA}
+        />
+        <Side
+          name={sides.B}
+          impact={impact.B}
+          players={byId}
+          match={match}
+          chance={1 - chanceA}
+          actual={1 - actualA}
+        />
       </CardContent>
     </Card>
   );

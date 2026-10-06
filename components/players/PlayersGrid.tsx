@@ -2,16 +2,22 @@ import Link from "next/link";
 
 import React from "react";
 
-import { Player, PlayerFormResult, SeasonPlayerStats } from "@/types";
+import { Player, RecentResult, SeasonPlayerStats } from "@/types";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PlayerCard from "./PlayerCard";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
-import { useSquadForm } from "@/hooks/useSquadForm";
+import { useRecentResults } from "@/hooks/useRecentResults";
 import { usePermission } from "@/lib/permission-utils";
 import { scopeTo, type ActiveScope } from "./ActiveFilter";
 import { orderPlayers, type PlayerSort } from "@/lib/player-order";
+import { useQuery } from "@tanstack/react-query";
+import { getMatches } from "@/lib/db";
+import { useTeam } from "@/contexts/TeamContext";
+import { ELO } from "@/lib/config";
+import { matchExpectations, playerLedgers } from "@/lib/expected-wins";
+import { withinTimeline } from "@/lib/timeline";
 
 interface PlayersGridProps {
   players: Player[];
@@ -38,10 +44,27 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
   // Likewise the ratings: the hook replays the entire match history, so a card
   // calling it for itself would replay it once per player on screen.
   const { ratingFor, all } = usePlayerRatings();
-  // Not the season's form: the squad list is not a season view, so it shows
+  // Not the season's run: the squad list is not a season view, so it shows
   // how people have been going lately whatever the calendar says.
-  const { formFor, isLoading: isLoadingForms } = useSquadForm();
+  const { resultsFor, isLoading: isLoadingResults } = useRecentResults();
   const { canManage, ready } = usePermission();
+
+  // Wins against expected wins over the rating's own window, for sorting by
+  // who is beating the odds lately. The odds come from the whole history.
+  const { currentTeam } = useTeam();
+  const { data: matches = [] } = useQuery({
+    queryKey: ["matches", currentTeam?.id],
+    queryFn: getMatches,
+    enabled: !!currentTeam,
+  });
+  const recentOdds = React.useMemo(
+    () =>
+      playerLedgers(
+        withinTimeline(matches, { kind: "recent", matches: ELO.window }),
+        matchExpectations(matches)
+      ),
+    [matches]
+  );
   const editable = ready && canManage();
 
   // Where each rating sits within the squad's own spread. Elo has no absolute
@@ -66,17 +89,18 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
     return orderPlayers(
       matching.map((player) => {
         const record = recordFor(player.id, player.name);
+        const odds = recentOdds.get(player.id);
         return {
           ...player,
           rating: ratingFor(player.id),
-          form: formFor(player.id),
+          aboveXw: odds && odds.played > 0 ? odds.above : undefined,
           played: record.played,
           wins: record.wins,
         };
       }),
       sort
     );
-  }, [players, scope, searchTerm, sort, formFor, recordFor, ratingFor]);
+  }, [players, scope, searchTerm, sort, recentOdds, recordFor, ratingFor]);
 
   // No players found
   if (filteredPlayers.length === 0) {
@@ -101,21 +125,21 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
     );
   }
 
-  // Function to get player's season stats and form data
-  const getPlayerSeasonData = (playerId: string): { seasonStats: SeasonPlayerStats | undefined, formResults: PlayerFormResult[] } => {
+  // Function to get player's season stats and recent results
+  const getPlayerSeasonData = (playerId: string): { seasonStats: SeasonPlayerStats | undefined, recentRun: RecentResult[] } => {
     const playerStats = seasonPlayerStats.find(stat => stat.playerId === playerId);
-    const formResults = formFor(playerId);
+    const recentRun = resultsFor(playerId);
     
     return { 
       seasonStats: playerStats,
-      formResults
+      recentRun
     };
   };
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {filteredPlayers.map((player) => {
-        const { seasonStats, formResults } = getPlayerSeasonData(player.id);
+        const { seasonStats, recentRun } = getPlayerSeasonData(player.id);
         
         return (
           <PlayerCard
@@ -126,8 +150,8 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({
             record={recordFor(player.id, player.name)}
             rating={ratingFor(player.id)}
             standing={standingFor(player.id)}
-            formResults={formResults}
-            isLoadingForms={isLoadingForms}
+            recentRun={recentRun}
+            isLoadingResults={isLoadingResults}
             onDeleteClick={onDeleteClick}
           />
         );

@@ -16,7 +16,6 @@ const player = (id: string): Player => ({
   image: null,
   createdAt: "2026-01-01",
   updatedAt: "2026-01-01",
-  skillLevel: undefined,
 });
 
 const squad = ["a", "b", "c", "d", "e"].map(player);

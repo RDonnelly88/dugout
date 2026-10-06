@@ -8,12 +8,10 @@ import {
   getSeasons,
   getSeasonPlayerStats, 
   getMatches,
-  getPlayerFormInSeason,
   updateSeason,
   deleteSeason
 } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
-import { PlayerFormResult } from "@/types";
 import { useTeam } from "@/contexts/TeamContext";
 
 export const useSeasonDetail = () => {
@@ -47,8 +45,6 @@ export const useSeasonDetail = () => {
     refetchOnWindowFocus: true // Refetch when window gets focus
   });
 
-  console.log("Season player stats:", playerStats);
-
   // Get matches for this season
   const { data: allMatches = [], isLoading: isLoadingMatches } = useQuery({
     queryKey: ['matches', currentTeam?.id],
@@ -58,29 +54,6 @@ export const useSeasonDetail = () => {
 
   // Filter matches for this season
   const seasonMatches = allMatches.filter(match => match.seasonId === id);
-  
-  console.log("Season matches:", seasonMatches);
-
-  // Get form for each player
-  const [playerForms, setPlayerForms] = useState<Record<string, PlayerFormResult[]>>({});
-
-  // Load player forms
-  useQuery({
-    queryKey: ['playerForms', id],
-    queryFn: async () => {
-      const forms: Record<string, PlayerFormResult[]> = {};
-      
-      for (const player of playerStats) {
-        const form = await getPlayerFormInSeason(id!, player.playerId);
-        forms[player.playerId] = form;
-      }
-      
-      setPlayerForms(forms);
-      return forms;
-    },
-    enabled: !!id && playerStats.length > 0,
-    staleTime: 0 // Don't cache results
-  });
 
   // Update season mutation
   const updateSeasonMutation = useMutation({
@@ -150,7 +123,6 @@ export const useSeasonDetail = () => {
   useEffect(() => {
     if (id) {
       queryClient.invalidateQueries({ queryKey: ['seasonPlayerStats', id] });
-      queryClient.invalidateQueries({ queryKey: ['playerForms', id] });
     }
   }, [id, queryClient]);
 
@@ -159,7 +131,6 @@ export const useSeasonDetail = () => {
     season,
     seasons,
     playerStats,
-    playerForms,
     seasonMatches,
     isLoadingSeason,
     isLoadingStats,

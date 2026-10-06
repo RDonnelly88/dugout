@@ -3,7 +3,7 @@ import { mapSupabaseMatchToMatch } from "@/lib/supabase-utils";
 import { shareCard, type ShareTables } from "@/lib/share-card";
 import { cardFonts, matchCardImage } from "@/lib/share-card-image";
 import { computeRatings } from "@/lib/elo";
-import { recentForm } from "@/lib/form";
+import { recentResults } from "@/lib/recent-results";
 import { outcomeOf } from "@/lib/match-result";
 import { SIDE_NAMES } from "@/lib/config";
 import type { Match } from "@/types";
@@ -117,13 +117,13 @@ export async function GET(
   const { changes, ranked } = ladderThatNight(played, match);
   // The window ends on the match being shared, so the run beside a name
   // includes the game the card is about.
-  const form = new Map(
-    [...recentForm(played)].map(([playerId, run]) => [playerId, run.results])
+  const results = new Map(
+    [...recentResults(played)].map(([playerId, run]) => [playerId, run.results])
   );
 
   const tables: ShareTables = {
     changes,
-    form,
+    results,
     ladder: ranked.map((rating) => ({
       playerId: rating.playerId,
       name: nameOf(rating.playerId),

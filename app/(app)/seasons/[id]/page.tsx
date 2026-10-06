@@ -28,10 +28,18 @@ import SeasonForm from "@/components/seasons/SeasonForm";
 import SeasonSelector from "@/components/seasons/SeasonSelector";
 import SeasonLeaderboard from "@/components/seasons/SeasonLeaderboard";
 import SeasonPositionChart from "@/components/seasons/SeasonPositionChart";
+import WrappedPicker from "@/components/wrapped/WrappedPicker";
+import MatchCard from "@/components/matches/MatchCard";
+import { Rail } from "@/components/ui/rail";
+import { outcomeOf } from "@/lib/match-result";
 import { useSeasonDetail } from "@/hooks/useSeasonDetail";
 import { calculatePlayerRanks } from "@/lib/ranking-utils";
 import PageHeader from "@/components/PageHeader";
 import { StatTile, StatTiles } from "@/components/StatTile";
+import SectionHeading from "@/components/SectionHeading";
+
+/** How many of the season's latest results the rail at the top shows. */
+const LATEST_NIGHTS = 8;
 
 const SeasonDetail = () => {
   const { currentTeam } = useTeam();
@@ -46,7 +54,6 @@ const SeasonDetail = () => {
     season,
     seasons,
     playerStats,
-    playerForms,
     seasonMatches,
     isLoadingSeason,
     isEditing,
@@ -62,6 +69,11 @@ const SeasonDetail = () => {
 
   const ranks = calculatePlayerRanks(playerStats);
   const leaders = playerStats.filter((p) => ranks[p.playerId] === 1);
+  // The season's last few results, newest first, as a run of scoreboards.
+  const latestNights = seasonMatches
+    .filter((m) => outcomeOf(m) !== null)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, LATEST_NIGHTS);
 
   if (isLoadingSeason) {
     return (
@@ -72,8 +84,8 @@ const SeasonDetail = () => {
             Back
           </Button>
         </div>
-        <div className="shimmer rounded-xl h-[100px] mb-6"></div>
-        <div className="shimmer rounded-xl h-[400px]"></div>
+        <div className="sheen rounded-xl h-[100px] mb-6"></div>
+        <div className="sheen rounded-xl h-[400px]"></div>
       </div>
     );
   }
@@ -197,7 +209,12 @@ const SeasonDetail = () => {
             }
           >
             <StatTiles>
-              <StatTile label="Matches" value={seasonMatches.length} />
+              {/* Played ones: a fixture on the calendar is not yet a match
+                  of the season, and the seasons list counts the same way. */}
+              <StatTile
+                label="Matches"
+                value={seasonMatches.filter((m) => outcomeOf(m) !== null).length}
+              />
               <StatTile label="Players" value={playerStats.length} />
               <StatTile
                 label={
@@ -227,18 +244,37 @@ const SeasonDetail = () => {
             </StatTiles>
           </PageHeader>
 
+          {latestNights.length > 0 && (
+            <section className="mb-6">
+              <SectionHeading kicker={season.name} title="Latest nights" />
+              <Rail label={`The latest nights of ${season.name}`}>
+                {latestNights.map((match) => (
+                  <MatchCard key={match.id} match={match} />
+                ))}
+              </Rail>
+            </section>
+          )}
+
+          <div className="mb-6">
+            <WrappedPicker
+              seasonId={season.id}
+              finished={season.isFinished}
+              table={playerStats}
+              players={allPlayers}
+            />
+          </div>
+
           <Tabs defaultValue="leaderboard" className="space-y-4">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="leaderboard">League Table</TabsTrigger>
               <TabsTrigger value="story">The Season</TabsTrigger>
-              <TabsTrigger value="positions">Position Tracking</TabsTrigger>
+              <TabsTrigger value="positions">Positions</TabsTrigger>
               <TabsTrigger value="matches">Matches</TabsTrigger>
             </TabsList>
             
             <TabsContent value="leaderboard" className="space-y-4">
               <SeasonLeaderboard 
                 stats={playerStats}
-                playerForms={playerForms}
                 seasonName={season.name}
                 isFinished={season.isFinished}
                 seasonId={season.id}
@@ -246,7 +282,11 @@ const SeasonDetail = () => {
             </TabsContent>
 
             <TabsContent value="story" className="space-y-4">
-              <SeasonWrap season={seasonMatches} players={allPlayers} />
+              <SeasonWrap
+                season={seasonMatches}
+                players={allPlayers}
+                finished={season.isFinished}
+              />
             </TabsContent>
 
             <TabsContent value="positions" className="space-y-4">

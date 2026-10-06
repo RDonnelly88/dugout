@@ -28,7 +28,6 @@ export function usePlayerMutation() {
       });
     },
     onSuccess: (player) => {
-      console.log("Player added successfully:", player);
       queryClient.invalidateQueries({ queryKey: ['players'] });
       toast({
         title: "Player added",

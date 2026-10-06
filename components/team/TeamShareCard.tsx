@@ -47,8 +47,7 @@ const TeamShareCard = () => {
           title: "Team shared",
           description: "Team sharing dialog opened",
         });
-      } catch (error) {
-        console.log("Error sharing:", error);
+      } catch {
         handleCopyTeamId();
       }
     } else {

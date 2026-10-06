@@ -1,62 +1,50 @@
-
 import React from "react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Ghost } from "lucide-react";
-import { PlayerPositionHistory } from "@/hooks/usePlayerPositionHistory";
+import PlayerAvatar from "@/components/players/PlayerAvatar";
+import type { ChartLine } from "./PositionLineChart";
 
 interface ChartTooltipProps {
   active?: boolean;
   /** Recharts hands this over readonly — it is the chart's own array. */
-  payload?: readonly any[];
-  label?: any;
-  positionHistories: PlayerPositionHistory[];
+  payload?: readonly { dataKey?: unknown; value?: unknown; payload?: { date?: string } }[];
+  label?: unknown;
+  lines: ChartLine[];
 }
 
-const ChartTooltip: React.FC<ChartTooltipProps> = ({ 
-  active, 
-  payload, 
-  label, 
-  positionHistories 
-}) => {
-  if (active && payload && payload.length) {
-    const matchDate = payload[0]?.payload?.formattedDate || '';
-    return (
-      <div className="bg-background border border-border/50 rounded-md p-2 shadow-md">
-        <p className="text-sm font-medium mb-1">Match #{label} - {matchDate}</p>
-        <div className="space-y-1">
-          {[...payload]
-            .sort((a: any, b: any) => a.value - b.value)
-            .map((entry: any, index: number) => {
-              // Extract the player name from the data
-              const playerId = entry.dataKey;
-              const player = positionHistories.find(p => p.playerId === playerId);
-              return (
-                <div 
-                  key={`item-${index}`} 
-                  className="flex items-center gap-2 text-xs"
-                >
-                  <div 
-                    className="w-2 h-2 rounded-full" 
-                    style={{ backgroundColor: entry.color }}
-                  />
-                  <Avatar className="h-4 w-4">
-                    <AvatarImage src={player?.playerImage} alt={player?.playerName} />
-                    <AvatarFallback className="text-[8px]">
-                      {player?.playerImage ? player?.playerName.charAt(0) : <Ghost className="h-2 w-2" />}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="font-medium">{player?.playerName}</span>
-                  <span className="text-muted-foreground ml-auto">
-                    Position: {entry.value}
-                  </span>
-                </div>
-              );
-            })}
-        </div>
-      </div>
-    );
-  }
-  return null;
+const ChartTooltip: React.FC<ChartTooltipProps> = ({ active, payload, label, lines }) => {
+  if (!active || !payload?.length) return null;
+
+  const date = payload[0]?.payload?.date ?? "";
+  const rows = payload
+    .filter((entry) => typeof entry.value === "number")
+    .map((entry) => ({
+      line: lines.find((l) => l.playerId === entry.dataKey),
+      position: entry.value as number,
+    }))
+    .sort((a, b) => a.position - b.position);
+
+  return (
+    <div className="rounded-md border border-border bg-popover p-2 text-popover-foreground shadow-md">
+      <p className="mb-1 text-sm font-medium">
+        Match {String(label)} · {date}
+      </p>
+      <ul className="space-y-1">
+        {rows.map(({ line, position }) =>
+          line ? (
+            <li key={line.playerId} className="flex items-center gap-2 text-xs">
+              <span
+                aria-hidden
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ backgroundColor: line.colour }}
+              />
+              <PlayerAvatar name={line.player?.name ?? "Unknown"} image={line.player?.image} size="xs" />
+              <span className="font-medium">{line.player?.name ?? "Unknown"}</span>
+              <span className="tabular ml-auto pl-3 text-muted-foreground">#{position}</span>
+            </li>
+          ) : null
+        )}
+      </ul>
+    </div>
+  );
 };
 
 export default ChartTooltip;

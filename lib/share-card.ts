@@ -1,6 +1,6 @@
 import { outcomeOf } from "./match-result";
 import { calculatePlayerRanks, sortPlayersByRank } from "./ranking-utils";
-import type { Match, PlayerFormResult } from "@/types";
+import type { Match, RecentResult } from "@/types";
 
 /**
  * What a match looks like as a picture worth sending to the group.
@@ -24,7 +24,7 @@ export interface SharePlayer {
    * card is the record of a game that has just been played, so a run ending
    * the week before it would be answering a question nobody asked.
    */
-  form?: PlayerFormResult[];
+  results?: RecentResult[];
 }
 
 export interface ShareSide {
@@ -62,7 +62,7 @@ export interface ShareTables {
   /** What the night did to each player, by id. */
   changes?: Map<string, number>;
   /** How each player had been going by the end of it, newest first, by id. */
-  form?: Map<string, PlayerFormResult[]>;
+  results?: Map<string, RecentResult[]>;
   /** The ladder as it stood when this match finished, strongest first. */
   ladder?: { playerId: string; name: string; rating: number }[];
   /**
@@ -190,7 +190,7 @@ export function shareCard(
       name: nameOf(id),
       change: tables.changes?.get(id),
       rank: rankOf[id],
-      form: tables.form?.get(id),
+      results: tables.results?.get(id),
     }));
 
   const top = <T extends { playerId: string; name: string }>(

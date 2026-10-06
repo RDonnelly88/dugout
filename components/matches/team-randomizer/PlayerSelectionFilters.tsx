@@ -3,6 +3,7 @@ import { Search } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import ActiveFilter from "@/components/players/ActiveFilter";
+import { usePermission } from "@/lib/permission-utils";
 
 interface PlayerSelectionFiltersProps {
   searchTerm: string;
@@ -27,6 +28,9 @@ const PlayerSelectionFilters = ({
   selectedCount,
   hiddenSelectedCount
 }: PlayerSelectionFiltersProps) => {
+  // Only somebody who can change players gets the switches to explain.
+  const { canManage: can, ready } = usePermission();
+  const canManage = ready && can();
   return (
     <div className="space-y-3">
       <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center justify-between">
@@ -59,6 +63,9 @@ const PlayerSelectionFilters = ({
           <Badge variant="outline" className="text-xs">
             {hiddenSelectedCount} picked but hidden
           </Badge>
+        )}
+        {canManage && (
+          <span className="ml-auto hidden sm:inline">The switch on each row marks a player active.</span>
         )}
       </div>
     </div>

@@ -7,6 +7,7 @@ import PlayerAvatar from "@/components/players/PlayerAvatar";
 import Counter from "@/components/Counter";
 import { displayRating, type PlayerRating } from "@/lib/elo";
 import { ELO } from "@/lib/config";
+import { awayExplanation } from "@/components/ratings/away";
 import type { Player } from "@/types";
 
 function Delta({ change }: { change: number }) {
@@ -77,20 +78,25 @@ export default function RatingLeaderboard({
           <li key={rating.playerId}>
             <TransitionLink
               href={`/players/${rating.playerId}`}
-              className="focus-ring relative flex items-center gap-3 overflow-hidden rounded-lg border border-border bg-surface px-3 py-2.5 transition-colors hover:border-border-strong"
+              className={`focus-ring relative flex items-center gap-3 overflow-hidden rounded-lg border bg-surface px-3 py-2.5 transition-colors hover:border-border-strong ${
+                // The top of the ladder lit like a leader's board.
+                index === 0 ? "border-accent/50 glow-accent" : "border-border"
+              }`}
               shareAvatar
             >
               {/* Behind the content, so the row stays readable at any width. */}
               <motion.span
                 aria-hidden
                 className="absolute inset-y-0 left-0 bg-accent/10"
-                initial={reduced ? false : { width: 0 }}
+                // The same start whatever the motion setting, which the
+                // server cannot know; reduced motion fills it at once.
+                initial={{ width: 0 }}
                 animate={{ width: `${12 + share * 88}%` }}
-                transition={{
-                  duration: 0.7,
-                  delay: reduced ? 0 : index * 0.04,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
+                transition={
+                  reduced
+                    ? { duration: 0 }
+                    : { duration: 0.7, delay: index * 0.04, ease: [0.22, 1, 0.36, 1] }
+                }
               />
 
               <span className="relative w-6 shrink-0 text-center text-sm font-semibold tabular text-muted-foreground">
@@ -116,15 +122,18 @@ export default function RatingLeaderboard({
                   rough
                 </span>
               )}
-              {/* Said in words, not just an icon and a number. "−59" beside an
-                  hourglass told you nothing about what had happened. */}
-              {rating.drift >= 1 && (
+              {/* Said in words, not just an icon and a number. */}
+              {rating.missed >= ELO.awayAfter && (
                 <span
                   className="relative hidden items-center gap-1 whitespace-nowrap text-xs text-muted-foreground sm:inline-flex"
-                  title={`Missed ${rating.missed} matches, drifting ${Math.round(rating.drift)} back towards ${ELO.start}`}
+                  title={
+                    rating.counted === 0
+                      ? `None of their games are in the squad's last ${ELO.window} matches, so there is nothing to rate them on.`
+                      : awayExplanation(rating.missed)
+                  }
                 >
                   <Hourglass className="h-3 w-3 shrink-0" />
-                  missed {rating.missed}, −{Math.round(rating.drift)}
+                  {rating.counted === 0 ? "no recent games" : `away ${rating.missed}`}
                 </span>
               )}
               <span
@@ -134,11 +143,7 @@ export default function RatingLeaderboard({
                 title={
                   played
                     ? "Change from the last match"
-                    : `Missed the last match. ${
-                        rating.lastChange === 0
-                          ? "Still inside the grace, so nothing moved."
-                          : "Drifting back towards " + ELO.start + "."
-                      }`
+                    : awayExplanation(rating.missed)
                 }
               >
                 <Delta change={rating.lastChange} />

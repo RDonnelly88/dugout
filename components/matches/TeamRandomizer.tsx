@@ -9,19 +9,25 @@ import MethodPicker from "./team-randomizer/MethodPicker";
 import CardPackRandomizer from "./team-randomizer/CardPackRandomizer";
 import ManualPicker from "./team-randomizer/ManualPicker";
 import { isBalanceMethod, type PickMethod } from "./team-randomizer/pick-method";
+import { keepSelection } from "@/lib/player-selection";
 import {
   Dialog,
   DialogContent,
   DialogOverlay,
   DialogPortal,
 } from "@/components/ui/dialog";
-import { splitTeams, type Split } from "@/lib/team-balance";
-import { usePlayerRatings } from "@/hooks/usePlayerRatings";
-import { recentForm } from "@/lib/form";
-import { getMatches } from "@/lib/db";
 import { useQuery } from "@tanstack/react-query";
+import {
+  alternateSplit,
+  leagueOrder,
+  splitTeams,
+  type Split,
+} from "@/lib/team-balance";
+import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
+import { usePlayerRatings } from "@/hooks/usePlayerRatings";
 import { useTeam } from "@/contexts/TeamContext";
-import { ELO, SKILL } from "@/lib/config";
+import { ELO } from "@/lib/config";
+import SectionHeading from "@/components/SectionHeading";
 
 interface TeamRandomizerProps {
   players: Player[];
@@ -44,26 +50,34 @@ const TeamRandomizer = ({
   onSelectionChange,
   disabled = false,
 }: TeamRandomizerProps) => {
-  const { currentTeam } = useTeam();
-  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
+  // Null until the squad first arrives; see `keepSelection`.
+  const [picked, setPicked] = useState<string[] | null>(null);
+  const selectedPlayers = useMemo(() => picked ?? [], [picked]);
   const [method, setMethod] = useState<PickMethod>("random");
   const [dealing, setDealing] = useState(false);
 
   const { ratingFor } = usePlayerRatings();
-  const { data: matches = [] } = useQuery({
-    queryKey: ["matches", currentTeam?.id],
-    queryFn: getMatches,
-    enabled: !!currentTeam,
-  });
-  const form = useMemo(() => recentForm(matches), [matches]);
 
-  // Active players only, matching what the list shows by default. Selecting
+  // The same two queries, under the same keys, as the player list beside this,
+  // so the table is fetched once for both.
+  const { currentTeam } = useTeam();
+  const { data: currentSeason } = useQuery({
+    queryKey: ["currentSeason", currentTeam?.id],
+    queryFn: getCurrentSeason,
+  });
+  const { data: standings = [] } = useQuery({
+    queryKey: ["seasonPlayerStats", currentSeason?.id],
+    queryFn: () =>
+      currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
+    enabled: !!currentSeason,
+  });
+
+  // Active players to start with, matching what the list shows by default, and
+  // the person's own picks from then on, whatever redraws the list. Selecting
   // everyone meant retired players were picked, hidden, and quietly dealt into
   // the teams — the button read "23 playing" above a list showing twelve.
   useEffect(() => {
-    setSelectedPlayers(
-      players.filter((p) => p.isActive !== false).map((p) => p.id)
-    );
+    setPicked((previous) => keepSelection(previous, players));
   }, [players]);
 
   useEffect(() => {
@@ -73,28 +87,25 @@ const TeamRandomizer = ({
   const availablePlayers = players.filter((p) => selectedPlayers.includes(p.id));
   const canRandomize = availablePlayers.length >= 2;
 
-  // Each in its own unit. They used to be scaled onto a common range to make
-  // the gap readouts comparable, which they are not — the readout names its
-  // unit instead, and the search only ever compares within one method.
   const weightFor = useMemo(
     () => ({
       random: () => 0,
       rating: (p: Player) => ratingFor(p.id)?.rating ?? ELO.start,
-      form: (p: Player) => form.get(p.id)?.pointsPerGame ?? 1,
-      skill: (p: Player) => p.skillLevel ?? SKILL.default,
     }),
-    [ratingFor, form]
+    [ratingFor]
   );
 
-  // Everyone starts on the middle level, so until somebody sets them the skill
-  // split is dead even and looks broken rather than untouched.
-  const skillNote = useMemo(() => {
-    if (availablePlayers.length < 2) return undefined;
-    const levels = new Set(availablePlayers.map((p) => p.skillLevel ?? SKILL.default));
-    return levels.size === 1
-      ? `Everyone here is on ${[...levels][0]} — set levels on the player pages.`
-      : undefined;
-  }, [availablePlayers]);
+  // Measured by rating, like "even by rating", so the two gaps can be read
+  // against each other: dealing down the table is fair by position, and this
+  // says how fair that turns out to be on the pitch.
+  const byStanding = useMemo(
+    () =>
+      alternateSplit(
+        leagueOrder(availablePlayers, standings, weightFor.rating),
+        weightFor.rating
+      ),
+    [availablePlayers, standings, weightFor]
+  );
 
   const preview = useMemo(
     () =>
@@ -104,14 +115,9 @@ const TeamRandomizer = ({
         rating: canRandomize
           ? splitTeams(availablePlayers, "rating", weightFor.rating)
           : null,
-        form: canRandomize
-          ? splitTeams(availablePlayers, "form", weightFor.form)
-          : null,
-        skill: canRandomize
-          ? splitTeams(availablePlayers, "skill", weightFor.skill)
-          : null,
+        standing: canRandomize ? byStanding : null,
       }) as Record<PickMethod, Split<Player> | null>,
-    [availablePlayers, canRandomize, weightFor]
+    [availablePlayers, canRandomize, weightFor, byStanding]
   );
 
   // Recomputed when the dialog opens rather than held in state: a shuffle
@@ -120,12 +126,13 @@ const TeamRandomizer = ({
 
   const startDealing = () => {
     if (!canRandomize) return;
-    // Still dealt for the balance methods; the manual picker opens empty and
-    // ignores it.
+    // Still dealt for the manual picker, which opens empty and ignores it.
     setDealt(
       isBalanceMethod(method)
         ? splitTeams(availablePlayers, method, weightFor[method])
-        : splitTeams(availablePlayers, "random", weightFor.random)
+        : method === "standing"
+          ? byStanding
+          : splitTeams(availablePlayers, "random", weightFor.random)
     );
     setDealing(true);
   };
@@ -135,32 +142,42 @@ const TeamRandomizer = ({
     onRandomize(teamA, teamB);
   };
 
+  // Somebody marked active from the list is playing; somebody marked
+  // inactive is not, and drops out of the picks rather than staying picked
+  // behind the filter.
+  const followActive = (playerId: string, active: boolean) =>
+    setPicked((prev) => {
+      const list = prev ?? [];
+      if (!active) return list.filter((id) => id !== playerId);
+      return list.includes(playerId) ? list : [...list, playerId];
+    });
+
   const togglePlayerSelection = (playerId: string) =>
-    setSelectedPlayers((prev) =>
-      prev.includes(playerId)
-        ? prev.filter((id) => id !== playerId)
-        : [...prev, playerId]
+    setPicked((prev) =>
+      (prev ?? []).includes(playerId)
+        ? (prev ?? []).filter((id) => id !== playerId)
+        : [...(prev ?? []), playerId]
     );
 
   return (
     <div className="space-y-5">
       <section>
-        <h3 className="eyebrow mb-2">1 · Who&apos;s playing</h3>
+        <SectionHeading number={1} kicker="Pick them" title="Who's playing" as="h3" />
         <PlayerSelection
           players={players}
           selectedPlayers={selectedPlayers}
           togglePlayerSelection={togglePlayerSelection}
+          onActiveChange={followActive}
           disabled={dealing || disabled}
         />
       </section>
 
       <section>
-        <h3 className="eyebrow mb-2">2 · How to split them</h3>
+        <SectionHeading number={2} kicker="Then" title="How to split them" as="h3" />
         <MethodPicker
           value={method}
           onChange={setMethod}
           preview={preview}
-          notes={{ skill: skillNote }}
           disabled={dealing || disabled || !canRandomize}
         />
       </section>

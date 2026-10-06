@@ -6,14 +6,14 @@ import {
 } from "@/components/ui/segmented-control";
 import { SORT_LABELS, type PlayerSort as SortValue } from "@/lib/player-order";
 
-const ORDER: SortValue[] = ["rank", "form", "played", "winRate", "name"];
+const ORDER: SortValue[] = ["rank", "odds", "played", "winRate", "name"];
 
 /**
  * What the squad is sorted by.
  *
  * The grid used to come out in whatever order the query returned, which is no
  * order at all once there are forty of them — every question the page answers
- * ("who is in form", "who turns out", "who is any good") was a question you
+ * ("who is beating the odds", "who turns out", "who is any good") was a question you
  * had to answer by reading every card.
  */
 export default function PlayerSort({

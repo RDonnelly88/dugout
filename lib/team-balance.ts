@@ -1,13 +1,16 @@
+import { sortPlayersByRank, type Rankable } from "./ranking-utils";
+
 /**
  * Splitting a group into two sides.
  *
  * Three ways, because they answer different questions: a shuffle when the
- * point is that nobody chose, and a weighted split when the point is a game
- * worth playing. The weighted ones take a number per player and try to make
- * the two totals meet in the middle.
+ * point is that nobody chose, a weighted split when the point is a game worth
+ * playing, and dealing down the league table when the point is that the top
+ * of it should not all be on one side. The weighted one takes a number per
+ * player and tries to make the two totals meet in the middle.
  */
 
-export type BalanceMethod = "random" | "rating" | "form" | "skill";
+export type BalanceMethod = "random" | "rating";
 
 export interface Split<T> {
   teamA: T[];
@@ -168,4 +171,48 @@ export function splitTeams<T>(
   return players.length <= EXHAUSTIVE_LIMIT
     ? exhaustiveSplit(players, weightOf)
     : greedySplit(players, weightOf);
+}
+
+/**
+ * Deal down a ranked list like cards: first, third, fifth… to A, and second,
+ * fourth, sixth… to B. An odd number gives the extra body to A, the same as
+ * every other split.
+ *
+ * The weight plays no part in who goes where. It is only measured, so the
+ * gap it leaves can be shown beside the other methods' gaps.
+ */
+export function alternateSplit<T>(
+  ordered: T[],
+  weightOf: (item: T) => number
+): Split<T> {
+  return describe(
+    ordered.filter((_, i) => i % 2 === 0),
+    ordered.filter((_, i) => i % 2 === 1),
+    weightOf
+  );
+}
+
+/**
+ * A group in league order: the table's own order for everyone in it, with
+ * players level on every count kept in the order they arrived, then everyone
+ * who has not played in it yet, strongest first by `fallbackOf`.
+ *
+ * The fallback matters early in a season, when half the squad has no row and
+ * would otherwise land on a side by accident of the list.
+ */
+export function leagueOrder<T extends { id: string }>(
+  players: T[],
+  standings: Rankable[],
+  fallbackOf: (item: T) => number
+): T[] {
+  const position = new Map(
+    sortPlayersByRank(standings).map((row, i) => [row.playerId, i])
+  );
+  const inTable = players
+    .filter((p) => position.has(p.id))
+    .sort((a, b) => position.get(a.id)! - position.get(b.id)!);
+  const outside = players
+    .filter((p) => !position.has(p.id))
+    .sort((a, b) => fallbackOf(b) - fallbackOf(a));
+  return [...inTable, ...outside];
 }

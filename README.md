@@ -4,7 +4,7 @@
 
 **A league table for your five-a-side.**
 
-Every result, every season, who's on form, and who you actually play well with.
+Every result, every season, and who you actually play well with.
 
 [![CI](https://github.com/RDonnelly88/dugout/actions/workflows/ci.yml/badge.svg)](https://github.com/RDonnelly88/dugout/actions/workflows/ci.yml)
 [![Live](https://img.shields.io/badge/live-the--dugout--fives.vercel.app-000?logo=vercel&logoColor=white)](https://the-dugout-fives.vercel.app)
@@ -26,26 +26,50 @@ then on games played — turning out more often breaks a tie in your favour —
 then on wins. Level records share a place, so two tied in second are followed
 by a fourth.
 
-**Rates everyone.** Elo, adapted for a team game: a side is rated at the mean
-of its players, everyone on it takes the same adjustment, and beating a
-stronger team is worth more than beating a weaker one. Margin counts, capped —
-a nine-nil is one team having a night, not nine times the evidence of a one-nil.
+**Rates everyone.** On Elo's scale, fitted for a team game: a side is rated at
+the mean of its players, and beating a stronger team is worth more than beating
+a weaker one. Ratings are fitted from the squad's recent matches, the newest
+counting most and old ones dropping out, so a hot spell two years ago stops
+propping anybody up. A win is a win — a nine-nil is one team having a night,
+not nine times the evidence of a one-nil.
 
 **Picks the sides.** Say who turned up, then choose how to split them: a
-straight shuffle, evenly by rating, or evenly by recent form. Each option shows
-the gap it would leave between the two teams before you commit, and the cards
-are dealt out one at a time.
+straight shuffle, evenly by rating, down the league table (first, third, fifth
+against second, fourth, sixth) or by hand. The rated splits show the gap they
+would leave between the two teams before you commit, and the cards are dealt
+out one at a time.
+
+**Finds out who works together.** The line-up lab takes any two to five
+players and shows their record on the same side, how the rest of them do with
+each one missing, and who would complete the set — over all time, a season, the
+last few weeks or any dates you pick. The squad web draws everybody at once: a
+line for every pair who have shared a side, green where they took more points a
+game together than the squad's average and red where fewer. A player's
+chemistry does the same from their side: who they take the most points with,
+and who they come unstuck against.
+
+**And, for anybody who wants it, against the odds.** Before every match the
+ratings give each side a chance of winning; added up over a player's games,
+those chances are their expected wins, or xW. Winning more than your xW means
+you are doing better than the sides you were picked into should have, and the
+app says plainly whether the gap is more than luck would explain. Every record
+above has the same games against the odds a tap away.
 
 **Compares any two players.** Rating, record and points per game side by side —
 then the half a league table can never show: how they do on the same team, and
 how they do against each other.
 
-**Tracks form and shape.** Last five results, current rank, and a chart of
+**Tracks results and shape.** Last five results, current rank, and a chart of
 where everyone sat in the table after every match of the season.
 
 **Runs seasons.** A season has a start, an end and a champion. Matches count
 towards the table once they're marked complete, so a fixture entered on Tuesday
 doesn't move anything until it's played.
+
+**Wraps them up.** Every player gets their season as a story to tap through —
+their record and place, how they moved up the table, their rating, their best
+partnership and nemesis, their web of everybody they played with, and one card
+on how they did against the odds — and a picture of it to send to the group.
 
 **Keeps groups apart.** A team owns its own players, matches and seasons.
 Members are admins, who can change things, or viewers, who can't. Share the
@@ -60,7 +84,7 @@ Supabase, deployed to Vercel with functions in London — the same region as the
 database, so a query doesn't cross an ocean to answer.
 
 **Nothing is counted twice.** A player's record, their rating and their recent
-form are all derived from the matches, every time. Nothing caches a tally, so
+results are all derived from the matches, every time. Nothing caches a tally, so
 correcting a scoreline from last month re-rates everything after it and no two
 screens can disagree about the same player.
 

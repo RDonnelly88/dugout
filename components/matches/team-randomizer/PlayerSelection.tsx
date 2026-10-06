@@ -6,16 +6,16 @@ import { Label } from "@/components/ui/label";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
-import { useSquadForm } from "@/hooks/useSquadForm";
-import PlayerFormDisplay from '@/components/players/PlayerFormDisplay';
+import { useRecentResults } from "@/hooks/useRecentResults";
+import ResultStrip from '@/components/players/ResultStrip';
 import { TrendingUp, Trophy, Flag } from "lucide-react";
 import { calculatePlayerRanks } from "@/lib/ranking-utils";
 import PlayerSelectionFilters from './PlayerSelectionFilters';
+import { selectionOrder } from "@/lib/player-selection";
+import ActiveSwitch from "@/components/players/ActiveSwitch";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
-import SkillScale from "@/components/players/SkillScale";
 import { displayRating } from "@/lib/elo";
-import { SKILL } from "@/lib/config";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import { useTeam } from "@/contexts/TeamContext";
 
@@ -23,6 +23,8 @@ interface PlayerSelectionProps {
   players: Player[];
   selectedPlayers: string[];
   togglePlayerSelection: (playerId: string) => void;
+  /** A player marked active or not from the list, so the picks can follow. */
+  onActiveChange?: (playerId: string, active: boolean) => void;
   disabled: boolean;
 }
 
@@ -30,6 +32,7 @@ const PlayerSelection = ({
   players, 
   selectedPlayers, 
   togglePlayerSelection,
+  onActiveChange,
   disabled
 }: PlayerSelectionProps) => {
   const { currentTeam } = useTeam();
@@ -45,10 +48,10 @@ const PlayerSelection = ({
   
   // The squad's recent nights, worked out once for the whole list. Picking a
   // side is not a season view, and asking per player opened one request each.
-  const { formFor } = useSquadForm();
+  const { resultsFor } = useRecentResults();
 
   const { data: seasonPlayerStats = [] } = useQuery({
-    queryKey: ['seasonStats', currentSeason?.id],
+    queryKey: ['seasonPlayerStats', currentSeason?.id],
     queryFn: () => currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
     enabled: !!currentSeason
   });
@@ -58,37 +61,18 @@ const PlayerSelection = ({
     return calculatePlayerRanks(seasonPlayerStats);
   }, [seasonPlayerStats]);
 
-  // Filter and sort players
-  const filteredAndSortedPlayers = useMemo(() => {
-    let filtered = players;
-    
-    // Filter by active status
-    if (showActiveOnly) {
-      filtered = filtered.filter(player => player.isActive !== false);
-    }
-    
-    // Filter by search term
-    if (searchTerm.trim()) {
-      filtered = filtered.filter(player =>
-        player.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    // Sort by frequency (games played) descending, then by name
-    return filtered.sort((a, b) => {
-      const aSeasonStats = seasonPlayerStats.find(stat => stat.playerId === a.id);
-      const bSeasonStats = seasonPlayerStats.find(stat => stat.playerId === b.id);
-      
-      // Prioritize current season stats, fallback to overall stats
-      const aPlayed = aSeasonStats?.played ?? recordFor(a.id, a.name).played;
-      const bPlayed = bSeasonStats?.played ?? recordFor(b.id, b.name).played;
-
-      if (aPlayed !== bPlayed) {
-        return bPlayed - aPlayed; // Most frequent first
-      }
-      return a.name.localeCompare(b.name); // Then alphabetically
-    });
-  }, [players, searchTerm, showActiveOnly, seasonPlayerStats, recordFor]);
+  // Most games first — this season's where there is one, all time otherwise.
+  const filteredAndSortedPlayers = useMemo(
+    () =>
+      selectionOrder(players, {
+        activeOnly: showActiveOnly,
+        search: searchTerm,
+        playedOf: (p) =>
+          seasonPlayerStats.find((stat) => stat.playerId === p.id)?.played ??
+          recordFor(p.id, p.name).played,
+      }),
+    [players, searchTerm, showActiveOnly, seasonPlayerStats, recordFor]
+  );
 
   const filteredSelectedPlayers = filteredAndSortedPlayers.filter(player =>
     selectedPlayers.includes(player.id)
@@ -102,8 +86,8 @@ const PlayerSelection = ({
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
       <div className="mb-4">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="text-sm font-medium">Select Available Players</h3>
+        {/* No heading of its own: "Who's playing" above it already says it. */}
+        <div className="mb-3 flex items-center justify-end">
           <div className="flex gap-2">
             <Button 
               variant="outline" 
@@ -143,7 +127,7 @@ const PlayerSelection = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
         {filteredAndSortedPlayers.map(player => {
           const rating = ratingFor(player.id);
-          const formResults = formFor(player.id);
+          const recentRun = resultsFor(player.id);
           
           return (
             <div 
@@ -174,8 +158,7 @@ const PlayerSelection = ({
                               {displayRating(rating.rating)}
                             </span>
                           )}
-                          <PlayerFormDisplay results={formResults} size="xs" />
-                          <SkillScale level={player.skillLevel ?? SKILL.default} />
+                          <ResultStrip results={recentRun} size="xs" />
                         </div>
                       </div>
                     </HoverCardTrigger>
@@ -189,6 +172,10 @@ const PlayerSelection = ({
                   </HoverCard>
                 </Label>
               </div>
+              <ActiveSwitch
+                player={player}
+                onChange={(active) => onActiveChange?.(player.id, active)}
+              />
             </div>
           );
         })}
@@ -227,7 +214,7 @@ const PlayerHoverContent = ({
   seasonPlayerStats,
   playerRanks = {}
 }: PlayerHoverContentProps) => {
-  const { formFor, isLoading } = useSquadForm();
+  const { resultsFor, isLoading } = useRecentResults();
   const { recordFor } = usePlayerRecords();
   const record = recordFor(player.id, player.name);
 
@@ -237,7 +224,7 @@ const PlayerHoverContent = ({
   
   const playerRank = hasPlayedGames ? playerRanks[player.id] : null;
   
-  const recentForm = formFor(player.id);
+  const recentResults = resultsFor(player.id);
   
   return (
     <>
@@ -303,13 +290,13 @@ const PlayerHoverContent = ({
       <div className="mt-2 p-2 rounded-md bg-info/15 border border-border">
         <div className="flex items-center mb-1">
           <TrendingUp className="h-3 w-3 text-info mr-1" />
-          <h5 className="text-xs font-medium text-info">Recent Form</h5>
+          <h5 className="text-xs font-medium text-info">Last five</h5>
         </div>
         <div className="flex space-x-1">
           {isLoading ? (
-            <div className="w-full text-center text-xs opacity-70">Loading form data...</div>
-          ) : recentForm.length > 0 ? (
-            <PlayerFormDisplay results={recentForm} size="sm" />
+            <div className="w-full text-center text-xs opacity-70">Loading results…</div>
+          ) : recentResults.length > 0 ? (
+            <ResultStrip results={recentResults} size="sm" />
           ) : (
             <div className="w-full text-center text-xs opacity-70">No recent matches</div>
           )}

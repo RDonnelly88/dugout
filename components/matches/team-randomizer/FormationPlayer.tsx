@@ -3,14 +3,15 @@ import React from 'react';
 import { Player } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { useSquadForm } from "@/hooks/useSquadForm";
+import { useRecentResults } from "@/hooks/useRecentResults";
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
-import PlayerFormDisplay from '@/components/players/PlayerFormDisplay';
+import ResultStrip from '@/components/players/ResultStrip';
 import { TrendingUp, Trophy, Flag } from "lucide-react";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import { useTeam } from "@/contexts/TeamContext";
+import { calculatePlayerRanks } from "@/lib/ranking-utils";
 
 interface FormationPlayerProps {
   player: Player;
@@ -24,7 +25,6 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
   const { recordFor } = usePlayerRecords();
   const record = recordFor(player.id, player.name);
 
-  console.log(`Rendering FormationPlayer for ${player.name} at index ${index} and team ${teamColor}`);
   
   const bgColor = teamColor === 'red' ? 'bg-destructive' : 'bg-win';
   const textColor = 'text-foreground';
@@ -37,25 +37,24 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
 
   // The squad's recent nights rather than the season's: a card on the pitch
   // is not a season view. One map for the whole formation, not a query a head.
-  const { formFor, isLoading } = useSquadForm();
+  const { resultsFor, isLoading } = useRecentResults();
   
   // Get season stats
   const { data: seasonPlayerStats = [] } = useQuery({
-    queryKey: ['seasonStats', currentSeason?.id],
+    queryKey: ['seasonPlayerStats', currentSeason?.id],
     queryFn: () => currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
     enabled: !!currentSeason
   });
   
   const playerSeasonStats = seasonPlayerStats.find(stat => stat.playerId === player.id);
   
-  // Calculate player's rank in current season
+  // By the league's own rules, so a tie on points is settled the way the
+  // table settles it and two players level share a place.
   const playerRank = playerSeasonStats && playerSeasonStats.played > 0
-    ? seasonPlayerStats
-        .sort((a, b) => b.points - a.points)
-        .findIndex(stat => stat.playerId === player.id) + 1
+    ? calculatePlayerRanks(seasonPlayerStats)[player.id] ?? null
     : null;
   
-  const recentForm = formFor(player.id);
+  const recentResults = resultsFor(player.id);
   
   return (
     <div className="player-formation-card">
@@ -72,7 +71,9 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
               </Badge>
               <PlayerAvatar name={player.name} image={player.image} size="md" className="border-2 border-white/50 shadow-lg hover:border-white transition-all duration-200" />
             </div>
-            <span className="mt-1 text-xs font-medium text-foreground truncate max-w-[60px] text-center">
+            {/* On a chip of its own: the grass behind it is a stripe of two
+                greens, and no one text colour reads on both. */}
+            <span className="mt-1 max-w-[72px] truncate rounded bg-surface/90 px-1.5 py-0.5 text-center text-xs font-medium text-foreground">
               {player.name}
             </span>
           </button>
@@ -148,8 +149,8 @@ const FormationPlayer = ({ player, index, teamColor, onClick }: FormationPlayerP
             <div className="flex space-x-1">
               {isLoading ? (
                 <div className="w-full text-center text-xs opacity-70">Loading form data...</div>
-              ) : recentForm.length > 0 ? (
-                <PlayerFormDisplay results={recentForm} size="sm" />
+              ) : recentResults.length > 0 ? (
+                <ResultStrip results={recentResults} size="sm" />
               ) : (
                 <div className="w-full text-center text-xs opacity-70">No recent matches</div>
               )}

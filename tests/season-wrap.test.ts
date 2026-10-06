@@ -171,7 +171,9 @@ describe("seasonWrap", () => {
   });
 
   describe("the partnership", () => {
-    it("finds the pair who win most on the same side", () => {
+    const VALUES = { win: 3, draw: 1 };
+
+    it("finds the pair with the best record on the same side", () => {
       const fixtures = [
         ...Array.from({ length: 6 }, () =>
           match(["pal1", "pal2"], ["opp1", "opp2"], 1, 0)
@@ -181,16 +183,26 @@ describe("seasonWrap", () => {
         ),
       ];
 
-      const wrap = seasonWrap(fixtures);
-      expect(wrap.partnership).not.toBeNull();
-      expect(wrap.partnership!.playerIds).toContain("pal1");
-      expect(wrap.partnership!.playerIds).toContain("pal2");
-      expect(wrap.partnership!.lift).toBeGreaterThan(0);
+      const wrap = seasonWrap(fixtures, fixtures, VALUES);
+      expect(wrap.partnership).toMatchObject({ played: 6, wins: 6, losses: 0, pointsPerGame: 3 });
+      expect([...wrap.partnership!.playerIds].sort()).toEqual(["pal1", "pal2"]);
     });
 
-    it("says nothing when nobody has played with anybody twice", () => {
-      const wrap = seasonWrap([match(["a"], ["b"], 1, 0)]);
-      expect(wrap.partnership).toBeNull();
+    it("prefers more games between two pairs level on points", () => {
+      const fixtures = [
+        ...Array.from({ length: 5 }, () => match(["a", "b"], ["x"], 1, 0)),
+        ...Array.from({ length: 8 }, () => match(["c", "d"], ["y"], 1, 0)),
+      ];
+
+      expect([...seasonWrap(fixtures, fixtures, VALUES).partnership!.playerIds].sort()).toEqual([
+        "c",
+        "d",
+      ]);
+    });
+
+    it("says nothing when no pair has played enough together to tell", () => {
+      const fixtures = [match(["a", "b"], ["c"], 1, 0)];
+      expect(seasonWrap(fixtures, fixtures, VALUES).partnership).toBeNull();
     });
   });
 

@@ -1,12 +1,11 @@
 import type { PlayerRating } from "./elo";
 import { winRate } from "./player-record";
-import type { PlayerFormResult } from "@/types";
 
-export type PlayerSort = "rank" | "form" | "played" | "winRate" | "name";
+export type PlayerSort = "rank" | "odds" | "played" | "winRate" | "name";
 
 export const SORT_LABELS: Record<PlayerSort, string> = {
   rank: "Rating",
-  form: "Form",
+  odds: "Above xW",
   played: "Games",
   winRate: "Win rate",
   name: "Name",
@@ -17,23 +16,14 @@ export interface Sortable {
   id: string;
   name: string;
   rating?: PlayerRating;
-  form: PlayerFormResult[];
+  /**
+   * Wins above expected over the recent stretch the caller chose. Absent for
+   * anybody with no games in it, who sorts last rather than as nought.
+   */
+  aboveXw?: number;
   played: number;
   wins: number;
 }
-
-/** Points a game over whatever form is to hand, on the league's own scoring. */
-const formScore = (results: PlayerFormResult[]): number => {
-  if (results.length === 0) return 0;
-  const points = results.reduce(
-    (sum, r) => sum + (r === "win" ? 3 : r === "draw" ? 1 : 0),
-    0
-  );
-  // Over the window rather than over the nights they turned out for, which is
-  // how form is counted everywhere else: three wins from three is not a better
-  // run than four wins from five.
-  return points / results.length;
-};
 
 /**
  * The squad in whatever order was asked for.
@@ -44,9 +34,9 @@ const formScore = (results: PlayerFormResult[]): number => {
  * players on nought games and no rating are otherwise in whichever order the
  * sort happened to leave them.
  *
- * Anybody without a rating sorts last rather than as nought: a player with no
- * games has not been measured, which is a different thing from having been
- * measured badly.
+ * Anybody without a rating, or without games in the stretch xW is read over,
+ * sorts last rather than as nought: a player with no games has not been
+ * measured, which is a different thing from having been measured badly.
  */
 export function orderPlayers<T extends Sortable>(
   players: T[],
@@ -66,8 +56,12 @@ export function orderPlayers<T extends Sortable>(
         if (rb === undefined) return -1;
         return rb - ra || byName(a, b);
       }
-      case "form":
-        return formScore(b.form) - formScore(a.form) || byName(a, b);
+      case "odds": {
+        if (a.aboveXw === undefined && b.aboveXw === undefined) return byName(a, b);
+        if (a.aboveXw === undefined) return 1;
+        if (b.aboveXw === undefined) return -1;
+        return b.aboveXw - a.aboveXw || byName(a, b);
+      }
       case "played":
         return b.played - a.played || byName(a, b);
       case "winRate":

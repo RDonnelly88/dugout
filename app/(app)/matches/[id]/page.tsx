@@ -42,8 +42,8 @@ const MatchDetail = () => {
             Back
           </Button>
         </div>
-        <div className="shimmer rounded-xl h-[300px] mb-8"></div>
-        <div className="shimmer rounded-xl h-[400px]"></div>
+        <div className="sheen rounded-xl h-[300px] mb-8"></div>
+        <div className="sheen rounded-xl h-[400px]"></div>
       </div>
     );
   }
