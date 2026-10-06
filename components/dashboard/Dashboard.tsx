@@ -3,228 +3,239 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, TrendingUp } from "lucide-react";
+import { CalendarPlus, ChevronRight, PartyPopper, Sparkles, TrendingUp, Trophy, UserPlus } from "lucide-react";
 import { useTeam } from "@/contexts/TeamContext";
-import { getCurrentSeason, getMatches, getPlayers, getSeasonPlayerStats } from "@/lib/db";
+import { getCurrentSeason, getMatches, getPlayers, getSeasonPlayerStats, getSeasons } from "@/lib/db";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
+import { usePlayerRecords } from "@/hooks/usePlayerRecords";
+import { usePermission } from "@/lib/permission-utils";
 import { isActivePlayer } from "@/components/players/ActiveFilter";
 import { outcomeOf } from "@/lib/match-result";
-import { calculatePlayerRanks } from "@/lib/ranking-utils";
+import { milestones } from "@/lib/milestones";
+import { shortNames } from "@/lib/short-names";
 import PageHeader from "@/components/PageHeader";
-import { StatTile, StatTiles } from "@/components/StatTile";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import SeasonLeaderboard from "@/components/seasons/SeasonLeaderboard";
+import PlayerAvatar from "@/components/players/PlayerAvatar";
+import LeagueTable from "@/components/seasons/LeagueTable";
 import RatingLeaderboard from "@/components/ratings/RatingLeaderboard";
-import MatchCard from "@/components/matches/MatchCard";
-import { Rail } from "@/components/ui/rail";
-import QuickActions from "./QuickActions";
-import OddsLeaders from "./OddsLeaders";
-import SectionHeading from "@/components/SectionHeading";
+import { NextUp, LastResult } from "./Matchday";
 
-/** A card heading that is also the way through to the whole thing. */
-function More({ href, children }: { href: string; children: React.ReactNode }) {
+const time = (date: string) => new Date(date).getTime();
+
+/** A card's heading, and the way through to the page that holds the rest. */
+function Panel({
+  title,
+  icon: Icon,
+  href,
+  more,
+  children,
+}: {
+  title: string;
+  icon: typeof Trophy;
+  href?: string;
+  more?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <Link
-      href={href}
-      className="focus-ring flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-accent"
-    >
+    <section className="rounded-2xl border border-border bg-surface p-4 sm:p-5">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight">
+          <Icon className="h-5 w-5 text-accent" />
+          {title}
+        </h2>
+        {href && (
+          <Link
+            href={href}
+            className="focus-ring flex shrink-0 items-center gap-0.5 rounded text-sm text-muted-foreground transition-colors hover:text-accent"
+          >
+            {more}
+            <ChevronRight className="h-4 w-4" />
+          </Link>
+        )}
+      </div>
       {children}
-      <ChevronRight className="h-4 w-4" />
-    </Link>
+    </section>
   );
 }
 
 /**
- * The front page.
+ * The front page, in the order a Monday goes: the next night (or the button
+ * to set one up), how the last one finished, then where everybody stands —
+ * the table and the ratings — and anything worth a cheer coming up.
  *
- * It used to be a league table and a list of recent matches, which is two of
- * the things the nav already goes to and none of the things you open the app
- * to do. It now leads with picking the teams, and shows the three answers
- * worth having at a glance — the table, who is beating the odds, and who is rated where
- * — each linking through to the page that holds the rest.
+ * Everything else has a tab of its own; this is a glance, and each panel
+ * goes through to the page that tells the rest.
  */
 const Dashboard = () => {
   const { currentTeam } = useTeam();
+  const { canManage, ready } = usePermission();
+  const admin = ready && canManage();
 
   const { data: currentSeason } = useQuery({
     queryKey: ["currentSeason", currentTeam?.id],
     queryFn: getCurrentSeason,
     enabled: !!currentTeam,
   });
-
+  const { data: seasons = [] } = useQuery({
+    queryKey: ["seasons", currentTeam?.id],
+    queryFn: getSeasons,
+    enabled: !!currentTeam,
+  });
   const { data: seasonPlayerStats = [] } = useQuery({
-    queryKey: ["seasonPlayerStats", currentSeason?.id, currentTeam?.id],
-    queryFn: () =>
-      currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([]),
+    queryKey: ["seasonPlayerStats", currentSeason?.id],
+    queryFn: () => (currentSeason ? getSeasonPlayerStats(currentSeason.id) : Promise.resolve([])),
     enabled: !!currentSeason && !!currentTeam,
   });
-
   const { data: matches = [] } = useQuery({
     queryKey: ["matches", currentTeam?.id],
     queryFn: getMatches,
     enabled: !!currentTeam,
   });
-
   const { data: players = [] } = useQuery({
     queryKey: ["players", currentTeam?.id],
     queryFn: getPlayers,
     enabled: !!currentTeam,
   });
-
   const { ranked } = usePlayerRatings();
+  const { records } = usePlayerRecords();
 
+  const names = useMemo(() => shortNames(players), [players]);
+  const name = (id: string) => names.get(id) ?? "?";
+  const byId = useMemo(() => new Map(players.map((p) => [p.id, p])), [players]);
 
-  const played = useMemo(() => matches.filter((m) => outcomeOf(m) !== null), [matches]);
-
-  const recent = useMemo(
-    () =>
-      [...matches]
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        .slice(0, 5),
+  const played = useMemo(
+    () => matches.filter((m) => outcomeOf(m) !== null).sort((a, b) => time(b.date) - time(a.date)),
     [matches]
   );
+  const last = played[0];
+  // The soonest fixture not yet played, from the last result on: an old one
+  // nobody ever finished is not "next".
+  const fixture = useMemo(
+    () =>
+      matches
+        .filter((m) => outcomeOf(m) === null && (!last || time(m.date) >= time(last.date)))
+        .sort((a, b) => time(a.date) - time(b.date))[0],
+    [matches, last]
+  );
 
-  // Whoever tops the season table, sharing the place if it is shared.
-  const leaders = useMemo(() => {
-    if (seasonPlayerStats.length === 0) return [];
-    const ranks = calculatePlayerRanks(seasonPlayerStats);
-    return seasonPlayerStats.filter((stat) => ranks[stat.playerId] === 1);
-  }, [seasonPlayerStats]);
+  const coming = useMemo(() => {
+    const active = new Set(players.filter(isActivePlayer).map((p) => p.id));
+    const lineUp = new Set(last ? [...last.teamA.players, ...last.teamB.players] : []);
+    return milestones(records.filter((r) => active.has(r.playerId)), lineUp).slice(0, 4);
+  }, [records, players, last]);
+
+  // A season that finished lately has a wrapped worth opening. Measured from
+  // the latest result rather than today, so the page reads the same however
+  // late it is opened.
+  const wrapped = useMemo(() => {
+    if (!last) return undefined;
+    return seasons
+      .filter((s) => s.isFinished && s.endDate && time(last.date) - time(s.endDate) < 60 * 86_400_000)
+      .sort((a, b) => time(b.endDate!) - time(a.endDate!))[0];
+  }, [seasons, last]);
+
+  const nightsThisSeason = currentSeason ? played.filter((m) => m.seasonId === currentSeason.id).length : 0;
 
   return (
     <div className="page-container animate-slide-up">
       <PageHeader
-        // The title is the team, so the line above it is the season rather
-        // than the team's name a second time.
         eyebrow={currentSeason?.name ?? "The Dugout"}
         title={currentTeam?.name ?? "Dugout"}
         subtitle={
           currentSeason
-            ? `${played.filter((m) => m.seasonId === currentSeason.id).length} played this season so far.`
+            ? `${nightsThisSeason} ${nightsThisSeason === 1 ? "night" : "nights"} into ${currentSeason.name}.`
             : "No season running. Start one to keep a table."
         }
-      >
-        <StatTiles>
-          <StatTile label="Matches" value={played.length} />
-          <StatTile
-            label="Squad"
-            value={players.filter(isActivePlayer).length}
-            hint={
-              players.length !== players.filter(isActivePlayer).length
-                ? `${players.length} in total`
-                : undefined
-            }
-          />
-          <StatTile
-            label={leaders.length > 1 ? "Joint leaders" : "Leader"}
-            tone="draw"
-            value={
-              leaders.length > 0 ? (
-                <span className="text-base">
-                  {leaders.map((leader) => leader.playerName).join(" & ")}
-                </span>
-              ) : (
-                <span className="text-base text-muted-foreground">—</span>
-              )
-            }
-          />
-          <StatTile
-            label="Top rated"
-            tone="accent"
-            value={
-              ranked.length > 0 ? (
-                <span className="text-base">
-                  {playerName(players, ranked[0].playerId)}
-                </span>
-              ) : (
-                <span className="text-base text-muted-foreground">—</span>
-              )
-            }
-          />
-        </StatTiles>
-      </PageHeader>
+      />
 
-      <section className="mb-8">
-        <SectionHeading kicker="This week" title="Get on with it" />
-        <QuickActions />
-      </section>
+      <div className="space-y-4">
+        <NextUp fixture={fixture} canManage={admin} name={name} />
+        <LastResult match={last} name={name} />
 
-      {/* One column on a phone, held to the screen: an auto-sized column would
-          stretch to the full width of the recent-matches rail inside it. */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {currentSeason && seasonPlayerStats.length > 0 && (
-          <div className="reveal lg:col-span-2">
-            <SeasonLeaderboard
-              stats={seasonPlayerStats}
-              seasonId={currentSeason.id}
-              limit={5}
-              seasonName={currentSeason.name}
-            />
-          </div>
+        {wrapped && (
+          <Link
+            href={`/seasons/${wrapped.id}#wrapped`}
+            className="focus-ring flex items-center gap-3 rounded-2xl border border-accent/40 bg-gradient-to-r from-accent/15 to-transparent p-4 transition-colors hover:border-accent"
+          >
+            <Sparkles className="h-6 w-6 shrink-0 text-accent" />
+            <span className="min-w-0 flex-1">
+              <span className="block font-semibold">{wrapped.name}, wrapped</span>
+              <span className="block text-sm text-muted-foreground">Everybody&apos;s season as a story to tap through.</span>
+            </span>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </Link>
         )}
 
-        <div className="reveal">
-          <OddsLeaders matches={matches} players={players} />
+        <div className="grid gap-4 lg:grid-cols-2">
+          {currentSeason && seasonPlayerStats.some((s) => s.played > 0) && (
+            <Panel title="The table" icon={Trophy} href={`/seasons/${currentSeason.id}`} more="In full">
+              <LeagueTable stats={seasonPlayerStats} seasonId={currentSeason.id} limit={5} />
+            </Panel>
+          )}
+          {ranked.length > 0 && (
+            <Panel title="Top rated" icon={TrendingUp} href="/ratings" more="All ratings">
+              <RatingLeaderboard ratings={ranked.slice(0, 5)} players={players} />
+            </Panel>
+          )}
         </div>
 
-        <Card className="reveal">
-          <CardHeader>
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-accent" />
-                  Top rated
-                </CardTitle>
-                <CardDescription>Once a rating has settled</CardDescription>
-              </div>
-              <More href="/ratings">The table</More>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <RatingLeaderboard ratings={ranked.slice(0, 5)} players={players} />
-          </CardContent>
-        </Card>
+        {coming.length > 0 && (
+          <Panel title="Milestones" icon={PartyPopper}>
+            <ul className="space-y-2">
+              {coming.map((m) => {
+                const player = byId.get(m.playerId);
+                const what = m.kind === "games" ? "game" : "win";
+                return (
+                  <li key={`${m.playerId}-${m.kind}`} className="flex items-center gap-3">
+                    <PlayerAvatar name={player?.name ?? "?"} image={player?.image} size="sm" />
+                    <span className="min-w-0 flex-1 text-sm">
+                      <Link href={`/players/${m.playerId}`} className="font-semibold hover:underline">
+                        {player?.name ?? "Unknown"}
+                      </Link>{" "}
+                      {m.toGo === 0 ? (
+                        <>brought up {m.mark} {what}s last time out.</>
+                      ) : (
+                        <>
+                          is {m.toGo} {m.toGo === 1 ? what : `${what}s`} from {m.mark}.
+                        </>
+                      )}
+                    </span>
+                    <span
+                      className={
+                        m.toGo === 0
+                          ? "scoreboard text-xl text-accent"
+                          : "scoreboard text-xl text-muted-foreground"
+                      }
+                    >
+                      {m.mark}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </Panel>
+        )}
 
-        <Card className="reveal lg:col-span-2">
-          <CardHeader>
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <CardTitle>Recent matches</CardTitle>
-                <CardDescription>The last five, newest first. Swipe for more.</CardDescription>
-              </div>
-              <More href="/matches">All matches</More>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {recent.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                Nothing played yet.
-              </p>
-            ) : (
-              /* No delete here. This is a glance, and a bin beside a card you
-                 came to read is an accident waiting to happen. */
-              <Rail label="Recent matches">
-                {recent.map((match) => (
-                  <MatchCard key={match.id} match={match} />
-                ))}
-              </Rail>
-            )}
-          </CardContent>
-        </Card>
+        {admin && (
+          <div className="flex flex-wrap gap-2 pt-2">
+            <Link
+              href="/players/add"
+              className="focus-ring flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
+            >
+              <UserPlus className="h-4 w-4" />
+              Add a player
+            </Link>
+            <Link
+              href="/seasons/create"
+              className="focus-ring flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
+            >
+              <CalendarPlus className="h-4 w-4" />
+              Start a season
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );
 };
-
-/** The rating knows an id; the name lives on the player. */
-function playerName(players: { id: string; name: string }[], id: string) {
-  return players.find((player) => player.id === id)?.name ?? "—";
-}
 
 export default Dashboard;
