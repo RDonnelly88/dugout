@@ -2,17 +2,13 @@ import React, { useState, useMemo } from 'react';
 import { Player } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentSeason, getSeasonPlayerStats } from "@/lib/db";
 import { useRecentResults } from "@/hooks/useRecentResults";
 import ResultStrip from '@/components/players/ResultStrip';
-import { TrendingUp, Trophy, Flag } from "lucide-react";
 import { calculatePlayerRanks } from "@/lib/ranking-utils";
 import PlayerSelectionFilters from './PlayerSelectionFilters';
 import { selectionOrder } from "@/lib/player-selection";
-import ActiveSwitch from "@/components/players/ActiveSwitch";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
 import { displayRating } from "@/lib/elo";
@@ -23,8 +19,6 @@ interface PlayerSelectionProps {
   players: Player[];
   selectedPlayers: string[];
   togglePlayerSelection: (playerId: string) => void;
-  /** A player marked active or not from the list, so the picks can follow. */
-  onActiveChange?: (playerId: string, active: boolean) => void;
   disabled: boolean;
 }
 
@@ -32,7 +26,6 @@ const PlayerSelection = ({
   players, 
   selectedPlayers, 
   togglePlayerSelection,
-  onActiveChange,
   disabled
 }: PlayerSelectionProps) => {
   const { currentTeam } = useTeam();
@@ -124,59 +117,43 @@ const PlayerSelection = ({
         />
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-        {filteredAndSortedPlayers.map(player => {
+      {/* The whole tile is the tick box, so a thumb can pick ten people in
+          ten taps without aiming for a small square. Who is active is
+          changed on the squad page, not here, where a switch beside every
+          tick box was a second thing to mistake for the first. */}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
+        {filteredAndSortedPlayers.map((player) => {
           const rating = ratingFor(player.id);
           const recentRun = resultsFor(player.id);
-          
+          const picked = selectedPlayers.includes(player.id);
+          const rank = playerRanks[player.id];
+
           return (
-            <div 
-              key={player.id} 
-              className={`flex items-center space-x-2 p-2 rounded-md transition-colors ${
-                selectedPlayers.includes(player.id) 
-                  ? 'bg-accent/20 border border-accent/30' 
-                  : 'hover:bg-muted/50'
-              }`}
+            <label
+              key={player.id}
+              htmlFor={`player-${player.id}`}
+              className={`flex cursor-pointer items-center gap-3 rounded-lg border p-2.5 transition-colors ${
+                picked ? "border-accent/60 bg-accent/15" : "border-border hover:bg-surface-2/60"
+              } ${disabled ? "pointer-events-none opacity-60" : ""}`}
             >
-              <Checkbox 
-                id={`player-${player.id}`} 
-                checked={selectedPlayers.includes(player.id)}
+              <Checkbox
+                id={`player-${player.id}`}
+                checked={picked}
                 onCheckedChange={() => togglePlayerSelection(player.id)}
                 disabled={disabled}
               />
-              <div className="flex-1 min-w-0">
-                <Label htmlFor={`player-${player.id}`} className="cursor-pointer flex items-center justify-between">
-                  <HoverCard>
-                    <HoverCardTrigger>
-                      <div className="flex min-w-0 flex-col gap-1">
-                        <span className="truncate hover:underline">{player.name}</span>
-                        {/* The same three things the player card leads with, so
-                            a name means the same wherever it is read. */}
-                        <div className="flex items-center gap-2">
-                          {rating && (
-                            <span className="tabular text-xs text-muted-foreground">
-                              {displayRating(rating.rating)}
-                            </span>
-                          )}
-                          <ResultStrip results={recentRun} size="xs" />
-                        </div>
-                      </div>
-                    </HoverCardTrigger>
-                    <HoverCardContent className="w-72 p-3 bg-popover border border-border text-foreground">
-                      <PlayerHoverContent 
-                        player={player} 
-                        seasonPlayerStats={seasonPlayerStats}
-                        playerRanks={playerRanks}
-                      />
-                    </HoverCardContent>
-                  </HoverCard>
-                </Label>
-              </div>
-              <ActiveSwitch
-                player={player}
-                onChange={(active) => onActiveChange?.(player.id, active)}
-              />
-            </div>
+              <PlayerAvatar name={player.name} image={player.image} size="sm" />
+              <span className="min-w-0 flex-1">
+                <span className="block font-medium leading-tight">{player.name}</span>
+                <span className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground tabular">
+                  {rating && <span>{displayRating(rating.rating)}</span>}
+                  {rank && seasonPlayerStats.some((s) => s.playerId === player.id && s.played > 0) && (
+                    <span>#{rank} this season</span>
+                  )}
+                  <ResultStrip results={recentRun} size="xs" />
+                </span>
+              </span>
+            </label>
           );
         })}
       </div>
@@ -200,109 +177,6 @@ const PlayerSelection = ({
         </div>
       )}
     </div>
-  );
-};
-
-interface PlayerHoverContentProps {
-  player: Player;
-  seasonPlayerStats: Array<any>;
-  playerRanks?: Record<string, number>;
-}
-
-const PlayerHoverContent = ({ 
-  player, 
-  seasonPlayerStats,
-  playerRanks = {}
-}: PlayerHoverContentProps) => {
-  const { resultsFor, isLoading } = useRecentResults();
-  const { recordFor } = usePlayerRecords();
-  const record = recordFor(player.id, player.name);
-
-  const playerSeasonStats = seasonPlayerStats.find(stat => stat.playerId === player.id);
-  
-  const hasPlayedGames = playerSeasonStats && playerSeasonStats.played > 0;
-  
-  const playerRank = hasPlayedGames ? playerRanks[player.id] : null;
-  
-  const recentResults = resultsFor(player.id);
-  
-  return (
-    <>
-      <div className="flex space-x-3">
-        <PlayerAvatar name={player.name} image={player.image} size="md" />
-        <div>
-          <h4 className="font-bold">{player.name}</h4>
-          <div className="flex items-center text-xs">
-            <Flag className="h-3 w-3 text-draw mr-1" />
-            <span className="text-draw">
-              {playerRank ? `Season rank: #${playerRank}` : hasPlayedGames ? 'Not ranked' : 'No games played'}
-            </span>
-          </div>
-        </div>
-      </div>
-      
-      {playerSeasonStats && (
-        <div className="mt-3 p-2 bg-info/15 rounded-md">
-          <div className="flex items-center mb-1">
-            <Trophy className="h-3 w-3 text-info mr-1" />
-            <h5 className="text-xs font-medium text-info">Season Stats</h5>
-          </div>
-          <div className="grid grid-cols-4 gap-1 text-center">
-            <div>
-              <span className="text-sm font-bold">{playerSeasonStats.played}</span>
-              <span className="text-xs block text-info">Played</span>
-            </div>
-            <div>
-              <span className="text-sm font-bold">{playerSeasonStats.wins}</span>
-              <span className="text-xs block text-win">Won</span>
-            </div>
-            <div>
-              <span className="text-sm font-bold">{playerSeasonStats.losses}</span>
-              <span className="text-xs block text-loss">Lost</span>
-            </div>
-            <div>
-              <span className="text-sm font-bold">{playerSeasonStats.draws}</span>
-              <span className="text-xs block text-draw">Draw</span>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      <div className="mt-3 grid grid-cols-4 gap-2">
-        <div className="bg-info/15 p-2 rounded-md text-center">
-          <div className="text-sm font-bold">{record.played}</div>
-          <div className="text-xs text-info">Played</div>
-        </div>
-        <div className="bg-win/15 p-2 rounded-md text-center">
-          <div className="text-sm font-bold">{record.wins}</div>
-          <div className="text-xs text-win">Won</div>
-        </div>
-        <div className="bg-draw/15 p-2 rounded-md text-center">
-          <div className="text-sm font-bold">{record.draws}</div>
-          <div className="text-xs text-draw">Draw</div>
-        </div>
-        <div className="bg-loss/15 p-2 rounded-md text-center">
-          <div className="text-sm font-bold">{record.losses}</div>
-          <div className="text-xs text-loss">Lost</div>
-        </div>
-      </div>
-      
-      <div className="mt-2 p-2 rounded-md bg-info/15 border border-border">
-        <div className="flex items-center mb-1">
-          <TrendingUp className="h-3 w-3 text-info mr-1" />
-          <h5 className="text-xs font-medium text-info">Last five</h5>
-        </div>
-        <div className="flex space-x-1">
-          {isLoading ? (
-            <div className="w-full text-center text-xs opacity-70">Loading results…</div>
-          ) : recentResults.length > 0 ? (
-            <ResultStrip results={recentResults} size="sm" />
-          ) : (
-            <div className="w-full text-center text-xs opacity-70">No recent matches</div>
-          )}
-        </div>
-      </div>
-    </>
   );
 };
 

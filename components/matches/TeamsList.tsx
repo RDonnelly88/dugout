@@ -42,7 +42,7 @@ const TeamsList = ({ match, players, getPlayerName }: TeamsListProps) => {
     tone: { border: string; hover: string }
   ) => (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 sm:pb-3">
         <CardTitle className="flex items-center gap-2">
           <Users className="h-5 w-5 shrink-0 text-muted-foreground" />
           {sides[key]}

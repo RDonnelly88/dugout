@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
+import TransitionLink from "@/components/TransitionLink";
 import ResultStrip from "@/components/players/ResultStrip";
 import { getMatches } from "@/lib/db";
 import { useTeam } from "@/contexts/TeamContext";
@@ -112,36 +113,37 @@ function Side({
         />
       </div>
 
-      <ul className="mt-3 space-y-1 border-t border-border pt-3">
+      <ul className="mt-3 space-y-2.5 border-t border-border pt-3">
         {impact.players.map((entry) => {
           const player = players.get(entry.playerId);
           return (
-            <li
-              key={entry.playerId}
-              className="flex items-center gap-2 text-sm"
-            >
-              <PlayerAvatar
-                name={player?.name ?? "Unknown"}
-                image={player?.image}
-                size="xs"
-              />
-              <span className="min-w-0 flex-1 truncate">
-                {player?.name ?? "Unknown"}
-              </span>
-              {/* The run they walked in on, with this night ringed on the end
-                  of it so the five before stay distinct from the one being
-                  read. */}
-              <ResultStrip
-                results={entry.results}
-                size="xs"
-                latest={resultFor(match, entry.playerId) ?? undefined}
-              />
-              <span className="tabular text-muted-foreground">
-                {displayRating(entry.after)}
-              </span>
-              <span className="w-12 text-right">
-                <Change value={entry.change} />
-              </span>
+            <li key={entry.playerId}>
+              <TransitionLink
+                href={`/players/${entry.playerId}`}
+                shareAvatar
+                className="focus-ring flex items-center gap-2.5 rounded text-sm"
+              >
+                <PlayerAvatar name={player?.name ?? "Unknown"} image={player?.image} size="sm" />
+                <span className="min-w-0 flex-1">
+                  <span className="block font-medium leading-tight">{player?.name ?? "Unknown"}</span>
+                  {/* The run they walked in on, with this night ringed on the
+                      end of it so the five before stay distinct from the one
+                      being read. */}
+                  <span className="mt-1 block">
+                    <ResultStrip
+                      results={entry.results}
+                      size="xs"
+                      latest={resultFor(match, entry.playerId) ?? undefined}
+                    />
+                  </span>
+                </span>
+                <span className="shrink-0 text-right">
+                  <span className="block font-semibold tabular">{displayRating(entry.after)}</span>
+                  <span className="block text-xs">
+                    <Change value={entry.change} />
+                  </span>
+                </span>
+              </TransitionLink>
             </li>
           );
         })}
@@ -189,15 +191,15 @@ export default function MatchImpact({
   const actualA = outcome === "a" ? 1 : outcome === "draw" ? 0.5 : 0;
 
   return (
-    <Card className="mt-8">
+    <Card className="mt-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-accent" />
-          What this match changed
+          The sides
         </CardTitle>
         <CardDescription>
-          Each side&apos;s chance before kick-off and what the result made of
-          it, and their average rating going in and coming out.
+          Who played, the chance the ratings gave each side before kick-off,
+          and what the result did to everybody&apos;s rating.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-2">

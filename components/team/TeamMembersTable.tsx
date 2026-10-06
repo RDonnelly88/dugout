@@ -1,5 +1,6 @@
 
 
+import { format } from "date-fns";
 import { supabase } from "@/lib/supabase-browser";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -136,7 +137,7 @@ const TeamMembersTable = ({
               )}
             </TableCell>
             <TableCell>
-              {new Date(member.created_at).toLocaleDateString()}
+              {format(new Date(member.created_at), "d MMM yyyy")}
             </TableCell>
             {userRole === "admin" && (
               <TableCell className="text-right">

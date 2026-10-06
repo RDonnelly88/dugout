@@ -1,13 +1,20 @@
 "use client";
 
+import { format } from "date-fns";
 import Link from "next/link";
 
 import React from "react";
 
-import { ArrowLeft, ChevronRight, Edit, Trash, Calendar, Lock, Check } from "lucide-react";
+import { ArrowLeft, Edit, Trash, Calendar, Lock, Check, MoreHorizontal, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { SegmentedControl, SegmentedControlItem } from "@/components/ui/segmented-control";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -26,23 +33,33 @@ import { getPlayers } from "@/lib/db";
 import { useTeam } from "@/contexts/TeamContext";
 import SeasonForm from "@/components/seasons/SeasonForm";
 import SeasonSelector from "@/components/seasons/SeasonSelector";
-import SeasonLeaderboard from "@/components/seasons/SeasonLeaderboard";
+import LeagueTable from "@/components/seasons/LeagueTable";
 import SeasonPositionChart from "@/components/seasons/SeasonPositionChart";
 import WrappedPicker from "@/components/wrapped/WrappedPicker";
-import MatchCard from "@/components/matches/MatchCard";
-import { Rail } from "@/components/ui/rail";
 import { outcomeOf } from "@/lib/match-result";
 import { useSeasonDetail } from "@/hooks/useSeasonDetail";
 import { calculatePlayerRanks } from "@/lib/ranking-utils";
 import PageHeader from "@/components/PageHeader";
-import { StatTile, StatTiles } from "@/components/StatTile";
-import SectionHeading from "@/components/SectionHeading";
+import { usePermission } from "@/lib/permission-utils";
 
-/** How many of the season's latest results the rail at the top shows. */
-const LATEST_NIGHTS = 8;
+type Part = "table" | "story" | "positions" | "results";
 
+const PARTS: { value: Part; label: string }[] = [
+  { value: "table", label: "Table" },
+  { value: "story", label: "Story" },
+  { value: "positions", label: "Race" },
+  { value: "results", label: "Results" },
+];
+
+/**
+ * One season: the table first, because that is what anybody opening a season
+ * has come for, then the story of it, the race for the top and every result.
+ * Changing or deleting the season is tucked in a menu for whoever can.
+ */
 const SeasonDetail = () => {
   const { currentTeam } = useTeam();
+  const { canManage, ready } = usePermission();
+  const [part, setPart] = React.useState<Part>("table");
   // The squad, for the names and faces on the season's awards.
   const { data: allPlayers = [] } = useQuery({
     queryKey: ["players", currentTeam?.id],
@@ -67,13 +84,10 @@ const SeasonDetail = () => {
     router
   } = useSeasonDetail();
 
-  const ranks = calculatePlayerRanks(playerStats);
+  const ranks = calculatePlayerRanks(playerStats.filter((p) => p.played > 0));
   const leaders = playerStats.filter((p) => ranks[p.playerId] === 1);
-  // The season's last few results, newest first, as a run of scoreboards.
-  const latestNights = seasonMatches
-    .filter((m) => outcomeOf(m) !== null)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, LATEST_NIGHTS);
+  // Played ones: a fixture on the calendar is not yet a night of the season.
+  const nights = seasonMatches.filter((m) => outcomeOf(m) !== null).length;
 
   if (isLoadingSeason) {
     return (
@@ -100,7 +114,7 @@ const SeasonDetail = () => {
           </Button>
         </div>
         <Card>
-          <CardContent className="p-8 text-center">
+          <CardContent className="p-8 text-center sm:p-8">
             <h2 className="text-xl font-medium mb-2">Season not found</h2>
             <p className="text-muted-foreground mb-4">The season you're looking for doesn't exist or has been deleted.</p>
             <Button asChild>
@@ -112,9 +126,9 @@ const SeasonDetail = () => {
     );
   }
 
-  const startDate = new Date(season.startDate).toLocaleDateString();
+  const startDate = format(new Date(season.startDate), "d MMM yyyy");
   const endDate = season.endDate
-    ? new Date(season.endDate).toLocaleDateString()
+    ? format(new Date(season.endDate), "d MMM yyyy")
     // A finished season with no end date recorded is over, whatever the
     // absence of a date implies. It used to read "Finished" and "Ongoing" side
     // by side.
@@ -124,37 +138,34 @@ const SeasonDetail = () => {
 
   return (
     <div className="page-container animate-slide-up">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <Button variant="ghost" size="sm" asChild className="-ml-2">
+          <Link href="/seasons">
+            <ArrowLeft className="mr-1 h-4 w-4" />
+            Seasons
+          </Link>
+        </Button>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/seasons">
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Seasons
-            </Link>
-          </Button>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
           <SeasonSelector seasons={seasons} currentSeasonId={season.id} />
-        </div>
-        
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setIsEditing(true)}
-            className="w-full sm:w-auto"
-          >
-            <Edit className="h-4 w-4 mr-1" />
-            Edit
-          </Button>
-          <Button 
-            variant="destructive" 
-            size="sm" 
-            onClick={() => setIsDeleting(true)}
-            className="w-full sm:w-auto"
-          >
-            <Trash className="h-4 w-4 mr-1" />
-            Delete
-          </Button>
+          {ready && canManage() && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" aria-label="Change this season">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit season
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsDeleting(true)} className="text-loss focus:text-loss">
+                  <Trash className="mr-2 h-4 w-4" />
+                  Delete season
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 
@@ -208,52 +219,22 @@ const SeasonDetail = () => {
               </>
             }
           >
-            <StatTiles>
-              {/* Played ones: a fixture on the calendar is not yet a match
-                  of the season, and the seasons list counts the same way. */}
-              <StatTile
-                label="Matches"
-                value={seasonMatches.filter((m) => outcomeOf(m) !== null).length}
-              />
-              <StatTile label="Players" value={playerStats.length} />
-              <StatTile
-                label={
-                  season.isFinished
-                    ? leaders.length > 1
-                      ? "Joint champions"
-                      : "Champion"
-                    : leaders.length > 1
-                      ? "Joint leaders"
-                      : "Leader"
-                }
-                tone="draw"
-                value={
-                  leaders.length > 0 ? (
-                    <span className="text-base">
-                      {leaders.map((p) => p.playerName).join(" & ")}
-                    </span>
-                  ) : (
-                    <span className="text-base text-muted-foreground">—</span>
-                  )
-                }
-              />
-              <StatTile
-                label="Top points"
-                value={leaders[0]?.points ?? 0}
-              />
-            </StatTiles>
+            {leaders.length > 0 && (
+              <div className="flex items-center gap-3 rounded-xl border border-draw/30 bg-draw/10 px-4 py-3">
+                <Trophy className="h-6 w-6 shrink-0 text-draw" />
+                <p className="min-w-0 text-sm">
+                  <span className="font-semibold">{leaders.map((p) => p.playerName).join(" & ")}</span>{" "}
+                  {season.isFinished
+                    ? leaders.length > 1 ? "were joint champions" : "won it"
+                    : leaders.length > 1 ? "lead jointly" : "leads"}{" "}
+                  on {leaders[0].points} points
+                  <span className="text-muted-foreground">
+                    {" "}· {nights} {nights === 1 ? "night" : "nights"}, {playerStats.filter((p) => p.played > 0).length} players
+                  </span>
+                </p>
+              </div>
+            )}
           </PageHeader>
-
-          {latestNights.length > 0 && (
-            <section className="mb-6">
-              <SectionHeading kicker={season.name} title="Latest nights" />
-              <Rail label={`The latest nights of ${season.name}`}>
-                {latestNights.map((match) => (
-                  <MatchCard key={match.id} match={match} />
-                ))}
-              </Rail>
-            </section>
-          )}
 
           <div className="mb-6">
             <WrappedPicker
@@ -264,70 +245,50 @@ const SeasonDetail = () => {
             />
           </div>
 
-          <Tabs defaultValue="leaderboard" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="leaderboard">League Table</TabsTrigger>
-              <TabsTrigger value="story">The Season</TabsTrigger>
-              <TabsTrigger value="positions">Positions</TabsTrigger>
-              <TabsTrigger value="matches">Matches</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="leaderboard" className="space-y-4">
-              <SeasonLeaderboard 
-                stats={playerStats}
-                seasonName={season.name}
-                isFinished={season.isFinished}
-                seasonId={season.id}
-              />
-            </TabsContent>
+          <div className="sticky top-[57px] z-10 -mx-4 mb-4 bg-background/90 px-4 py-2 backdrop-blur-md md:top-0 md:mx-0 md:px-0">
+            <SegmentedControl
+              label="Part of the season"
+              value={part}
+              onValueChange={(next) => setPart(next as Part)}
+              className="grid w-full grid-cols-4"
+            >
+              {PARTS.map(({ value, label }) => (
+                <SegmentedControlItem key={value} value={value} className="justify-center py-1.5 text-sm font-medium">
+                  {label}
+                </SegmentedControlItem>
+              ))}
+            </SegmentedControl>
+          </div>
 
-            <TabsContent value="story" className="space-y-4">
-              <SeasonWrap
-                season={seasonMatches}
-                players={allPlayers}
-                finished={season.isFinished}
-              />
-            </TabsContent>
+          {part === "table" && (
+            <Card>
+              <CardContent className="pt-4 sm:pt-6">
+                <LeagueTable stats={playerStats} seasonId={season.id} />
+              </CardContent>
+            </Card>
+          )}
 
-            <TabsContent value="positions" className="space-y-4">
-              <SeasonPositionChart
-                seasonId={season.id}
-                seasonName={season.name}
-              />
-            </TabsContent>
-            
-            <TabsContent value="matches" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Season Matches</CardTitle>
-                  <CardDescription>
-                    All matches in this season
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <MatchList 
-                    matches={seasonMatches}
-                    isLoading={false}
-                    searchTerm=""
-                    onDeleteClick={() => {}}
-                  />
-                  
-                  {seasonMatches.length === 0 && (
-                    <div className="text-center py-6">
-                      <p className="text-muted-foreground mb-4">No matches in this season yet</p>
-                      {!season.isFinished ? (
-                        <Button asChild>
-                          <Link href="/matches/create">Create a Match</Link>
-                        </Button>
-                      ) : (
-                        <p className="text-draw">This season is finished. No more matches can be added.</p>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+          {part === "story" && (
+            <SeasonWrap season={seasonMatches} players={allPlayers} finished={season.isFinished} />
+          )}
+
+          {part === "positions" && (
+            <SeasonPositionChart seasonId={season.id} seasonName={season.name} />
+          )}
+
+          {part === "results" &&
+            (seasonMatches.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border py-10 text-center">
+                <p className="mb-4 text-muted-foreground">No matches in this season yet</p>
+                {!season.isFinished && ready && canManage() && (
+                  <Button asChild>
+                    <Link href="/matches/create">Pick the teams</Link>
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <MatchList matches={seasonMatches} isLoading={false} searchTerm="" />
+            ))}
         </>
       )}
 

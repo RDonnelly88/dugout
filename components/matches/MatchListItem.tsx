@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
-import { ChevronRight, Trash2 } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Match } from "@/types";
 import { useSideNames } from "@/hooks/useSideNames";
 import { outcomeOf } from "@/lib/match-result";
@@ -18,8 +18,6 @@ import {
 
 interface MatchListItemProps {
   match: Match;
-  /** Omitted where deleting is not on offer, such as a player's own page. */
-  onDeleteClick?: (match: Match) => void;
   /** What the two sides were rated going in, and what the result did to them. */
   swing?: { A: SideSwing; B: SideSwing };
   /**
@@ -119,7 +117,6 @@ function matchDate(value: string): Date {
  */
 const MatchListItem = ({
   match,
-  onDeleteClick,
   swing,
   viewpoint,
 }: MatchListItemProps) => {
@@ -150,12 +147,9 @@ const MatchListItem = ({
     <li className="relative">
       <Link
         href={`/matches/${match.id}`}
-        // The right padding is clearance for the delete button, which is not
-        // always there.
         className={cn(
           "focus-ring flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 transition-colors hover:border-border-strong sm:gap-4 sm:px-4",
-          result && ["border-l-4", RESULT_STYLE[result].row],
-          onDeleteClick && "pr-12 sm:pr-12"
+          result && ["border-l-4", RESULT_STYLE[result].row]
         )}
       >
         <time
@@ -219,17 +213,6 @@ const MatchListItem = ({
         <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
       </Link>
 
-      {/* Outside the link: a button inside an anchor is invalid markup. */}
-      {onDeleteClick && (
-        <button
-          type="button"
-          onClick={() => onDeleteClick(match)}
-          aria-label={`Delete the match on ${format(matchDate(match.date), "d MMMM")}`}
-          className="focus-ring absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-2 text-muted-foreground transition-colors hover:bg-loss/15 hover:text-loss"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
-      )}
     </li>
   );
 };

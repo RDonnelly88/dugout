@@ -142,16 +142,6 @@ const TeamRandomizer = ({
     onRandomize(teamA, teamB);
   };
 
-  // Somebody marked active from the list is playing; somebody marked
-  // inactive is not, and drops out of the picks rather than staying picked
-  // behind the filter.
-  const followActive = (playerId: string, active: boolean) =>
-    setPicked((prev) => {
-      const list = prev ?? [];
-      if (!active) return list.filter((id) => id !== playerId);
-      return list.includes(playerId) ? list : [...list, playerId];
-    });
-
   const togglePlayerSelection = (playerId: string) =>
     setPicked((prev) =>
       (prev ?? []).includes(playerId)
@@ -167,7 +157,6 @@ const TeamRandomizer = ({
           players={players}
           selectedPlayers={selectedPlayers}
           togglePlayerSelection={togglePlayerSelection}
-          onActiveChange={followActive}
           disabled={dealing || disabled}
         />
       </section>

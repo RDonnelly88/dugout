@@ -26,7 +26,7 @@ export default function WrappedPicker({
 
   return (
     <Card id="wrapped" className="grain scroll-mt-24">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 sm:pb-3">
         <CardTitle className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-accent" />
           Wrapped{finished ? "" : " so far"}
