@@ -16,8 +16,9 @@ import { getMatches } from "@/lib/db";
 import { useTeam } from "@/contexts/TeamContext";
 import { useSideNames } from "@/hooks/useSideNames";
 import { matchImpact, type SideImpact } from "@/lib/match-impact";
-import { resultFor } from "@/lib/match-result";
-import { displayRating } from "@/lib/elo";
+import { outcomeOf, resultFor } from "@/lib/match-result";
+import { displayRating, expectedScore } from "@/lib/elo";
+import { signedWins } from "@/lib/expected-wins";
 import type { Match, Player } from "@/types";
 
 function Change({ value, digits = 0 }: { value: number; digits?: number }) {
@@ -75,23 +76,54 @@ function Row({
   );
 }
 
+/**
+ * The chance the ratings gave the side before kick-off, and what the result
+ * made of it: a side given 40% that won took 0.6 of a win more than expected.
+ */
+function Odds({ chance, actual }: { chance: number; actual: number }) {
+  const above = actual - chance;
+  return (
+    <div className="flex items-baseline justify-between gap-2 py-1.5">
+      <span className="eyebrow">Win chance</span>
+      <span className="tabular flex items-baseline gap-2 text-sm">
+        <span className="font-semibold">{Math.round(chance * 100)}%</span>
+        <span
+          className={
+            above > 0.005 ? "text-win" : above < -0.005 ? "text-loss" : "text-muted-foreground"
+          }
+          title="Wins above what was expected: one for a win, a half for a draw, less the chance"
+        >
+          {signedWins(above)} xW
+        </span>
+      </span>
+    </div>
+  );
+}
+
 function Side({
   name,
   impact,
   players,
   match,
+  chance,
+  actual,
 }: {
   name: string;
   impact: SideImpact;
   players: Map<string, Player>;
   /** The night in question, to pick this result out of the run. */
   match: Match;
+  /** What the ratings gave this side before kick-off. */
+  chance: number;
+  /** One for a win, a half for a draw. */
+  actual: number;
 }) {
   return (
     <div className="rounded-xl border border-border bg-surface-2/40 p-4">
       <h4 className="mb-2 font-semibold">{name}</h4>
 
       <div className="divide-y divide-border">
+        <Odds chance={chance} actual={actual} />
         <Row
           label="Rating"
           before={displayRating(impact.ratingBefore)}
@@ -178,6 +210,10 @@ export default function MatchImpact({
 
   if (!impact) return null;
 
+  const outcome = outcomeOf(match);
+  const chanceA = expectedScore(impact.A.ratingBefore, impact.B.ratingBefore);
+  const actualA = outcome === "a" ? 1 : outcome === "draw" ? 0.5 : 0;
+
   return (
     <Card className="mt-8">
       <CardHeader>
@@ -191,8 +227,22 @@ export default function MatchImpact({
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-2">
-        <Side name={sides.A} impact={impact.A} players={byId} match={match} />
-        <Side name={sides.B} impact={impact.B} players={byId} match={match} />
+        <Side
+          name={sides.A}
+          impact={impact.A}
+          players={byId}
+          match={match}
+          chance={chanceA}
+          actual={actualA}
+        />
+        <Side
+          name={sides.B}
+          impact={impact.B}
+          players={byId}
+          match={match}
+          chance={1 - chanceA}
+          actual={1 - actualA}
+        />
       </CardContent>
     </Card>
   );

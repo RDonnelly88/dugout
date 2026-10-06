@@ -171,7 +171,7 @@ describe("seasonWrap", () => {
   });
 
   describe("the partnership", () => {
-    it("finds the pair who win most on the same side", () => {
+    it("finds the pair who beat the odds most on the same side", () => {
       const fixtures = [
         ...Array.from({ length: 6 }, () =>
           match(["pal1", "pal2"], ["opp1", "opp2"], 1, 0)
@@ -185,10 +185,10 @@ describe("seasonWrap", () => {
       expect(wrap.partnership).not.toBeNull();
       expect(wrap.partnership!.playerIds).toContain("pal1");
       expect(wrap.partnership!.playerIds).toContain("pal2");
-      expect(wrap.partnership!.lift).toBeGreaterThan(0);
+      expect(wrap.partnership!.above).toBeGreaterThan(0);
     });
 
-    it("says nothing when nobody has played with anybody twice", () => {
+    it("says nothing when no pair has played enough together to tell", () => {
       const wrap = seasonWrap([match(["a"], ["b"], 1, 0)]);
       expect(wrap.partnership).toBeNull();
     });

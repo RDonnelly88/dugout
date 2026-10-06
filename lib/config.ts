@@ -75,6 +75,30 @@ export const ELO = {
   awayAfter: 4,
 } as const;
 
+/**
+ * Expected wins: results measured against what the ratings expected.
+ *
+ * Before every match the ratings give each side a chance of winning; a side
+ * that wins a game it was given 40% for has beaten the odds by 0.6 of a win,
+ * and one that loses it was only expected to take 0.4. Summed over the games
+ * a player, a pair or a whole line-up shared, that is how far they ran ahead
+ * of, or behind, the side they were picked into.
+ */
+export const XW = {
+  /**
+   * Games together before a verdict is offered at all. Below this the figures
+   * are shown but called too early: four games is a fortnight's luck.
+   */
+  minGames: 5,
+
+  /**
+   * How wide the band of ordinary luck is, in standard deviations of the
+   * results those games could have produced. Two covers about nineteen
+   * results in twenty, so anything outside it is unlikely to be chance.
+   */
+  luckWidth: 2,
+} as const;
+
 /** How many results the form strip shows. */
 export const FORM_LENGTH = 5;
 

@@ -38,6 +38,17 @@ straight shuffle, evenly by rating, or evenly by recent form. Each option shows
 the gap it would leave between the two teams before you commit, and the cards
 are dealt out one at a time.
 
+**Measures everyone against the odds.** Before every match the ratings give
+each side a chance of winning; added up over a player's games, those chances
+are their expected wins, or xW. Winning more than your xW means you are doing
+better than the sides you were picked into should have, and the app says
+plainly whether the gap is more than luck would explain.
+
+**Finds out who works together.** The line-up lab takes any two to five
+players and shows how they do on the same side against their xW, how the rest
+of them do with each one missing, and who would complete the set — over all
+time, a season, the last few weeks or any dates you pick.
+
 **Compares any two players.** Rating, record and points per game side by side —
 then the half a league table can never show: how they do on the same team, and
 how they do against each other.

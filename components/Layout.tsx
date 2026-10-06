@@ -16,6 +16,7 @@ import {
   Settings,
   TrendingUp,
   ArrowLeftRight,
+  FlaskConical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -34,6 +35,7 @@ const menuItems = [
   { path: "/seasons", label: "Seasons", icon: Trophy },
   { path: "/ratings", label: "Ratings", icon: TrendingUp },
   { path: "/compare", label: "Compare", icon: ArrowLeftRight },
+  { path: "/lineups", label: "Line-ups", icon: FlaskConical },
   { path: "/team", label: "Team", icon: UserCog },
   { path: "/settings", label: "Settings", icon: Settings },
 ];

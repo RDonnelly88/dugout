@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getMatches, getPlayers } from "@/lib/db";
 import { chemistryFor } from "@/lib/chemistry";
+import { matchExpectations } from "@/lib/expected-wins";
 import { useTeam } from "@/contexts/TeamContext";
 import type { Player } from "@/types";
 
@@ -42,7 +43,9 @@ export function useChemistry(playerId: string, scope: ChemistryScope = "overall"
   const report = useMemo(() => {
     const scoped =
       scope === "overall" ? matches : matches.filter((m) => m.seasonId === scope);
-    return chemistryFor(scoped, playerId);
+    // The odds from the whole history, whatever the stretch: a rating carries
+    // over from one season to the next.
+    return chemistryFor(scoped, matchExpectations(matches), playerId);
   }, [matches, playerId, scope]);
 
   return {

@@ -22,6 +22,7 @@ import ActiveFilter, {
 import PageHeader from "@/components/PageHeader";
 import RatingsGuide from "@/components/ratings/RatingsGuide";
 import ChartPlayerPicker, { MAX_LINES } from "@/components/ratings/ChartPlayerPicker";
+import BeatingTheOdds from "@/components/xw/BeatingTheOdds";
 
 export default function RatingsPage() {
   const { currentTeam } = useTeam();
@@ -47,6 +48,11 @@ export default function RatingsPage() {
             return player ? isActivePlayer(player) : true;
           }),
     [ranked, scope, byId]
+  );
+
+  const squad = useMemo(
+    () => players.filter((p) => scope === "all" || isActivePlayer(p)),
+    [players, scope]
   );
 
   // The top of the table is a reasonable opening guess and rarely the
@@ -140,6 +146,12 @@ export default function RatingsPage() {
             <RatingHistoryChart players={charted} />
           </CardContent>
         </Card>
+      </div>
+
+      <div className="reveal mt-6">
+        {/* The same squad as the table above: hiding the people who stopped
+            coming hides them here too. */}
+        <BeatingTheOdds players={squad} />
       </div>
     </div>
   );

@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { motion, useReducedMotion } from "motion/react";
-import { Handshake, Skull, Sparkles, Swords, Users } from "lucide-react";
+import { FlaskConical, Handshake, Skull, Sparkles, Swords, Target, Users } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -20,61 +19,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import { getSeasons } from "@/lib/db";
 import { useChemistry, type ChemistryScope } from "@/hooks/useChemistry";
-import { MIN_GAMES, pick, type ChemistryEntry } from "@/lib/chemistry";
+import { pick, type ChemistryEntry } from "@/lib/chemistry";
+import { signedWins } from "@/lib/expected-wins";
+import { XW } from "@/lib/config";
+import Verdict from "@/components/xw/Verdict";
+import LuckBar from "@/components/xw/LuckBar";
 import { useTeam } from "@/contexts/TeamContext";
 
-/**
- * The widest lift the bars are drawn to scale against.
- *
- * Twenty points either side of your own average is already a strong effect
- * once it has survived the shrinkage, and pinning the scale means two players'
- * charts can be compared by eye.
- */
-const BAR_RANGE = 0.2;
-
-const pct = (value: number) => `${Math.round(value * 100)}%`;
-const signed = (value: number) => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(Math.round(value * 100))}`;
-
-function LiftBar({ lift }: { lift: number }) {
-  const reduced = useReducedMotion();
-  const width = Math.min(Math.abs(lift) / BAR_RANGE, 1) * 50;
-  const good = lift >= 0;
-
-  return (
-    <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
-      {/* Centre line: the player's own average, which is what lift is measured
-          against. Without it a bar is just a length with no zero. */}
-      <div className="absolute inset-y-0 left-1/2 w-px bg-border-strong" />
-      <motion.div
-        initial={reduced ? false : { width: 0 }}
-        animate={{ width: `${width}%` }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className={`absolute inset-y-0 ${good ? "left-1/2 bg-win" : "right-1/2 bg-loss"}`}
-      />
-    </div>
-  );
-}
+/** Wins with a draw as a half, to one place, dropping a needless ".0". */
+const wins = (value: number) => (Number.isInteger(value) ? String(value) : value.toFixed(1));
 
 function ChemistryRow({
   entry,
   name,
   image,
   rank,
+  href,
 }: {
   entry: ChemistryEntry;
   name: string;
   image?: string | null;
   rank?: number;
+  /** Where the row leads: the pair in the line-up lab, or the opponent's page. */
+  href: string;
 }) {
-  const { tally, lift, confidence } = entry;
-
+  const { ledger } = entry;
   return (
     <Link
-      href={`/players/${entry.playerId}`}
+      href={href}
       className="focus-ring flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-surface-2/60"
     >
       {rank !== undefined && (
@@ -83,25 +58,31 @@ function ChemistryRow({
         </span>
       )}
       <PlayerAvatar name={name} image={image} size="sm" />
-
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-2">
           <span className="truncate text-sm font-medium">{name}</span>
           <span
             className={`tabular shrink-0 text-sm font-semibold ${
-              lift > 0.01 ? "text-win" : lift < -0.01 ? "text-loss" : "text-muted-foreground"
+              ledger.above > 0.05
+                ? "text-win"
+                : ledger.above < -0.05
+                  ? "text-loss"
+                  : "text-muted-foreground"
             }`}
           >
-            {signed(lift)}
+            {signedWins(ledger.above)}
           </span>
         </div>
-        <div className="mt-1">
-          <LiftBar lift={lift} />
+        <div className="mt-1.5">
+          <LuckBar ledger={ledger} className="h-2" />
         </div>
-        <p className="tabular mt-1 text-[11px] text-muted-foreground">
-          {tally.played} {tally.played === 1 ? "game" : "games"} · {tally.wins}W {tally.draws}D{" "}
-          {tally.losses}L · {pct(confidence)} confident
-        </p>
+        <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+          <p className="tabular text-[11px] text-muted-foreground">
+            {ledger.played} {ledger.played === 1 ? "game" : "games"} · {ledger.wins}W{" "}
+            {ledger.draws}D {ledger.losses}L · {wins(ledger.actual)} v {ledger.expected.toFixed(1)} xW
+          </p>
+          <Verdict verdict={ledger.verdict} />
+        </div>
       </div>
     </Link>
   );
@@ -114,6 +95,7 @@ function Lineup({
   tone,
   entries,
   playerFor,
+  hrefFor,
 }: {
   title: string;
   description: string;
@@ -121,6 +103,7 @@ function Lineup({
   tone: "win" | "loss";
   entries: ChemistryEntry[];
   playerFor: (id: string) => { name: string; image?: string | null } | undefined;
+  hrefFor: (id: string) => string;
 }) {
   return (
     <Card>
@@ -134,7 +117,7 @@ function Lineup({
       <CardContent className="pt-0">
         {entries.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            Nobody with {MIN_GAMES} games yet.
+            Nobody with {XW.minGames} games yet.
           </p>
         ) : (
           <div className="space-y-1">
@@ -147,6 +130,7 @@ function Lineup({
                   name={player?.name ?? "Unknown"}
                   image={player?.image}
                   rank={i + 1}
+                  href={hrefFor(entry.playerId)}
                 />
               );
             })}
@@ -218,6 +202,9 @@ export default function PlayerChemistry({
   }
 
   const dreamTeam = pick(report.withPlayers);
+  // A team-mate opens the pair in the line-up lab, where the two of them can
+  // be taken apart; an opponent opens their own page.
+  const pairHref = (id: string) => `/lineups?p=${playerId},${id}`;
   const teamOfDeath = pick(report.againstPlayers, { worst: true });
 
   return (
@@ -230,7 +217,8 @@ export default function PlayerChemistry({
               Chemistry
             </CardTitle>
             <CardDescription>
-              Who {playerName} wins with, and who they come unstuck against
+              Who {playerName} beats the odds with, and who they come unstuck
+              against — measured in wins above what the ratings expected
             </CardDescription>
           </div>
 
@@ -251,7 +239,7 @@ export default function PlayerChemistry({
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {report.played === 0 ? (
+        {report.own.played === 0 ? (
           <div className="py-10 text-center">
             <Users className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
             <p className="text-muted-foreground">
@@ -263,46 +251,54 @@ export default function PlayerChemistry({
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               <Tile
                 label="Games"
-                value={String(report.played)}
+                value={String(report.own.played)}
                 Icon={Users}
                 hint={scope === "overall" ? "All time" : "This season"}
               />
               <Tile
-                label="Own average"
-                value={pct(report.baseline)}
-                Icon={Handshake}
+                label="Won v xW"
+                value={`${wins(report.own.actual)} v ${report.own.expected.toFixed(1)}`}
+                Icon={Target}
                 hint="A draw counts a half"
+              />
+              <Tile
+                label="Above xW"
+                value={signedWins(report.own.above)}
+                Icon={Sparkles}
+                hint={
+                  report.own.verdict === "early"
+                    ? "Too early to say"
+                    : report.own.verdict === "luck"
+                      ? "Could be luck"
+                      : `${report.own.verdict === "above" ? "Better" : "Worse"} than luck`
+                }
               />
               <Tile
                 label="Team-mates"
                 value={String(report.withPlayers.length)}
                 Icon={Handshake}
-                hint="Different people"
-              />
-              <Tile
-                label="Opponents"
-                value={String(report.againstPlayers.length)}
-                Icon={Swords}
-                hint="Different people"
+                hint={`${report.againstPlayers.length} different opponents`}
               />
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
               <Lineup
                 title="Dream team"
-                description={`Beside these four, ${playerName} does better than usual`}
+                description={`Beside these, ${playerName} beats the odds by the most`}
                 Icon={Sparkles}
                 tone="win"
                 entries={dreamTeam}
                 playerFor={playerFor}
+                hrefFor={pairHref}
               />
               <Lineup
                 title="Team of death"
-                description="The side you would least like to line up against"
+                description={`Against these, ${playerName} falls furthest short of the odds`}
                 Icon={Skull}
                 tone="loss"
                 entries={teamOfDeath}
                 playerFor={playerFor}
+                hrefFor={(id) => `/players/${id}`}
               />
             </div>
 
@@ -333,6 +329,7 @@ export default function PlayerChemistry({
                         entry={entry}
                         name={player?.name ?? "Unknown"}
                         image={player?.image}
+                        href={key === "with" ? pairHref(entry.playerId) : `/players/${entry.playerId}`}
                       />
                     );
                   })}
@@ -340,16 +337,21 @@ export default function PlayerChemistry({
               ))}
             </Tabs>
 
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              The number beside each name is percentage points above or below{" "}
-              {playerName}&apos;s own average, after allowing for how little some of
-              these pairings have actually happened. One game together barely
-              moves it;{" "}
-              <Badge variant="outline" className="mx-0.5 align-middle text-[10px]">
-                confident
-              </Badge>{" "}
-              is how much of the raw result survived that allowance.
-            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                The number beside each name is wins above or below what the ratings
+                expected from the games they shared, so the rest of each side is already
+                allowed for. The shaded band is how far luck alone could move it; under{" "}
+                {XW.minGames} games it is too early to say.
+              </p>
+              <Link
+                href={`/lineups?p=${playerId}`}
+                className="focus-ring flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm hover:border-border-strong"
+              >
+                <FlaskConical className="h-4 w-4 text-accent" />
+                Open in the line-up lab
+              </Link>
+            </div>
           </>
         )}
       </CardContent>

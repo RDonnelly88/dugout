@@ -165,7 +165,9 @@ const Dashboard = () => {
         <QuickActions />
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      {/* One column on a phone, held to the screen: an auto-sized column would
+          stretch to the full width of the recent-matches rail inside it. */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {currentSeason && seasonPlayerStats.length > 0 && (
           <div className="reveal lg:col-span-2">
             <SeasonLeaderboard

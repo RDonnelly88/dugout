@@ -26,7 +26,7 @@ const FEATURES = [
   {
     Icon: Handshake,
     title: "Find out who works together",
-    body: "Who you win with and who you come unstuck against — measured against your own average, not off one lucky night.",
+    body: "Who you win with and who you come unstuck against — measured against the odds you were given, not off one lucky night.",
   },
 ];
 

@@ -12,6 +12,12 @@ interface RatingPoint {
   change: number;
   /** The mean rating of the side they faced, going in. */
   opponentRating: number;
+  /**
+   * What their side was expected to take from the night before kick-off:
+   * nought to one, a draw counting a half. Summed over games this is
+   * expected wins, the yardstick results are measured against.
+   */
+  expected: number;
   result: FormResult;
   /** The run they walked in on, newest first, for showing beside the result. */
   formBefore: PlayerFormResult[];
@@ -373,6 +379,9 @@ function replay(matches: Match[]): Map<string, PlayerRating> {
         rating,
         change: rating - before[i],
         opponentRating: sideA.includes(playerId) ? ratingB : ratingA,
+        expected: sideA.includes(playerId)
+          ? expectedScore(ratingA, ratingB)
+          : expectedScore(ratingB, ratingA),
         result,
         formBefore: run,
         countedBefore: countedBefore.get(playerId)!,

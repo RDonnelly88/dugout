@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ArrowRight, Flame, Sparkles, TrendingUp, Users, Zap } from "lucide-react";
 import { seasonWrap } from "@/lib/season-wrap";
 import { seasonNights } from "@/lib/season-story";
+import { signedWins } from "@/lib/expected-wins";
 import { displayRating } from "@/lib/elo";
 import { getMatches } from "@/lib/db";
 import { useTeam } from "@/contexts/TeamContext";
@@ -165,6 +166,8 @@ export default function SeasonWrap({
       icon: Users,
       title: "Best pair",
       stamp: "Partners",
+      // Into the line-up lab, where the pair can be taken apart.
+      href: `/lineups?p=${wrap.partnership.playerIds.join(",")}`,
       body: (
         <div className="flex items-center gap-2">
           <div className="flex -space-x-2">
@@ -184,8 +187,8 @@ export default function SeasonWrap({
                 .join(" & ")}
             </p>
             <p className="text-xs text-muted-foreground">
-              {pct(wrap.partnership.lift)} together over{" "}
-              {wrap.partnership.played} games
+              {signedWins(wrap.partnership.above)} wins above xW over{" "}
+              {wrap.partnership.played} games together
             </p>
           </div>
         </div>
