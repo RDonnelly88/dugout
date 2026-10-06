@@ -8,6 +8,13 @@ import { outcomeOf } from "@/lib/match-result";
 import { displayRating } from "@/lib/elo";
 import type { SideSwing } from "@/lib/match-impact";
 import { cn } from "@/lib/utils";
+import { usePlayerNames } from "@/hooks/usePlayerNames";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface MatchListItemProps {
   match: Match;
@@ -54,6 +61,49 @@ function Swing({ side }: { side: SideSwing }) {
   );
 }
 
+/**
+ * Who was on a side, in first names on one small line under the side's name.
+ *
+ * Five names rarely fit beside another five on a phone, so the line truncates
+ * and the whole side, in full names, is a hover away. The match itself lists
+ * them properly on a tap.
+ */
+function Lineup({
+  side,
+  playerIds,
+  align,
+}: {
+  side: string;
+  playerIds: string[];
+  align: "start" | "end";
+}) {
+  const { fullName, shortName } = usePlayerNames();
+  if (playerIds.length === 0) return null;
+
+  return (
+    <TooltipProvider delayDuration={300}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            className={cn(
+              // Two lines on a phone, where one holds barely two names; one line
+              // from there up, where it holds the lot.
+              "line-clamp-2 w-full text-[11px] leading-tight text-muted-foreground sm:line-clamp-1",
+              align === "end" ? "text-right" : "text-left"
+            )}
+          >
+            {playerIds.map(shortName).join(", ")}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-64 text-xs">
+          <span className="font-semibold">{side}</span>
+          <span className="block">{playerIds.map(fullName).join(", ")}</span>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 /** Dates arrive as either a plain day or a full timestamp. */
 function matchDate(value: string): Date {
   return value.includes("T") ? parseISO(value) : new Date(`${value}T12:00:00`);
@@ -85,11 +135,13 @@ const MatchListItem = ({
   const flipped = viewpoint ? viewpoint.side === "b" : winner === "b";
   const left = {
     name: flipped ? sides.B : sides.A,
+    players: (flipped ? match.teamB?.players : match.teamA?.players) ?? [],
     swing: flipped ? swing?.B : swing?.A,
     strong: viewpoint ? true : played && winner !== "draw",
   };
   const right = {
     name: flipped ? sides.A : sides.B,
+    players: (flipped ? match.teamA?.players : match.teamB?.players) ?? [],
     swing: flipped ? swing?.A : swing?.B,
   };
   const verb = result ? RESULT_VERB[result] : winner === "draw" ? "drew" : played ? "beat" : "v";
@@ -124,6 +176,7 @@ const MatchListItem = ({
             >
               {left.name}
             </span>
+            <Lineup side={left.name} playerIds={left.players} align="end" />
             {left.swing && <Swing side={left.swing} />}
           </span>
 
@@ -138,6 +191,7 @@ const MatchListItem = ({
             <span className="w-full truncate text-sm text-muted-foreground sm:text-base">
               {right.name}
             </span>
+            <Lineup side={right.name} playerIds={right.players} align="start" />
             {right.swing && <Swing side={right.swing} />}
           </span>
         </span>
