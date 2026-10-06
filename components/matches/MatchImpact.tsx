@@ -71,7 +71,8 @@ function Odds({ chance, actual }: { chance: number; actual: number }) {
         <span className="font-semibold">{Math.round(chance * 100)}%</span>
         <span
           className={
-            above > 0.005 ? "text-win" : above < -0.005 ? "text-loss" : "text-muted-foreground"
+            // Coloured only past what the figure shows: a red "0.0" read as a loss.
+            above >= 0.05 ? "text-win" : above <= -0.05 ? "text-loss" : "text-muted-foreground"
           }
           title="Wins above what was expected: one for a win, a half for a draw, less the chance"
         >

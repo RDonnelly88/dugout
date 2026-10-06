@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
 import { z } from "zod";
@@ -63,12 +63,19 @@ const SeasonForm = ({ onSubmit, initialData, isSubmitting }: SeasonFormProps) =>
         }
       : {
           name: "",
-          startDate: new Date(),
           endDate: undefined,
           isCurrent: false,
           isFinished: false,
         },
   });
+
+  // Today for a new season, but the browser's today: the server renders in
+  // UTC, and around midnight in London the two disagree about the date,
+  // which broke hydration. Filled in once the form is in the browser.
+  const { getValues, setValue } = form;
+  useEffect(() => {
+    if (!initialData && !getValues("startDate")) setValue("startDate", new Date());
+  }, [initialData, getValues, setValue]);
 
   return (
     <Form {...form}>
