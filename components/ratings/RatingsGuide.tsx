@@ -256,10 +256,13 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
                 Nothing is given or taken away for missing a game. But every
                 match the squad plays makes your games a match older, so they
                 count for a little less and your rating eases back towards{" "}
-                {ELO.start} — up if you are below it, down if you are above. The
-                people from your games have also carried on playing and may
-                have been re-rated, which can move you either way. The rating
-                card says &ldquo;while away&rdquo; beside a change like that.
+                {ELO.start} — up if you are below it, down if you are above.
+                Your old results are also re-judged as the people in them move.
+                Beat somebody who has been winning since, and that win counts
+                for a bit more; win beside somebody who has been winning since,
+                and you had more help than it looked, so it counts for a bit
+                less. Those nudges are small. The rating card
+                says &ldquo;while away&rdquo; beside a change like that.
               </dd>
             </div>
             <div>

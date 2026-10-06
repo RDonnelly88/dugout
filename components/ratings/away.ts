@@ -11,5 +11,5 @@ import { ELO } from "@/lib/config";
  */
 export function awayExplanation(missed: number): string {
   const nights = missed === 1 ? "the squad's last match" : `the squad's last ${missed} matches`;
-  return `Not in ${nights}. Nothing is given or taken away for missing a game: as their games get older the rating eases towards ${ELO.start}, and it moves when the people in those games are re-rated.`;
+  return `Not in ${nights}. Nothing is given or taken away for missing a game, but the rating still moves a little. Their games get older, which eases it towards ${ELO.start}. And their old results are re-judged as the people in them move: beat somebody who has been winning since, and that win now counts for a bit more.`;
 }
