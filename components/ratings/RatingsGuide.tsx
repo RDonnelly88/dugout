@@ -6,12 +6,11 @@ import { HelpCircle } from "lucide-react";
 import { getMatches } from "@/lib/db";
 import { useTeam } from "@/contexts/TeamContext";
 import { useSideNames } from "@/hooks/useSideNames";
-import { ELO, FORM_LENGTH } from "@/lib/config";
+import { ELO } from "@/lib/config";
 import { displayRating } from "@/lib/elo";
-import { workedExample, driftCurve } from "@/lib/ratings-guide";
-import { Frac, Line, Sup, Times, Var, Working } from "@/components/ratings/Formula";
+import { workedExample, fadeCurve } from "@/lib/ratings-guide";
+import { Frac, Line, Sup, Var, Working } from "@/components/ratings/Formula";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
-import PlayerFormDisplay from "@/components/players/PlayerFormDisplay";
 import { Button } from "@/components/ui/button";
 import SidePanel from "@/components/ui/side-panel";
 import type { Player } from "@/types";
@@ -81,9 +80,7 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
     [matches, players, sides]
   );
 
-  const strong = ELO.start + 200;
-  const drift = driftCurve(strong, ELO.decay.graceMatches + 8);
-  const afterAWhile = drift.at(-1)!;
+  const fade = fadeCurve();
 
   return (
     <SidePanel
@@ -92,9 +89,10 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
       title="How the table is worked out"
       description={
         <>
-          Everyone starts on {ELO.start}. Beat a side rated above you and you
-          take more than you would for beating one below. A win is a win — a
-          thrashing counts the same as a scrape.
+          Everyone starts on {ELO.start}. Beat a side rated above you and it
+          says more about you than beating one below. Recent games count most,
+          and old ones stop counting altogether. A win is a win — a thrashing
+          counts the same as a scrape.
         </>
       }
       trigger={
@@ -105,23 +103,23 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
       }
     >
       <div className="space-y-6">
-        <Section title="A night, in three steps">
+        <Section title="After every match, in three steps">
           <div className="space-y-4">
             <Step n={1} title="Each side is averaged">
               A team is worth the average of the players in it. Nothing else
               goes in — not the score, not who is in goal.
             </Step>
-            <Step n={2} title="The result sets a pot">
-              The further apart the two averages, the more an upset is worth
-              and the less a win anybody saw coming. The pot is what the
-              winning side gains and exactly what the losing side drops —
-              nobody is created or destroyed by playing a game.
+            <Step n={2} title="Your games are weighed by age">
+              Your rating answers for your own last {ELO.window} games. The
+              newest counts in full, one {ELO.halfLife} games back counts
+              half, and anything older than {ELO.window} does not count at
+              all.
             </Step>
-            <Step n={3} title="Form decides the shares">
-              The pot is split across the side by how everyone has been going
-              lately, over the squad&apos;s last {FORM_LENGTH} nights — a night
-              missed counts as a nought, so turning up is part of it. Whoever
-              is flying takes more of a win, and more of a defeat.
+            <Step n={3} title="The whole table is worked out again">
+              Everybody&apos;s rating is set to whatever best explains who beat
+              whom, given who was on each side. Winning beside strong
+              team-mates says less about you than winning beside weak ones,
+              and as their ratings settle, so does what your results meant.
             </Step>
           </div>
         </Section>
@@ -148,11 +146,9 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
                 <span className="tabular">{pct(example.expected)}</span> to win.
               </p>
               <p className="mt-2 text-muted-foreground">
-                {example.drawn ? "They drew" : "They won"}, so{" "}
-                <span className="tabular font-medium text-foreground">
-                  {Math.abs(Math.round(example.pot))}
-                </span>{" "}
-                points moved from one side to the other. Split by form:
+                {example.drawn ? "They drew" : "They won"}, and the table was
+                worked out again with that result in it. For{" "}
+                {example.winner.name}:
               </p>
 
               <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
@@ -169,7 +165,11 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
                       <span className="min-w-0 flex-1 truncate">
                         {byId.get(p.playerId)?.name ?? "Unknown"}
                       </span>
-                      <PlayerFormDisplay results={p.form} size="xs" />
+                      <span className="text-xs text-muted-foreground tabular">
+                        {p.counted === 0
+                          ? "debut"
+                          : `${p.counted} ${p.counted === 1 ? "game" : "games"} behind it`}
+                      </span>
                       <span
                         className={`w-10 text-right tabular ${
                           p.change >= 0 ? "text-win" : "text-loss"
@@ -181,29 +181,39 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
                   ))}
               </ul>
               <p className="mt-3 text-xs text-muted-foreground">
-                Same result, same side, different numbers — that is the form
-                strip beside each name doing the work. The six of them still
-                add up to the pot.
+                Same result, same side, different numbers. The fewer games a
+                rating rests on, the more one more result says about it — and
+                the ratings around each player in their older games matter
+                too.
               </p>
             </div>
           </Section>
         )}
 
-        <Section title="Weeks off">
-          <p className="text-sm text-muted-foreground">
-            Miss more than {ELO.decay.graceMatches} matches the rest of the
-            squad played and a rating starts drifting back towards{" "}
-            {ELO.start}. A holiday costs nothing. A long absence takes the
-            edge off: someone on{" "}
-            <span className="tabular">{strong}</span> who sat out{" "}
-            {afterAWhile.missed} would come back on{" "}
-            <span className="tabular">{Math.round(afterAWhile.rating)}</span>.
-          </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            It is counted in games the squad played without you, not weeks on
-            the calendar — a winter where nobody plays costs nobody anything.
-            It never carries you past {ELO.start}, so time off can make a
-            strong player ordinary but never bad.
+        <Section title="Old games fade">
+          {/* The weights themselves, newest on the left, so the shape of the
+              fade is seen rather than taken on trust. Hidden from a screen
+              reader, which gets the same thing in the paragraph below. */}
+          <div className="flex h-16 items-end gap-px" aria-hidden>
+            {fade.map(({ age, weight }) => (
+              <span
+                key={age}
+                className="flex-1 rounded-t-sm bg-accent/70"
+                style={{ height: `${weight * 100}%` }}
+              />
+            ))}
+          </div>
+          <div className="mt-1 flex justify-between text-[11px] text-muted-foreground">
+            <span>Your latest game</span>
+            <span>{ELO.window} games back</span>
+          </div>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Your newest game counts in full, one {ELO.halfLife} games back
+            counts half, and nothing older than {ELO.window} counts at all.
+            That is counted in your own games, not weeks on the calendar, so a
+            holiday or an injury costs nothing. Come back and your rating is
+            where you left it; your next results start to replace the old
+            ones.
           </p>
         </Section>
 
@@ -231,11 +241,20 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
             <div>
               <dt className="font-medium">I am new. Am I treated differently?</dt>
               <dd className="mt-0.5 text-muted-foreground">
-                No. Your rating moves exactly as far as anyone else&apos;s from
-                your first game. It is only marked as a rough guess until{" "}
-                {ELO.settledAfter} games are behind it, because a number
-                resting on three results is a shakier guess than one resting
-                on forty.
+                Only in that your first results move you further than they
+                would a regular — with little else to go on, each one says
+                more. The number is marked as a rough guess until{" "}
+                {ELO.settledAfter} games are behind it.
+              </dd>
+            </div>
+            <div>
+              <dt className="font-medium">
+                Why did my number move when I didn&apos;t play?
+              </dt>
+              <dd className="mt-0.5 text-muted-foreground">
+                Your rating depends on how good the people in your games were,
+                and they have carried on playing. It is usually a point or
+                two.
               </dd>
             </div>
           </dl>
@@ -266,52 +285,29 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
               />
             </Line>
 
-            <Line name="pot">
-              <span>{example?.headcount ?? 5}</span>
-              <Times />
-              <span>{ELO.k}</span>
-              <Times />
-              <span className="whitespace-nowrap">
-                (<Var>result</Var>
-                <span className="mx-1 text-muted-foreground">−</span>
-                <Var>expected</Var>)
+            <Line name="weight">
+              <span>½</span>
+              <Sup>
+                <Frac over={<Var>games since</Var>} under={<>{ELO.halfLife}</>} />
+              </Sup>
+              <span className="ml-2 text-xs text-muted-foreground">
+                for your last {ELO.window}, then 0
               </span>
             </Line>
 
-            <Line name="your share">
-              <Var>pot</Var>
-              <Times />
-              <Frac
-                over={
-                  <>
-                    <Var>your weight</Var>
-                  </>
-                }
-                under={
-                  <>
-                    <Var>the side&apos;s weights</Var>
-                  </>
-                }
-              />
-            </Line>
-
-            <Line name="weight">
-              <span>1</span>
-              <span className="mx-1.5 text-muted-foreground">+</span>
-              <span>{ELO.formShare}</span>
-              <Times />
-              <span className="whitespace-nowrap">
-                (<Var>form</Var>
-                <span className="mx-1 text-muted-foreground">−</span>
-                <Var>par</Var>)
+            <Line name="ratings">
+              <span className="text-sm">
+                the set where, for every player, the weighted{" "}
+                <Var>expected</Var> adds up to the weighted <Var>result</Var>
               </span>
             </Line>
           </Working>
 
           <p className="mt-2 text-xs text-muted-foreground">
-            Result is 1 for a win, ½ for a draw, 0 for a defeat. Form is read
-            before kick-off, never from the result — a share that knew how the
-            night went would quietly drag everyone towards the middle.
+            Result is 1 for a win, ½ for a draw, 0 for a defeat. Every rating
+            is also held towards {ELO.start} with a give of about{" "}
+            {ELO.spread} points, so it takes results to move one and a single
+            win cannot make anybody a world-beater.
           </p>
         </Section>
       </div>

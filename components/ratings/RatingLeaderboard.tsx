@@ -116,15 +116,16 @@ export default function RatingLeaderboard({
                   rough
                 </span>
               )}
-              {/* Said in words, not just an icon and a number. "−59" beside an
-                  hourglass told you nothing about what had happened. */}
-              {rating.drift >= 1 && (
+              {/* Said in words, not just an icon and a number. Being away
+                  costs nothing, so this is only a note on how fresh the
+                  number is. */}
+              {rating.missed >= ELO.awayAfter && (
                 <span
                   className="relative hidden items-center gap-1 whitespace-nowrap text-xs text-muted-foreground sm:inline-flex"
-                  title={`Missed ${rating.missed} matches, drifting ${Math.round(rating.drift)} back towards ${ELO.start}`}
+                  title={`Not played in the squad's last ${rating.missed} matches. The rating is where they left it.`}
                 >
                   <Hourglass className="h-3 w-3 shrink-0" />
-                  missed {rating.missed}, −{Math.round(rating.drift)}
+                  away {rating.missed}
                 </span>
               )}
               <span
@@ -134,11 +135,7 @@ export default function RatingLeaderboard({
                 title={
                   played
                     ? "Change from the last match"
-                    : `Missed the last match. ${
-                        rating.lastChange === 0
-                          ? "Still inside the grace, so nothing moved."
-                          : "Drifting back towards " + ELO.start + "."
-                      }`
+                    : "Missed the last match. Anything here is the people in their games being re-rated."
                 }
               >
                 <Delta change={rating.lastChange} />

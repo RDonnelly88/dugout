@@ -122,11 +122,9 @@ function Side({
               <span className="min-w-0 flex-1 truncate">
                 {player?.name ?? "Unknown"}
               </span>
-              {/* The run they walked in on, which is why two team-mates in
-                  the same result took different numbers. Without it the card
-                  looks arbitrary. This night is ringed on the end of it, so
-                  the five that decided the weighting stay distinct from the
-                  one being read. */}
+              {/* The run they walked in on, with this night ringed on the end
+                  of it so the five before stay distinct from the one being
+                  read. */}
               <PlayerFormDisplay
                 results={entry.form}
                 size="xs"

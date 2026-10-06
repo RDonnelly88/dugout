@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { workedExample, driftCurve } from "@/lib/ratings-guide";
+import { workedExample, fadeCurve } from "@/lib/ratings-guide";
 import { ELO } from "@/lib/config";
 import type { Match, Player } from "@/types";
 
@@ -9,10 +9,14 @@ function match(
   b: string[],
   scoreA: number,
   scoreB: number,
-  date = `2026-01-${String(++counter).padStart(2, "0")}`
+  date?: string
 ): Match {
+  // Numbered here rather than in the default date, so two matches given dates
+  // of their own still get ids of their own.
+  const n = ++counter;
+  date ??= `2026-01-${String(n).padStart(2, "0")}`;
   return {
-    id: `m${counter}`,
+    id: `m${n}`,
     date,
     teamA: { name: "Bibs", players: a, score: scoreA },
     teamB: { name: "No bibs", players: b, score: scoreB },
@@ -49,25 +53,24 @@ describe("workedExample", () => {
     expect(example.date).toBe("2026-03-01");
   });
 
-  /**
-   * The guide prints a pot above a list of shares. If the two disagree the
-   * whole explanation is worthless, so the pot is read back out of the
-   * changes rather than worked out a second time.
-   */
-  it("prints a pot the shares underneath actually add up to", () => {
+  it("moves the winners up and the losers down", () => {
     const fixture = match(["a", "b", "c"], ["x", "y", "z"], 2, 1, "2026-04-01");
     const example = workedExample([fixture], squad, sides)!;
 
-    const shares = example.winner.players.reduce((s, p) => s + p.change, 0);
-    expect(shares).toBeCloseTo(example.pot, 9);
+    for (const p of example.winner.players) expect(p.change).toBeGreaterThan(0);
+    for (const p of example.loser.players) expect(p.change).toBeLessThan(0);
   });
 
-  it("says the losers dropped exactly what the winners took", () => {
-    const fixture = match(["a", "b", "c"], ["x", "y", "z"], 2, 1, "2026-05-01");
-    const example = workedExample([fixture], squad, sides)!;
+  it("says how many games each rating rested on going in", () => {
+    const earlier = match(["a"], ["x"], 1, 0, "2026-04-02");
+    const fixture = match(["a", "b"], ["x", "y"], 2, 1, "2026-04-03");
+    const example = workedExample([earlier, fixture], squad, sides)!;
 
-    const lost = example.loser.players.reduce((s, p) => s + p.change, 0);
-    expect(lost).toBeCloseTo(-example.pot, 9);
+    const counted = new Map(
+      example.winner.players.map((p) => [p.playerId, p.counted])
+    );
+    expect(counted.get("a")).toBe(1);
+    expect(counted.get("b")).toBe(0);
   });
 
   it("puts the side that won on the winning side of the story", () => {
@@ -76,56 +79,42 @@ describe("workedExample", () => {
 
     expect(example.winner.name).toBe("No bibs");
     expect(example.loser.name).toBe("Bibs");
-    expect(example.pot).toBeGreaterThan(0);
     expect(example.drawn).toBe(false);
   });
 
-  it("reads a draw between equals as a draw worth nothing", () => {
+  it("reads a draw between equals as a draw that moves nobody", () => {
     const drawn = match(["a", "b"], ["x", "y"], 1, 1, "2026-07-01");
     const example = workedExample([drawn], squad, sides)!;
 
     expect(example.drawn).toBe(true);
-    expect(example.pot).toBeCloseTo(0, 9);
+    for (const p of [...example.winner.players, ...example.loser.players]) {
+      expect(p.change).toBeCloseTo(0, 6);
+    }
   });
 
-  it("gives the favourite less than an even chance of nothing", () => {
+  it("starts two sides that have never played at even", () => {
     const fixture = match(["a", "b"], ["x", "y"], 1, 0, "2026-08-01");
     const example = workedExample([fixture], squad, sides)!;
 
-    // Two sides that have never played are level, so the tale starts at even.
     expect(example.expected).toBeCloseTo(0.5, 6);
-    expect(example.headcount).toBe(2);
   });
 });
 
-describe("driftCurve", () => {
-  const strong = ELO.start + 200;
+describe("fadeCurve", () => {
+  const curve = fadeCurve();
 
-  it("stays flat for as long as the grace lasts", () => {
-    const curve = driftCurve(strong, ELO.decay.graceMatches);
-    for (const point of curve) expect(point.rating).toBe(strong);
+  it("has a point for every game that still counts, newest first", () => {
+    expect(curve).toHaveLength(ELO.window);
+    expect(curve[0]).toEqual({ age: 0, weight: 1 });
   });
 
-  it("falls away once the grace is used up", () => {
-    const curve = driftCurve(strong, ELO.decay.graceMatches + 5);
-    const last = curve.at(-1)!;
-
-    expect(last.rating).toBeLessThan(strong);
-    expect(last.rating).toBeGreaterThan(ELO.start);
+  it("only ever falls", () => {
+    for (let i = 1; i < curve.length; i++) {
+      expect(curve[i].weight).toBeLessThan(curve[i - 1].weight);
+    }
   });
 
-  it("never drags anybody past the starting mark", () => {
-    expect(driftCurve(strong, 500).at(-1)!.rating).toBeGreaterThanOrEqual(
-      ELO.start
-    );
-    expect(driftCurve(ELO.start - 200, 500).at(-1)!.rating).toBeLessThanOrEqual(
-      ELO.start
-    );
-  });
-
-  it("carries one point per match missed, counting from none", () => {
-    const curve = driftCurve(strong, 6);
-    expect(curve).toHaveLength(7);
-    expect(curve[0]).toEqual({ missed: 0, rating: strong });
+  it("still counts the oldest game for something", () => {
+    expect(curve.at(-1)!.weight).toBeGreaterThan(0);
   });
 });

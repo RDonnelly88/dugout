@@ -77,8 +77,7 @@ export default function RatingHistoryChart({
     for (const { playerId, rating } of players) {
       // The matches they played and the ones they missed, on one line.
       // Without the second half a line stopped at whenever somebody last
-      // turned out, which read as a rating holding steady when it had been
-      // drifting for weeks.
+      // turned out, and two players could not be read off the same date.
       for (const point of ratingSeries(rating)) {
         const row = byDate.get(point.date) ?? { date: point.date };
         row[playerId] = displayRating(point.rating);

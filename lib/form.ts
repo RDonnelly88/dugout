@@ -8,9 +8,7 @@ export type FormResult = "win" | "draw" | "loss";
  * A run, newest first, with `dnp` for a night the squad played without them.
  *
  * One shape for form everywhere: what the table shows beside a name and what
- * the rating model reads before deciding a share are the same list. A strip
- * that skipped the weeks somebody was missing told a different story from the
- * number beside it.
+ * a match card shows beside a result are the same list.
  */
 export type FormRun = readonly PlayerFormResult[];
 
@@ -38,40 +36,12 @@ export interface RecentForm {
 const pointsFor = (result: PlayerFormResult): number =>
   result === "win" ? 3 : result === "draw" ? 1 : 0;
 
-/** A perfectly ordinary run: the mark everything else is read against. */
-const PAR_POINTS_PER_GAME = 1.5;
-
-/**
- * How many ordinary games to imagine behind a short record.
- *
- * Without this a single win is a flawless run and a single defeat is a
- * collapse, because one game out of one is the whole window. Two par games
- * on the end let form arrive over the first few weeks instead of at full
- * tilt from one result.
- */
-const SETTLING_GAMES = 2;
-
 /** Newest first, capped at the window — the shape the rest of this file uses. */
 export const rollForm = (
   previous: FormRun,
   result: PlayerFormResult,
   windowSize: number = FORM_LENGTH
 ): PlayerFormResult[] => [result, ...previous].slice(0, windowSize);
-
-/**
- * Where a run sits between a wipeout and a perfect one, as nought to one.
- *
- * Eased towards par while the window is still filling, so this can be leant
- * on from a player's very first game without a single result swinging it to
- * an extreme.
- */
-export function formShare(results: FormRun): number {
-  const points = results.reduce((sum, r) => sum + pointsFor(r), 0);
-  const eased =
-    (points + SETTLING_GAMES * PAR_POINTS_PER_GAME) /
-    (results.length + SETTLING_GAMES);
-  return eased / 3;
-}
 
 /**
  * How everyone has been going lately.

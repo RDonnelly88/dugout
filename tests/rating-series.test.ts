@@ -29,10 +29,10 @@ function match(
   };
 }
 
-/** Matches the squad played without them. */
+/** Matches the squad played without them, between people they never met. */
 const withoutThem = (count: number, from = 2) =>
   Array.from({ length: count }, (_, i) =>
-    match(["x"], ["y"], 1, 0, `2026-0${from}-${String(i + 1).padStart(2, "0")}`)
+    match([`x${from}${i}`], [`y${from}${i}`], 1, 0, `2026-0${from}-${String(i + 1).padStart(2, "0")}`)
   );
 
 describe("ratingSeries", () => {
@@ -57,44 +57,45 @@ describe("ratingSeries", () => {
   it("puts the weeks they missed on the same line as the ones they played", () => {
     const ratings = computeRatings([
       match(["a"], ["b"], 5, 0, "2026-01-01"),
-      ...withoutThem(ELO.decay.graceMatches + 4),
+      ...withoutThem(6),
     ]);
     const series = ratingSeries(ratings.get("a")!);
 
     expect(series[0].played).toBe(true);
     expect(series.slice(1).every((p) => !p.played)).toBe(true);
-    expect(series).toHaveLength(1 + ELO.decay.graceMatches + 4);
+    expect(series).toHaveLength(1 + 6);
   });
 
-  /** Inside the grace nothing has happened, and the line should say so. */
-  it("costs nothing for a week away inside the grace", () => {
+  /** Being away is not evidence about anybody, and the line should say so. */
+  it("stays flat through weeks away from everyone in their games", () => {
     const ratings = computeRatings([
       match(["a"], ["b"], 5, 0, "2026-01-01"),
-      ...withoutThem(1),
+      ...withoutThem(8),
+    ]);
+    const series = ratingSeries(ratings.get("a")!);
+
+    for (const away of series.slice(1)) {
+      expect(away.played).toBe(false);
+      expect(away.change).toBeCloseTo(0, 6);
+      expect(away.rating).toBeCloseTo(series[0].rating, 6);
+    }
+  });
+
+  it("works out a week away's step from the point before it", () => {
+    // Their old opponent plays on and loses, so the win over him is worth a
+    // little less in hindsight.
+    const ratings = computeRatings([
+      match(["a"], ["b"], 5, 0, "2026-01-01"),
+      match(["z"], ["b"], 1, 0, "2026-01-02"),
     ]);
     const series = ratingSeries(ratings.get("a")!);
     const away = series.at(-1)!;
 
-    expect(away.played).toBe(false);
-    expect(away.change).toBe(0);
-  });
-
-  it("works out what a week away cost once the grace has gone", () => {
-    const ratings = computeRatings([
-      match(["a"], ["b"], 5, 0, "2026-01-01"),
-      ...withoutThem(ELO.decay.graceMatches + 3),
-    ]);
-    const series = ratingSeries(ratings.get("a")!);
-    const away = series.at(-1)!;
-
-    // Above the start and drifting back down towards it.
     expect(away.played).toBe(false);
     expect(away.change).toBeLessThan(0);
     // The steps add up to the distance travelled, so the line and the numbers
     // beside it cannot disagree.
-    const first = series[0];
-    const drifted = series.slice(1).reduce((sum, p) => sum + p.change, 0);
-    expect(first.rating + drifted).toBeCloseTo(away.rating, 6);
+    expect(series[0].rating + away.change).toBeCloseTo(away.rating, 6);
   });
 
   it("reads in date order whichever half a point came from", () => {
@@ -107,27 +108,20 @@ describe("ratingSeries", () => {
     expect([...dates].sort((x, y) => x.localeCompare(y))).toEqual(dates);
   });
 
-  /**
-   * The weeks off in the middle of a career used to be folded into whatever
-   * a player walked in on for their next game, so a chart drew a straight
-   * line across two months away and nothing said what the two months cost.
-   */
   it("shows the weeks missed in the middle, not only the ones since", () => {
     const ratings = computeRatings([
       match(["a"], ["b"], 5, 0, "2026-01-01"),
-      ...withoutThem(ELO.decay.graceMatches + 4, 2),
+      ...withoutThem(6, 2),
       match(["a"], ["b"], 1, 0, "2026-03-01"),
     ]);
     const series = ratingSeries(ratings.get("a")!);
 
     const away = series.filter((p) => !p.played);
-    expect(away).toHaveLength(ELO.decay.graceMatches + 4);
+    expect(away).toHaveLength(6);
     // Every one of them sits between the two games, not after the last.
     for (const point of away) {
       expect(point.date > "2026-01-01" && point.date < "2026-03-01").toBe(true);
     }
-    // And the last of them cost something, the grace being long gone.
-    expect(away.at(-1)!.change).toBeLessThan(0);
   });
 
   it("keeps the middle weeks and the trailing ones both", () => {

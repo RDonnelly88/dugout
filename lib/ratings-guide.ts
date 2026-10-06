@@ -1,9 +1,9 @@
 import { ELO } from "./config";
-import { expectedScore } from "./elo";
+import { expectedScore, gameWeight } from "./elo";
 import { matchImpact } from "./match-impact";
 import { outcomeOf } from "./match-result";
 
-import type { Match, Player, PlayerFormResult } from "@/types";
+import type { Match, Player } from "@/types";
 
 /**
  * A real result, taken apart, for the guide to walk through.
@@ -15,8 +15,8 @@ import type { Match, Player, PlayerFormResult } from "@/types";
  */
 interface GuidePlayer {
   playerId: string;
-  /** The run they walked in on, newest first. */
-  form: PlayerFormResult[];
+  /** How many of their games the rating rested on going in. */
+  counted: number;
   change: number;
   after: number;
 }
@@ -37,16 +37,10 @@ export interface WorkedExample {
   drawn: boolean;
   /** What the ratings gave the winning side before a ball was kicked. */
   expected: number;
-  /** Everyone who played, which is what sizes the pot. */
-  headcount: number;
-  /** The whole swing the winning side shared out. Negated for the losers. */
-  pot: number;
 }
 
-const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
-
 /**
- * The most recent result, broken into the three steps the guide describes.
+ * The most recent result, broken into the steps the guide describes.
  *
  * Every figure is read back out of the rating history, so the walkthrough
  * cannot disagree with the match card it is explaining. Returns nothing for
@@ -78,7 +72,7 @@ export function workedExample(
     ratingBefore: impact[which].ratingBefore,
     players: impact[which].players.map((p) => ({
       playerId: p.playerId,
-      form: p.form,
+      counted: p.counted,
       change: p.change,
       after: p.after,
     })),
@@ -96,27 +90,16 @@ export function workedExample(
     loser,
     drawn: outcome === "draw",
     expected: expectedScore(winner.ratingBefore, loser.ratingBefore),
-    headcount: Math.max(a.players.length, b.players.length),
-    // Read back from what actually happened rather than recomputed, so a
-    // rounding difference cannot make the sum of the rows disagree with the
-    // total the guide prints above them.
-    pot: sum(winner.players.map((p) => p.change)),
   };
 }
 
 /**
- * What a rating of `from` falls to after a run of matches missed, one entry
- * per match, for drawing the shape of the drift rather than asserting it.
+ * How much each of a player's games counts, newest first, out to the last
+ * one that counts at all — for drawing the fade rather than describing it.
  */
-export function driftCurve(from: number, upTo: number): { missed: number; rating: number }[] {
-  return Array.from({ length: upTo + 1 }, (_, missed) => {
-    const beyond = missed - ELO.decay.graceMatches;
-    return {
-      missed,
-      rating:
-        beyond <= 0
-          ? from
-          : ELO.start + (from - ELO.start) * (1 - ELO.decay.perMatch) ** beyond,
-    };
-  });
+export function fadeCurve(): { age: number; weight: number }[] {
+  return Array.from({ length: ELO.window }, (_, age) => ({
+    age,
+    weight: gameWeight(age),
+  }));
 }

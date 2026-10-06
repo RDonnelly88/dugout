@@ -9,13 +9,14 @@ interface PlayerImpact {
   before: number;
   after: number;
   change: number;
-  /**
-   * The run they walked in on, newest first, with the nights they were not
-   * there marked. Two team-mates in the same result take different numbers
-   * because of this, so it is shown beside them rather than left to be
-   * guessed at.
-   */
+  /** The run they walked in on, newest first, with the nights they were not there marked. */
   form: PlayerFormResult[];
+  /**
+   * How many of their games the rating rested on going in. Two team-mates in
+   * the same result move by different amounts mostly because of this, so it
+   * is carried here rather than left to be guessed at.
+   */
+  counted: number;
 }
 
 export interface SideImpact {
@@ -68,12 +69,12 @@ export function matchImpact(
       after: moment.rating,
       change: moment.change,
       form: moment.formBefore,
+      counted: moment.countedBefore,
     };
   };
 
-  // The clock does not matter: every figure below comes from the history,
-  // which holds what the ratings were at the time, not what they have drifted
-  // to since.
+  // Every figure below comes from the history, which holds what the ratings
+  // were at the time, not what they have become since.
   const ratings = computeRatings(matches);
 
   const ordered = [...matches].sort(

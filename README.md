@@ -26,10 +26,12 @@ then on games played — turning out more often breaks a tie in your favour —
 then on wins. Level records share a place, so two tied in second are followed
 by a fourth.
 
-**Rates everyone.** Elo, adapted for a team game: a side is rated at the mean
-of its players, everyone on it takes the same adjustment, and beating a
-stronger team is worth more than beating a weaker one. Margin counts, capped —
-a nine-nil is one team having a night, not nine times the evidence of a one-nil.
+**Rates everyone.** On Elo's scale, fitted for a team game: a side is rated at
+the mean of its players, and beating a stronger team is worth more than beating
+a weaker one. Each player is rated on their own recent games, the newest
+counting most and old ones dropping out, so missing a week costs nothing. A win
+is a win — a nine-nil is one team having a night, not nine times the evidence
+of a one-nil.
 
 **Picks the sides.** Say who turned up, then choose how to split them: a
 straight shuffle, evenly by rating, or evenly by recent form. Each option shows
