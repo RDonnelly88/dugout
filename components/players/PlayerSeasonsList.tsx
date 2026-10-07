@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { ChevronRight, Sparkles, Trophy } from "lucide-react";
 import type { PlayerSeason } from "@/lib/player-seasons";
+import { MEDAL } from "@/lib/podium";
 import { cn } from "@/lib/utils";
 
 /** Gold, silver and bronze, in the shades the season stars use. */
-const MEDAL = ["text-draw", "text-muted-foreground", "text-draw/60"];
 
 /**
  * Every season a player has had, newest first: where they finished, their
@@ -37,7 +37,7 @@ export default function PlayerSeasonsList({
               )}
             >
               {podium ? (
-                <Trophy className={cn("h-5 w-5", MEDAL[place.position - 1])} />
+                <Trophy className={cn("h-5 w-5", MEDAL[place.position - 1]?.text)} />
               ) : (
                 <span className="scoreboard text-lg leading-none">{place ? place.position : "–"}</span>
               )}

@@ -2,6 +2,7 @@
 import React from "react";
 import { Star } from "lucide-react";
 import { usePlayerSeasonAwards } from "@/hooks/usePlayerSeasonAwards";
+import { MEDAL } from "@/lib/podium";
 
 interface PlayerSeasonStarsProps {
   playerId: string;
@@ -34,21 +35,21 @@ const PlayerSeasonStars = ({ playerId, size = "sm", className = "" }: PlayerSeas
   // Add gold stars
   for (let i = 0; i < Math.min(awards.gold, 3); i++) {
     stars.push(
-      <Star key={`gold-${i}`} className={`${iconSize} text-draw fill-draw`} />
+      <Star key={`gold-${i}`} className={`${iconSize} ${MEDAL[0].text} ${MEDAL[0].fill}`} />
     );
   }
   
   // Add silver stars
   for (let i = 0; i < Math.min(awards.silver, 3 - stars.length); i++) {
     stars.push(
-      <Star key={`silver-${i}`} className={`${iconSize} text-muted-foreground fill-muted-foreground/60`} />
+      <Star key={`silver-${i}`} className={`${iconSize} ${MEDAL[1].text} ${MEDAL[1].fill}`} />
     );
   }
   
   // Add bronze stars
   for (let i = 0; i < Math.min(awards.bronze, 3 - stars.length); i++) {
     stars.push(
-      <Star key={`bronze-${i}`} className={`${iconSize} text-draw/70 fill-draw/40`} />
+      <Star key={`bronze-${i}`} className={`${iconSize} ${MEDAL[2].text} ${MEDAL[2].fill}`} />
     );
   }
   

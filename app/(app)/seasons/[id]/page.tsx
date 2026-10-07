@@ -220,8 +220,8 @@ const SeasonDetail = () => {
             }
           >
             {leaders.length > 0 && (
-              <div className="flex items-center gap-3 rounded-xl border border-draw/30 bg-draw/10 px-4 py-3">
-                <Trophy className="h-6 w-6 shrink-0 text-draw" />
+              <div className="flex items-center gap-3 rounded-xl border border-gold/30 bg-gold/10 px-4 py-3">
+                <Trophy className="h-6 w-6 shrink-0 text-gold" />
                 <p className="min-w-0 text-sm">
                   <span className="font-semibold">{leaders.map((p) => p.playerName).join(" & ")}</span>{" "}
                   {season.isFinished

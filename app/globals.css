@@ -49,6 +49,13 @@
   --draw: 38 78% 34%;
   --loss: 0 65% 44%;
 
+  /* Medals for a finishing place, told apart by hue. One colour at three
+     strengths will not do: how light a faded colour looks depends on what
+     is behind it, so the order can read backwards in one theme or other. */
+  --gold: 44 92% 38%;
+  --silver: 215 12% 52%;
+  --bronze: 24 62% 40%;
+
   /* For text sitting ON those colours, not beside them. Win, draw and loss are
      chosen to read as text against a surface, so in light mode they are dark
      blocks — a letter on one has to be white. It was inheriting --foreground
@@ -116,6 +123,10 @@
     --draw: 40 90% 62%;
     --loss: 0 85% 71%;
 
+    --gold: 45 95% 58%;
+    --silver: 215 18% 74%;
+    --bronze: 25 62% 56%;
+
     /* Inverted: the dark theme's result colours are pale blocks. */
     --win-foreground: 220 41% 5%;
     --draw-foreground: 220 41% 5%;
@@ -172,6 +183,10 @@
   --win: 142 63% 58%;
   --draw: 40 90% 62%;
   --loss: 0 85% 71%;
+
+  --gold: 45 95% 58%;
+  --silver: 215 18% 74%;
+  --bronze: 25 62% 56%;
 
   /* Inverted: the dark theme's result colours are pale blocks. */
   --win-foreground: 220 41% 5%;
@@ -235,6 +250,9 @@
   --color-win: hsl(var(--win));
   --color-draw: hsl(var(--draw));
   --color-loss: hsl(var(--loss));
+  --color-gold: hsl(var(--gold));
+  --color-silver: hsl(var(--silver));
+  --color-bronze: hsl(var(--bronze));
   --color-win-foreground: hsl(var(--win-foreground));
   --color-draw-foreground: hsl(var(--draw-foreground));
   --color-loss-foreground: hsl(var(--loss-foreground));
