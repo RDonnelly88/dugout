@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Minus, Plus } from "lucide-react";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
+import MinGamesStepper, { MIN_GAMES } from "@/components/MinGamesStepper";
 import { SegmentedControl, SegmentedControlItem } from "@/components/ui/segmented-control";
 import type { Ledger } from "@/lib/expected-wins";
 import type { PointValues } from "@/lib/season-positions";
@@ -24,13 +24,6 @@ const LABEL = RING + NODE / 2 + 8;
  * digits of a sine, and the page as served must match the page as hydrated.
  */
 const px = (value: number) => Math.round(value * 100) / 100;
-
-/**
- * The fewest games a link needs to be drawn, to start with. Under five a
- * points-a-game figure swings on a single night, and a ring of everybody
- * anyone has ever shared a pitch with is too dense to read.
- */
-const MIN_GAMES = 5;
 
 const STROKE = { ahead: "stroke-win", behind: "stroke-loss", level: "stroke-border-strong" } as const;
 const TEXT = { ahead: "text-win", behind: "text-loss", level: "text-muted-foreground" } as const;
@@ -124,30 +117,12 @@ export default function PlayerWeb({
           </SegmentedControlItem>
         </SegmentedControl>
 
-        {/* Any number, a step at a time: the density is the reader's call. */}
-        <div className="flex h-8 items-center gap-1 rounded-full border border-border bg-surface px-1 text-xs">
-          <button
-            type="button"
-            onClick={() => setMinGames(Math.max(1, threshold - 1))}
-            disabled={threshold <= 1}
-            aria-label="Fewer games needed"
-            className="focus-ring flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-40"
-          >
-            <Minus className="h-3.5 w-3.5" />
-          </button>
-          <span className="min-w-[6.5rem] text-center font-medium tabular" aria-live="polite">
-            {threshold}+ {side === "with" ? "together" : "meetings"}
-          </span>
-          <button
-            type="button"
-            onClick={() => setMinGames(Math.min(mostAny, threshold + 1))}
-            disabled={threshold >= mostAny}
-            aria-label="More games needed"
-            className="focus-ring flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-40"
-          >
-            <Plus className="h-3.5 w-3.5" />
-          </button>
-        </div>
+        <MinGamesStepper
+          value={threshold}
+          most={mostAny}
+          onChange={setMinGames}
+          unit={side === "with" ? "together" : "meetings"}
+        />
         <span className="flex items-center text-xs text-muted-foreground tabular">
           {ring.length} of {all.length} shown
         </span>
