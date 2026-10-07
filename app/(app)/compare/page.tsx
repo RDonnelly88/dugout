@@ -20,6 +20,9 @@ import Verdict from "@/components/xw/Verdict";
 import { emptyRecord } from "@/lib/player-stats";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import RatingHistoryChart from "@/components/ratings/RatingHistoryChart";
+import RatingMakeup from "@/components/ratings/RatingMakeup";
+import { waterfallExtent } from "@/components/ratings/RatingWaterfall";
+import { fadingSummary, ratingBreakdown } from "@/lib/ratings-guide";
 import {
   Card,
   CardContent,
@@ -224,7 +227,8 @@ function Compare() {
   const [bId, setBId] = useState<string>(() => params.get("b") ?? "");
 
   const a = sorted.find((p) => p.id === aId) ?? sorted[0];
-  const b = sorted.find((p) => p.id === bId) ?? sorted[1];
+  // Never the same player twice, when only the first came in the address.
+  const b = sorted.find((p) => p.id === bId) ?? sorted.find((p) => p.id !== a?.id) ?? sorted[1];
 
   const h2h = useMemo(
     () => (a && b ? headToHead(scopedMatches, a.id, b.id) : null),
@@ -249,6 +253,21 @@ function Compare() {
   const ratingB = ratingNow(b.id);
   const togetherXw = ledger(nightsFor(scopedMatches, odds, { together: [a.id, b.id] }));
   const againstXw = ledger(nightsFor(scopedMatches, odds, { together: [a.id], against: [b.id] }));
+  // Both waterfalls across the extent of the two, so a bar the same width is
+  // the same number of points on either side.
+  const madeUp = [a, b].flatMap((player) => {
+    const line = ratingFor(player.id);
+    return line && line.games > 0 ? [{ player, line }] : [];
+  });
+  const extents = madeUp.map(({ line }) =>
+    waterfallExtent(fadingSummary(ratingBreakdown(line)), line.rating)
+  );
+  const shared = extents.length
+    ? {
+        low: Math.min(...extents.map((e) => e.low)),
+        high: Math.max(...extents.map((e) => e.high)),
+      }
+    : undefined;
   const scopeName =
     scope === "overall"
       ? "all time"
@@ -377,6 +396,28 @@ function Compare() {
           />
         </CardContent>
       </Card>
+
+      {madeUp.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Ratings side by side</CardTitle>
+            <CardDescription>
+              What each rating today is made of, drawn to the same scale.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-6 lg:grid-cols-2">
+            {madeUp.map(({ player, line }) => (
+              <div key={player.id} className="min-w-0 space-y-2">
+                <div className="flex min-w-0 items-center gap-2">
+                  <PlayerAvatar name={player.name} image={player.image} size="sm" />
+                  <span className="truncate font-semibold">{player.name}</span>
+                </div>
+                <RatingMakeup rating={line} name={player.name} scale={shared} full={false} />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
