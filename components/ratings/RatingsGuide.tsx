@@ -8,7 +8,7 @@ import { useTeam } from "@/contexts/TeamContext";
 import { useSideNames } from "@/hooks/useSideNames";
 import { ELO, XW } from "@/lib/config";
 import { computeRatings, displayRating, expectedScore, gameWeight } from "@/lib/elo";
-import { workedExample, fadeCurve, threeWays } from "@/lib/ratings-guide";
+import { FADE_DRAWN, workedExample, fadeCurve, threeWays } from "@/lib/ratings-guide";
 import RatingBreakdown from "@/components/ratings/RatingBreakdown";
 import ResultStrip from "@/components/players/ResultStrip";
 import { Frac, Line, Sup, Var, Working } from "@/components/ratings/Formula";
@@ -90,7 +90,7 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
   const ratings = useMemo(() => computeRatings(matches), [matches]);
   // Somebody on the winning side with games behind them who barely faded,
   // to show it is distance from the start that fades, not games played.
-  const nearly = example?.winner.players.find((p) => p.counted > 0 && Math.abs(p.faded) < 0.5);
+  const nearly = example?.winner.players.find((p) => p.gamesBefore > 0 && Math.abs(p.faded) < 0.5);
 
   const fade = fadeCurve();
   const night = threeWays();
@@ -107,7 +107,7 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
         <>
           Everyone starts on {ELO.start}. Beat a side rated above you and it
           says more about you than beating one below. Recent matches count most,
-          and old ones stop counting altogether. A win is a win — a thrashing
+          and old ones count for less and less. A win is a win — a thrashing
           counts the same as a scrape.
         </>
       }
@@ -141,9 +141,10 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
             </Step>
             <Step n={4} title="Then it fades">
               Every match the squad plays after, the game counts for a little
-              less: half after {ELO.halfLife} matches, nothing after{" "}
-              {ELO.window}. Your rating is {ELO.start} plus every game still
-              counting, at what it is worth now.
+              less: half after {ELO.halfLife} matches, a quarter after{" "}
+              {ELO.halfLife * 2}, and so on, never quite nothing. Your rating is{" "}
+              {ELO.start} plus every game you have played, at what it is worth
+              now.
             </Step>
           </div>
         </Section>
@@ -252,7 +253,7 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
                         />
                         <span className="min-w-0 truncate">
                           {byId.get(p.playerId)?.name ?? "Unknown"}
-                          {p.counted === 0 && (
+                          {p.gamesBefore === 0 && (
                             <span className="text-xs text-muted-foreground"> · debut</span>
                           )}
                         </span>
@@ -275,9 +276,7 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
                 about the same they all but cancel
                 {nearly ? <>, as they did for {byId.get(nearly.playerId)?.name ?? "one of them"}</> : null}
                 , however many games are behind them; a debutant has nothing to
-                fade at all. A game reaching {ELO.window} matches old drops out
-                altogether, which can move somebody more than the rest put
-                together. Take anybody apart below to follow every point.
+                fade at all. Take anybody apart below to follow every point.
                 Rounding each column can leave a total a point out.
               </p>
             </div>
@@ -303,17 +302,18 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
           </div>
           <div className="mt-1 flex justify-between text-[11px] text-muted-foreground">
             <span>The latest match</span>
-            <span>{ELO.window} matches back</span>
+            <span>{FADE_DRAWN} matches back</span>
           </div>
           <p className="mt-3 text-sm text-muted-foreground">
             The newest match counts in full, one {ELO.halfLife} matches back
-            counts half, and nothing older than {ELO.window} counts at all.
-            It is counted in the squad&apos;s matches, whether you played in
-            them or not, so a game ages at the same rate for everybody. Miss a
-            few weeks and your last games are that much older when you come
-            back; miss {ELO.window} and there is nothing left to rate you on,
-            so you are back on {ELO.start} until you play again. A winter when
-            nobody plays ages nothing.
+            counts half, one {ELO.halfLife * 2} back a quarter, and so on: an
+            old game is never cut off, it just keeps shrinking. It is counted
+            in the squad&apos;s matches, whether you played in them or not, so
+            a game ages at the same rate for everybody. Miss a few weeks and
+            your last games are that much older when you come back, and your
+            rating has eased the same share of the way back to {ELO.start} each
+            week; miss a season and there is little left to rate you on. A
+            winter when nobody plays ages nothing.
           </p>
           <p className="mt-3 text-sm text-muted-foreground">
             Take a win settled at{" "}
@@ -323,8 +323,10 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
             <span className="tabular">{signed(aWin * gameWeight(ELO.halfLife / 2))}</span>
             , after {ELO.halfLife} it adds{" "}
             <span className="tabular">{signed(aWin * gameWeight(ELO.halfLife))}</span>
-            , and once {ELO.window} have been played it adds nothing. The{" "}
-            {signed(aWin)} itself never changes.
+            , and after {ELO.halfLife * 2} it adds{" "}
+            <span className="tabular">{signed(aWin * gameWeight(ELO.halfLife * 2))}</span>
+            , shrinking for as long as the squad plays on. The {signed(aWin)}{" "}
+            itself never changes.
           </p>
         </Section>
 
@@ -369,11 +371,12 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
                 is ever re-judged. But every match the squad plays makes your
                 games a match older, so each counts for a little less and your
                 rating eases back towards {ELO.start} — up if you are below it,
-                down if you are above, and by more the further from it you
-                are. When one of your games reaches {ELO.window} matches old
-                it drops out altogether, which can be a bigger step. The
-                rating card says &ldquo;while away&rdquo; beside a change like
-                that, and the breakdown below shows what your next one will be.
+                down if you are above, always about{" "}
+                {Math.round((1 - gameWeight(1)) * 1000) / 10}% of the way, so by
+                more the further from it you are. It never moves you away from{" "}
+                {ELO.start}. The rating card says &ldquo;while away&rdquo; beside
+                a change like that, and the breakdown below shows what your next
+                one will be.
               </dd>
             </div>
             <div>
@@ -381,7 +384,7 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
               <dd className="mt-0.5 text-muted-foreground">
                 No. The table is points from this season&apos;s results, and
                 that decides the champion. The rating is how good the results
-                say you are, over the squad&apos;s last {ELO.window} matches
+                say you are, the squad&apos;s latest matches counting most
                 whichever season they fell in, and it is what evens up the
                 sides.
               </dd>
@@ -453,7 +456,7 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
                 <Frac over={<Var>matches since</Var>} under={<>{ELO.halfLife}</>} />
               </Sup>
               <span className="ml-2 text-xs text-muted-foreground">
-                for the last {ELO.window} matches, then 0
+                however old the game, never quite 0
               </span>
             </Line>
 

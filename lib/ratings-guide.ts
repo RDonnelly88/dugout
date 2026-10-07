@@ -16,8 +16,8 @@ import type { Match } from "@/types";
  */
 interface GuidePlayer {
   playerId: string;
-  /** How many of their games the rating rested on going in. */
-  counted: number;
+  /** How many games they had played going in; nought on a debut. */
+  gamesBefore: number;
   /** The whole night's movement: the side's result plus `faded`. */
   change: number;
   /**
@@ -86,7 +86,7 @@ export function workedExample(
       settled,
       players: impact[which].players.map((p) => ({
         playerId: p.playerId,
-        counted: p.counted,
+        gamesBefore: p.gamesBefore,
         change: p.change,
         faded: p.change - settled,
         after: p.after,
@@ -109,12 +109,15 @@ export function workedExample(
   };
 }
 
+/** How far back the fade is drawn: four halvings, by when a game counts a sixteenth. */
+export const FADE_DRAWN = ELO.halfLife * 4;
+
 /**
- * How much each of a player's games counts, newest first, out to the last
- * one that counts at all — for drawing the fade rather than describing it.
+ * How much each of a player's games counts, newest first, out to where it is
+ * all but gone — for drawing the fade rather than describing it.
  */
 export function fadeCurve(): { age: number; weight: number }[] {
-  return Array.from({ length: ELO.window }, (_, age) => ({
+  return Array.from({ length: FADE_DRAWN }, (_, age) => ({
     age,
     weight: gameWeight(age),
   }));
@@ -154,9 +157,8 @@ interface Piece {
   /** What it adds to the rating today: `settled` × `weight`. */
   now: number;
   /**
-   * What the squad's next match does to it before a ball is kicked: a game
-   * counts a little less each match, and one at the edge of the window
-   * drops out altogether, taking everything it had left with it.
+   * What the squad's next match does to it before a ball is kicked: the
+   * same share of what it has left as every other game gives up.
    */
   next: number;
 }
@@ -188,7 +190,6 @@ export function ratingBreakdown(rating: PlayerRating): Piece[] {
         next: point.settled * (gameWeight(age + 1) - weight),
       };
     })
-    .filter((piece) => piece.weight > 0)
     .reverse();
 }
 
@@ -198,17 +199,15 @@ export function ratingBreakdown(rating: PlayerRating): Piece[] {
  * before it starts.
  *
  * Fading is a share of each game's worth, so across a player it is a share
- * of what their games add up to, not of how big any one of them is. Wins
- * fade down and defeats fade up; somebody whose games roughly cancel out
- * has next to nothing to lose, however many games they have.
+ * of what their games add up to, not of how big any one of them is: the same
+ * share of the way back to the start every match. Wins fade down and defeats
+ * fade up; somebody whose games roughly cancel out has next to nothing to
+ * lose, however many games they have.
  */
 export function fadingSummary(pieces: Piece[]) {
   const earned = pieces.reduce((sum, p) => sum + p.settled, 0);
   const now = pieces.reduce((sum, p) => sum + p.now, 0);
   const next = pieces.reduce((sum, p) => sum + p.next, 0);
-  // The one game that reaches the edge of the window at the next match.
-  const leaving = pieces.find((p) => p.age === ELO.window - 1) ?? null;
-  const staying = pieces.filter((p) => p !== leaving);
   const fade = (list: Piece[]) => list.reduce((sum, p) => sum + p.next, 0);
   return {
     /** Everything the counted games were worth on their nights. */
@@ -219,17 +218,15 @@ export function fadingSummary(pieces: Piece[]) {
     now,
     /** The change the next match makes before anybody plays. */
     next,
-    leaving,
     /**
-     * The ordinary fading, split the way it is easiest to follow: the games
-     * that put points on shrink, which costs; the games that took points
-     * off shrink too, which gives some back. With the game leaving, these
-     * three add up to `next`.
+     * The fading, split the way it is easiest to follow: the games that put
+     * points on shrink, which costs; the games that took points off shrink
+     * too, which gives some back. The two add up to `next`.
      */
-    gains: fade(staying.filter((p) => p.now > 0)),
-    losses: fade(staying.filter((p) => p.now < 0)),
+    gains: fade(pieces.filter((p) => p.now > 0)),
+    losses: fade(pieces.filter((p) => p.now < 0)),
     /** What the games that put points on are worth now, and those that took them off. */
-    gainedNow: staying.filter((p) => p.now > 0).reduce((sum, p) => sum + p.now, 0),
-    lostNow: staying.filter((p) => p.now < 0).reduce((sum, p) => sum + p.now, 0),
+    gainedNow: pieces.filter((p) => p.now > 0).reduce((sum, p) => sum + p.now, 0),
+    lostNow: pieces.filter((p) => p.now < 0).reduce((sum, p) => sum + p.now, 0),
   };
 }

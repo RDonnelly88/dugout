@@ -16,7 +16,7 @@ import { useRecentResults } from "@/hooks/useRecentResults";
 import { useTeam } from "@/contexts/TeamContext";
 import { usePermission } from "@/lib/permission-utils";
 import { getMatches } from "@/lib/db";
-import { ELO } from "@/lib/config";
+import { RECENT_MATCHES } from "@/lib/config";
 import { displayRating } from "@/lib/elo";
 import { matchExpectations, playerLedgers, signedWins } from "@/lib/expected-wins";
 import { orderPlayers, type PlayerSort } from "@/lib/player-order";
@@ -59,8 +59,8 @@ export default function SquadList({
   const { resultsFor } = useRecentResults();
   const { canManage, ready } = usePermission();
 
-  // Wins against expected wins over the rating's own window, for sorting by
-  // who is beating the odds lately. The odds come from the whole history.
+  // Wins against expected wins over the squad's recent matches, for sorting
+  // by who is beating the odds lately. The odds come from the whole history.
   const { currentTeam } = useTeam();
   const { data: matches = [] } = useQuery({
     queryKey: ["matches", currentTeam?.id],
@@ -70,7 +70,7 @@ export default function SquadList({
   const recentOdds = React.useMemo(
     () =>
       playerLedgers(
-        withinTimeline(matches, { kind: "recent", matches: ELO.window }),
+        withinTimeline(matches, { kind: "recent", matches: RECENT_MATCHES }),
         matchExpectations(matches)
       ),
     [matches]

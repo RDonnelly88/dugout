@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { workedExample, fadeCurve, fadingSummary, ratingBreakdown, threeWays } from "@/lib/ratings-guide";
-import { computeRatings } from "@/lib/elo";
+import { FADE_DRAWN, workedExample, fadeCurve, fadingSummary, ratingBreakdown, threeWays } from "@/lib/ratings-guide";
+import { computeRatings, gameWeight } from "@/lib/elo";
 import { ELO } from "@/lib/config";
 import type { Match } from "@/types";
 
@@ -58,7 +58,7 @@ describe("workedExample", () => {
     const example = workedExample([earlier, fixture], sides)!;
 
     const counted = new Map(
-      example.winner.players.map((p) => [p.playerId, p.counted])
+      example.winner.players.map((p) => [p.playerId, p.gamesBefore])
     );
     expect(counted.get("a")).toBe(1);
     expect(counted.get("b")).toBe(0);
@@ -114,8 +114,9 @@ describe("workedExample", () => {
 describe("fadeCurve", () => {
   const curve = fadeCurve();
 
-  it("has a point for every game that still counts, newest first", () => {
-    expect(curve).toHaveLength(ELO.window);
+  it("draws the fade out to where a game is all but gone, newest first", () => {
+    expect(curve).toHaveLength(FADE_DRAWN);
+    expect(curve.at(-1)!.weight).toBeLessThan(0.07);
     expect(curve[0]).toEqual({ age: 0, weight: 1 });
   });
 
@@ -171,15 +172,17 @@ describe("ratingBreakdown", () => {
     expect(pieces[0].weight).toBeCloseTo(0.5 ** (1 / ELO.halfLife), 9);
   });
 
-  it("leaves out a game too old to count", () => {
+  /** Every game they have played is in it, however old, still counting a little. */
+  it("keeps every game, however old", () => {
     const opener = match(["a"], ["b"], 1, 0, "2025-01-01");
-    const later = Array.from({ length: ELO.window }, (_, i) =>
+    const later = Array.from({ length: 60 }, (_, i) =>
       match(["a"], [`o${i}`], 1, 0, new Date(Date.UTC(2025, 1, 1 + i)).toISOString().slice(0, 10))
     );
     const pieces = ratingBreakdown(computeRatings([opener, ...later]).get("a")!);
 
-    expect(pieces).toHaveLength(ELO.window);
-    expect(pieces.some((p) => p.matchId === opener.id)).toBe(false);
+    expect(pieces).toHaveLength(61);
+    const oldest = pieces.find((p) => p.matchId === opener.id)!;
+    expect(oldest.weight).toBeCloseTo(0.5 ** (60 / ELO.halfLife), 9);
   });
 });
 
@@ -210,24 +213,32 @@ describe("fadingSummary", () => {
     expect(after.rating - before.rating).toBeCloseTo(fadingSummary(ratingBreakdown(before)).next, 9);
   });
 
-  it("splits the next match into what gains give up, what losses give back and what leaves", () => {
+  it("splits the next match into what gains give up and what losses give back", () => {
     for (const rating of computeRatings(fixtures).values()) {
       const sum = fadingSummary(ratingBreakdown(rating));
       expect(sum.gains).toBeLessThanOrEqual(0);
       expect(sum.losses).toBeGreaterThanOrEqual(0);
-      expect(sum.gains + sum.losses + (sum.leaving?.next ?? 0)).toBeCloseTo(sum.next, 9);
+      expect(sum.gains + sum.losses).toBeCloseTo(sum.next, 9);
     }
   });
 
-  it("names the game about to leave the window, which takes all it has left", () => {
-    const opener = match(["a"], ["b"], 1, 0, "2025-06-01");
-    const since = Array.from({ length: ELO.window - 1 }, (_, i) =>
-      match([`p${i}`], [`q${i}`], 1, 0, new Date(Date.UTC(2025, 6, 1 + i)).toISOString().slice(0, 10))
-    );
-    const sum = fadingSummary(ratingBreakdown(computeRatings([opener, ...since]).get("a")!));
-
-    expect(sum.leaving?.matchId).toBe(opener.id);
-    expect(sum.leaving!.next).toBeCloseTo(-sum.leaving!.now, 9);
-    expect(sum.gains + sum.losses).toBeCloseTo(0, 9);
+  /**
+   * The bug a cut-off had: a rating left alone moving away from the start
+   * because an old defeat stopped counting all at once.
+   */
+  it("eases a rating left alone towards the start by the same share every match", () => {
+    const opener = match(["a"], ["b"], 0, 1, "2025-06-01");
+    const since = [
+      match(["a"], ["c"], 1, 0, "2025-06-02"),
+      ...Array.from({ length: 60 }, (_, i) =>
+        match([`p${i}`], [`q${i}`], 1, 0, new Date(Date.UTC(2025, 6, 1 + i)).toISOString().slice(0, 10))
+      ),
+    ];
+    let previous = computeRatings([opener, ...since.slice(0, 1)]).get("a")!.rating;
+    for (let n = 2; n <= since.length; n++) {
+      const rating = computeRatings([opener, ...since.slice(0, n)]).get("a")!.rating;
+      expect(rating - ELO.start).toBeCloseTo((previous - ELO.start) * gameWeight(1), 9);
+      previous = rating;
+    }
   });
 });

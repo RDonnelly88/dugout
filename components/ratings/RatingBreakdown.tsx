@@ -33,7 +33,7 @@ const rate = Math.round((1 - gameWeight(1)) * 1000) / 10;
  * was worth on the night times how much it still counts.
  *
  * Opens on whoever tops the table, since there is no telling which player
- * the viewer is; anybody with a game still counting can be picked instead.
+ * the viewer is; anybody who has played can be picked instead.
  */
 export default function RatingBreakdown({
   ratings,
@@ -45,7 +45,7 @@ export default function RatingBreakdown({
   const choices = useMemo(
     () =>
       players
-        .filter((p) => (ratings.get(p.id)?.counted ?? 0) > 0)
+        .filter((p) => (ratings.get(p.id)?.games ?? 0) > 0)
         .sort((a, b) => ratings.get(b.id)!.rating - ratings.get(a.id)!.rating),
     [players, ratings]
   );
@@ -92,8 +92,8 @@ export default function RatingBreakdown({
       <p className="text-muted-foreground">
         {first} is on{" "}
         <span className="font-medium text-foreground tabular">{displayRating(rating.rating)}</span>.
-        Every game of theirs still counting is worth something fixed on the night it was played,
-        and a little less with each match since. Here is all of it added up.
+        Every game of theirs is worth something fixed on the night it was played, and a little
+        less with each match since, however long ago. Here is all of it added up.
       </p>
 
       {/* The rating as three numbers that add up: earned, faded, now. */}
@@ -119,8 +119,8 @@ export default function RatingBreakdown({
       <div className="rounded-xl border border-accent/30 bg-accent/5 p-3">
         <p className="font-semibold">At the next match, before a ball is kicked</p>
         <p className="mt-1 text-muted-foreground">
-          Every game still counting loses about {rate}% of what it is worth now
-          {sum.leaving ? <>, and the one {ELO.window} matches old drops out</> : null}.
+          Every game loses about {rate}% of what it is worth now, which always comes to about{" "}
+          {rate}% of the way from {first}&apos;s rating back to {ELO.start}.
         </p>
         <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1.5 tabular">
           <span className="text-muted-foreground">
@@ -133,15 +133,6 @@ export default function RatingBreakdown({
             <span className="whitespace-nowrap">({signed(sum.lostNow)} now)</span> shrink too, giving back
           </span>
           <span className={cn("text-right", tone1(sum.losses))}>{signed1(sum.losses)}</span>
-          {sum.leaving && (
-            <>
-              <span className="text-muted-foreground">
-                The {format(parseISO(sum.leaving.date), "d MMM yy")} game drops out, taking all it
-                had left
-              </span>
-              <span className={cn("text-right", tone1(sum.leaving.next))}>{signed1(sum.leaving.next)}</span>
-            </>
-          )}
           <span className="border-t border-border pt-1.5 font-semibold">Next match</span>
           <span className={cn("border-t border-border pt-1.5 text-right font-semibold", tone1(sum.next))}>
             {signed1(sum.next)}
@@ -161,19 +152,16 @@ export default function RatingBreakdown({
           <span className="text-right text-[11px] uppercase tracking-wide text-muted-foreground">Next</span>
 
           {shown.map((piece) => {
-            const leaving = piece.age === ELO.window - 1;
             return (
               <div key={piece.matchId} className="contents">
                 <span className="flex min-w-0 items-center gap-2">
                   <ResultStrip results={[piece.result]} size="xs" />
                   <span className="min-w-0 leading-tight">
                     <span className="block truncate">{format(parseISO(piece.date), "d MMM yy")}</span>
-                    <span className={cn("block truncate text-xs", leaving ? "text-loss" : "text-muted-foreground")}>
-                      {leaving
-                        ? "drops out next match"
-                        : piece.age === 0
-                          ? "the latest match"
-                          : `${piece.age} ${piece.age === 1 ? "match" : "matches"} ago`}
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {piece.age === 0
+                        ? "the latest match"
+                        : `${piece.age} ${piece.age === 1 ? "match" : "matches"} ago`}
                     </span>
                   </span>
                 </span>
@@ -181,7 +169,8 @@ export default function RatingBreakdown({
                 <span className="text-right leading-tight">
                   <span className={cn("block font-medium", tone(piece.now))}>{signed(piece.now)}</span>
                   <span className="block text-[11px] text-muted-foreground">
-                    {Math.round(piece.weight * 100)}% left
+                    {/* The oldest are never quite gone, and "0% left" would say they were. */}
+                    {piece.weight >= 0.01 ? Math.round(piece.weight * 100) : "<1"}% left
                   </span>
                 </span>
                 <span className={cn("text-right text-xs", tone1(piece.next))}>{signed1(piece.next)}</span>
