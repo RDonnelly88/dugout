@@ -4,9 +4,9 @@ import { shareCard, type ShareTables } from "@/lib/share-card";
 import { cardFonts, matchCardImage } from "@/lib/share-card-image";
 import { computeRatings } from "@/lib/elo";
 import { recentResults } from "@/lib/recent-results";
-import { outcomeOf, sideOf } from "@/lib/match-result";
-import { matchExpectations } from "@/lib/expected-wins";
-import { pointValues, seasonTable, type LeagueRow } from "@/lib/season-positions";
+import { sideOf } from "@/lib/match-result";
+import { nightContext } from "@/lib/match-story";
+import { pointValues, type LeagueRow } from "@/lib/season-positions";
 import { SIDE_NAMES } from "@/lib/config";
 import type { Match } from "@/types";
 
@@ -27,24 +27,6 @@ import type { Match } from "@/types";
 // `next/og` needs the Node runtime for the wasm renderer, and the Supabase
 // cookie client is happier there too.
 export const runtime = "nodejs";
-
-/**
- * Every match the squad had played by the end of this one, oldest first.
- *
- * Everything the card says about where a player stands is worked out from
- * this and nothing later, which is what makes a card for a game from March
- * true of March rather than a picture of March's result over August's table.
- * Empty for a match that is not in the history at all, which leaves the card
- * with the result and no tables rather than with tables that are wrong.
- */
-function playedBy(history: Match[], match: Match): Match[] {
-  const played = history
-    .filter((m) => outcomeOf(m) !== null)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-  const index = played.findIndex((m) => m.id === match.id);
-  return index === -1 ? [] : played.slice(0, index + 1);
-}
 
 /**
  * What the result locked in for each side, how far it moved each player once
@@ -106,7 +88,7 @@ export async function GET(
         .select("side_a_name, side_b_name")
         .eq("id", row.team_id)
         .maybeSingle(),
-      supabase.from("players").select("id, name").eq("team_id", row.team_id),
+      supabase.from("players").select("id, name, is_active").eq("team_id", row.team_id),
       supabase.from("matches").select("*").eq("team_id", row.team_id),
       row.season_id
         ? supabase
@@ -120,15 +102,7 @@ export async function GET(
   const names = new Map((squad ?? []).map((player) => [player.id, player.name]));
   const nameOf = (playerId: string) => names.get(playerId);
 
-  const played = playedBy((history ?? []).map(mapSupabaseMatchToMatch), match);
-  const { points, changes, ranked } = ladderThatNight(played, match);
-  // The window ends on the match being shared, so the run beside a name
-  // includes the game the card is about.
-  const results = new Map(
-    [...recentResults(played)].map(([playerId, run]) => [playerId, run.results])
-  );
-
-  // The league as it stood either side of this match, counted from the
+  // The league as it stood either side of this match is counted from the
   // season's games with what the view says a win and a draw are worth, so a
   // card for a game from March shows March's table and who it moved.
   const view = (table ?? []).map((entry) => ({
@@ -136,8 +110,19 @@ export async function GET(
     wins: entry.wins ?? 0,
     draws: entry.draws ?? 0,
   }));
-  const values = pointValues(view);
-  const season = row.season_id ? played.filter((m) => m.seasonId === row.season_id) : [];
+  // Everything the card says about where a player stands is worked out from
+  // the history to the final whistle and nothing later. A match missing from
+  // the history leaves the card with the result and no tables rather than
+  // with tables that are wrong.
+  const night = nightContext(match, (history ?? []).map(mapSupabaseMatchToMatch), pointValues(view));
+  const { played } = night;
+  const { points, changes, ranked } = ladderThatNight(played, match);
+  // The window ends on the match being shared, so the run beside a name
+  // includes the game the card is about.
+  const results = new Map(
+    [...recentResults(played)].map(([playerId, run]) => [playerId, run.results])
+  );
+
   const named = (rows: LeagueRow[]) =>
     rows.map((r) => ({ ...r, name: nameOf(r.playerId) ?? "Unknown" }));
 
@@ -145,22 +130,16 @@ export async function GET(
     points,
     changes,
     played,
-    // Read off the history to this night, which holds everything before it:
-    // later results never reach back into the odds a match was played at.
-    chanceA: matchExpectations(played).get(match.id),
+    chanceA: night.chanceA,
+    active: new Set((squad ?? []).filter((player) => player.is_active !== false).map((player) => player.id)),
     results,
     ladder: ranked.map((rating) => ({
       playerId: rating.playerId,
       name: nameOf(rating.playerId) ?? "Unknown",
       rating: rating.rating,
     })),
-    season,
-    ...(values && season.length > 0
-      ? {
-          standings: named(seasonTable(season, values)),
-          previous: named(seasonTable(season.filter((m) => m.id !== match.id), values)),
-        }
-      : {}),
+    season: night.season,
+    ...(night.table ? { standings: named(night.table.after), previous: named(night.table.before) } : {}),
     seasonName: table?.[0]?.season_name ?? undefined,
   };
 

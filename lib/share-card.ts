@@ -47,6 +47,11 @@ export interface ShareSide {
    * game fading and so can fall on a night the side won.
    */
   points?: number;
+  /**
+   * The chance the ratings gave the side before kick-off, nought to one, a
+   * draw counting a half: what a result is measured against for xW.
+   */
+  chance?: number;
 }
 
 /** One line of a standings table on the card. */
@@ -103,6 +108,12 @@ export interface ShareTables {
   previous?: StandingsRow[];
   /** The season's matches by the end of this one, for the story. */
   season?: Match[];
+  /**
+   * The squad as it is now, by id. The ratings table and the story's No. 1
+   * are read among them and whoever played on the night, so a player who has
+   * stopped coming does not sit in the top five; without it, everybody.
+   */
+  active?: Set<string>;
   /** What the season is called, for the heading over its table. */
   seasonName?: string;
 }
@@ -255,6 +266,7 @@ export function shareCard(
       season: tables.season,
       chanceA: tables.chanceA,
       league: tables.previous && tables.standings ? { before: rankBefore, after: rankOf } : undefined,
+      among: tables.active ? (id) => tables.active!.has(id) : undefined,
       nameOf,
     }),
     date: spokenDate(match.date),
@@ -262,7 +274,13 @@ export function shareCard(
     // Ratings are a measurement rather than a count, so two of them being
     // equal to the point of sharing a place does not happen; the row number is
     // the placing. A league is a count, and ties are its normal weather.
-    ladder: top(tables.ladder, (row) => row.rating, (_row, index) => index + 1),
+    ladder: top(
+      tables.ladder?.filter(
+        (row) => !tables.active || tables.active.has(row.playerId) || inMatch.has(row.playerId)
+      ),
+      (row) => row.rating,
+      (_row, index) => index + 1
+    ),
     standings: top(
       league,
       (row) => row.points,
@@ -276,6 +294,7 @@ export function shareCard(
       players: names(match.teamA.players),
       won: outcome === "a",
       points: tables.points?.a,
+      chance: tables.chanceA,
     },
     b: {
       name: sideNames.B,
@@ -283,6 +302,7 @@ export function shareCard(
       players: names(match.teamB.players),
       won: outcome === "b",
       points: tables.points?.b,
+      chance: tables.chanceA === undefined ? undefined : 1 - tables.chanceA,
     },
   };
 }

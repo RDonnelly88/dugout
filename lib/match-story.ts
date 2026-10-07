@@ -1,8 +1,11 @@
 import { ELO } from "./config";
 import { computeRatings } from "./elo";
+import { matchExpectations } from "./expected-wins";
 import { milestones } from "./milestones";
 import { outcomeOf, resultFor } from "./match-result";
 import { ordinal } from "./podium";
+import { calculatePlayerRanks } from "./ranking-utils";
+import { seasonTable, type LeagueRow, type PointValues } from "./season-positions";
 import type { Match } from "@/types";
 
 /** At or under this, a side that won was the underdog worth mentioning. */
@@ -50,13 +53,54 @@ function inARow(
 const newestFirst = (matches: Match[]) =>
   [...matches].sort((x, y) => new Date(y.date).getTime() - new Date(x.date).getTime());
 
-/** Whoever is top of the ladder once `matches` are counted. */
-function leaderOf(matches: Match[]): string | undefined {
+/** Whoever is top of the ladder once `matches` are counted, among `who`. */
+function leaderOf(matches: Match[], who: (playerId: string) => boolean): string | undefined {
   let best: { id: string; rating: number } | undefined;
   for (const rating of computeRatings(matches).values()) {
+    if (!who(rating.playerId)) continue;
     if (!best || rating.rating > best.rating) best = { id: rating.playerId, rating: rating.rating };
   }
   return best?.id;
+}
+
+/**
+ * Everything the story of a night is told from, as it stood at the final
+ * whistle: the matches played by then, this one among them, the season's
+ * share of them, what the first side was given going in, and the season's
+ * table either side of the match, counted with what a win and a draw are
+ * worth. Nothing later reaches back into it, so a night from March is told
+ * as March saw it.
+ *
+ * `played` is empty for a match that is not in the history at all.
+ */
+export function nightContext(match: Match, history: Match[], values: PointValues | null) {
+  const ordered = history
+    .filter((m) => outcomeOf(m) !== null)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const index = ordered.findIndex((m) => m.id === match.id);
+  const played = index === -1 ? [] : ordered.slice(0, index + 1);
+  const season = match.seasonId ? played.filter((m) => m.seasonId === match.seasonId) : [];
+
+  let table: { before: LeagueRow[]; after: LeagueRow[] } | undefined;
+  if (values && season.length > 0) {
+    table = {
+      before: seasonTable(season.filter((m) => m.id !== match.id), values),
+      after: seasonTable(season, values),
+    };
+  }
+
+  return {
+    played,
+    season,
+    // Read off the history to this night, which holds everything before it:
+    // later results never reach back into the odds a match was played at.
+    chanceA: matchExpectations(played).get(match.id),
+    table,
+    league: table && {
+      before: calculatePlayerRanks(table.before),
+      after: calculatePlayerRanks(table.after),
+    },
+  };
 }
 
 /**
@@ -77,6 +121,7 @@ export function matchStory({
   chanceA,
   league,
   nameOf,
+  among = () => true,
 }: {
   match: Match;
   played: Match[];
@@ -85,6 +130,11 @@ export function matchStory({
   league?: { before: Record<string, number>; after: Record<string, number> };
   /** Undefined for a player deleted since, who has no story to tell. */
   nameOf: (playerId: string) => string | undefined;
+  /**
+   * Who the ladder of ratings is read among: the squad as it is, so a player
+   * who has stopped coming is not the No. 1 anybody is told about.
+   */
+  among?: (playerId: string) => boolean;
 }): string[] {
   const outcome = outcomeOf(match);
   if (!outcome) return [];
@@ -216,11 +266,12 @@ export function matchStory({
   }
 
   // A new No. 1 on the ladder of ratings.
-  const leader = leaderOf(played);
+  const counted = (id: string) => among(id) || lineUp.includes(id);
+  const leader = leaderOf(played, counted);
   if (
     leader !== undefined &&
     lineUp.includes(leader) &&
-    leader !== leaderOf(played.filter((m) => m.id !== match.id))
+    leader !== leaderOf(played.filter((m) => m.id !== match.id), counted)
   ) {
     lines.push(`${name(leader)} is the new No. 1 in the ratings`);
   }

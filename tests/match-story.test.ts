@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchStory } from "@/lib/match-story";
+import { matchStory, nightContext } from "@/lib/match-story";
 import type { Match } from "@/types";
 
 const nameOf = (id: string) => id[0].toUpperCase() + id.slice(1);
@@ -221,6 +221,14 @@ describe("matchStory", () => {
     expect(storyOf(season, { season }).some((line) => line.includes("biggest"))).toBe(false);
   });
 
+  /** Somebody who has stopped coming is not the No. 1 anybody is told about. */
+  it("reads the No. 1 among the squad as it is", () => {
+    const played = [game(["ally"], ["sam"], "a"), game(["ally"], ["chris"], "a")];
+    // Ally tops everybody; with Ally gone from the squad, nobody playing
+    // tonight has taken a No. 1 from anybody still in it.
+    expect(storyOf(played, { among: (id) => id !== "ally" }).some((l) => l.includes("No. 1"))).toBe(false);
+  });
+
   it("says who has become the No. 1 in the ratings", () => {
     // Ally leads after the first; Sam, the underdog second time round, wins
     // more back than was lost.
@@ -259,3 +267,39 @@ describe("matchStory", () => {
     expect(matchStory({ match: fixture, played: [], nameOf })).toEqual([]);
   });
 });
+
+describe("nightContext", () => {
+  const VALUES = { win: 3, draw: 1 };
+
+  it("reads the night as it stood at the final whistle and no later", () => {
+    const first = { ...game(["ally"], ["sam"], "a"), seasonId: "s1" };
+    const tonight = { ...game(["ally"], ["sam"], "b"), seasonId: "s1" };
+    const later = { ...game(["ally"], ["sam"], "b"), seasonId: "s1" };
+    const night = nightContext(tonight, [later, tonight, first], VALUES);
+
+    expect(night.played.map((m) => m.id)).toEqual([first.id, tonight.id]);
+    expect(night.season.map((m) => m.id)).toEqual([first.id, tonight.id]);
+    expect(night.chanceA).toBeGreaterThan(0.5);
+  });
+
+  it("gives the season's places either side of the match", () => {
+    const first = { ...game(["ally"], ["sam"], "a"), seasonId: "s1" };
+    const second = { ...game(["sam"], ["ally"], "a"), seasonId: "s1" };
+    const night = nightContext(second, [first, second], VALUES);
+
+    expect(night.league?.before).toEqual({ ally: 1, sam: 2 });
+    expect(night.league?.after).toEqual({ ally: 1, sam: 1 });
+  });
+
+  it("has no table without point values or a season", () => {
+    const match = game(["ally"], ["sam"], "a");
+    expect(nightContext(match, [match], VALUES).table).toBeUndefined();
+    expect(nightContext({ ...match, seasonId: "s1" }, [{ ...match, seasonId: "s1" }], null).table).toBeUndefined();
+  });
+
+  it("has nothing for a match missing from the history", () => {
+    const match = game(["ally"], ["sam"], "a");
+    expect(nightContext(match, [], VALUES).played).toEqual([]);
+  });
+});
+
