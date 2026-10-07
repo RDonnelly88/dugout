@@ -208,6 +208,8 @@ export function fadingSummary(pieces: Piece[]) {
   const next = pieces.reduce((sum, p) => sum + p.next, 0);
   // The one game that reaches the edge of the window at the next match.
   const leaving = pieces.find((p) => p.age === ELO.window - 1) ?? null;
+  const staying = pieces.filter((p) => p !== leaving);
+  const fade = (list: Piece[]) => list.reduce((sum, p) => sum + p.next, 0);
   return {
     /** Everything the counted games were worth on their nights. */
     earned,
@@ -218,7 +220,16 @@ export function fadingSummary(pieces: Piece[]) {
     /** The change the next match makes before anybody plays. */
     next,
     leaving,
-    /** The part of `next` that is ordinary fading, without the game leaving. */
-    gradual: next - (leaving ? leaving.next : 0),
+    /**
+     * The ordinary fading, split the way it is easiest to follow: the games
+     * that put points on shrink, which costs; the games that took points
+     * off shrink too, which gives some back. With the game leaving, these
+     * three add up to `next`.
+     */
+    gains: fade(staying.filter((p) => p.now > 0)),
+    losses: fade(staying.filter((p) => p.now < 0)),
+    /** What the games that put points on are worth now, and those that took them off. */
+    gainedNow: staying.filter((p) => p.now > 0).reduce((sum, p) => sum + p.now, 0),
+    lostNow: staying.filter((p) => p.now < 0).reduce((sum, p) => sum + p.now, 0),
   };
 }

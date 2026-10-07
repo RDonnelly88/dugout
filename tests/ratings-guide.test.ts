@@ -210,6 +210,15 @@ describe("fadingSummary", () => {
     expect(after.rating - before.rating).toBeCloseTo(fadingSummary(ratingBreakdown(before)).next, 9);
   });
 
+  it("splits the next match into what gains give up, what losses give back and what leaves", () => {
+    for (const rating of computeRatings(fixtures).values()) {
+      const sum = fadingSummary(ratingBreakdown(rating));
+      expect(sum.gains).toBeLessThanOrEqual(0);
+      expect(sum.losses).toBeGreaterThanOrEqual(0);
+      expect(sum.gains + sum.losses + (sum.leaving?.next ?? 0)).toBeCloseTo(sum.next, 9);
+    }
+  });
+
   it("names the game about to leave the window, which takes all it has left", () => {
     const opener = match(["a"], ["b"], 1, 0, "2025-06-01");
     const since = Array.from({ length: ELO.window - 1 }, (_, i) =>
@@ -219,6 +228,6 @@ describe("fadingSummary", () => {
 
     expect(sum.leaving?.matchId).toBe(opener.id);
     expect(sum.leaving!.next).toBeCloseTo(-sum.leaving!.now, 9);
-    expect(sum.gradual).toBeCloseTo(0, 9);
+    expect(sum.gains + sum.losses).toBeCloseTo(0, 9);
   });
 });

@@ -268,13 +268,14 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
                   ))}
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
-                Fading moves each player about{" "}
-                {Math.round((1 - gameWeight(1)) * 1000) / 10}% of the way back
-                towards {ELO.start} each match: a point or two for somebody well
-                above or below it, next to nothing for somebody near it
-                {nearly ? <>, like {byId.get(nearly.playerId)?.name ?? "one of them"}</> : null}
-                , however many games they have, and nothing at all for a
-                debutant. A game reaching {ELO.window} matches old drops out
+                Fading is every older game losing about{" "}
+                {Math.round((1 - gameWeight(1)) * 1000) / 10}% of what it was
+                worth. The games that gained points shrink, and so do the ones
+                that cost points, which gives some back. When the two come to
+                about the same they all but cancel
+                {nearly ? <>, as they did for {byId.get(nearly.playerId)?.name ?? "one of them"}</> : null}
+                , however many games are behind them; a debutant has nothing to
+                fade at all. A game reaching {ELO.window} matches old drops out
                 altogether, which can move somebody more than the rest put
                 together. Take anybody apart below to follow every point.
                 Rounding each column can leave a total a point out.

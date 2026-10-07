@@ -112,34 +112,45 @@ export default function RatingBreakdown({
         </span>
       </div>
 
-      {/* What happens next, before anybody plays, and why it is the size
-          it is: fading is a share of what the games add up to, so wins and
-          defeats pull against each other. */}
+      {/* What happens next, before anybody plays, added up the way it is
+          easiest to follow: every game shrinks, so what gained points gives
+          some up and what cost points gives some back, and the two pull
+          against each other. */}
       <div className="rounded-xl border border-accent/30 bg-accent/5 p-3">
-        <p className="flex items-baseline justify-between gap-3">
-          <span className="font-semibold">At the next match, before a ball is kicked</span>
-          <span className={cn("shrink-0 font-semibold tabular", tone1(sum.next))}>{signed1(sum.next)}</span>
+        <p className="font-semibold">At the next match, before a ball is kicked</p>
+        <p className="mt-1 text-muted-foreground">
+          Every game still counting loses about {rate}% of what it is worth now
+          {sum.leaving ? <>, and the one {ELO.window} matches old drops out</> : null}.
         </p>
-        <ul className="mt-2 space-y-1.5 text-muted-foreground">
-          <li>
-            Every game counts about {rate}% less, so the rating slips {rate}% of the way back
-            towards {ELO.start}. {first}&apos;s games{sum.leaving ? ", the one leaving aside," : ""}{" "}
-            have them{" "}
-            <span className="tabular text-foreground">{signed1(sum.now - (sum.leaving?.now ?? 0))}</span>{" "}
-            from it, so that is{" "}
-            <span className={cn("tabular", tone1(sum.gradual))}>{signed1(sum.gradual)}</span>. The
-            closer to {ELO.start}, the less there is to fade, however many games are behind it:
-            wins fade down and defeats fade up, and they pull against each other.
-          </li>
+        <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1.5 tabular">
+          <span className="text-muted-foreground">
+            The games that gained {first} points{" "}
+            <span className="whitespace-nowrap">({signed(sum.gainedNow)} now)</span> shrink
+          </span>
+          <span className={cn("text-right", tone1(sum.gains))}>{signed1(sum.gains)}</span>
+          <span className="text-muted-foreground">
+            The games that cost them points{" "}
+            <span className="whitespace-nowrap">({signed(sum.lostNow)} now)</span> shrink too, giving back
+          </span>
+          <span className={cn("text-right", tone1(sum.losses))}>{signed1(sum.losses)}</span>
           {sum.leaving && (
-            <li>
-              The {format(parseISO(sum.leaving.date), "d MMM yy")} game reaches {ELO.window} matches
-              old and drops out altogether, taking the{" "}
-              <span className={cn("tabular", tone1(sum.leaving.now))}>{signed1(sum.leaving.now)}</span> it
-              still counted for with it.
-            </li>
+            <>
+              <span className="text-muted-foreground">
+                The {format(parseISO(sum.leaving.date), "d MMM yy")} game drops out, taking all it
+                had left
+              </span>
+              <span className={cn("text-right", tone1(sum.leaving.next))}>{signed1(sum.leaving.next)}</span>
+            </>
           )}
-        </ul>
+          <span className="border-t border-border pt-1.5 font-semibold">Next match</span>
+          <span className={cn("border-t border-border pt-1.5 text-right font-semibold", tone1(sum.next))}>
+            {signed1(sum.next)}
+          </span>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          When what was gained and what was lost come to about the same, they all but cancel and
+          there is next to nothing to fade, however many games are behind it.
+        </p>
       </div>
 
       <div className="rounded-xl border border-border bg-surface-2/40 p-3">
