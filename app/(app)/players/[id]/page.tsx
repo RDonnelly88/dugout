@@ -21,6 +21,7 @@ import PlayerWeb from "@/components/wrapped/PlayerWeb";
 import MatchListItem from "@/components/matches/MatchListItem";
 import SectionHeading from "@/components/SectionHeading";
 import { matchExpectations } from "@/lib/expected-wins";
+import { outcomeOf } from "@/lib/match-result";
 import { highlightsFor } from "@/lib/player-highlights";
 import { playerSeasons } from "@/lib/player-seasons";
 import { recentResults } from "@/lib/recent-results";
@@ -86,6 +87,15 @@ const PlayerDetail = () => {
     () => (stretch === "all" ? allMatches : allMatches.filter((m) => m.seasonId === stretch)),
     [allMatches, stretch]
   );
+  // Everybody's games in the stretch, for the web's floor on who is drawn.
+  const gamesInStretch = React.useMemo(() => {
+    const games = new Map<string, number>();
+    for (const m of inStretch) {
+      if (outcomeOf(m) === null) continue;
+      for (const pid of [...m.teamA.players, ...m.teamB.players]) games.set(pid, (games.get(pid) ?? 0) + 1);
+    }
+    return games;
+  }, [inStretch]);
   const highlights = React.useMemo(
     () => (id ? highlightsFor(inStretch, odds, id, values) : null),
     [inStretch, odds, id, values]
@@ -261,6 +271,7 @@ const PlayerDetail = () => {
                 playerFor={playerFor}
                 values={values}
                 across={stretch === "all" ? "all their games" : stretchName}
+                gamesOf={(pid) => gamesInStretch.get(pid) ?? 0}
               />
             </div>
           </section>

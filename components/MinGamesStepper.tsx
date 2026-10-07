@@ -3,28 +3,25 @@
 import { Minus, Plus } from "lucide-react";
 
 /**
- * The fewest games a link needs to be drawn, to start with. Under five a
- * points-a-game figure swings on a single night, and a web of everybody who
- * has ever shared a pitch is too dense to read.
+ * The fewest games a player needs in the stretch to be on a web, to start
+ * with: enough to clear the guests who came once or twice, whose handful of
+ * lines would otherwise crowd the ring.
  */
 export const MIN_GAMES = 5;
 
 /**
- * How many games a link in a web needs before it is drawn, a step at a time
- * from one up to the most anybody has: the density is the reader's call.
+ * How many games a player needs in the stretch to be on a web, a step at a
+ * time from one up to the most anybody has: the density is the reader's call.
  */
 export default function MinGamesStepper({
   value,
   most,
   onChange,
-  unit,
 }: {
   value: number;
   /** The most games any link has, past which nothing would be left. */
   most: number;
   onChange: (value: number) => void;
-  /** What the games are, after the number: "together", "meetings". */
-  unit: string;
 }) {
   const step =
     "focus-ring flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-40";
@@ -40,7 +37,7 @@ export default function MinGamesStepper({
         <Minus className="h-3.5 w-3.5" />
       </button>
       <span className="min-w-[6.5rem] text-center font-medium tabular" aria-live="polite">
-        {value}+ {unit}
+        {value}+ games
       </span>
       <button
         type="button"

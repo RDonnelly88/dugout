@@ -58,8 +58,9 @@ const wins = (value: number) => (Number.isInteger(value) ? String(value) : value
  * faint while it is too early to say, firm once it is more than luck. Either
  * way green is ahead, red behind, and a thicker line is more games. Tap a face
  * to light up their lines; tap a line to open the pair in the lab. The list
- * under it says the same in words. Only pairs with enough games together are
- * drawn or listed, five to start with and any number after.
+ * under it says the same in words. Only players with enough games in the
+ * stretch are on the ring, five to start with and any number after, so the
+ * one-night guests do not crowd it.
  */
 export default function SquadWeb({
   web,
@@ -118,11 +119,30 @@ export default function SquadWeb({
   const radius = centre - LABEL_ROOM;
   const narrow = size < 480;
 
+  // The floor is on players, not pairs: anybody with fewer games than it in
+  // the stretch is left off the ring, which clears the one-night guests,
+  // and everybody left is linked to everybody they have played with. Never
+  // past the most games anybody has, so the ring is never emptied.
+  const gamesOf = useMemo(
+    () => new Map(web.players.map((p) => [p.playerId, p.ledger.played])),
+    [web]
+  );
+  const mostPlayed = Math.max(1, ...gamesOf.values());
+  const threshold = Math.min(minGames, mostPlayed);
+  const seated = useMemo(
+    () => order.filter((id) => (gamesOf.get(id) ?? 0) >= threshold),
+    [order, gamesOf, threshold]
+  );
+  const kept = useMemo(() => {
+    const on = new Set(seated);
+    return web.links.filter((l) => on.has(l.a) && on.has(l.b));
+  }, [web, seated]);
+
   const seat = useMemo(() => {
     const at = new Map<string, { x: number; y: number; angle: number }>();
-    order.forEach((id, i) => {
+    seated.forEach((id, i) => {
       // From the top, clockwise.
-      const angle = -Math.PI / 2 + (i / Math.max(order.length, 1)) * Math.PI * 2;
+      const angle = -Math.PI / 2 + (i / Math.max(seated.length, 1)) * Math.PI * 2;
       at.set(id, {
         x: px(centre + radius * Math.cos(angle)),
         y: px(centre + radius * Math.sin(angle)),
@@ -130,13 +150,9 @@ export default function SquadWeb({
       });
     });
     return at;
-  }, [order, centre, radius]);
+  }, [seated, centre, radius]);
 
   const most = Math.max(1, ...web.links.map((l) => l.ledger.played));
-  // Never past the most games any pair has, so the web always keeps the
-  // pairs who have played most together, however short the stretch.
-  const threshold = Math.min(minGames, most);
-  const kept = useMemo(() => web.links.filter((l) => l.ledger.played >= threshold), [web, threshold]);
   // On the odds, beyond luck; on the record, enough games to rank and a lean
   // worth a colour.
   const telling = (link: WebLink) =>
@@ -221,7 +237,7 @@ export default function SquadWeb({
     );
   };
 
-  if (order.length < 2) {
+  if (seated.length < 2) {
     return (
       <p className="py-8 text-center text-sm text-muted-foreground">
         Not enough games in this stretch to draw a web.
@@ -234,9 +250,9 @@ export default function SquadWeb({
       <div className="flex flex-wrap items-center justify-between gap-3">
         {values && <MeasureToggle value={measure} onChange={setChosen} />}
         <div className="flex flex-wrap items-center gap-2">
-          <MinGamesStepper value={threshold} most={most} onChange={setMinGames} unit="together" />
+          <MinGamesStepper value={threshold} most={mostPlayed} onChange={setMinGames} />
           <span className="text-xs text-muted-foreground tabular">
-            {shown.length} of {web.links.length} pairs
+            {seated.length} of {web.players.length} players
           </span>
         </div>
         <SegmentedControl
@@ -262,14 +278,10 @@ export default function SquadWeb({
           <span className="h-1 w-5 rounded-full bg-loss" aria-hidden />
           {measure === "odds" ? "Fell short" : "Fewer"}
         </span>
-        {/* On the record a line is only faint for want of games, and none
-            are left once the floor reaches that many. */}
-        {(measure === "odds" || threshold < XW.minGames) && (
-          <span className="flex items-center gap-1.5">
-            <span className="h-1 w-5 rounded-full bg-border-strong opacity-40" aria-hidden />
-            {measure === "odds" ? "Faint: too early or could be luck" : `Faint: under ${XW.minGames} games`}
-          </span>
-        )}
+        <span className="flex items-center gap-1.5">
+          <span className="h-1 w-5 rounded-full bg-border-strong opacity-40" aria-hidden />
+          {measure === "odds" ? "Faint: too early or could be luck" : `Faint: under ${XW.minGames} games together`}
+        </span>
         <span>Thicker: more games</span>
       </div>
 
@@ -327,7 +339,7 @@ export default function SquadWeb({
             </path>
           ))}
 
-          {order.map((id) => {
+          {seated.map((id) => {
             const at = seat.get(id)!;
             const player = byId.get(id);
             const ringed = picked.includes(id);
