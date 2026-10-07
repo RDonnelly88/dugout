@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { signedWins } from "@/lib/expected-wins";
 import type { PointValues } from "@/lib/season-positions";
+import { XW } from "@/lib/config";
 import {
   averagePointsPerGame,
   enoughGames,
@@ -16,6 +17,7 @@ import {
 import type { SquadWeb as Web, WebLink } from "@/lib/squad-web";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import MeasureToggle from "@/components/MeasureToggle";
+import MinGamesStepper, { MIN_GAMES } from "@/components/MinGamesStepper";
 import Verdict from "@/components/xw/Verdict";
 import {
   SegmentedControl,
@@ -56,7 +58,8 @@ const wins = (value: number) => (Number.isInteger(value) ? String(value) : value
  * faint while it is too early to say, firm once it is more than luck. Either
  * way green is ahead, red behind, and a thicker line is more games. Tap a face
  * to light up their lines; tap a line to open the pair in the lab. The list
- * under it says the same in words.
+ * under it says the same in words. Only pairs with enough games together are
+ * drawn or listed, five to start with and any number after.
  */
 export default function SquadWeb({
   web,
@@ -83,6 +86,7 @@ export default function SquadWeb({
   const [focus, setFocus] = useState<string | null>(null);
   const [hover, setHover] = useState<WebLink | null>(null);
   const [only, setOnly] = useState<"all" | "telling">("all");
+  const [minGames, setMinGames] = useState(MIN_GAMES);
   const [chosen, setChosen] = useState<Measure>("record");
   const measure: Measure = values ? chosen : "odds";
   // Only read on the record, which is only offered with real values; the
@@ -129,13 +133,17 @@ export default function SquadWeb({
   }, [order, centre, radius]);
 
   const most = Math.max(1, ...web.links.map((l) => l.ledger.played));
+  // Never past the most games any pair has, so the web always keeps the
+  // pairs who have played most together, however short the stretch.
+  const threshold = Math.min(minGames, most);
+  const kept = useMemo(() => web.links.filter((l) => l.ledger.played >= threshold), [web, threshold]);
   // On the odds, beyond luck; on the record, enough games to rank and a lean
   // worth a colour.
   const telling = (link: WebLink) =>
     measure === "odds"
       ? link.ledger.verdict === "above" || link.ledger.verdict === "below"
       : enoughGames(link.ledger) && toneOf(link) !== "level";
-  const shown = web.links.filter((l) => only === "all" || telling(l));
+  const shown = kept.filter((l) => only === "all" || telling(l));
   // Faint links first, so the telling ones are drawn on top of them.
   const layered = [...shown].sort(
     (x, y) => firmness(x.ledger, measure, most) - firmness(y.ledger, measure, most)
@@ -158,11 +166,11 @@ export default function SquadWeb({
   };
 
   const focusLinks = focus
-    ? web.links
+    ? kept
         .filter((l) => touches(l, focus))
         .sort((x, y) => leanOf(y) - leanOf(x) || y.ledger.played - x.ledger.played)
     : [];
-  const ranked = web.links.filter((l) => enoughGames(l.ledger));
+  const ranked = kept.filter((l) => enoughGames(l.ledger));
   const best = [...ranked].sort((x, y) => leanOf(y) - leanOf(x)).slice(0, LISTED);
   const worst = [...ranked]
     .sort((x, y) => leanOf(x) - leanOf(y))
@@ -225,6 +233,12 @@ export default function SquadWeb({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         {values && <MeasureToggle value={measure} onChange={setChosen} />}
+        <div className="flex flex-wrap items-center gap-2">
+          <MinGamesStepper value={threshold} most={most} onChange={setMinGames} unit="together" />
+          <span className="text-xs text-muted-foreground tabular">
+            {shown.length} of {web.links.length} pairs
+          </span>
+        </div>
         <SegmentedControl
           label="Which links to draw"
           value={only}
@@ -248,10 +262,14 @@ export default function SquadWeb({
           <span className="h-1 w-5 rounded-full bg-loss" aria-hidden />
           {measure === "odds" ? "Fell short" : "Fewer"}
         </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-1 w-5 rounded-full bg-border-strong opacity-40" aria-hidden />
-          {measure === "odds" ? "Faint: too early or could be luck" : "Faint: under five games"}
-        </span>
+        {/* On the record a line is only faint for want of games, and none
+            are left once the floor reaches that many. */}
+        {(measure === "odds" || threshold < XW.minGames) && (
+          <span className="flex items-center gap-1.5">
+            <span className="h-1 w-5 rounded-full bg-border-strong opacity-40" aria-hidden />
+            {measure === "odds" ? "Faint: too early or could be luck" : `Faint: under ${XW.minGames} games`}
+          </span>
+        )}
         <span>Thicker: more games</span>
       </div>
 
@@ -314,7 +332,7 @@ export default function SquadWeb({
             const player = byId.get(id);
             const ringed = picked.includes(id);
             const dim = focus !== null && focus !== id &&
-              !web.links.some((l) => touches(l, focus) && touches(l, id));
+              !kept.some((l) => touches(l, focus) && touches(l, id));
             const cos = Math.cos(at.angle);
             const label = name(id);
             // First names round the ring, where full ones ran off the edge
