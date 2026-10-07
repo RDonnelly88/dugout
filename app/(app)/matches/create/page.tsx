@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import TeamSelection from "@/components/matches/TeamSelection";
 import TeamRandomizer from "@/components/matches/TeamRandomizer";
+import MatchStakes from "@/components/matches/MatchStakes";
 import DatePicker from "@/components/matches/DatePicker";
 import SeasonSelect from "@/components/matches/SeasonSelect";
 import { useCreateMatch } from "@/hooks/useCreateMatch";
@@ -98,6 +99,10 @@ const CreateMatch = () => {
           selectedPlayers={selectedPlayers}
           togglePlayer={togglePlayer}
         />
+
+        {/* Before the match is saved, so a split that leaves one side with
+            everything to lose can be redealt. */}
+        <MatchStakes teamA={teamA} teamB={teamB} players={players} />
 
         <Card>
           <CardContent>

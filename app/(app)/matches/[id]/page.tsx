@@ -9,6 +9,7 @@ import { useMatchDetail } from "@/hooks/useMatchDetail";
 import MatchHeader from "@/components/matches/MatchHeader";
 import MatchScore from "@/components/matches/MatchScore";
 import TeamsList from "@/components/matches/TeamsList";
+import MatchStakes from "@/components/matches/MatchStakes";
 import MatchImpact from "@/components/matches/MatchImpact";
 import MatchNotFound from "@/components/matches/MatchNotFound";
 import Confetti from "@/components/Confetti";
@@ -122,7 +123,10 @@ const MatchDetail = () => {
       {isCompleted ? (
         <MatchImpact match={match} players={players} />
       ) : (
-        <TeamsList match={match} players={players} getPlayerName={getPlayerName} />
+        <>
+          <TeamsList match={match} players={players} getPlayerName={getPlayerName} />
+          <MatchStakes teamA={match.teamA.players} teamB={match.teamB.players} players={players} className="mt-6" />
+        </>
       )}
 
       {/* Match Notes */}

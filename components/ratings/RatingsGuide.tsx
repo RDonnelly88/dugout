@@ -10,6 +10,7 @@ import { ELO, XW } from "@/lib/config";
 import { computeRatings, displayRating, expectedScore, gameWeight } from "@/lib/elo";
 import { FADE_DRAWN, workedExample, fadeCurve, threeWays } from "@/lib/ratings-guide";
 import RatingBreakdown from "@/components/ratings/RatingBreakdown";
+import OddsCheck from "@/components/ratings/OddsCheck";
 import ResultStrip from "@/components/players/ResultStrip";
 import { Frac, Line, Sup, Var, Working } from "@/components/ratings/Formula";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
@@ -425,57 +426,56 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
           </div>
         </Section>
 
+        <Section title="Do the odds come true?">
+          <OddsCheck matches={matches} />
+        </Section>
+
         <Section title="The actual sums">
           <Working>
-            <Line name="expected">
+            <Line
+              name="expected"
+              note={
+                <>
+                  <Var>us</Var> and <Var>them</Var> are the two sides&apos; average ratings
+                  going in
+                </>
+              }
+            >
               <Frac
                 over={<>1</>}
                 under={
                   <>
                     1 <span className="mx-1 text-muted-foreground">+</span> 10
                     <Sup>
-                      <Frac
-                        over={
-                          <>
-                            <Var>them</Var>
-                            <span className="mx-1 text-muted-foreground">−</span>
-                            <Var>us</Var>
-                          </>
-                        }
-                        under={<>400</>}
-                      />
+                      (<Var>them</Var> − <Var>us</Var>) / 400
                     </Sup>
                   </>
                 }
               />
             </Line>
 
-            <Line name="weight">
+            <Line name="weight" note="however old the game, never quite 0">
               <span>½</span>
               <Sup>
-                <Frac over={<Var>matches since</Var>} under={<>{ELO.halfLife}</>} />
+                <Var>matches since</Var> / {ELO.halfLife}
               </Sup>
-              <span className="ml-2 text-xs text-muted-foreground">
-                however old the game, never quite 0
-              </span>
             </Line>
 
-            <Line name="change">
+            <Line name="change" note="fixed on the night">
               <span>{ELO.k}</span>
-              <span className="mx-1 text-muted-foreground">×</span>
+              <span className="mx-1.5 text-muted-foreground">×</span>
               <span>(</span>
               <Var>result</Var>
-              <span className="mx-1 text-muted-foreground">−</span>
+              <span className="mx-1.5 text-muted-foreground">−</span>
               <Var>expected</Var>
               <span>)</span>
-              <span className="ml-2 text-xs text-muted-foreground">fixed on the night</span>
             </Line>
 
-            <Line name="rating">
+            <Line name="rating" note="added up over every game they have played">
               <span>{ELO.start}</span>
-              <span className="mx-1 text-muted-foreground">+</span>
-              <span className="text-sm">
-                every <Var>change</Var> × its <Var>weight</Var> now
+              <span className="mx-1.5 text-muted-foreground">+</span>
+              <span>
+                sum of <Var>change</Var> × <Var>weight</Var>
               </span>
             </Line>
           </Working>

@@ -127,12 +127,12 @@ function ResultRun({ results, box }: { results: RecentResult[]; box: number }) {
 }
 
 /** "+4", "−3", "±0": a rounded swing, signed the way the app signs one. */
-function signed(value: number): string {
+export function signed(value: number): string {
   const moved = Math.round(value);
   return `${moved > 0 ? "+" : moved < 0 ? "−" : "±"}${Math.abs(moved)}`;
 }
 
-const swingTint = (value: number) =>
+export const swingTint = (value: number) =>
   Math.round(value) > 0 ? C.win : Math.round(value) < 0 ? C.loss : C.muted;
 
 /** Where a player's rating move sits, before their run. */
@@ -142,7 +142,7 @@ const MOVE = 84;
  * Places gained or lost on the night: a small triangle and the count, or
  * nothing for a player who stayed put or has no place to move from.
  */
-function Moved({ by, size }: { by?: number; size: number }) {
+export function Moved({ by, size }: { by?: number; size: number }) {
   if (!by) return null;
   const up = by > 0;
   const tint = up ? C.win : C.loss;

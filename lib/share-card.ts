@@ -157,7 +157,7 @@ const DASH = "–";
  * Fixed to en-GB: the card is one image sent to other people, so it cannot
  * take its format from whoever happens to be looking at it.
  */
-function spokenDate(iso: string): string {
+export function spokenDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-GB", {
     weekday: "short",
     day: "numeric",
@@ -173,7 +173,7 @@ function spokenDate(iso: string): string {
  * column of numbers read as the date the table was taken rather than as the
  * season it covers. Not said twice for a squad who have already said it.
  */
-function tableTitle(seasonName?: string): string {
+export function tableTitle(seasonName?: string): string {
   if (!seasonName) return "League table";
   return /^season\b/i.test(seasonName) ? seasonName : `Season ${seasonName}`;
 }

@@ -14,6 +14,7 @@ import { isActivePlayer } from "@/components/players/ActiveFilter";
 import { outcomeOf } from "@/lib/match-result";
 import { currentRuns, matchStory, nightContext } from "@/lib/match-story";
 import { milestones } from "@/lib/milestones";
+import { matchStakes } from "@/lib/stakes";
 import { shortNames } from "@/lib/short-names";
 import PageHeader from "@/components/PageHeader";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
@@ -115,7 +116,7 @@ const Dashboard = () => {
     queryFn: getPlayers,
     enabled: !!currentTeam,
   });
-  const { ranked } = usePlayerRatings();
+  const { ranked, ratings } = usePlayerRatings();
   const { records } = usePlayerRecords();
 
   const names = useMemo(() => shortNames(players), [players]);
@@ -206,7 +207,12 @@ const Dashboard = () => {
       />
 
       <div className="space-y-4">
-        <NextUp fixture={fixture} canManage={admin} name={name} />
+        <NextUp
+          fixture={fixture}
+          canManage={admin}
+          name={name}
+          chanceA={fixture ? matchStakes(ratings, fixture.teamA.players, fixture.teamB.players)?.chanceA : undefined}
+        />
         <LastResult match={last} name={name} />
 
         {last && story.length > 0 && (
