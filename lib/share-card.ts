@@ -1,4 +1,5 @@
 import { outcomeOf } from "./match-result";
+import { matchStory } from "./match-story";
 import { calculatePlayerRanks, sortPlayersByRank } from "./ranking-utils";
 import type { Match, RecentResult } from "@/types";
 
@@ -12,11 +13,8 @@ import type { Match, RecentResult } from "@/types";
 
 export interface SharePlayer {
   name: string;
-  /**
-   * What the night did to their rating. Absent for anybody the ladder has no
-   * entry for, which happens to a player deleted since the match was played.
-   */
-  change?: number;
+  /** What the `image` column holds for them, read by `readAvatar`. */
+  image?: string | null;
   /** Where they stand in the season's league, first being top. */
   rank?: number;
   /**
@@ -33,6 +31,12 @@ export interface ShareSide {
   score?: number;
   players: SharePlayer[];
   won: boolean;
+  /**
+   * The rating points the result locked in, the same for everybody on the
+   * side. Not the night's change in a rating, which also carries every older
+   * game fading and so can fall on a night the side won.
+   */
+  points?: number;
 }
 
 /** One line of a standings table on the card. */
@@ -59,8 +63,16 @@ export interface ShareRow {
  * is worse than none.
  */
 export interface ShareTables {
-  /** What the night did to each player, by id. */
-  changes?: Map<string, number>;
+  /** What the result locked in for each side; see `ShareSide.points`. */
+  points?: { a?: number; b?: number };
+  /** Each player's `image` value, by id. */
+  images?: Map<string, string | null>;
+  /**
+   * Every match played by the end of this one, this one among them, and what
+   * the first side was expected to take from it: what the story is read from.
+   */
+  played?: Match[];
+  chanceA?: number;
   /** How each player had been going by the end of it, newest first, by id. */
   results?: Map<string, RecentResult[]>;
   /** The ladder as it stood when this match finished, strongest first. */
@@ -90,6 +102,8 @@ export interface ShareCard {
   headline: string;
   /** How it felt, for the line the score already tells you nothing about. */
   blurb: string;
+  /** The few things about the night worth saying; see `matchStory`. */
+  story: string[];
   date: string;
   location?: string;
   a: ShareSide;
@@ -144,7 +158,8 @@ function tableTitle(seasonName?: string): string {
 export function shareCard(
   match: Match,
   sideNames: { A: string; B: string },
-  nameOf: (playerId: string) => string,
+  /** Undefined for a player deleted since, who is drawn as "Unknown". */
+  nameOf: (playerId: string) => string | undefined,
   tables: ShareTables = {}
 ): ShareCard | null {
   const outcome = outcomeOf(match);
@@ -187,8 +202,10 @@ export function shareCard(
   const rankOf = calculatePlayerRanks(tables.standings ?? []);
   const names = (ids: string[]): SharePlayer[] =>
     ids.map((id) => ({
-      name: nameOf(id),
-      change: tables.changes?.get(id),
+      // Deleted since, but they still had a shirt on the night, so they keep
+      // a place on the card without a name.
+      name: nameOf(id) ?? "Unknown",
+      image: tables.images?.get(id),
       rank: rankOf[id],
       results: tables.results?.get(id),
     }));
@@ -208,6 +225,13 @@ export function shareCard(
   return {
     headline,
     blurb,
+    story: matchStory({
+      match,
+      played: tables.played ?? [],
+      chanceA: tables.chanceA,
+      sides: sideNames,
+      nameOf,
+    }),
     date: spokenDate(match.date),
     location: match.location || undefined,
     // Ratings are a measurement rather than a count, so two of them being
@@ -221,12 +245,14 @@ export function shareCard(
       score: scored ? scoreA : undefined,
       players: names(match.teamA.players),
       won: outcome === "a",
+      points: tables.points?.a,
     },
     b: {
       name: sideNames.B,
       score: scored ? scoreB : undefined,
       players: names(match.teamB.players),
       won: outcome === "b",
+      points: tables.points?.b,
     },
   };
 }

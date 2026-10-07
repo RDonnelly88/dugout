@@ -1,10 +1,11 @@
 import { supabaseServer } from "@/lib/supabase-server";
 import { mapSupabaseMatchToMatch } from "@/lib/supabase-utils";
 import { shareCard, type ShareTables } from "@/lib/share-card";
-import { cardFonts, matchCardImage } from "@/lib/share-card-image";
+import { cardFaces, cardFonts, matchCardImage } from "@/lib/share-card-image";
 import { computeRatings } from "@/lib/elo";
 import { recentResults } from "@/lib/recent-results";
-import { outcomeOf } from "@/lib/match-result";
+import { outcomeOf, sideOf } from "@/lib/match-result";
+import { matchExpectations } from "@/lib/expected-wins";
 import { SIDE_NAMES } from "@/lib/config";
 import type { Match } from "@/types";
 
@@ -45,7 +46,7 @@ function playedBy(history: Match[], match: Match): Match[] {
 }
 
 /**
- * What the night did to everybody, and where it left the ladder.
+ * What the result locked in for each side, and where it left the ladder.
  *
  * Ratings are sequential, so replaying only as far as this match changes
  * nothing about the numbers up to the cut.
@@ -53,14 +54,15 @@ function playedBy(history: Match[], match: Match): Match[] {
 function ladderThatNight(played: Match[], match: Match) {
   const ratings = computeRatings(played);
 
-  const changes = new Map<string, number>();
+  const points: { a?: number; b?: number } = {};
   for (const rating of ratings.values()) {
     const moment = rating.history.find((point) => point.matchId === match.id);
-    if (moment) changes.set(rating.playerId, moment.change);
+    const side = sideOf(match, rating.playerId);
+    if (moment && side) points[side] = moment.settled;
   }
 
   return {
-    changes,
+    points,
     ranked: [...ratings.values()].sort((a, b) => b.rating - a.rating),
   };
 }
@@ -97,7 +99,7 @@ export async function GET(
         .select("side_a_name, side_b_name")
         .eq("id", row.team_id)
         .maybeSingle(),
-      supabase.from("players").select("id, name").eq("team_id", row.team_id),
+      supabase.from("players").select("id, name, image").eq("team_id", row.team_id),
       supabase.from("matches").select("*").eq("team_id", row.team_id),
       row.season_id
         ? supabase
@@ -109,12 +111,10 @@ export async function GET(
     ]);
 
   const names = new Map((squad ?? []).map((player) => [player.id, player.name]));
-  // A player deleted since the match was played still has a shirt on the
-  // night, so they keep a place on the card without a name.
-  const nameOf = (playerId: string) => names.get(playerId) ?? "Unknown";
+  const nameOf = (playerId: string) => names.get(playerId);
 
   const played = playedBy((history ?? []).map(mapSupabaseMatchToMatch), match);
-  const { changes, ranked } = ladderThatNight(played, match);
+  const { points, ranked } = ladderThatNight(played, match);
   // The window ends on the match being shared, so the run beside a name
   // includes the game the card is about.
   const results = new Map(
@@ -122,11 +122,16 @@ export async function GET(
   );
 
   const tables: ShareTables = {
-    changes,
+    points,
+    images: new Map((squad ?? []).map((player) => [player.id, player.image])),
+    played,
+    // Read off the history to this night, which holds everything before it:
+    // later results never reach back into the odds a match was played at.
+    chanceA: matchExpectations(played).get(match.id),
     results,
     ladder: ranked.map((rating) => ({
       playerId: rating.playerId,
-      name: nameOf(rating.playerId),
+      name: nameOf(rating.playerId) ?? "Unknown",
       rating: rating.rating,
     })),
     standings: (table ?? []).flatMap((entry) =>
@@ -164,5 +169,6 @@ export async function GET(
     });
   }
 
-  return matchCardImage(card, await cardFonts());
+  const [fonts, faces] = await Promise.all([cardFonts(), cardFaces(card)]);
+  return matchCardImage(card, fonts, faces);
 }

@@ -164,22 +164,38 @@ describe("the blurb", () => {
 });
 
 describe("what the night was worth", () => {
-  it("puts each player's swing beside them", () => {
-    const card = shareCard(match(), sides, nameOf, {
-      changes: new Map([
-        ["p1", 18.4],
-        ["p2", -18.4],
-      ]),
-    })!;
+  /**
+   * The result's own points, not the night's change in a rating, which also
+   * carries older games fading and can fall on a night the side won.
+   */
+  it("gives each side what the result locked in", () => {
+    const card = shareCard(match(), sides, nameOf, { points: { a: 6.4, b: -6.4 } })!;
 
-    expect(card.a.players[0].change).toBeCloseTo(18.4);
-    expect(card.b.players[0].change).toBeCloseTo(-18.4);
+    expect(card.a.points).toBeCloseTo(6.4);
+    expect(card.b.points).toBeCloseTo(-6.4);
   });
 
-  /** A player deleted since the match still has a shirt on the night. */
-  it("leaves the swing off anybody the ladder has never heard of", () => {
-    const card = shareCard(match(), sides, nameOf, { changes: new Map() })!;
-    expect(card.a.players[0].change).toBeUndefined();
+  it("leaves it off a side the ladder has no record of", () => {
+    const card = shareCard(match(), sides, nameOf, { points: {} })!;
+    expect(card.a.points).toBeUndefined();
+  });
+
+  it("carries each player's picture through to be drawn", () => {
+    const card = shareCard(match(), sides, nameOf, {
+      images: new Map([["p1", "icon:Crown"]]),
+    })!;
+
+    expect(card.a.players[0].image).toBe("icon:Crown");
+    expect(card.b.players[0].image).toBeUndefined();
+  });
+
+  it("tells the story of the night from the history it is given", () => {
+    const card = shareCard(match(), sides, nameOf, { played: [match()], chanceA: 0.3 })!;
+
+    expect(card.story).toContain("Bibs won with a 30% chance");
+    expect(shareCard(match(), sides, nameOf)!.story).toEqual(
+      expect.not.arrayContaining(["Bibs won with a 30% chance"])
+    );
   });
 });
 
