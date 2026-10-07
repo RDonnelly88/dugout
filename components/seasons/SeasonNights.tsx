@@ -63,7 +63,7 @@ export default function SeasonNights({ nights }: { nights: StoryNight[] }) {
             <p className="eyebrow">
               <time dateTime={night.date}>{format(day(night.date), "d MMMM yyyy")}</time>
             </p>
-            <h4 className="mt-0.5 font-semibold">{night.labels.join(" · ")}</h4>
+            {night.labels.length > 0 && <h4 className="mt-0.5 font-semibold">{night.labels.join(" · ")}</h4>}
 
             <Link
               href={`/matches/${night.matchId}`}
@@ -91,6 +91,16 @@ export default function SeasonNights({ nights }: { nights: StoryNight[] }) {
                 <ArrowRight className="h-3 w-3" />
               </span>
             </Link>
+            {night.story.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {night.story.map((line) => (
+                  <li key={line} className="flex items-baseline gap-2 text-sm">
+                    <span className="h-1.5 w-1.5 shrink-0 translate-y-[-2px] rounded-full bg-accent" aria-hidden />
+                    {line}
+                  </li>
+                ))}
+              </ul>
+            )}
           </li>
         );
       })}

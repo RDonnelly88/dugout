@@ -456,3 +456,28 @@ describe("how far the night moved everybody in the league", () => {
   });
 });
 
+describe("the odds and the squad as it is", () => {
+  it("gives each side the chance it was given, the two adding to one", () => {
+    const card = shareCard(match(), sides, nameOf, { chanceA: 0.3 })!;
+
+    expect(card.a.chance).toBeCloseTo(0.3);
+    expect(card.b.chance).toBeCloseTo(0.7);
+  });
+
+  /** A player who has stopped coming does not sit in the top five. */
+  it("leaves anybody no longer in the squad out of the ratings table", () => {
+    const ladder = [
+      { playerId: "gone", name: "Gone", rating: 1300 },
+      { playerId: "p3", name: "Chris", rating: 1250 },
+      { playerId: "p1", name: "Ross Donnelly", rating: 1240 },
+    ];
+    const card = shareCard(match(), sides, nameOf, { ladder, active: new Set(["p3"]) })!;
+
+    // Ross is not in the squad any more either, but played on the night.
+    expect(card.ladder.map((row) => [row.place, row.name])).toEqual([
+      [1, "Chris"],
+      [2, "Ross Donnelly"],
+    ]);
+  });
+});
+

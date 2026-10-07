@@ -77,6 +77,30 @@ describe("seasonWrap", () => {
     });
   });
 
+  describe("the other runs", () => {
+    it("finds the longest unbeaten run when it is longer than any run of wins", () => {
+      const season = [
+        match(["ally"], ["sam"], 2, 2),
+        match(["ally"], ["sam"], 3, 1),
+        match(["ally"], ["sam"], 1, 1),
+        match(["ally"], ["sam"], 2, 0),
+      ];
+      expect(seasonWrap(season).unbeaten).toEqual({ playerId: "ally", length: 4 });
+    });
+
+    /** Four wins on the bounce is the longest run; it is not also an unbeaten one. */
+    it("does not give an unbeaten run that was all wins", () => {
+      const season = Array.from({ length: 4 }, () => match(["ally"], ["sam"], 2, 0));
+      expect(seasonWrap(season).unbeaten).toBeNull();
+    });
+
+    it("finds the longest run of defeats, from three", () => {
+      const season = Array.from({ length: 3 }, () => match(["ally"], ["sam"], 2, 0));
+      expect(seasonWrap(season).slump).toEqual({ playerId: "sam", length: 3 });
+      expect(seasonWrap(season.slice(0, 2)).slump).toBeNull();
+    });
+  });
+
   describe("turning out", () => {
     it("names whoever played most, and what share that was", () => {
       const wrap = seasonWrap([

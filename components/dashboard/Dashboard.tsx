@@ -3,14 +3,16 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarPlus, ChevronRight, PartyPopper, Sparkles, TrendingUp, Trophy, UserPlus } from "lucide-react";
+import { CalendarPlus, ChevronRight, Flag, Flame, PartyPopper, Sparkles, TrendingUp, Trophy, UserPlus } from "lucide-react";
 import { useTeam } from "@/contexts/TeamContext";
 import { getCurrentSeason, getMatches, getPlayers, getSeasonPlayerStats, getSeasons } from "@/lib/db";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
+import { usePointValues } from "@/hooks/usePointValues";
 import { usePermission } from "@/lib/permission-utils";
 import { isActivePlayer } from "@/components/players/ActiveFilter";
 import { outcomeOf } from "@/lib/match-result";
+import { currentRuns, matchStory, nightContext } from "@/lib/match-story";
 import { milestones } from "@/lib/milestones";
 import { shortNames } from "@/lib/short-names";
 import PageHeader from "@/components/PageHeader";
@@ -20,6 +22,23 @@ import RatingLeaderboard from "@/components/ratings/RatingLeaderboard";
 import { NextUp, LastResult } from "./Matchday";
 
 const time = (date: string) => new Date(date).getTime();
+
+/** How far back a player's latest game can be for their run to still be news. */
+const RECENT_NIGHTS = 3;
+
+/** A panel's lines, each with the accent's dot. */
+function Lines({ lines }: { lines: string[] }) {
+  return (
+    <ul className="space-y-2">
+      {lines.map((line) => (
+        <li key={line} className="flex items-baseline gap-3 text-sm">
+          <span className="h-2 w-2 shrink-0 translate-y-[-1px] rounded-full bg-accent" aria-hidden />
+          {line}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 /** A card's heading, and the way through to the page that holds the rest. */
 function Panel({
@@ -59,8 +78,9 @@ function Panel({
 
 /**
  * The front page, in the order a Monday goes: the next night (or the button
- * to set one up), how the last one finished, then where everybody stands —
- * the table and the ratings — and anything worth a cheer coming up.
+ * to set one up), how the last one finished and what was worth saying about
+ * it, then where everybody stands — the table and the ratings — and the
+ * round numbers coming up.
  *
  * Everything else has a tab of its own; this is a glance, and each panel
  * goes through to the page that tells the rest.
@@ -117,11 +137,49 @@ const Dashboard = () => {
     [matches, last]
   );
 
-  const coming = useMemo(() => {
-    const active = new Set(players.filter(isActivePlayer).map((p) => p.id));
-    const lineUp = new Set(last ? [...last.teamA.players, ...last.teamB.players] : []);
-    return milestones(records.filter((r) => active.has(r.playerId)), lineUp).slice(0, 4);
-  }, [records, players, last]);
+  const active = useMemo(() => new Set(players.filter(isActivePlayer).map((p) => p.id)), [players]);
+
+  // The last night told the way the share card tells it, from the same
+  // story, so the front page and the picture in the group chat never differ;
+  // its runs are left to the panel below, which has everybody's.
+  const values = usePointValues();
+  const story = useMemo(() => {
+    if (!last) return [];
+    const night = nightContext(last, matches, values);
+    return matchStory({
+      match: last,
+      played: night.played,
+      season: night.season,
+      chanceA: night.chanceA,
+      league: night.league,
+      nameOf: (id) => byId.get(id)?.name,
+      among: (id) => active.has(id),
+      runs: false,
+    });
+  }, [last, matches, values, byId, active]);
+
+  // The runs the squad is on, each to their own latest game, so somebody
+  // who sat out last week is still on the run they left on. Only those who
+  // have played in the last few nights, so a run from months ago is not news.
+  const runs = useMemo(
+    () =>
+      currentRuns({
+        played,
+        players: [...active],
+        recent: new Set(played.slice(0, RECENT_NIGHTS).map((m) => m.id)),
+        nameOf: (id) => byId.get(id)?.name,
+        // The front page has room for everybody.
+        shown: Infinity,
+      }),
+    [played, active, byId]
+  );
+
+  // Round numbers still to come. One brought up last time out is in the
+  // story above, told only if it was really brought up then.
+  const coming = useMemo(
+    () => milestones(records.filter((r) => active.has(r.playerId)), new Set()).slice(0, 4),
+    [records, active]
+  );
 
   // A season that finished lately has a wrapped worth opening. Measured from
   // the latest result rather than today, so the page reads the same however
@@ -151,6 +209,18 @@ const Dashboard = () => {
         <NextUp fixture={fixture} canManage={admin} name={name} />
         <LastResult match={last} name={name} />
 
+        {last && story.length > 0 && (
+          <Panel title="Last time out" icon={PartyPopper} href={`/matches/${last.id}`} more="The match">
+            <Lines lines={story} />
+          </Panel>
+        )}
+
+        {runs.length > 0 && (
+          <Panel title="Runs going" icon={Flame}>
+            <Lines lines={runs} />
+          </Panel>
+        )}
+
         {wrapped && (
           <Link
             href={`/seasons/${wrapped.id}#wrapped`}
@@ -173,13 +243,15 @@ const Dashboard = () => {
           )}
           {ranked.length > 0 && (
             <Panel title="Top rated" icon={TrendingUp} href="/ratings" more="All ratings">
-              <RatingLeaderboard ratings={ranked.slice(0, 5)} players={players} />
+              {/* The squad as it is: somebody who has stopped coming keeps a
+                  rating, but not a place in the top five. */}
+              <RatingLeaderboard ratings={ranked.filter((r) => active.has(r.playerId)).slice(0, 5)} players={players} />
             </Panel>
           )}
         </div>
 
         {coming.length > 0 && (
-          <Panel title="Milestones" icon={PartyPopper}>
+          <Panel title="Coming up" icon={Flag}>
             <ul className="space-y-2">
               {coming.map((m) => {
                 const player = byId.get(m.playerId);
@@ -191,23 +263,9 @@ const Dashboard = () => {
                       <Link href={`/players/${m.playerId}`} className="font-semibold hover:underline">
                         {player?.name ?? "Unknown"}
                       </Link>{" "}
-                      {m.toGo === 0 ? (
-                        <>brought up {m.mark} {what}s last time out.</>
-                      ) : (
-                        <>
-                          is {m.toGo} {m.toGo === 1 ? what : `${what}s`} from {m.mark}.
-                        </>
-                      )}
+                      is {m.toGo} {m.toGo === 1 ? what : `${what}s`} from {m.mark}.
                     </span>
-                    <span
-                      className={
-                        m.toGo === 0
-                          ? "scoreboard text-xl text-accent"
-                          : "scoreboard text-xl text-muted-foreground"
-                      }
-                    >
-                      {m.mark}
-                    </span>
+                    <span className="scoreboard text-xl text-muted-foreground">{m.mark}</span>
                   </li>
                 );
               })}

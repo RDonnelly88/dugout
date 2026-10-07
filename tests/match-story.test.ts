@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchStory } from "@/lib/match-story";
+import { currentRuns, matchStory, nightContext } from "@/lib/match-story";
 import type { Match } from "@/types";
 
 const nameOf = (id: string) => id[0].toUpperCase() + id.slice(1);
@@ -221,6 +221,14 @@ describe("matchStory", () => {
     expect(storyOf(season, { season }).some((line) => line.includes("biggest"))).toBe(false);
   });
 
+  /** Somebody who has stopped coming is not the No. 1 anybody is told about. */
+  it("reads the No. 1 among the squad as it is", () => {
+    const played = [game(["ally"], ["sam"], "a"), game(["ally"], ["chris"], "a")];
+    // Ally tops everybody; with Ally gone from the squad, nobody playing
+    // tonight has taken a No. 1 from anybody still in it.
+    expect(storyOf(played, { among: (id) => id !== "ally" }).some((l) => l.includes("No. 1"))).toBe(false);
+  });
+
   it("says who has become the No. 1 in the ratings", () => {
     // Ally leads after the first; Sam, the underdog second time round, wins
     // more back than was lost.
@@ -259,3 +267,112 @@ describe("matchStory", () => {
     expect(matchStory({ match: fixture, played: [], nameOf })).toEqual([]);
   });
 });
+
+describe("nightContext", () => {
+  const VALUES = { win: 3, draw: 1 };
+
+  it("reads the night as it stood at the final whistle and no later", () => {
+    const first = { ...game(["ally"], ["sam"], "a"), seasonId: "s1" };
+    const tonight = { ...game(["ally"], ["sam"], "b"), seasonId: "s1" };
+    const later = { ...game(["ally"], ["sam"], "b"), seasonId: "s1" };
+    const night = nightContext(tonight, [later, tonight, first], VALUES);
+
+    expect(night.played.map((m) => m.id)).toEqual([first.id, tonight.id]);
+    expect(night.season.map((m) => m.id)).toEqual([first.id, tonight.id]);
+    expect(night.chanceA).toBeGreaterThan(0.5);
+  });
+
+  it("gives the season's places either side of the match", () => {
+    const first = { ...game(["ally"], ["sam"], "a"), seasonId: "s1" };
+    const second = { ...game(["sam"], ["ally"], "a"), seasonId: "s1" };
+    const night = nightContext(second, [first, second], VALUES);
+
+    expect(night.league?.before).toEqual({ ally: 1, sam: 2 });
+    expect(night.league?.after).toEqual({ ally: 1, sam: 1 });
+  });
+
+  it("has no table without point values or a season", () => {
+    const match = game(["ally"], ["sam"], "a");
+    expect(nightContext(match, [match], VALUES).table).toBeUndefined();
+    expect(nightContext({ ...match, seasonId: "s1" }, [{ ...match, seasonId: "s1" }], null).table).toBeUndefined();
+  });
+
+  it("has nothing for a match missing from the history", () => {
+    const match = game(["ally"], ["sam"], "a");
+    expect(nightContext(match, [], VALUES).played).toEqual([]);
+  });
+});
+
+describe("matchStory without runs", () => {
+  it("leaves runs to a page that tells them elsewhere", () => {
+    const played = Array.from({ length: 4 }, () => game(["ally"], ["sam"], "a"));
+    const story = storyOf(played, { runs: false });
+    expect(story.some((line) => line.includes("in a row"))).toBe(false);
+  });
+});
+
+describe("currentRuns", () => {
+  const runsOf = (played: Match[], players: string[], recent = played.slice(-3)) =>
+    currentRuns({ played, players, recent: new Set(recent.map((m) => m.id)), nameOf });
+
+  /** Sat out last week, still on the run they left on. */
+  it("counts a run to each player's own latest game", () => {
+    const played = [
+      ...Array.from({ length: 3 }, () => game(["ally"], ["umar"], "a")),
+      game(["ally"], ["sam"], "a"),
+    ];
+    expect(runsOf(played, ["ally", "umar"])).toEqual(["Ally has won 4 in a row", "Umar has lost 3 in a row"]);
+  });
+
+  it("says who hasn't won in a while, but not of a run of defeats told twice", () => {
+    const played = [
+      game(["ally"], ["umar"], "draw"),
+      game(["ally"], ["umar"], "a"),
+      game(["ally"], ["umar"], "draw"),
+    ];
+    expect(runsOf(played, ["umar"])).toEqual(["Umar hasn't won in 3"]);
+
+    const beaten = Array.from({ length: 3 }, () => game(["ally"], ["umar"], "a"));
+    expect(runsOf(beaten, ["umar"])).toEqual(["Umar has lost 3 in a row"]);
+  });
+
+  it("puts runs of different lengths in one line, longest first", () => {
+    const played = [
+      game(["chris"], ["sam"], "a"),
+      game(["ally", "chris"], ["sam"], "a"),
+      game(["ally", "chris"], ["sam"], "a"),
+      game(["ally", "chris"], ["sam"], "a"),
+    ];
+    expect(runsOf(played, ["ally", "chris"])).toEqual(["Winning runs: Chris 4, Ally 3"]);
+  });
+
+  /** A run from somebody gone since March is not news. */
+  it("leaves out anybody whose latest game is not recent", () => {
+    const played = [
+      ...Array.from({ length: 3 }, () => game(["ally"], ["umar"], "a")),
+      ...Array.from({ length: 3 }, () => game(["chris"], ["sam"], "draw")),
+    ];
+    expect(runsOf(played, ["umar"])).toEqual([]);
+  });
+});
+
+describe("a season told night by night", () => {
+  it("tells a run when it starts and at every five, not every week it grows", () => {
+    const worth = (n: number) => n === 3 || n % 5 === 0;
+    const played = Array.from({ length: 5 }, () => game(["ally"], ["sam"], "a"));
+    const said = (upTo: number) =>
+      storyOf(played.slice(0, upTo), { worth }).some((l) => l.startsWith("Ally has won"));
+
+    expect([3, 4, 5].map(said)).toEqual([true, false, true]);
+  });
+
+  it("names the first three of a crowd and counts the rest", () => {
+    const played = [...warmUp(), game(["ally", "sam"], ["chris", "dan"])];
+    const league = {
+      before: { ally: 2, sam: 2, chris: 2, dan: 2, eve: 1 },
+      after: { ally: 1, sam: 1, chris: 1, dan: 1, eve: 5 },
+    };
+    expect(storyOf(played, { league })).toContain("Ally, Sam, Chris and 1 more go top of the league");
+  });
+});
+

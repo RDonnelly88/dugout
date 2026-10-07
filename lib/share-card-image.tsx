@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { RESULTS_SHOWN } from "./config";
+import { signedWins } from "./expected-wins";
 import { ordinal } from "./podium";
 import {
   initials,
@@ -373,16 +374,24 @@ function Table({ title, unit, rows }: { title: string; unit?: string; rows: Shar
   );
 }
 
-/** A side's name over the score, and what the result locked in for each of them. */
+/**
+ * A side's name over the score, what the result locked in for each of them,
+ * and the odds it was played at: the chance the ratings gave them and the
+ * wins above or below it the result came to, as the match page puts it.
+ */
 function Side({
   side,
   tint,
   align,
+  actual,
 }: {
   side: ShareSide;
   tint: string;
   align: "flex-start" | "flex-end";
+  /** What the side took from the night: one for a win, a half for a draw. */
+  actual: number;
 }) {
+  const above = side.chance === undefined ? undefined : actual - side.chance;
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: align, width: 300 }}>
       <div style={{ display: "flex", fontSize: 44, fontWeight: 700, color: side.won ? tint : C.text }}>
@@ -394,6 +403,23 @@ function Side({
           <span style={{ marginLeft: 8, color: C.muted }}>each for the result</span>
         </div>
       )}
+      {side.chance !== undefined && above !== undefined && (
+        <div style={{ display: "flex", alignItems: "baseline", marginTop: 4, fontSize: 24 }}>
+          <span style={{ fontWeight: 700, color: C.text }}>{Math.round(side.chance * 100)}%</span>
+          <span style={{ marginLeft: 8, color: C.muted }}>chance ·</span>
+          <span
+            style={{
+              marginLeft: 8,
+              fontWeight: 700,
+              // Coloured only past what the figure shows: a red "0.0" reads as a loss.
+              color: above >= 0.05 ? C.win : above <= -0.05 ? C.loss : C.muted,
+            }}
+          >
+            {signedWins(above)}
+          </span>
+          <span style={{ marginLeft: 8, color: C.muted }}>xW</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -401,7 +427,7 @@ function Side({
 /** The heights the card is added up from; see `WIDTH`. */
 const H = {
   header: 34,
-  score: 32 + 136,
+  score: 32 + 156,
   headline: 10 + 44,
   story: (lines: number) => (lines === 0 ? 0 : 28 + 40 + lines * 40 + (lines - 1) * 6),
   lineUps: (row: number, perSide: number) => 28 + 2 * (34 + perSide * row) + 20,
@@ -467,10 +493,10 @@ export function matchCardImage(card: ShareCard, fonts: ImageFont[]): ImageRespon
             alignItems: "center",
             justifyContent: "space-between",
             marginTop: 32,
-            height: 136,
+            height: 156,
           }}
         >
-          <Side side={card.a} tint={tintA} align="flex-start" />
+          <Side side={card.a} tint={tintA} align="flex-start" actual={card.a.won ? 1 : drawn ? 0.5 : 0} />
           {scored ? (
             <div style={{ display: "flex", alignItems: "center", fontSize: 128, fontWeight: 700 }}>
               <span style={{ color: tintA }}>{card.a.score}</span>
@@ -483,7 +509,7 @@ export function matchCardImage(card: ShareCard, fonts: ImageFont[]): ImageRespon
             // pair of noughts that were never true.
             <div style={{ display: "flex", fontSize: 60, fontWeight: 700, color: C.border }}>v</div>
           )}
-          <Side side={card.b} tint={tintB} align="flex-end" />
+          <Side side={card.b} tint={tintB} align="flex-end" actual={card.b.won ? 1 : drawn ? 0.5 : 0} />
         </div>
 
         <div

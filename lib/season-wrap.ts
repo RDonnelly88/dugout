@@ -58,6 +58,10 @@ export interface SeasonWrap {
   climber: Mover | null;
   /** The longest run of wins anybody put together. */
   streak: Streak | null;
+  /** The longest run without a defeat, when longer than the longest of wins. */
+  unbeaten: Streak | null;
+  /** The longest run of defeats. */
+  slump: Streak | null;
   /** Who turned out most. */
   everPresent: Turnout | null;
   /** The result the table least expected. */
@@ -105,8 +109,15 @@ function climber(ratings: RatingTable, inSeason: Set<string>): Mover | null {
   return best && best.change > 0 ? best : null;
 }
 
-/** The longest run of wins, counted over the games each player was in. */
-function longestStreak(matches: Match[]): Streak | null {
+/**
+ * The longest run of results passing `keeps`, counted over the games each
+ * player was in, if it reaches `least`.
+ */
+function longestStreak(
+  matches: Match[],
+  keeps: (result: "win" | "draw" | "loss") => boolean = (r) => r === "win",
+  least = 2
+): Streak | null {
   const running = new Map<string, number>();
   let best: Streak | null = null;
 
@@ -116,17 +127,27 @@ function longestStreak(matches: Match[]): Streak | null {
       [match.teamA.players, "a"],
       [match.teamB.players, "b"],
     ] as const) {
-      const won = outcome === key;
+      const result = outcome === "draw" ? "draw" : outcome === key ? "win" : "loss";
       for (const id of side) {
-        const next = won ? (running.get(id) ?? 0) + 1 : 0;
+        const next = keeps(result) ? (running.get(id) ?? 0) + 1 : 0;
         running.set(id, next);
-        if (next > 1 && (!best || next > best.length))
+        if (next >= least && (!best || next > best.length))
           best = { playerId: id, length: next };
       }
     }
   }
 
   return best;
+}
+
+/** The fewest games in a run of the season worth an award. */
+const RUN_AWARD = 3;
+
+/** The longest unbeaten run, when it says more than the longest of wins. */
+function unbeatenRun(matches: Match[]): Streak | null {
+  const run = longestStreak(matches, (r) => r !== "loss", RUN_AWARD);
+  const wins = longestStreak(matches);
+  return run && (!wins || run.length > wins.length) ? run : null;
 }
 
 /** Who turned out most often. */
@@ -269,6 +290,8 @@ export function seasonWrap(
     matches: fixtures.length,
     climber: climber(ratings, inSeason),
     streak: longestStreak(season),
+    unbeaten: unbeatenRun(season),
+    slump: longestStreak(season, (r) => r === "loss", RUN_AWARD),
     everPresent: everPresent(season),
     upset: biggestUpset(fixtures, ratings),
     partnership: values ? partnership(season, values) : null,

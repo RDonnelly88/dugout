@@ -9,12 +9,15 @@ export interface StoryNight {
   outcome: Outcome;
   /** Only when both were written down. */
   score?: [number, number];
+  /** What was worth saying about the night; see `matchStory`. */
+  story: string[];
 }
 
 /**
  * The nights a season's story is told through, oldest first: how it opened,
- * the result nobody saw coming, and how it ended — or where it has got to,
- * for a season still running.
+ * the result nobody saw coming, how it ended — or where it has got to, for a
+ * season still running — and every night between with something worth
+ * saying about it, a run or a milestone or a new name at the top.
  *
  * A night that is two of those at once is told once, carrying both names,
  * rather than appearing twice on the line. A season of one match is one
@@ -22,7 +25,16 @@ export interface StoryNight {
  */
 export function seasonNights(
   season: Match[],
-  { upsetMatchId, finished }: { upsetMatchId?: string; finished: boolean }
+  {
+    upsetMatchId,
+    finished,
+    stories = new Map(),
+  }: {
+    upsetMatchId?: string;
+    finished: boolean;
+    /** Each night's story by match id, for the nights between. */
+    stories?: Map<string, string[]>;
+  }
 ): StoryNight[] {
   const played = season
     .filter((m) => outcomeOf(m) !== null)
@@ -43,14 +55,15 @@ export function seasonNights(
   add(played.at(-1), finished ? "Final night" : "Latest night");
 
   return played
-    .filter((m) => picked.has(m.id))
+    .filter((m) => picked.has(m.id) || (stories.get(m.id)?.length ?? 0) > 0)
     .map((m) => {
       const a = m.teamA?.score;
       const b = m.teamB?.score;
       return {
         matchId: m.id,
         date: m.date,
-        labels: picked.get(m.id)!,
+        labels: picked.get(m.id) ?? [],
+        story: stories.get(m.id) ?? [],
         outcome: outcomeOf(m)!,
         score: typeof a === "number" && typeof b === "number" ? [a, b] : undefined,
       };
