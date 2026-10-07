@@ -6,7 +6,7 @@ import { ChevronDown, ChevronUp, Hourglass, Minus } from "lucide-react";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import Counter from "@/components/Counter";
 import { displayRating, type PlayerRating } from "@/lib/elo";
-import { ELO } from "@/lib/config";
+import { ELO, RECENT_MATCHES } from "@/lib/config";
 import { awayExplanation } from "@/components/ratings/away";
 import type { Player } from "@/types";
 
@@ -130,7 +130,7 @@ export default function RatingLeaderboard({
                   className="relative hidden items-center gap-1 whitespace-nowrap text-xs text-muted-foreground sm:inline-flex"
                   title={
                     rating.counted === 0
-                      ? `None of their games are in the squad's last ${ELO.window} matches, so there is nothing to rate them on.`
+                      ? `None of their games are in the squad's last ${RECENT_MATCHES} matches, so what is left of them is small and the rating says little about them now.`
                       : awayExplanation(rating.missed)
                   }
                 >

@@ -10,11 +10,12 @@ interface PlayerImpact {
   /** The run they walked in on, newest first, with the nights they were not there marked. */
   results: RecentResult[];
   /**
-   * How many of their games the rating rested on going in. Two team-mates in
-   * the same result move by different amounts mostly because of this, so it
-   * is carried here rather than left to be guessed at.
+   * How many games they had played going in. Two team-mates in the same
+   * result move by different amounts because their older games fade by
+   * different amounts, and a debutant has none, so it is carried here rather
+   * than left to be guessed at.
    */
-  counted: number;
+  gamesBefore: number;
 }
 
 export interface SideImpact {
@@ -51,7 +52,7 @@ export function matchImpact(matches: Match[], match: Match): MatchImpact | null 
       after: moment.rating,
       change: moment.change,
       results: moment.resultsBefore,
-      counted: moment.countedBefore,
+      gamesBefore: moment.gamesBefore,
     };
   };
 

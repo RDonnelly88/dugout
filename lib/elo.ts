@@ -1,4 +1,4 @@
-import { ELO } from "./config";
+import { ELO, RECENT_MATCHES } from "./config";
 import { rollResults, type Result } from "./recent-results";
 import { outcomeOf } from "./match-result";
 import type { Match, RecentResult } from "@/types";
@@ -36,11 +36,11 @@ interface RatingPoint {
   /** The run they walked in on, newest first, for showing beside the result. */
   resultsBefore: RecentResult[];
   /**
-   * How many of their games were still counting going in. Team-mates take
-   * the same verdict from a result; what differs is how much their older
-   * games faded on the same night, and that depends on how many there were.
+   * How many games they had played going in. Team-mates take the same
+   * verdict from a result; what differs is how much their older games faded
+   * on the same night, and a debutant has none to fade.
    */
-  countedBefore: number;
+  gamesBefore: number;
 }
 
 export interface PlayerRating {
@@ -57,9 +57,9 @@ export interface PlayerRating {
   /** Matches the squad has played since this player last turned out. */
   missed: number;
   /**
-   * Their games still inside the window. Nought means nothing of theirs still
-   * counts: they are back on `ELO.start`, and the number says nothing about
-   * them.
+   * Their games in the squad's last `RECENT_MATCHES`. Nought means they have
+   * not played lately: what is left of their older games is small, and the
+   * number says little about them now.
    */
   counted: number;
   /**
@@ -87,8 +87,14 @@ export interface PlayerRating {
 /**
  * How much a game counts towards a rating, by how many matches the squad has
  * played since it. The newest counts in full, each one older counts a little
- * less, halving every `ELO.halfLife` matches, and from `ELO.window` back it
- * counts for nothing at all.
+ * less, halving every `ELO.halfLife` matches: a quarter at twice that, an
+ * eighth at three times, and so on, small but never quite nothing.
+ *
+ * No game is ever cut off. A cut-off took what was left of a game away in a
+ * single match, which moved a rating — up, for an old defeat — on a night its
+ * player sat out. Halving alone makes every game shrink by the same share
+ * each match, so a rating left alone always eases towards `ELO.start`, by
+ * the same share of the way each time.
  *
  * Counted in the squad's matches, whoever played in them, so a game ages the
  * same for everybody: somebody back after five weeks away finds their last
@@ -97,12 +103,13 @@ export interface PlayerRating {
  * they play again.
  */
 export function gameWeight(age: number): number {
-  if (age < 0 || age >= ELO.window) return 0;
+  if (age < 0) return 0;
   return 0.5 ** (age / ELO.halfLife);
 }
 
-/** `gameWeight` for every age inside the window, worked out once. */
-const WEIGHTS = Array.from({ length: ELO.window }, (_, age) => gameWeight(age));
+/** `gameWeight` by age, each worked out the first time it is asked for. */
+const WEIGHTS: number[] = [];
+const weightAt = (age: number) => (WEIGHTS[age] ??= gameWeight(age));
 
 /**
  * The share of the points a side of rating `a` is expected to take against a
@@ -129,8 +136,8 @@ interface Contribution {
 
 /**
  * A rating as it stands after `night`: the start, plus every game's
- * contribution still in the window, each faded by how many of the squad's
- * matches have been played since.
+ * contribution, each faded by how many of the squad's matches have been
+ * played since.
  *
  * The contributions are fixed. Nothing that happens later changes what a
  * game was worth — only how much it still counts as it ages.
@@ -139,7 +146,7 @@ function ratingAt(contributions: Contribution[], night: number): number {
   let rating = ELO.start;
   for (const c of contributions) {
     const age = night - c.night;
-    if (age >= 0 && age < ELO.window) rating += c.delta * WEIGHTS[age];
+    if (age >= 0) rating += c.delta * weightAt(age);
   }
   return rating;
 }
@@ -151,8 +158,8 @@ function ratingAt(contributions: Contribution[], night: number): number {
  * was expected to take, and every player on a side moves by the same
  * `ELO.k` times the gap between that and what they took. That amount is
  * locked in. Afterwards it only fades, counting less with every match the
- * squad plays and nothing once it is `ELO.window` matches old (see
- * `gameWeight`), so a rating is "what the recent games said at the time",
+ * squad plays (see `gameWeight`), so a rating is "what the recent games said
+ * at the time",
  * never a running total that a good spell two years ago is still propping
  * up, and never a re-reading of an old game in the light of later ones.
  *
@@ -201,9 +208,9 @@ function replay(matches: Match[]): Map<string, PlayerRating> {
   const appearances: number[][] = [];
   const lastPlayedIndex = new Map<string, number>();
 
-  // Of a player's nights, the ones still inside the window after `night`.
-  const inWindow = (player: number, night: number) =>
-    appearances[player].filter((g) => night - g < ELO.window).length;
+  // Of a player's nights, the ones among the squad's recent matches after `night`.
+  const recently = (player: number, night: number) =>
+    appearances[player].filter((g) => night - g < RECENT_MATCHES).length;
 
   // The run each player carries into the next match, newest first, with the
   // nights the squad played without them marked — the same strip the table
@@ -242,8 +249,8 @@ function replay(matches: Match[]): Map<string, PlayerRating> {
     const at = (playerId: string) => before[index.get(playerId)!];
     const ratingA = mean(sideA.map(at));
     const ratingB = mean(sideB.map(at));
-    const countedBefore = new Map(
-      [...sideA, ...sideB].map((id) => [id, inWindow(index.get(id)!, night - 1)])
+    const gamesBefore = new Map(
+      [...sideA, ...sideB].map((id) => [id, appearances[index.get(id)!].length])
     );
 
     const lineUp = [...sideA, ...sideB];
@@ -300,7 +307,7 @@ function replay(matches: Match[]): Map<string, PlayerRating> {
           : expectedScore(ratingB, ratingA),
         result,
         resultsBefore: run,
-        countedBefore: countedBefore.get(playerId)!,
+        gamesBefore: gamesBefore.get(playerId)!,
       });
       runs.set(playerId, rollResults(run, result));
       lastPlayedIndex.set(playerId, night);
@@ -315,7 +322,7 @@ function replay(matches: Match[]): Map<string, PlayerRating> {
 
   for (const player of ratings.values()) {
     player.missed = played.length - 1 - lastPlayedIndex.get(player.playerId)!;
-    player.counted = inWindow(index.get(player.playerId)!, played.length - 1);
+    player.counted = recently(index.get(player.playerId)!, played.length - 1);
   }
 
   return ratings;

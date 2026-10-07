@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { getMatches, getPlayers, getSeasons } from "@/lib/db";
 import { useTeam } from "@/contexts/TeamContext";
-import { ELO } from "@/lib/config";
+import { RECENT_MATCHES } from "@/lib/config";
 import { matchExpectations } from "@/lib/expected-wins";
 import { ringOrder, squadWeb } from "@/lib/squad-web";
 import { readTimeline, withinTimeline } from "@/lib/timeline";
@@ -83,7 +83,7 @@ function SquadWebPage() {
 
   const stretches = [
     { token: null, name: "All time" },
-    { token: "recent", name: `Last ${ELO.window}` },
+    { token: "recent", name: `Last ${RECENT_MATCHES}` },
     ...[...seasons]
       .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
       .map((s) => ({ token: `s:${s.id}`, name: s.name })),

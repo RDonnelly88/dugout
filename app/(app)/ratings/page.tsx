@@ -82,8 +82,9 @@ export default function RatingsPage() {
         subtitle={
           <>
             Who the results say is strongest right now. Every game is settled
-            on the night and fades as the squad plays on, so only the last{" "}
-            {ELO.window} matches count. Everybody starts on {ELO.start}.
+            on the night and fades as the squad plays on, halving every{" "}
+            {ELO.halfLife} matches, so the latest count most. Everybody starts
+            on {ELO.start}.
           </>
         }
       />

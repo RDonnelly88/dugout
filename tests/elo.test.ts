@@ -218,10 +218,11 @@ describe("gameWeight", () => {
     expect(gameWeight(ELO.halfLife + 5) / gameWeight(5)).toBeCloseTo(0.5);
   });
 
-  it("stops counting a game at the edge of the window", () => {
-    expect(gameWeight(ELO.window - 1)).toBeGreaterThan(0);
-    expect(gameWeight(ELO.window)).toBe(0);
-    expect(gameWeight(ELO.window + 50)).toBe(0);
+  /** No edge for an old game to fall off and jolt a rating the week it does. */
+  it("never stops counting a game, only counts it for less", () => {
+    expect(gameWeight(ELO.halfLife * 2)).toBeCloseTo(0.25);
+    expect(gameWeight(ELO.halfLife * 10)).toBeGreaterThan(0);
+    expect(gameWeight(ELO.halfLife * 10)).toBeLessThan(0.001);
   });
 });
 
@@ -231,12 +232,11 @@ describe("old games fade", () => {
     won ? match([player], [`${tag}`], 1, 0) : match([`${tag}`], [player], 1, 0);
 
   /**
-   * The early run still shaped the verdicts after it — a player expected to
-   * win is paid less for winning — but its own points are gone, so it
-   * cannot leave anybody higher than the recent games alone would.
+   * Four halvings on, a flying start counts a sixteenth of what it did: it
+   * can no longer hold a rating up the way a running total would.
    */
-  it("props nobody up with a result a window's worth of games old", () => {
-    const recent = Array.from({ length: ELO.window }, (_, i) =>
+  it("leaves only a sliver of a result four half-lives old", () => {
+    const recent = Array.from({ length: ELO.halfLife * 4 }, (_, i) =>
       versus("a", i % 2 === 0, `recent${i}`)
     );
     const flyingStart = Array.from({ length: 12 }, (_, i) =>
@@ -246,7 +246,8 @@ describe("old games fade", () => {
     const withThem = computeRatings([...flyingStart, ...recent]).get("a")!;
     const without = computeRatings(recent).get("a")!;
 
-    expect(withThem.rating).toBeLessThanOrEqual(without.rating);
+    const early = computeRatings(flyingStart).get("a")!.rating - ELO.start;
+    expect(withThem.rating - without.rating).toBeLessThan(early * gameWeight(ELO.halfLife * 4) + 1);
     expect(withThem.counted).toBe(without.counted);
   });
 
@@ -270,7 +271,7 @@ describe("old games fade", () => {
   it("catches up with a player who has got better", () => {
     const poorThenGood = [
       ...Array.from({ length: 30 }, (_, i) => versus("a", false, `p${i}`)),
-      ...Array.from({ length: ELO.window }, (_, i) => versus("a", true, `g${i}`)),
+      ...Array.from({ length: ELO.halfLife * 2 }, (_, i) => versus("a", true, `g${i}`)),
     ];
 
     expect(computeRatings(poorThenGood).get("a")!.rating).toBeGreaterThan(
@@ -317,9 +318,9 @@ describe("computeRatings and matches missed", () => {
     expect(after.lastChange).toBeLessThan(0);
   });
 
-  it("has nothing left to rate somebody on once a window has passed without them", () => {
+  it("leaves little to rate somebody on after a long spell without them", () => {
     const opener = match(["a"], ["b"], 5, 0, "2026-01-01");
-    const away = Array.from({ length: ELO.window }, (_, i) =>
+    const away = Array.from({ length: ELO.halfLife * 4 }, (_, i) =>
       match(
         [`x${i}`],
         [`y${i}`],
@@ -329,9 +330,10 @@ describe("computeRatings and matches missed", () => {
       )
     );
     const a = computeRatings([opener, ...away]).get("a")!;
+    const first = computeRatings([opener]).get("a")!.rating;
 
     expect(a.counted).toBe(0);
-    expect(a.rating).toBeCloseTo(ELO.start, 6);
+    expect(a.rating - ELO.start).toBeCloseTo((first - ELO.start) * gameWeight(ELO.halfLife * 4), 9);
   });
 
   it("counts nothing missed for somebody who played the last match", () => {

@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { FlaskConical, Handshake, Network, UserPlus, X } from "lucide-react";
 import { getMatches, getPlayers, getSeasons } from "@/lib/db";
 import { useTeam } from "@/contexts/TeamContext";
-import { ELO } from "@/lib/config";
+import { RECENT_MATCHES } from "@/lib/config";
 import { matchExpectations, signedWins, type Ledger } from "@/lib/expected-wins";
 import type { PointValues } from "@/lib/season-positions";
 import {
@@ -440,7 +440,7 @@ function LineupLab() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All time</SelectItem>
-                  <SelectItem value="recent">Last {ELO.window} matches</SelectItem>
+                  <SelectItem value="recent">Last {RECENT_MATCHES} matches</SelectItem>
                   <SelectItem value="year">Last {LAST_MONTHS} months</SelectItem>
                   {seasons.map((season) => (
                     <SelectItem key={season.id} value={`s:${season.id}`}>

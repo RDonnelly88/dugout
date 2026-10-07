@@ -1,4 +1,4 @@
-import { ELO } from "./config";
+import { RECENT_MATCHES } from "./config";
 import { outcomeOf } from "./match-result";
 import type { Match } from "@/types";
 
@@ -61,7 +61,7 @@ export const LAST_MONTHS = 12;
  */
 export function readTimeline(token: string | null): Timeline {
   if (!token || token === "all") return { kind: "all" };
-  if (token === "recent") return { kind: "recent", matches: ELO.window };
+  if (token === "recent") return { kind: "recent", matches: RECENT_MATCHES };
   if (token === "year") return { kind: "months", months: LAST_MONTHS };
   if (token.startsWith("s:")) return { kind: "season", seasonId: token.slice(2) };
   if (token.startsWith("r:")) {

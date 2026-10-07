@@ -12,7 +12,7 @@
  * was expected to take — with one change: a game's effect fades. Each
  * game's verdict is settled on the night from the ratings as they stood and
  * never revisited, and then counts for less with every match the squad plays,
- * and for nothing once it is `window` matches old.
+ * halving every `halfLife` of them however old it gets, and never cut off.
  *
  * A running total never forgets, so a great spell two years ago went on
  * holding a rating up long after the player had stopped being that player.
@@ -36,14 +36,6 @@ export const ELO = {
    * much towards a rating as the latest.
    */
   halfLife: 20,
-
-  /**
-   * Matches the squad has played since a game, after which it no longer
-   * counts at all. Paired with `halfLife`: by the time a game drops out it is
-   * already counting for a quarter, so nobody's rating lurches the week an
-   * old result leaves.
-   */
-  window: 40,
 
   /**
    * How far one game can move a side: the most it can take from a win
@@ -101,6 +93,13 @@ export const RESULTS_SHOWN = 5;
  * `season_player_stats` view, which is what the table is actually computed
  * from — a copy in TypeScript would be a second answer to the same question.
  */
+
+/**
+ * What "recent" means wherever a stretch of matches can be picked or a
+ * player can be said to have gone quiet: the squad's last forty, by which
+ * point a game counts for a quarter of a rating.
+ */
+export const RECENT_MATCHES = 40;
 
 /** What the two sides are called on screen. Team A is the one in bibs. */
 export const SIDE_NAMES = { A: "Bibs", B: "No bibs" } as const;

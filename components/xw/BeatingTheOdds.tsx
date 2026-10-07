@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Target } from "lucide-react";
 import { getMatches } from "@/lib/db";
 import { useTeam } from "@/contexts/TeamContext";
-import { ELO } from "@/lib/config";
+import { RECENT_MATCHES } from "@/lib/config";
 import { matchExpectations, playerLedgers, signedWins } from "@/lib/expected-wins";
 import { withinTimeline, type Timeline } from "@/lib/timeline";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
@@ -26,7 +26,7 @@ import {
 import type { Player } from "@/types";
 
 const STRETCHES: Record<string, { label: string; timeline: Timeline }> = {
-  recent: { label: `Last ${ELO.window}`, timeline: { kind: "recent", matches: ELO.window } },
+  recent: { label: `Last ${RECENT_MATCHES}`, timeline: { kind: "recent", matches: RECENT_MATCHES } },
   all: { label: "All time", timeline: { kind: "all" } },
 };
 
