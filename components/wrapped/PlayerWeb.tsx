@@ -46,7 +46,7 @@ export default function PlayerWeb({
   playerFor,
   values,
   across = "the season",
-  everyone = false,
+  gamesOf,
 }: {
   player: Player;
   /** Their own season, the baseline a spoke is read against. */
@@ -59,10 +59,12 @@ export default function PlayerWeb({
   /** The stretch the baseline covers, as the caption names it. */
   across?: string;
   /**
-   * Everybody they shared a pitch with, however few games, and no control
-   * to thin them: a wrapped is the whole season, not a filtered view of it.
+   * Each person's own games over the stretch, for a floor that leaves the
+   * one-night guests off the ring. Without it everybody they shared a pitch
+   * with is drawn and there is no control to thin them, which is what a
+   * wrapped wants: the whole season, not a filtered view of it.
    */
-  everyone?: boolean;
+  gamesOf?: (playerId: string) => number;
 }) {
   const [side, setSide] = useState<"with" | "against">("with");
   const [minGames, setMinGames] = useState(MIN_GAMES);
@@ -73,9 +75,15 @@ export default function PlayerWeb({
   const all = side === "with" ? mates : opponents;
   // Never past the most games anybody has, so the ring always keeps the
   // people they have played most with, however short the stretch.
-  const mostAny = Math.max(1, ...all.map((e) => e.ledger.played));
-  const threshold = everyone ? 1 : Math.min(minGames, mostAny);
-  const entries = useMemo(() => all.filter((e) => e.ledger.played >= threshold), [all, threshold]);
+  // The floor is on how much each of them has played, not how much with this
+  // player: a regular they have shared one game with stays, a guest who came
+  // once goes. Never past the most anybody has, so the ring is never empty.
+  const mostAny = gamesOf ? Math.max(1, ...all.map((e) => gamesOf(e.playerId))) : 1;
+  const threshold = gamesOf ? Math.min(minGames, mostAny) : 1;
+  const entries = useMemo(
+    () => (gamesOf ? all.filter((e) => gamesOf(e.playerId) >= threshold) : all),
+    [all, gamesOf, threshold]
+  );
   const ring = useMemo(
     () =>
       [...entries].sort(
@@ -123,13 +131,12 @@ export default function PlayerWeb({
           </SegmentedControlItem>
         </SegmentedControl>
 
-        {!everyone && (
+        {gamesOf && (
           <>
             <MinGamesStepper
               value={threshold}
               most={mostAny}
               onChange={setMinGames}
-              unit={side === "with" ? "together" : "meetings"}
             />
             <span className="flex items-center text-xs text-muted-foreground tabular">
               {ring.length} of {all.length} shown
