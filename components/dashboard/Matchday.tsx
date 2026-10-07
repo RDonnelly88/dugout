@@ -125,17 +125,20 @@ export function LastResult({ match, name }: { match: Match | undefined; name: (i
       </p>
       <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-start gap-3">
         {side("a")}
-        <p className="scoreboard whitespace-nowrap pt-1 text-4xl leading-none sm:text-5xl">
-          {scored ? (
-            <>
-              <span className={outcome === "b" ? "text-muted-foreground" : undefined}>{a}</span>
-              <span className="mx-1.5 text-muted-foreground">–</span>
-              <span className={outcome === "a" ? "text-muted-foreground" : undefined}>{b}</span>
-            </>
-          ) : (
-            <span className="text-2xl">{outcome === "draw" ? "Drawn" : "FT"}</span>
-          )}
-        </p>
+        {scored ? (
+          <p className="scoreboard whitespace-nowrap pt-1 text-4xl leading-none sm:text-5xl">
+            <span className={outcome === "b" ? "text-muted-foreground" : undefined}>{a}</span>
+            <span className="mx-1.5 text-muted-foreground">–</span>
+            <span className={outcome === "a" ? "text-muted-foreground" : undefined}>{b}</span>
+          </p>
+        ) : (
+          // Most nights go down without a score. The result is then said
+          // the way the results list says it, left side first, rather than
+          // a bare "FT" that tells you nothing about who won.
+          <p className="whitespace-nowrap pt-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {outcome === "a" ? "beat" : outcome === "b" ? "lost to" : "drew with"}
+          </p>
+        )}
         {side("b")}
       </div>
     </Link>
