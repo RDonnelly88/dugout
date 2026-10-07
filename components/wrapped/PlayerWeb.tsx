@@ -46,6 +46,7 @@ export default function PlayerWeb({
   playerFor,
   values,
   across = "the season",
+  everyone = false,
 }: {
   player: Player;
   /** Their own season, the baseline a spoke is read against. */
@@ -57,6 +58,11 @@ export default function PlayerWeb({
   values: PointValues;
   /** The stretch the baseline covers, as the caption names it. */
   across?: string;
+  /**
+   * Everybody they shared a pitch with, however few games, and no control
+   * to thin them: a wrapped is the whole season, not a filtered view of it.
+   */
+  everyone?: boolean;
 }) {
   const [side, setSide] = useState<"with" | "against">("with");
   const [minGames, setMinGames] = useState(MIN_GAMES);
@@ -68,7 +74,7 @@ export default function PlayerWeb({
   // Never past the most games anybody has, so the ring always keeps the
   // people they have played most with, however short the stretch.
   const mostAny = Math.max(1, ...all.map((e) => e.ledger.played));
-  const threshold = Math.min(minGames, mostAny);
+  const threshold = everyone ? 1 : Math.min(minGames, mostAny);
   const entries = useMemo(() => all.filter((e) => e.ledger.played >= threshold), [all, threshold]);
   const ring = useMemo(
     () =>
@@ -117,15 +123,19 @@ export default function PlayerWeb({
           </SegmentedControlItem>
         </SegmentedControl>
 
-        <MinGamesStepper
-          value={threshold}
-          most={mostAny}
-          onChange={setMinGames}
-          unit={side === "with" ? "together" : "meetings"}
-        />
-        <span className="flex items-center text-xs text-muted-foreground tabular">
-          {ring.length} of {all.length} shown
-        </span>
+        {!everyone && (
+          <>
+            <MinGamesStepper
+              value={threshold}
+              most={mostAny}
+              onChange={setMinGames}
+              unit={side === "with" ? "together" : "meetings"}
+            />
+            <span className="flex items-center text-xs text-muted-foreground tabular">
+              {ring.length} of {all.length} shown
+            </span>
+          </>
+        )}
       </div>
 
       <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="mx-auto w-full max-w-[360px] overflow-visible" aria-hidden>
