@@ -164,22 +164,48 @@ describe("the blurb", () => {
 });
 
 describe("what the night was worth", () => {
-  it("puts each player's swing beside them", () => {
+  /**
+   * The result's own points, not the night's change in a rating, which also
+   * carries older games fading and can fall on a night the side won.
+   */
+  it("gives each side what the result locked in", () => {
+    const card = shareCard(match(), sides, nameOf, { points: { a: 6.4, b: -6.4 } })!;
+
+    expect(card.a.points).toBeCloseTo(6.4);
+    expect(card.b.points).toBeCloseTo(-6.4);
+  });
+
+  it("leaves it off a side the ladder has no record of", () => {
+    const card = shareCard(match(), sides, nameOf, { points: {} })!;
+    expect(card.a.points).toBeUndefined();
+  });
+
+  /** Team-mates share the result but not the fading, so each has their own. */
+  it("puts each player's own move beside them", () => {
     const card = shareCard(match(), sides, nameOf, {
+      points: { a: 6.4, b: -6.4 },
       changes: new Map([
-        ["p1", 18.4],
-        ["p2", -18.4],
+        ["p1", 5.1],
+        ["p2", -7.2],
       ]),
     })!;
 
-    expect(card.a.players[0].change).toBeCloseTo(18.4);
-    expect(card.b.players[0].change).toBeCloseTo(-18.4);
+    expect(card.a.players[0].change).toBeCloseTo(5.1);
+    expect(card.b.players[0].change).toBeCloseTo(-7.2);
   });
 
-  /** A player deleted since the match still has a shirt on the night. */
-  it("leaves the swing off anybody the ladder has never heard of", () => {
+  it("leaves the move off anybody the ladder has never heard of", () => {
     const card = shareCard(match(), sides, nameOf, { changes: new Map() })!;
     expect(card.a.players[0].change).toBeUndefined();
+  });
+
+  it("tells the story of the night from the history it is given", () => {
+    const card = shareCard(match(), sides, nameOf, { played: [match()], chanceA: 0.3 })!;
+
+    expect(card.story).toContain("An upset: the winners had a 30% chance");
+    expect(shareCard(match(), sides, nameOf)!.story).toEqual(
+      expect.not.arrayContaining(["An upset: the winners had a 30% chance"])
+    );
   });
 });
 
@@ -388,3 +414,45 @@ describe("the run each player is on", () => {
     expect(card.a.players[0].results).toBeUndefined();
   });
 });
+
+describe("how far the night moved everybody in the league", () => {
+  const before = [
+    { playerId: "p2", name: "Sam", points: 10, played: 4, wins: 3 },
+    { playerId: "p3", name: "Chris", points: 9, played: 4, wins: 3 },
+    { playerId: "p1", name: "Ross Donnelly", points: 8, played: 4, wins: 2 },
+  ];
+  const after = [
+    { playerId: "p1", name: "Ross Donnelly", points: 11, played: 5, wins: 3 },
+    { playerId: "p2", name: "Sam", points: 10, played: 5, wins: 3 },
+    { playerId: "p3", name: "Chris", points: 9, played: 4, wins: 3 },
+  ];
+
+  it("puts places gained and lost beside each player", () => {
+    const card = shareCard(match(), sides, nameOf, { standings: after, previous: before })!;
+
+    expect(card.a.players[0].moved).toBe(2);
+    expect(card.b.players[0].moved).toBe(-1);
+  });
+
+  it("puts them in the table too", () => {
+    const card = shareCard(match(), sides, nameOf, { standings: after, previous: before })!;
+
+    expect(card.standings.map((row) => row.moved)).toEqual([2, -1, -1]);
+  });
+
+  /** A first game of the season has no place to have moved from. */
+  it("leaves it off somebody new to the table", () => {
+    const card = shareCard(match(), sides, nameOf, {
+      standings: after,
+      previous: before.filter((row) => row.playerId !== "p1"),
+    })!;
+
+    expect(card.a.players[0].moved).toBeUndefined();
+  });
+
+  it("tells the story of who went top", () => {
+    const card = shareCard(match(), sides, nameOf, { standings: after, previous: before })!;
+    expect(card.story).toContain("Ross Donnelly goes top of the league");
+  });
+});
+

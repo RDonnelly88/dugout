@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { RESULTS_SHOWN } from "./config";
+import { ordinal } from "./podium";
 import {
   initials,
   type ShareCard,
@@ -38,37 +39,27 @@ export const C = {
 };
 
 /**
- * The card is as tall as it has something to say.
+ * Portrait, the shape of the phone it lands on. A landscape card shrinks to
+ * the width of a message bubble and its names to a few points high; four by
+ * five fills the screen when it is opened and still reads in the thread.
  *
- * A link preview wants 1200 by 630, but this is never a link preview — the
- * file itself is what gets sent, so the only shape it has to suit is a phone
- * screen. With tables under the result it grows to fit them; without, it
- * stays short rather than leaving a third of the picture empty, which is
- * precisely what a squad in its first fortnight would get.
+ * As tall as it has something to say: the height is added up from what is
+ * on it, so a squad in its first fortnight, with no tables and nothing to
+ * tell, gets a shorter card rather than one with a hole in it.
  */
+const WIDTH = 1080;
+const PAD = 60;
+const INNER = WIDTH - PAD * 2;
+
 /** The space between two squares of a run. */
 const FORM_GAP = 4;
 
-const WIDTH = 1200;
-const HEIGHT = { withTables: 900, plain: 630 };
+/** Where a player's league place sits, at the end of their row, with how far it moved. */
+const PLACE = 132;
 
-interface RowSize {
-  chip: number;
-  name: number;
-  gap: number;
-  /** One square of the results strip. */
-  box: number;
-}
-
-/**
- * How wide one side's list of names is.
- *
- * Fixed rather than fitted to the longest name, so both lists put their results
- * and their places in the same columns and the eye can read straight down
- * them. A name longer than its share of the row is cut rather than allowed to
- * shove the run of results off the card.
- */
-const COLUMN = 500;
+/** One of the two tables under the line-ups. */
+const TABLE = (INNER - 40) / 2;
+const TABLE_ROW = 40;
 
 const FORM_TINT: Record<RecentResult, string> = {
   win: C.win,
@@ -92,22 +83,18 @@ const FORM_LETTER: Record<RecentResult, string> = {
  *
  * The run arrives newest first and is drawn the other way round, the same way
  * the app draws it, so it reads forwards and ends on the night the card is
- * about. The list is never reversed for the away side: a mirrored run of
- * results would be a different story told backwards.
+ * about.
  */
-function ResultRun({ results, size }: { results: RecentResult[]; size: RowSize }) {
+function ResultRun({ results, box }: { results: RecentResult[]; box: number }) {
   return (
     <div
       style={{
         display: "flex",
         flexShrink: 0,
-        // Always as wide as a full run, and filled from the right. A player
-        // three games into their first season has a short run, and without a
-        // width to sit in every strip on the card started somewhere different
-        // and the column of placings after them came out ragged. Filled from
-        // the right because the last square is this match on every row, so it
-        // is the edge that has to line up.
-        width: RESULTS_SHOWN * size.box + (RESULTS_SHOWN - 1) * FORM_GAP,
+        // Always as wide as a full run, and filled from the right, so a
+        // newcomer's short run still ends in the same column as everybody
+        // else's: the last square is this match on every row.
+        width: RESULTS_SHOWN * box + (RESULTS_SHOWN - 1) * FORM_GAP,
         justifyContent: "flex-end",
       }}
     >
@@ -118,8 +105,8 @@ function ResultRun({ results, size }: { results: RecentResult[]; size: RowSize }
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width: size.box,
-            height: size.box,
+            width: box,
+            height: box,
             marginLeft: index === 0 ? 0 : FORM_GAP,
             borderRadius: 4,
             background: FORM_TINT[result],
@@ -127,7 +114,7 @@ function ResultRun({ results, size }: { results: RecentResult[]; size: RowSize }
             // square at all, so five weeks are still five things wide.
             border: `1px solid ${result === "dnp" ? C.border : "transparent"}`,
             color: result === "dnp" ? C.muted : C.bg,
-            fontSize: Math.round(size.box * 0.6),
+            fontSize: Math.round(box * 0.6),
             fontWeight: 700,
           }}
         >
@@ -138,185 +125,168 @@ function ResultRun({ results, size }: { results: RecentResult[]; size: RowSize }
   );
 }
 
-function Swing({ change, size }: { change: number; size: number }) {
-  const moved = Math.round(change);
+/** "+4", "−3", "±0": a rounded swing, signed the way the app signs one. */
+function signed(value: number): string {
+  const moved = Math.round(value);
+  return `${moved > 0 ? "+" : moved < 0 ? "−" : "±"}${Math.abs(moved)}`;
+}
+
+const swingTint = (value: number) =>
+  Math.round(value) > 0 ? C.win : Math.round(value) < 0 ? C.loss : C.muted;
+
+/** Where a player's rating move sits, before their run. */
+const MOVE = 84;
+
+/**
+ * Places gained or lost on the night: a small triangle and the count, or
+ * nothing for a player who stayed put or has no place to move from.
+ */
+function Moved({ by, size }: { by?: number; size: number }) {
+  if (!by) return null;
+  const up = by > 0;
+  const tint = up ? C.win : C.loss;
+  const arrow = Math.round(size * 0.7);
   return (
-    <div
-      style={{
-        display: "flex",
-        fontSize: size,
-        fontWeight: 700,
-        // A night that moved nothing is neither a gain nor a loss.
-        color: moved > 0 ? C.win : moved < 0 ? C.loss : C.muted,
-      }}
-    >
-      {moved > 0 ? "+" : moved < 0 ? "−" : "±"}
-      {Math.abs(moved)}
+    <div style={{ display: "flex", alignItems: "center", fontSize: size, fontWeight: 700, color: tint }}>
+      <svg width={arrow} height={arrow} viewBox="0 0 10 10" style={{ marginRight: 4 }}>
+        <path d={up ? "M5 1 L9.5 9 L0.5 9 Z" : "M0.5 1 L9.5 1 L5 9 Z"} fill={tint} />
+      </svg>
+      {Math.abs(by)}
     </div>
   );
 }
 
-function Chip({
-  player,
-  tint,
-  size,
-  mirrored,
-}: {
-  player: SharePlayer;
-  tint: string;
-  size: RowSize;
-  mirrored: boolean;
-}) {
-  const { name } = player;
+/** A player's initials in a ring of their side's colour. */
+function Initials({ player, size, tint }: { player: SharePlayer; size: number; tint: string }) {
   return (
     <div
       style={{
         display: "flex",
-        // The away side reads right to left, so its initials sit against the
-        // edge of the card and the two lists frame the middle rather than
-        // both pointing the same way.
-        flexDirection: mirrored ? "row-reverse" : "row",
         alignItems: "center",
-        marginBottom: size.gap,
-        width: COLUMN,
+        justifyContent: "center",
+        flexShrink: 0,
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        background: C.raised,
+        border: `2px solid ${tint}`,
+        color: C.text,
+        fontSize: Math.round(size * 0.38),
+        fontWeight: 700,
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: size.chip,
-          height: size.chip,
-          borderRadius: size.chip / 2,
-          marginLeft: mirrored ? 12 : 0,
-          marginRight: mirrored ? 0 : 12,
-          background: C.raised,
-          border: `2px solid ${tint}`,
-          color: tint,
-          fontSize: size.chip * 0.4,
-          fontWeight: 700,
-        }}
-      >
-        {initials(name)}
-      </div>
-      <div
-        style={{
-          display: "flex",
-          flex: 1,
-          minWidth: 0,
-          flexDirection: mirrored ? "row-reverse" : "row",
-          alignItems: "baseline",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            fontSize: size.name,
-            color: C.text,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {name}
-        </div>
-        {player.change !== undefined && (
-          <div
-            style={{
-              display: "flex",
-              marginLeft: mirrored ? 0 : 10,
-              marginRight: mirrored ? 10 : 0,
-            }}
-          >
-            <Swing change={player.change} size={Math.round(size.name * 0.8)} />
-          </div>
-        )}
-      </div>
-      {player.results && player.results.length > 0 && (
-        <div
-          style={{
-            display: "flex",
-            flexShrink: 0,
-            marginLeft: mirrored ? 0 : 14,
-            marginRight: mirrored ? 14 : 0,
-          }}
-        >
-          <ResultRun results={player.results} size={size} />
-        </div>
-      )}
-      {player.rank !== undefined && (
-        <div
-          style={{
-            display: "flex",
-            flexShrink: 0,
-            marginLeft: mirrored ? 0 : 12,
-            marginRight: mirrored ? 12 : 0,
-            fontSize: Math.round(size.name * 0.72),
-            fontWeight: 700,
-            color: C.muted,
-          }}
-        >
-          #{player.rank}
-        </div>
-      )}
+      {initials(player.name)}
     </div>
   );
 }
 
 /**
- * One of the two tables under the result.
+ * How tall a row of the line-ups is.
  *
- * Whoever played that night is picked out, because the question a table
- * answers on a match card is not "who is best" but "and where does that
- * leave us?".
+ * Five or six a side get a comfortable row; a bigger squad shrinks to fit
+ * rather than the eleventh player falling off the bottom edge.
  */
-function Table({ title, rows }: { title: string; rows: ShareRow[] }) {
+function rowHeight(perSide: number): number {
+  return perSide <= 6 ? 50 : Math.max(32, Math.floor(300 / perSide));
+}
+
+/**
+ * One side's line-up: who played, a row each, with how far the night moved
+ * their rating, the run they are on and where the league has them, in
+ * columns that line up down both sides.
+ */
+function LineUp({
+  side,
+  tint,
+  height,
+  labelled,
+}: {
+  side: ShareSide;
+  tint: string;
+  height: number;
+  /** Whether to say over the columns what they are; once is enough. */
+  labelled: boolean;
+}) {
+  const face = Math.min(42, height - 8);
+  const box = Math.min(24, Math.round(height * 0.48));
+  const runs = side.players.some((player) => player.results && player.results.length > 0);
+  const label = { display: "flex", justifyContent: "center", fontSize: 15, color: C.muted } as const;
   return (
-    <div style={{ display: "flex", flexDirection: "column", width: 480 }}>
+    <div style={{ display: "flex", flexDirection: "column" }}>
       <div
         style={{
           display: "flex",
-          marginBottom: 12,
+          alignItems: "center",
+          height: 34,
           fontSize: 20,
           fontWeight: 700,
           letterSpacing: 2,
-          color: C.accent,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
+          color: tint,
         }}
       >
-        {title.toUpperCase()}
+        <div style={{ display: "flex", flex: 1 }}>{side.name.toUpperCase()}</div>
+        {labelled && side.players.some((player) => player.change !== undefined) && (
+          <div style={{ ...label, justifyContent: "flex-end", width: MOVE, marginRight: 22 }}>RATING</div>
+        )}
+        {labelled && runs && (
+          <div style={{ ...label, width: RESULTS_SHOWN * box + (RESULTS_SHOWN - 1) * FORM_GAP }}>LAST {RESULTS_SHOWN}</div>
+        )}
+        {labelled && side.players.some((player) => player.rank !== undefined) && (
+          <div style={{ ...label, justifyContent: "flex-end", width: PLACE }}>POS</div>
+        )}
       </div>
-      {rows.map((row) => (
-        <div
-          key={row.name}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            marginBottom: 4,
-            padding: "5px 12px",
-            borderRadius: 8,
-            background: row.played ? C.raised : "transparent",
-            fontSize: 24,
-            color: row.played ? C.text : C.muted,
-          }}
-        >
-          <div style={{ display: "flex", width: 34, color: C.muted }}>{row.place}</div>
+      {side.players.map((player) => (
+        <div key={player.name} style={{ display: "flex", alignItems: "center", height }}>
+          <Initials player={player} size={face} tint={tint} />
           <div
             style={{
               display: "flex",
               flex: 1,
+              minWidth: 0,
+              marginLeft: 16,
+              fontSize: Math.min(32, Math.round(height * 0.62)),
+              color: C.text,
               overflow: "hidden",
-              textOverflow: "ellipsis",
               whiteSpace: "nowrap",
-              fontWeight: row.played ? 700 : 400,
+              textOverflow: "ellipsis",
             }}
           >
-            {row.name}
+            {player.name}
           </div>
-          <div style={{ display: "flex", fontWeight: 700 }}>{row.figure}</div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              width: MOVE,
+              marginRight: 22,
+              flexShrink: 0,
+              fontSize: Math.min(28, Math.round(height * 0.54)),
+              fontWeight: 700,
+              color: player.change === undefined ? C.muted : swingTint(player.change),
+            }}
+          >
+            {player.change === undefined ? "" : signed(player.change)}
+          </div>
+          {player.results && player.results.length > 0 && (
+            <ResultRun results={player.results} box={box} />
+          )}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              width: PLACE,
+              flexShrink: 0,
+              fontSize: Math.min(26, Math.round(height * 0.5)),
+              fontWeight: 700,
+              color: C.muted,
+            }}
+          >
+            <Moved by={player.moved} size={Math.min(20, Math.round(height * 0.4))} />
+            <div style={{ display: "flex", justifyContent: "flex-end", width: 64 }}>
+              {player.rank !== undefined ? ordinal(player.rank) : ""}
+            </div>
+          </div>
         </div>
       ))}
     </div>
@@ -324,24 +294,86 @@ function Table({ title, rows }: { title: string; rows: ShareRow[] }) {
 }
 
 /**
- * How big a name can be drawn.
+ * One of the two tables under the line-ups, with what its numbers are
+ * written over them.
  *
- * The card is a fixed width and a squad is not a fixed size, so the rows
- * shrink to fit rather than the eleventh player falling off the bottom edge —
- * which is exactly what a picture of a match should never do.
+ * Whoever played that night is picked out, because the question a table
+ * answers on a match card is not "who is best" but "and where does that
+ * leave us?".
  */
-const ROOM_FOR_NAMES = { withTables: 250, plain: 236 };
-
-function rowSize(rows: number, room: number): RowSize {
-  const height = Math.min(46, Math.floor(room / Math.max(rows, 1)));
-  return {
-    chip: Math.min(40, height - 6),
-    name: Math.min(28, Math.round(height * 0.62)),
-    gap: 6,
-    box: Math.min(22, Math.round(height * 0.5)),
-  };
+function Table({ title, unit, rows }: { title: string; unit?: string; rows: ShareRow[] }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", width: TABLE }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+          height: 34,
+          fontSize: 20,
+          fontWeight: 700,
+          letterSpacing: 2,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flex: 1,
+            minWidth: 0,
+            color: C.accent,
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {title.toUpperCase()}
+        </div>
+        {unit && (
+          <div style={{ display: "flex", marginLeft: 12, color: C.muted, fontSize: 16 }}>
+            {unit.toUpperCase()}
+          </div>
+        )}
+      </div>
+      {rows.map((row) => (
+        <div
+          key={row.name}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            height: TABLE_ROW - 4,
+            marginBottom: 4,
+            padding: "0 12px",
+            borderRadius: 8,
+            background: row.played ? C.raised : "transparent",
+            fontSize: 24,
+            color: row.played ? C.text : C.muted,
+          }}
+        >
+          <div style={{ display: "flex", width: 32, color: C.muted }}>{row.place}</div>
+          <div
+            style={{
+              display: "flex",
+              flex: 1,
+              minWidth: 0,
+              overflow: "hidden",
+              whiteSpace: "nowrap",
+              textOverflow: "ellipsis",
+              fontWeight: row.played ? 700 : 400,
+            }}
+          >
+            {row.name}
+          </div>
+          <Moved by={row.moved} size={18} />
+          <div style={{ display: "flex", justifyContent: "flex-end", width: 66, fontWeight: 700 }}>
+            {row.figure}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
+/** A side's name over the score, and what the result locked in for each of them. */
 function Side({
   side,
   tint,
@@ -352,38 +384,29 @@ function Side({
   align: "flex-start" | "flex-end";
 }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: align }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          fontSize: 40,
-          fontWeight: 700,
-          color: side.won ? tint : C.text,
-        }}
-      >
+    <div style={{ display: "flex", flexDirection: "column", alignItems: align, width: 300 }}>
+      <div style={{ display: "flex", fontSize: 44, fontWeight: 700, color: side.won ? tint : C.text }}>
         {side.name}
       </div>
-      {side.won && (
-        <div
-          style={{
-            display: "flex",
-            marginTop: 8,
-            padding: "4px 14px",
-            borderRadius: 999,
-            background: tint,
-            color: C.bg,
-            fontSize: 20,
-            fontWeight: 700,
-            letterSpacing: 1,
-          }}
-        >
-          WINNERS
+      {side.points !== undefined && (
+        <div style={{ display: "flex", alignItems: "baseline", marginTop: 6, fontSize: 24 }}>
+          <span style={{ fontWeight: 700, color: swingTint(side.points) }}>{signed(side.points)}</span>
+          <span style={{ marginLeft: 8, color: C.muted }}>each for the result</span>
         </div>
       )}
     </div>
   );
 }
+
+/** The heights the card is added up from; see `WIDTH`. */
+const H = {
+  header: 34,
+  score: 32 + 136,
+  headline: 10 + 44,
+  story: (lines: number) => (lines === 0 ? 0 : 28 + 40 + lines * 40 + (lines - 1) * 6),
+  lineUps: (row: number, perSide: number) => 28 + 2 * (34 + perSide * row) + 20,
+  tables: 28 + 24 + 34 + 5 * TABLE_ROW,
+};
 
 export function matchCardImage(card: ShareCard, fonts: ImageFont[]): ImageResponse {
   const drawn = !card.a.won && !card.b.won;
@@ -394,19 +417,22 @@ export function matchCardImage(card: ShareCard, fonts: ImageFont[]): ImageRespon
   // fortnight has neither, and an empty heading over four blank rows is worse
   // than leaving the space to the result.
   const tables = [
-    card.ladder.length > 0 && (
-      <Table key="ladder" title="Ratings" rows={card.ladder} />
-    ),
+    card.ladder.length > 0 && <Table key="ladder" title="Ratings" rows={card.ladder} />,
     card.standings.length > 0 && (
-      <Table key="standings" title={card.standingsTitle} rows={card.standings} />
+      <Table key="standings" title={card.standingsTitle} unit="pts" rows={card.standings} />
     ),
   ].filter(Boolean);
 
-  const roomy = tables.length > 0;
-  const size = rowSize(
-    Math.max(card.a.players.length, card.b.players.length),
-    roomy ? ROOM_FOR_NAMES.withTables : ROOM_FOR_NAMES.plain
-  );
+  const perSide = Math.max(card.a.players.length, card.b.players.length, 1);
+  const row = rowHeight(perSide);
+  const height =
+    PAD * 2 +
+    H.header +
+    H.score +
+    H.headline +
+    H.story(card.story.length) +
+    H.lineUps(row, perSide) +
+    (tables.length > 0 ? H.tables : 0);
 
   return new ImageResponse(
     (
@@ -416,36 +442,21 @@ export function matchCardImage(card: ShareCard, fonts: ImageFont[]): ImageRespon
           flexDirection: "column",
           width: "100%",
           height: "100%",
-          padding: 56,
+          padding: PAD,
           background: C.bg,
-          // A wash of the accent behind the scoreline, so the card has a
-          // centre of gravity rather than reading as a table.
-          backgroundImage: `radial-gradient(900px 420px at 50% 34%, ${C.surface} 0%, ${C.bg} 70%)`,
+          // A wash behind the scoreline, so the card has a centre of gravity
+          // rather than reading as a table.
+          backgroundImage: `radial-gradient(800px 420px at 50% 14%, ${C.surface} 0%, ${C.bg} 70%)`,
           fontFamily: "Archivo",
           color: C.text,
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", color: C.muted, fontSize: 24 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", height: H.header }}>
+          <div style={{ display: "flex", color: C.muted, fontSize: 26 }}>
             {card.date}
             {card.location ? `  ·  ${card.location}` : ""}
           </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              fontSize: 24,
-              fontWeight: 700,
-              letterSpacing: 2,
-              color: C.accent,
-            }}
-          >
+          <div style={{ display: "flex", fontSize: 24, fontWeight: 700, letterSpacing: 3, color: C.accent }}>
             THE DUGOUT
           </div>
         </div>
@@ -455,21 +466,22 @@ export function matchCardImage(card: ShareCard, fonts: ImageFont[]): ImageRespon
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginTop: 36,
+            marginTop: 32,
+            height: 136,
           }}
         >
           <Side side={card.a} tint={tintA} align="flex-start" />
           {scored ? (
-            <div style={{ display: "flex", alignItems: "center", fontSize: 116, fontWeight: 700 }}>
+            <div style={{ display: "flex", alignItems: "center", fontSize: 128, fontWeight: 700 }}>
               <span style={{ color: tintA }}>{card.a.score}</span>
-              <span style={{ color: C.border, margin: "0 24px" }}>–</span>
+              <span style={{ color: C.border, margin: "0 20px" }}>–</span>
               <span style={{ color: tintB }}>{card.b.score}</span>
             </div>
           ) : (
-            // Nobody counted the goals, which is most Tuesdays. The headline
+            // Nobody counted the goals, which is most nights. The headline
             // still says who won, so the space goes to the sides instead of a
             // pair of noughts that were never true.
-            <div style={{ display: "flex", fontSize: 56, fontWeight: 700, color: C.border }}>v</div>
+            <div style={{ display: "flex", fontSize: 60, fontWeight: 700, color: C.border }}>v</div>
           )}
           <Side side={card.b} tint={tintB} align="flex-end" />
         </div>
@@ -478,42 +490,81 @@ export function matchCardImage(card: ShareCard, fonts: ImageFont[]): ImageRespon
           style={{
             display: "flex",
             justifyContent: "center",
-            marginTop: 16,
-            fontSize: 32,
-            color: drawn ? C.draw : scored ? C.muted : C.win,
+            alignItems: "center",
+            marginTop: 10,
+            height: 44,
+            fontSize: 34,
             fontWeight: 700,
+            color: drawn ? C.draw : scored ? C.muted : C.win,
           }}
         >
           {scored ? card.blurb : card.headline}
         </div>
 
+        {card.story.length > 0 && (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              marginTop: 28,
+              padding: "20px 28px",
+              borderRadius: 20,
+              background: C.surface,
+              border: `2px solid ${C.border}`,
+            }}
+          >
+            {card.story.map((line, index) => (
+              <div
+                key={line}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  height: 40,
+                  marginTop: index === 0 ? 0 : 6,
+                  fontSize: 28,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    width: 10,
+                    height: 10,
+                    marginRight: 18,
+                    borderRadius: 5,
+                    background: C.accent,
+                    flexShrink: 0,
+                  }}
+                />
+                {/* Cut rather than wrapped: each line has its one row. */}
+                <div
+                  style={{
+                    display: "flex",
+                    flex: 1,
+                    minWidth: 0,
+                    overflow: "hidden",
+                    whiteSpace: "nowrap",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {line}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
+            flexDirection: "column",
             flex: 1,
-            alignItems: "center",
+            justifyContent: "center",
             marginTop: 28,
-            paddingTop: 24,
-            borderTop: `2px solid ${C.border}`,
           }}
         >
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {card.a.players.map((player) => (
-              <Chip
-                key={player.name}
-                player={player}
-                tint={tintA}
-                size={size}
-                mirrored={false}
-              />
-            ))}
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-            {card.b.players.map((player) => (
-              <Chip key={player.name} player={player} tint={tintB} size={size} mirrored />
-            ))}
-          </div>
+          <LineUp side={card.a} tint={tintA} height={row} labelled />
+          <div style={{ display: "flex", height: 20 }} />
+          <LineUp side={card.b} tint={tintB} height={row} labelled={false} />
         </div>
 
         {tables.length > 0 && (
@@ -521,7 +572,7 @@ export function matchCardImage(card: ShareCard, fonts: ImageFont[]): ImageRespon
             style={{
               display: "flex",
               justifyContent: tables.length === 1 ? "center" : "space-between",
-              marginTop: 20,
+              marginTop: 28,
               paddingTop: 24,
               borderTop: `2px solid ${C.border}`,
             }}
@@ -531,11 +582,7 @@ export function matchCardImage(card: ShareCard, fonts: ImageFont[]): ImageRespon
         )}
       </div>
     ),
-    {
-      width: WIDTH,
-      height: roomy ? HEIGHT.withTables : HEIGHT.plain,
-      fonts,
-    }
+    { width: WIDTH, height, fonts }
   );
 }
 

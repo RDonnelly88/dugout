@@ -5,12 +5,10 @@ import PlayerAvatar from "@/components/players/PlayerAvatar";
 import PlayerSeasonStars from "@/components/players/PlayerSeasonStars";
 import ResultStrip from "@/components/players/ResultStrip";
 import { useRecentResults } from "@/hooks/useRecentResults";
+import { MEDAL } from "@/lib/podium";
 import { calculatePlayerRanks, sortPlayersByRank } from "@/lib/ranking-utils";
 import { cn } from "@/lib/utils";
 import type { SeasonPlayerStats } from "@/types";
-
-/** Gold, silver and bronze for the places that win something. */
-const PLACE = ["text-draw", "text-foreground", "text-draw/70"];
 
 /**
  * A season's table, built for a phone first: every column a table needs —
@@ -65,7 +63,7 @@ export default function LeagueTable({
           const cell = cn("border-t border-border px-1 py-2.5 text-right tabular", lit && "bg-accent/10");
           return (
             <tr key={row.playerId}>
-              <td className={cn(cell, "text-left font-semibold", rank <= 3 ? PLACE[rank - 1] : "text-muted-foreground")}>
+              <td className={cn(cell, "text-left font-semibold", rank <= 3 ? MEDAL[rank - 1].text : "text-muted-foreground")}>
                 {rank}
               </td>
               <td className={cn(cell, "text-left")}>

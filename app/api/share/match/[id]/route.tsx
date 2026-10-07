@@ -4,7 +4,9 @@ import { shareCard, type ShareTables } from "@/lib/share-card";
 import { cardFonts, matchCardImage } from "@/lib/share-card-image";
 import { computeRatings } from "@/lib/elo";
 import { recentResults } from "@/lib/recent-results";
-import { outcomeOf } from "@/lib/match-result";
+import { outcomeOf, sideOf } from "@/lib/match-result";
+import { matchExpectations } from "@/lib/expected-wins";
+import { pointValues, seasonTable, type LeagueRow } from "@/lib/season-positions";
 import { SIDE_NAMES } from "@/lib/config";
 import type { Match } from "@/types";
 
@@ -45,7 +47,8 @@ function playedBy(history: Match[], match: Match): Match[] {
 }
 
 /**
- * What the night did to everybody, and where it left the ladder.
+ * What the result locked in for each side, how far it moved each player once
+ * their older games had faded too, and where it left the ladder.
  *
  * Ratings are sequential, so replaying only as far as this match changes
  * nothing about the numbers up to the cut.
@@ -53,13 +56,19 @@ function playedBy(history: Match[], match: Match): Match[] {
 function ladderThatNight(played: Match[], match: Match) {
   const ratings = computeRatings(played);
 
+  const points: { a?: number; b?: number } = {};
   const changes = new Map<string, number>();
   for (const rating of ratings.values()) {
     const moment = rating.history.find((point) => point.matchId === match.id);
-    if (moment) changes.set(rating.playerId, moment.change);
+    const side = sideOf(match, rating.playerId);
+    if (moment && side) {
+      points[side] = moment.settled;
+      changes.set(rating.playerId, moment.change);
+    }
   }
 
   return {
+    points,
     changes,
     ranked: [...ratings.values()].sort((a, b) => b.rating - a.rating),
   };
@@ -102,49 +111,56 @@ export async function GET(
       row.season_id
         ? supabase
             .from("season_player_stats")
-            .select("player_id, player_name, points, played, wins, season_name")
+            .select("points, wins, draws, season_name")
             .eq("season_id", row.season_id)
             .order("points", { ascending: false })
         : Promise.resolve({ data: null }),
     ]);
 
   const names = new Map((squad ?? []).map((player) => [player.id, player.name]));
-  // A player deleted since the match was played still has a shirt on the
-  // night, so they keep a place on the card without a name.
-  const nameOf = (playerId: string) => names.get(playerId) ?? "Unknown";
+  const nameOf = (playerId: string) => names.get(playerId);
 
   const played = playedBy((history ?? []).map(mapSupabaseMatchToMatch), match);
-  const { changes, ranked } = ladderThatNight(played, match);
+  const { points, changes, ranked } = ladderThatNight(played, match);
   // The window ends on the match being shared, so the run beside a name
   // includes the game the card is about.
   const results = new Map(
     [...recentResults(played)].map(([playerId, run]) => [playerId, run.results])
   );
 
+  // The league as it stood either side of this match, counted from the
+  // season's games with what the view says a win and a draw are worth, so a
+  // card for a game from March shows March's table and who it moved.
+  const view = (table ?? []).map((entry) => ({
+    points: entry.points ?? 0,
+    wins: entry.wins ?? 0,
+    draws: entry.draws ?? 0,
+  }));
+  const values = pointValues(view);
+  const season = row.season_id ? played.filter((m) => m.seasonId === row.season_id) : [];
+  const named = (rows: LeagueRow[]) =>
+    rows.map((r) => ({ ...r, name: nameOf(r.playerId) ?? "Unknown" }));
+
   const tables: ShareTables = {
+    points,
     changes,
+    played,
+    // Read off the history to this night, which holds everything before it:
+    // later results never reach back into the odds a match was played at.
+    chanceA: matchExpectations(played).get(match.id),
     results,
     ladder: ranked.map((rating) => ({
       playerId: rating.playerId,
-      name: nameOf(rating.playerId),
+      name: nameOf(rating.playerId) ?? "Unknown",
       rating: rating.rating,
     })),
-    standings: (table ?? []).flatMap((entry) =>
-      entry.player_id
-        ? [
-            {
-              playerId: entry.player_id,
-              name: entry.player_name ?? "Unknown",
-              points: entry.points ?? 0,
-              // The season page settles a tie on points by games played and
-              // then wins, so the card has to carry both to land on the same
-              // order it does.
-              played: entry.played ?? 0,
-              wins: entry.wins ?? 0,
-            },
-          ]
-        : []
-    ),
+    season,
+    ...(values && season.length > 0
+      ? {
+          standings: named(seasonTable(season, values)),
+          previous: named(seasonTable(season.filter((m) => m.id !== match.id), values)),
+        }
+      : {}),
     seasonName: table?.[0]?.season_name ?? undefined,
   };
 

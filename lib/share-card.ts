@@ -1,4 +1,5 @@
 import { outcomeOf } from "./match-result";
+import { matchStory } from "./match-story";
 import { calculatePlayerRanks, sortPlayersByRank } from "./ranking-utils";
 import type { Match, RecentResult } from "@/types";
 
@@ -13,10 +14,17 @@ import type { Match, RecentResult } from "@/types";
 export interface SharePlayer {
   name: string;
   /**
-   * What the night did to their rating. Absent for anybody the ladder has no
-   * entry for, which happens to a player deleted since the match was played.
+   * How far their rating moved on the night: the side's result, plus every
+   * older game of theirs fading by one more match, which is why two
+   * team-mates can move by different amounts. Absent for anybody the ladder
+   * has no record of.
    */
   change?: number;
+  /**
+   * Places gained in the league on the night, negative for places lost.
+   * Absent for their first game of the season, with no place to move from.
+   */
+  moved?: number;
   /** Where they stand in the season's league, first being top. */
   rank?: number;
   /**
@@ -33,11 +41,19 @@ export interface ShareSide {
   score?: number;
   players: SharePlayer[];
   won: boolean;
+  /**
+   * The rating points the result locked in, the same for everybody on the
+   * side. Not the night's change in a rating, which also carries every older
+   * game fading and so can fall on a night the side won.
+   */
+  points?: number;
 }
 
 /** One line of a standings table on the card. */
 export interface ShareRow {
   name: string;
+  /** Places gained on the night, negative for places lost; see `SharePlayer.moved`. */
+  moved?: number;
   /** Already rounded and ready to draw: a rating, or a points total. */
   figure: number;
   /** Whether they were in this match, so the tables answer "and us?". */
@@ -59,8 +75,16 @@ export interface ShareRow {
  * is worse than none.
  */
 export interface ShareTables {
-  /** What the night did to each player, by id. */
+  /** What the result locked in for each side; see `ShareSide.points`. */
+  points?: { a?: number; b?: number };
+  /** How far each player's rating moved on the night, by id. */
   changes?: Map<string, number>;
+  /**
+   * Every match played by the end of this one, this one among them, and what
+   * the first side was expected to take from it: what the story is read from.
+   */
+  played?: Match[];
+  chanceA?: number;
   /** How each player had been going by the end of it, newest first, by id. */
   results?: Map<string, RecentResult[]>;
   /** The ladder as it stood when this match finished, strongest first. */
@@ -74,15 +98,21 @@ export interface ShareTables {
    * than trusted to arrive sorted: a table and a number that disagreed about
    * who is second would both be on the same picture.
    */
-  standings?: {
-    playerId: string;
-    name: string;
-    points: number;
-    played: number;
-    wins: number;
-  }[];
+  standings?: StandingsRow[];
+  /** The league as it stood before this match, for how far everybody moved. */
+  previous?: StandingsRow[];
+  /** The season's matches by the end of this one, for the story. */
+  season?: Match[];
   /** What the season is called, for the heading over its table. */
   seasonName?: string;
+}
+
+interface StandingsRow {
+  playerId: string;
+  name: string;
+  points: number;
+  played: number;
+  wins: number;
 }
 
 export interface ShareCard {
@@ -90,6 +120,8 @@ export interface ShareCard {
   headline: string;
   /** How it felt, for the line the score already tells you nothing about. */
   blurb: string;
+  /** The few things about the night worth saying; see `matchStory`. */
+  story: string[];
   date: string;
   location?: string;
   a: ShareSide;
@@ -144,7 +176,8 @@ function tableTitle(seasonName?: string): string {
 export function shareCard(
   match: Match,
   sideNames: { A: string; B: string },
-  nameOf: (playerId: string) => string,
+  /** Undefined for a player deleted since, who is drawn as "Unknown". */
+  nameOf: (playerId: string) => string | undefined,
   tables: ShareTables = {}
 ): ShareCard | null {
   const outcome = outcomeOf(match);
@@ -185,48 +218,71 @@ export function shareCard(
   // five; this is how somebody sixth finds themselves.
   const league = sortPlayersByRank(tables.standings ?? []);
   const rankOf = calculatePlayerRanks(tables.standings ?? []);
+  const rankBefore = calculatePlayerRanks(tables.previous ?? []);
+  const moved = (id: string) =>
+    rankOf[id] !== undefined && rankBefore[id] !== undefined ? rankBefore[id] - rankOf[id] : undefined;
   const names = (ids: string[]): SharePlayer[] =>
     ids.map((id) => ({
-      name: nameOf(id),
+      // Deleted since, but they still had a shirt on the night, so they keep
+      // a place on the card without a name.
+      name: nameOf(id) ?? "Unknown",
       change: tables.changes?.get(id),
       rank: rankOf[id],
+      moved: tables.previous ? moved(id) : undefined,
       results: tables.results?.get(id),
     }));
 
   const top = <T extends { playerId: string; name: string }>(
     rows: T[] | undefined,
     figure: (row: T) => number,
-    place: (row: T, index: number) => number
+    place: (row: T, index: number) => number,
+    shift?: (row: T) => number | undefined
   ): ShareRow[] =>
     (rows ?? []).slice(0, TOP).map((row, index) => ({
       name: row.name,
       figure: Math.round(figure(row)),
       played: inMatch.has(row.playerId),
       place: place(row, index),
+      ...(shift?.(row) !== undefined ? { moved: shift(row) } : {}),
     }));
 
   return {
     headline,
     blurb,
+    story: matchStory({
+      match,
+      played: tables.played ?? [],
+      season: tables.season,
+      chanceA: tables.chanceA,
+      league: tables.previous && tables.standings ? { before: rankBefore, after: rankOf } : undefined,
+      nameOf,
+    }),
     date: spokenDate(match.date),
     location: match.location || undefined,
     // Ratings are a measurement rather than a count, so two of them being
     // equal to the point of sharing a place does not happen; the row number is
     // the placing. A league is a count, and ties are its normal weather.
     ladder: top(tables.ladder, (row) => row.rating, (_row, index) => index + 1),
-    standings: top(league, (row) => row.points, (row) => rankOf[row.playerId]),
+    standings: top(
+      league,
+      (row) => row.points,
+      (row) => rankOf[row.playerId],
+      tables.previous ? (row) => moved(row.playerId) : undefined
+    ),
     standingsTitle: tableTitle(tables.seasonName),
     a: {
       name: sideNames.A,
       score: scored ? scoreA : undefined,
       players: names(match.teamA.players),
       won: outcome === "a",
+      points: tables.points?.a,
     },
     b: {
       name: sideNames.B,
       score: scored ? scoreB : undefined,
       players: names(match.teamB.players),
       won: outcome === "b",
+      points: tables.points?.b,
     },
   };
 }

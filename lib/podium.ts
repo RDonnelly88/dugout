@@ -50,6 +50,16 @@ export function podium(
 export const winners = (champions: SeasonChampion[]): SeasonChampion[] =>
   podium(champions, 1)[0]?.players ?? [];
 
+/**
+ * The colour of first, second and third, as text and as the fill of a shape,
+ * wherever a finishing place is marked with a medal.
+ */
+export const MEDAL = [
+  { text: "text-gold", fill: "fill-gold" },
+  { text: "text-silver", fill: "fill-silver" },
+  { text: "text-bronze", fill: "fill-bronze" },
+] as const;
+
 /** "1st", "2nd", "3rd" — for labelling a place. */
 export const ordinal = (rank: number): string => {
   const lastTwo = rank % 100;

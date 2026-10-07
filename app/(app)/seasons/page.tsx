@@ -13,6 +13,7 @@ import { usePermission } from "@/lib/permission-utils";
 import PageHeader from "@/components/PageHeader";
 import PageLoading from "@/components/PageLoading";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
+import { MEDAL } from "@/lib/podium";
 import { cn } from "@/lib/utils";
 import type { Season, SeasonChampion } from "@/types";
 
@@ -23,7 +24,6 @@ const when = (season: Season) =>
   }`;
 
 /** Gold, silver and bronze, in the shades the season stars use. */
-const MEDAL = ["text-draw", "text-muted-foreground", "text-draw/60"];
 
 /**
  * Every season as an honours board: the one running now at the top with its
@@ -132,7 +132,7 @@ const Seasons = () => {
                 <ol className="mt-4 grid grid-cols-3 gap-2">
                   {podium(running.id).slice(0, 3).map((c) => (
                     <li key={c.playerId} className="flex flex-col items-center rounded-xl border border-border bg-surface-2/50 p-3 text-center">
-                      <span className={cn("scoreboard text-lg", MEDAL[c.rank - 1])}>{c.rank}</span>
+                      <span className={cn("scoreboard text-lg", MEDAL[c.rank - 1]?.text)}>{c.rank}</span>
                       {face(c, "md")}
                       <span className="mt-1.5 text-sm font-semibold leading-tight">{c.playerName.split(/\s+/)[0]}</span>
                       <span className="text-xs text-muted-foreground tabular">{c.points} pts</span>
@@ -160,8 +160,8 @@ const Seasons = () => {
                         href={`/seasons/${season.id}`}
                         className="focus-ring flex items-center gap-3 rounded-xl border border-border bg-surface p-3 transition-colors hover:border-border-strong"
                       >
-                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-draw/10">
-                          <Trophy className="h-6 w-6 text-draw" />
+                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gold/10">
+                          <Trophy className="h-6 w-6 text-gold" />
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="block text-xs text-muted-foreground">
@@ -199,11 +199,11 @@ const Seasons = () => {
                     <li key={playerId}>
                       <Link
                         href={`/players/${playerId}`}
-                        className="focus-ring flex items-center gap-2 rounded-full border border-border bg-surface py-1 pl-1 pr-3 transition-colors hover:border-draw"
+                        className="focus-ring flex items-center gap-2 rounded-full border border-border bg-surface py-1 pl-1 pr-3 transition-colors hover:border-gold"
                       >
                         <PlayerAvatar name={player?.name ?? "?"} image={player?.image} size="xs" />
                         <span className="text-sm font-medium">{player?.name ?? "Unknown"}</span>
-                        <span className="flex items-center gap-0.5 text-sm text-draw tabular">
+                        <span className="flex items-center gap-0.5 text-sm text-gold tabular">
                           <Crown className="h-3.5 w-3.5" />
                           {count}
                         </span>
