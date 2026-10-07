@@ -153,6 +153,12 @@ interface Piece {
   weight: number;
   /** What it adds to the rating today: `settled` × `weight`. */
   now: number;
+  /**
+   * What the squad's next match does to it before a ball is kicked: a game
+   * counts a little less each match, and one at the edge of the window
+   * drops out altogether, taking everything it had left with it.
+   */
+  next: number;
 }
 
 /**
@@ -179,8 +185,40 @@ export function ratingBreakdown(rating: PlayerRating): Piece[] {
         age,
         weight,
         now: point.settled * weight,
+        next: point.settled * (gameWeight(age + 1) - weight),
       };
     })
     .filter((piece) => piece.weight > 0)
     .reverse();
+}
+
+/**
+ * A rating's games added up three ways: what they were worth on the night,
+ * what fading has taken off them since, and what the next match will take
+ * before it starts.
+ *
+ * Fading is a share of each game's worth, so across a player it is a share
+ * of what their games add up to, not of how big any one of them is. Wins
+ * fade down and defeats fade up; somebody whose games roughly cancel out
+ * has next to nothing to lose, however many games they have.
+ */
+export function fadingSummary(pieces: Piece[]) {
+  const earned = pieces.reduce((sum, p) => sum + p.settled, 0);
+  const now = pieces.reduce((sum, p) => sum + p.now, 0);
+  const next = pieces.reduce((sum, p) => sum + p.next, 0);
+  // The one game that reaches the edge of the window at the next match.
+  const leaving = pieces.find((p) => p.age === ELO.window - 1) ?? null;
+  return {
+    /** Everything the counted games were worth on their nights. */
+    earned,
+    /** What fading has taken off that since: `now − earned`. */
+    faded: now - earned,
+    /** What the counted games add to the start today. */
+    now,
+    /** The change the next match makes before anybody plays. */
+    next,
+    leaving,
+    /** The part of `next` that is ordinary fading, without the game leaving. */
+    gradual: next - (leaving ? leaving.next : 0),
+  };
 }
