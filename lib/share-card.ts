@@ -13,8 +13,13 @@ import type { Match, RecentResult } from "@/types";
 
 export interface SharePlayer {
   name: string;
-  /** What the `image` column holds for them, read by `readAvatar`. */
-  image?: string | null;
+  /**
+   * How far their rating moved on the night: the side's result, plus every
+   * older game of theirs fading by one more match, which is why two
+   * team-mates can move by different amounts. Absent for anybody the ladder
+   * has no record of.
+   */
+  change?: number;
   /** Where they stand in the season's league, first being top. */
   rank?: number;
   /**
@@ -65,8 +70,8 @@ export interface ShareRow {
 export interface ShareTables {
   /** What the result locked in for each side; see `ShareSide.points`. */
   points?: { a?: number; b?: number };
-  /** Each player's `image` value, by id. */
-  images?: Map<string, string | null>;
+  /** How far each player's rating moved on the night, by id. */
+  changes?: Map<string, number>;
   /**
    * Every match played by the end of this one, this one among them, and what
    * the first side was expected to take from it: what the story is read from.
@@ -205,7 +210,7 @@ export function shareCard(
       // Deleted since, but they still had a shirt on the night, so they keep
       // a place on the card without a name.
       name: nameOf(id) ?? "Unknown",
-      image: tables.images?.get(id),
+      change: tables.changes?.get(id),
       rank: rankOf[id],
       results: tables.results?.get(id),
     }));

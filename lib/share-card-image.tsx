@@ -1,8 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
-import type { LucideIcon } from "lucide-react";
-import { readAvatar } from "./avatars";
 import { RESULTS_SHOWN } from "./config";
 import { ordinal } from "./podium";
 import {
@@ -80,9 +78,6 @@ const FORM_LETTER: Record<RecentResult, string> = {
   dnp: "–",
 };
 
-/** What each face on the card is drawn from, by the `image` value; see `cardFaces`. */
-export type CardFaces = Map<string, { kind: "icon" | "photo"; src: string }>;
-
 /**
  * How the last few nights went, oldest first.
  *
@@ -139,22 +134,11 @@ function signed(value: number): string {
 const swingTint = (value: number) =>
   Math.round(value) > 0 ? C.win : Math.round(value) < 0 ? C.loss : C.muted;
 
-/**
- * A player's face, the way `PlayerAvatar` draws it in the app: their photo,
- * their chosen icon in the accent, or with neither, their initials.
- */
-function Face({
-  player,
-  faces,
-  size,
-  tint,
-}: {
-  player: SharePlayer;
-  faces: CardFaces;
-  size: number;
-  tint: string;
-}) {
-  const face = player.image ? faces.get(player.image) : undefined;
+/** Where a player's rating move sits, before their run. */
+const MOVE = 84;
+
+/** A player's initials in a ring of their side's colour. */
+function Initials({ player, size, tint }: { player: SharePlayer; size: number; tint: string }) {
   return (
     <div
       style={{
@@ -165,7 +149,6 @@ function Face({
         width: size,
         height: size,
         borderRadius: size / 2,
-        overflow: "hidden",
         background: C.raised,
         border: `2px solid ${tint}`,
         color: C.text,
@@ -173,13 +156,7 @@ function Face({
         fontWeight: 700,
       }}
     >
-      {face?.kind === "photo" ? (
-        <img src={face.src} width={size} height={size} style={{ objectFit: "cover" }} alt="" />
-      ) : face?.kind === "icon" ? (
-        <img src={face.src} width={Math.round(size * 0.55)} height={Math.round(size * 0.55)} alt="" />
-      ) : (
-        initials(player.name)
-      )}
+      {initials(player.name)}
     </div>
   );
 }
@@ -195,19 +172,18 @@ function rowHeight(perSide: number): number {
 }
 
 /**
- * One side's line-up: who played, a row each, with the run they are on and
- * where the league has them, in columns that line up down both sides.
+ * One side's line-up: who played, a row each, with how far the night moved
+ * their rating, the run they are on and where the league has them, in
+ * columns that line up down both sides.
  */
 function LineUp({
   side,
   tint,
-  faces,
   height,
   labelled,
 }: {
   side: ShareSide;
   tint: string;
-  faces: CardFaces;
   height: number;
   /** Whether to say over the columns what they are; once is enough. */
   labelled: boolean;
@@ -230,6 +206,9 @@ function LineUp({
         }}
       >
         <div style={{ display: "flex", flex: 1 }}>{side.name.toUpperCase()}</div>
+        {labelled && side.players.some((player) => player.change !== undefined) && (
+          <div style={{ ...label, justifyContent: "flex-end", width: MOVE, marginRight: 22 }}>RATING</div>
+        )}
         {labelled && runs && (
           <div style={{ ...label, width: RESULTS_SHOWN * box + (RESULTS_SHOWN - 1) * FORM_GAP }}>LAST {RESULTS_SHOWN}</div>
         )}
@@ -239,7 +218,7 @@ function LineUp({
       </div>
       {side.players.map((player) => (
         <div key={player.name} style={{ display: "flex", alignItems: "center", height }}>
-          <Face player={player} faces={faces} size={face} tint={tint} />
+          <Initials player={player} size={face} tint={tint} />
           <div
             style={{
               display: "flex",
@@ -254,6 +233,20 @@ function LineUp({
             }}
           >
             {player.name}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              width: MOVE,
+              marginRight: 22,
+              flexShrink: 0,
+              fontSize: Math.min(28, Math.round(height * 0.54)),
+              fontWeight: 700,
+              color: player.change === undefined ? C.muted : swingTint(player.change),
+            }}
+          >
+            {player.change === undefined ? "" : signed(player.change)}
           </div>
           {player.results && player.results.length > 0 && (
             <ResultRun results={player.results} box={box} />
@@ -374,7 +367,7 @@ function Side({
       {side.points !== undefined && (
         <div style={{ display: "flex", alignItems: "baseline", marginTop: 6, fontSize: 24 }}>
           <span style={{ fontWeight: 700, color: swingTint(side.points) }}>{signed(side.points)}</span>
-          <span style={{ marginLeft: 8, color: C.muted }}>to each rating</span>
+          <span style={{ marginLeft: 8, color: C.muted }}>each for the result</span>
         </div>
       )}
     </div>
@@ -391,7 +384,7 @@ const H = {
   tables: 28 + 24 + 34 + 5 * TABLE_ROW,
 };
 
-export function matchCardImage(card: ShareCard, fonts: ImageFont[], faces: CardFaces): ImageResponse {
+export function matchCardImage(card: ShareCard, fonts: ImageFont[]): ImageResponse {
   const drawn = !card.a.won && !card.b.won;
   const tintA = drawn ? C.draw : card.a.won ? C.win : C.muted;
   const tintB = drawn ? C.draw : card.b.won ? C.win : C.muted;
@@ -533,9 +526,9 @@ export function matchCardImage(card: ShareCard, fonts: ImageFont[], faces: CardF
             marginTop: 28,
           }}
         >
-          <LineUp side={card.a} tint={tintA} faces={faces} height={row} labelled />
+          <LineUp side={card.a} tint={tintA} height={row} labelled />
           <div style={{ display: "flex", height: 20 }} />
-          <LineUp side={card.b} tint={tintB} faces={faces} height={row} labelled={false} />
+          <LineUp side={card.b} tint={tintB} height={row} labelled={false} />
         </div>
 
         {tables.length > 0 && (
@@ -555,81 +548,6 @@ export function matchCardImage(card: ShareCard, fonts: ImageFont[], faces: CardF
     ),
     { width: WIDTH, height, fonts }
   );
-}
-
-/** The kinds of picture satori can draw from bytes. */
-const DRAWABLE = ["image/png", "image/jpeg", "image/svg+xml"];
-
-/** A remote photo as bytes on the card, or nothing if it will not come quickly. */
-async function photo(src: string): Promise<string | null> {
-  if (src.startsWith("data:")) {
-    const type = src.slice(5, src.indexOf(";"));
-    return DRAWABLE.includes(type) ? src : null;
-  }
-  try {
-    const response = await fetch(src, { signal: AbortSignal.timeout(3000) });
-    const type = response.headers.get("content-type")?.split(";")[0] ?? "";
-    if (!response.ok || !DRAWABLE.includes(type)) return null;
-    const bytes = Buffer.from(await response.arrayBuffer());
-    return `data:${type};base64,${bytes.toString("base64")}`;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * A lucide icon as an SVG file, in the accent.
- *
- * Built from the shapes the icon is made of rather than by rendering the
- * component, because Next will not let a route import React's server
- * renderer and the component reads a context that only exists mid-render.
- * Called as a plain function, a lucide icon hands back the element it would
- * render with those shapes in its props; if that ever stops being true the
- * face falls back to initials rather than the card failing.
- */
-function iconSvg(Icon: LucideIcon): string | null {
-  const render = (Icon as unknown as { render?: (props: object, ref: null) => { props?: { iconNode?: unknown } } })
-    .render;
-  const shapes = render?.({}, null)?.props?.iconNode;
-  if (!Array.isArray(shapes)) return null;
-  const attributes = (props: Record<string, unknown>) =>
-    Object.entries(props)
-      .filter(([name]) => name !== "key")
-      .map(([name, value]) => `${name}="${String(value).replace(/"/g, "&quot;")}"`)
-      .join(" ");
-  const body = (shapes as [string, Record<string, unknown>][])
-    .map(([tag, props]) => `<${tag} ${attributes(props)}/>`)
-    .join("");
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="${C.accent}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
-}
-
-/**
- * Every face on the card, ready to draw, read through `readAvatar` like
- * every face in the app.
- *
- * Fetched before the drawing rather than left to satori, because a photo
- * that is slow or gone would otherwise take the whole picture down with it.
- * One that does not arrive in time falls back to initials, the same as a
- * player with no picture.
- */
-export async function cardFaces(card: ShareCard): Promise<CardFaces> {
-  const faces: CardFaces = new Map();
-  const images = new Set(
-    [...card.a.players, ...card.b.players].flatMap((player) => (player.image ? [player.image] : []))
-  );
-  await Promise.all(
-    [...images].map(async (image) => {
-      const avatar = readAvatar(image);
-      if (avatar.kind === "icon") {
-        const svg = iconSvg(avatar.Icon);
-        if (svg) faces.set(image, { kind: "icon", src: `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}` });
-      } else if (avatar.kind === "image") {
-        const src = await photo(avatar.src);
-        if (src) faces.set(image, { kind: "photo", src });
-      }
-    })
-  );
-  return faces;
 }
 
 /** What `ImageResponse` wants a font as. */

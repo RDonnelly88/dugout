@@ -180,13 +180,23 @@ describe("what the night was worth", () => {
     expect(card.a.points).toBeUndefined();
   });
 
-  it("carries each player's picture through to be drawn", () => {
+  /** Team-mates share the result but not the fading, so each has their own. */
+  it("puts each player's own move beside them", () => {
     const card = shareCard(match(), sides, nameOf, {
-      images: new Map([["p1", "icon:Crown"]]),
+      points: { a: 6.4, b: -6.4 },
+      changes: new Map([
+        ["p1", 5.1],
+        ["p2", -7.2],
+      ]),
     })!;
 
-    expect(card.a.players[0].image).toBe("icon:Crown");
-    expect(card.b.players[0].image).toBeUndefined();
+    expect(card.a.players[0].change).toBeCloseTo(5.1);
+    expect(card.b.players[0].change).toBeCloseTo(-7.2);
+  });
+
+  it("leaves the move off anybody the ladder has never heard of", () => {
+    const card = shareCard(match(), sides, nameOf, { changes: new Map() })!;
+    expect(card.a.players[0].change).toBeUndefined();
   });
 
   it("tells the story of the night from the history it is given", () => {
