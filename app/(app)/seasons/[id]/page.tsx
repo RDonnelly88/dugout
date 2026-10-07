@@ -5,10 +5,10 @@ import Link from "next/link";
 
 import React from "react";
 
-import { ArrowLeft, Edit, Trash, Calendar, Lock, Check, MoreHorizontal, Trophy } from "lucide-react";
+import { ArrowLeft, BookOpen, CalendarDays, Edit, LineChart, ListOrdered, Trash, Calendar, Lock, Check, MoreHorizontal, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { SegmentedControl, SegmentedControlItem } from "@/components/ui/segmented-control";
+import PageTabs, { type PageTab } from "@/components/PageTabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,11 +44,11 @@ import { usePermission } from "@/lib/permission-utils";
 
 type Part = "table" | "story" | "positions" | "results";
 
-const PARTS: { value: Part; label: string }[] = [
-  { value: "table", label: "Table" },
-  { value: "story", label: "Story" },
-  { value: "positions", label: "Race" },
-  { value: "results", label: "Results" },
+const PARTS: PageTab[] = [
+  { value: "table", label: "Table", icon: ListOrdered },
+  { value: "story", label: "Story", icon: BookOpen },
+  { value: "positions", label: "Race", icon: LineChart },
+  { value: "results", label: "Results", icon: CalendarDays },
 ];
 
 /**
@@ -245,20 +245,12 @@ const SeasonDetail = () => {
             />
           </div>
 
-          <div className="sticky top-[57px] z-10 -mx-4 mb-4 bg-background/90 px-4 py-2 backdrop-blur-md md:top-0 md:mx-0 md:px-0">
-            <SegmentedControl
-              label="Part of the season"
-              value={part}
-              onValueChange={(next) => setPart(next as Part)}
-              className="grid w-full grid-cols-4"
-            >
-              {PARTS.map(({ value, label }) => (
-                <SegmentedControlItem key={value} value={value} className="justify-center py-1.5 text-sm font-medium">
-                  {label}
-                </SegmentedControlItem>
-              ))}
-            </SegmentedControl>
-          </div>
+          <PageTabs
+            tabs={PARTS}
+            value={part}
+            onChange={(next) => setPart(next as Part)}
+            label={`${season.name}, part by part`}
+          />
 
           {part === "table" && (
             <Card>

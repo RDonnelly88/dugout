@@ -3,9 +3,9 @@
 import Link from "next/link";
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Edit, Network } from "lucide-react";
+import { ArrowLeft, CalendarDays, Edit, LayoutGrid, Network, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SegmentedControl, SegmentedControlItem } from "@/components/ui/segmented-control";
+import PageTabs, { type PageTab } from "@/components/PageTabs";
 import { usePlayerDetail } from "@/hooks/usePlayerDetail";
 import { usePlayerRecords } from "@/hooks/usePlayerRecords";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
@@ -34,11 +34,11 @@ const MATCHES_SHOWN = 10;
 
 type View = "overview" | "web" | "matches" | "seasons";
 
-const VIEWS: { value: View; label: string }[] = [
-  { value: "overview", label: "Overview" },
-  { value: "web", label: "Web" },
-  { value: "matches", label: "Matches" },
-  { value: "seasons", label: "Seasons" },
+const VIEWS: PageTab[] = [
+  { value: "overview", label: "Overview", icon: LayoutGrid },
+  { value: "web", label: "Web", icon: Network },
+  { value: "matches", label: "Matches", icon: CalendarDays },
+  { value: "seasons", label: "Seasons", icon: Trophy },
 ];
 
 /**
@@ -156,22 +156,12 @@ const PlayerDetail = () => {
         lastFive={lastFive}
       />
 
-      {/* Sticky so the way between the four parts is always to hand on a
-          long page, without scrolling back to the top for it. */}
-      <div className="sticky top-[57px] z-10 -mx-4 mb-4 bg-background/90 px-4 py-2 backdrop-blur-md md:top-0 md:mx-0 md:px-0">
-        <SegmentedControl
-          label="Part of the page"
-          value={view}
-          onValueChange={(next) => setView(next as View)}
-          className="grid w-full grid-cols-4"
-        >
-          {VIEWS.map(({ value, label }) => (
-            <SegmentedControlItem key={value} value={value} className="justify-center py-1.5 text-sm font-medium">
-              {label}
-            </SegmentedControlItem>
-          ))}
-        </SegmentedControl>
-      </div>
+      <PageTabs
+        tabs={VIEWS}
+        value={view}
+        onChange={(next) => setView(next as View)}
+        label={`${player.name}'s page`}
+      />
 
       {view !== "seasons" && career.length > 0 && (
         <div className="-mx-4 mb-5 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
