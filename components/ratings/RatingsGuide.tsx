@@ -10,6 +10,7 @@ import { ELO, XW } from "@/lib/config";
 import { computeRatings, displayRating, expectedScore, gameWeight } from "@/lib/elo";
 import { FADE_DRAWN, workedExample, fadeCurve, threeWays } from "@/lib/ratings-guide";
 import RatingBreakdown from "@/components/ratings/RatingBreakdown";
+import OddsCheck from "@/components/ratings/OddsCheck";
 import ResultStrip from "@/components/players/ResultStrip";
 import { Frac, Line, Sup, Var, Working } from "@/components/ratings/Formula";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
@@ -423,6 +424,10 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
               uncoloured, so one good night cannot pass for a partnership.
             </p>
           </div>
+        </Section>
+
+        <Section title="Do the odds come true?">
+          <OddsCheck matches={matches} />
         </Section>
 
         <Section title="The actual sums">

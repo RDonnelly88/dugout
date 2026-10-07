@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { ArrowLeft } from "lucide-react";
 import TeamSelection from "@/components/matches/TeamSelection";
 import TeamRandomizer from "@/components/matches/TeamRandomizer";
+import MatchStakes from "@/components/matches/MatchStakes";
 import DatePicker from "@/components/matches/DatePicker";
 import SeasonSelect from "@/components/matches/SeasonSelect";
 import { useEditMatch } from "@/hooks/useEditMatch";
@@ -159,6 +160,12 @@ const EditMatch = () => {
                 togglePlayer={togglePlayer}
               />
             </div>
+
+            {/* Only for a match not yet played: a result already counted is
+                in the ratings the stakes would be read from. */}
+            {match?.status !== "completed" && (
+              <MatchStakes teamA={teamA} teamB={teamB} players={players} />
+            )}
 
             <div className="space-y-6 bg-card/50 rounded-xl p-6 border border-accent/30">
               <div className="flex items-center justify-between">

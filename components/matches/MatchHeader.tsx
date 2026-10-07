@@ -102,6 +102,16 @@ const MatchHeader = ({ match, isCompleted, onEditClick }: MatchHeaderProps) => {
               fileName={`${match.date}-match.png`}
               title="The result, as a picture"
               alt="The match result"
+              label="Share the result"
+            />
+          )}
+          {isCompleted && (
+            <ShareImageButton
+              src={`/api/share/table/${match.id}`}
+              fileName={`${match.date}-table.png`}
+              title="The tables after the night"
+              alt="The ratings and league tables after the match"
+              label="Share the table"
             />
           )}
 

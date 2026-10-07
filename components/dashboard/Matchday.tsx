@@ -29,10 +29,13 @@ export function NextUp({
   fixture,
   canManage,
   name,
+  chanceA,
 }: {
   fixture: Match | undefined;
   canManage: boolean;
   name: (id: string) => string;
+  /** The chance the ratings give the first side, once both sides are picked. */
+  chanceA?: number;
 }) {
   const sides = useSideNames();
 
@@ -68,7 +71,14 @@ export function NextUp({
         <div className="mt-4 grid grid-cols-2 gap-3">
           {(["teamA", "teamB"] as const).map((key) => (
             <div key={key} className="rounded-xl border border-border bg-surface-2/50 p-3">
-              <p className="font-semibold">{key === "teamA" ? sides.A : sides.B}</p>
+              <p className="flex items-baseline justify-between gap-2 font-semibold">
+                {key === "teamA" ? sides.A : sides.B}
+                {chanceA !== undefined && (
+                  <span className="text-sm font-normal text-muted-foreground tabular">
+                    {Math.round((key === "teamA" ? chanceA : 1 - chanceA) * 100)}%
+                  </span>
+                )}
+              </p>
               <Names ids={fixture[key].players} name={name} />
             </div>
           ))}
