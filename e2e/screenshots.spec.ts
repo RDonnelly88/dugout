@@ -59,6 +59,7 @@ const PAGES = [
   { path: "/ratings", name: "04b-ratings" },
   { path: "/compare", name: "04c-compare" },
   { path: "/lineups", name: "04d-lineups" },
+  { path: "/web", name: "04e-squad-web" },
   { path: "/team", name: "05-team" },
   { path: "/settings", name: "06-settings" },
   { path: "/matches/create", name: "07-create-match" },

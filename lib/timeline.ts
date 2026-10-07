@@ -1,3 +1,4 @@
+import { ELO } from "./config";
 import { outcomeOf } from "./match-result";
 import type { Match } from "@/types";
 
@@ -48,4 +49,24 @@ export function withinTimeline(matches: Match[], timeline: Timeline): Match[] {
           (!timeline.to || day(m.date) <= timeline.to)
       );
   }
+}
+
+/** How far back "the last year" reaches, in months. */
+export const LAST_MONTHS = 12;
+
+/**
+ * A timeline kept in the address as one short token, so a question can be
+ * sent to the group chat and open on the same stretch: `all`, `recent`,
+ * `year`, `s:<season id>` or `r:<from>_<to>`.
+ */
+export function readTimeline(token: string | null): Timeline {
+  if (!token || token === "all") return { kind: "all" };
+  if (token === "recent") return { kind: "recent", matches: ELO.window };
+  if (token === "year") return { kind: "months", months: LAST_MONTHS };
+  if (token.startsWith("s:")) return { kind: "season", seasonId: token.slice(2) };
+  if (token.startsWith("r:")) {
+    const [from, to] = token.slice(2).split("_");
+    return { kind: "range", from: from || undefined, to: to || undefined };
+  }
+  return { kind: "all" };
 }

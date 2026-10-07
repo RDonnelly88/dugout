@@ -36,7 +36,7 @@ const menuItems = [
   { path: "/seasons", label: "Seasons", icon: Trophy },
   { path: "/matches", label: "Results", icon: CalendarDays },
   { path: "/players", label: "Squad", icon: Users },
-  { path: "/ratings", label: "Stats", icon: TrendingUp, also: ["/lineups", "/compare"] },
+  { path: "/ratings", label: "Stats", icon: TrendingUp, also: ["/lineups", "/web", "/compare"] },
   { path: "/team", label: "Team", icon: UserCog },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
