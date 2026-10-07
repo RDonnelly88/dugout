@@ -12,19 +12,19 @@ const HELD = 0.65;
 /** The fewest wins in a row worth a line. */
 const RUN = 3;
 /** The fewest wins in a row worth a line for having been ended. */
-const ENDED = 4;
+const ENDED = 3;
 /** The fewest games without a win before a win is worth a line. */
-const DROUGHT = 4;
+const DROUGHT = 3;
 /** The fewest defeats in a row worth a line. */
-const LOSING = 4;
+const LOSING = 3;
 /** The fewest games unbeaten worth a line, when they were not all wins. */
-const UNBEATEN = 6;
+const UNBEATEN = 3;
 /** The fewest places climbed worth a line. */
 const CLIMB = 3;
 /** The smallest margin worth calling the season's biggest win. */
 const THRASHING = 3;
 /** How many lines the card has room for. */
-const LINES = 4;
+const LINES = 5;
 
 /** "Ally", "Ally and Sam", "Ally, Sam and Chris", then a count past three. */
 function together(names: string[]): string {
@@ -128,6 +128,66 @@ export function matchStory({
     }
   }
 
+  // Runs, the stories the group talks about most: one line for each kind,
+  // with everybody on one in it.
+  const onRuns = (ids: string[], count: (id: string) => number, least: number) =>
+    ids
+      .map((id) => ({ id, n: count(id) }))
+      .filter((r) => r.n >= least)
+      .sort((x, y) => y.n - x.n || name(x.id).localeCompare(name(y.id)));
+  const runLine = (
+    runs: { id: string; n: number }[],
+    alike: (names: string, n: number, several: boolean) => string,
+    label: string,
+    each: (run: { id: string; n: number }) => string = (r) => `${name(r.id)} ${r.n}`
+  ) => {
+    if (runs.length === 0) return;
+    if (runs.every((r) => r.n === runs[0].n)) {
+      lines.push(alike(together(runs.map((r) => name(r.id))), runs[0].n, runs.length > 1));
+      return;
+    }
+    const rest = runs.length - 3;
+    lines.push(`${label}: ${runs.slice(0, 3).map(each).join(", ")}${rest > 0 ? ` and ${rest} more` : ""}`);
+  };
+
+  runLine(
+    onRuns(winners, (id) => inARow(games(id), id, (r) => r === "win"), RUN),
+    (names, n, several) => `${names} ${several ? "have" : "has"} won ${n} in a row`,
+    "Winning runs"
+  );
+  // Unbeaten, and not just a winning run told twice.
+  runLine(
+    onRuns(
+      lineUp.filter((id) => !losers.includes(id)),
+      (id) => {
+        const n = inARow(games(id), id, (r) => r === "win" || r === "draw");
+        return n > inARow(games(id), id, (r) => r === "win") ? n : 0;
+      },
+      UNBEATEN
+    ),
+    (names, n, several) => `${names} ${several ? "are" : "is"} unbeaten in ${n}`,
+    "Unbeaten runs"
+  );
+  // A win at last, after a run without one; counted to include tonight's.
+  runLine(
+    onRuns(winners, (id) => inARow(before(id), id, (r) => r !== "win") + 1, DROUGHT + 1),
+    (names, n, several) => (several ? `First wins in ${n} for ${names}` : `${names}'s first win in ${n}`),
+    "First wins in a while",
+    (r) => `${name(r.id)} in ${r.n}`
+  );
+  runLine(
+    onRuns(losers, (id) => inARow(games(id), id, (r) => r === "loss"), LOSING),
+    (names, n, several) => `${names} ${several ? "have" : "has"} lost ${n} in a row`,
+    "Losing runs"
+  );
+  // The winning run a loser walked in on.
+  runLine(
+    onRuns(losers, (id) => inARow(before(id), id, (r) => r === "win"), ENDED),
+    (names, n, several) => (several ? `Runs of ${n} wins over for ${names}` : `${names}'s run of ${n} wins is over`),
+    "Winning runs over",
+    (r) => `${name(r.id)} at ${r.n}`
+  );
+
   if (chanceA !== undefined) {
     const percent = (chance: number) => Math.round(chance * 100);
     if (outcome === "draw") {
@@ -204,29 +264,6 @@ export function matchStory({
     );
   }
 
-  // A win at last, after a run without one.
-  const drought = most(winners, (id) => inARow(before(id), id, (r) => r !== "win"), DROUGHT);
-  if (drought) {
-    lines.push(
-      drought.ids.length === 1
-        ? `${name(drought.ids[0])}'s first win in ${drought.n + 1}`
-        : `A first win in ${drought.n + 1} for ${together(drought.ids.map(name))}`
-    );
-  }
-
-  const run = most(winners, (id) => inARow(games(id), id, (r) => r === "win"), RUN);
-  if (run) lines.push(say(run.ids, `has won ${run.n} in a row`, `have won ${run.n} in a row`));
-
-  // The run a loser walked in on.
-  const ended = most(losers, (id) => inARow(before(id), id, (r) => r === "win"), ENDED);
-  if (ended) {
-    lines.push(
-      ended.ids.length === 1
-        ? `${name(ended.ids[0])}'s run of ${ended.n} wins is over`
-        : `A run of ${ended.n} wins is over for ${together(ended.ids.map(name))}`
-    );
-  }
-
   if (league) {
     const ranked = lineUp.filter((id) => league.before[id] !== undefined && league.after[id] !== undefined);
     const climb = most(ranked, (id) => league.before[id] - league.after[id], CLIMB);
@@ -249,20 +286,6 @@ export function matchStory({
     if (highest && (!peak || rating > peak.rating)) peak = { id, rating };
   }
   if (peak) lines.push(`A career-high rating for ${name(peak.id)}: ${Math.round(peak.rating)}`);
-
-  // Unbeaten for a while, and not just a winning run told twice.
-  const unbeaten = most(
-    lineUp.filter((id) => !losers.includes(id)),
-    (id) => {
-      const n = inARow(games(id), id, (r) => r === "win" || r === "draw");
-      return n > inARow(games(id), id, (r) => r === "win") ? n : 0;
-    },
-    UNBEATEN
-  );
-  if (unbeaten) lines.push(say(unbeaten.ids, `is unbeaten in ${unbeaten.n}`, `are unbeaten in ${unbeaten.n}`));
-
-  const losing = most(losers, (id) => inARow(games(id), id, (r) => r === "loss"), LOSING);
-  if (losing) lines.push(say(losing.ids, `has lost ${losing.n} in a row`, `have lost ${losing.n} in a row`));
 
   return lines.slice(0, LINES);
 }

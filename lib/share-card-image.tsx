@@ -535,7 +535,19 @@ export function matchCardImage(card: ShareCard, fonts: ImageFont[]): ImageRespon
                     flexShrink: 0,
                   }}
                 />
-                {line}
+                {/* Cut rather than wrapped: each line has its one row. */}
+                <div
+                  style={{
+                    display: "flex",
+                    flex: 1,
+                    minWidth: 0,
+                    overflow: "hidden",
+                    whiteSpace: "nowrap",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {line}
+                </div>
               </div>
             ))}
           </div>

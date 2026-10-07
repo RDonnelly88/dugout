@@ -108,6 +108,14 @@ describe("matchStory", () => {
     expect(storyOf(played)).toContain("Ally and Sam have won 3 in a row");
   });
 
+  it("groups everybody whose run was brought to an end", () => {
+    const played = [
+      ...Array.from({ length: 3 }, () => game(["ally", "sam"], ["chris", "dan"])),
+      game(["chris", "dan"], ["ally", "sam"]),
+    ];
+    expect(storyOf(played)).toContain("Runs of 3 wins over for Ally and Sam");
+  });
+
   it("says when somebody's run was brought to an end", () => {
     const played = [
       ...warmUp(),
@@ -125,9 +133,45 @@ describe("matchStory", () => {
     expect(storyOf(played)).toContain("Sam's first win in 5");
   });
 
-  it("says who has lost a few in a row", () => {
-    const played = Array.from({ length: 4 }, () => game(["ally"], ["sam"], "a"));
-    expect(storyOf(played)).toContain("Sam has lost 4 in a row");
+  it("says who has lost a few in a row, from three", () => {
+    const played = Array.from({ length: 3 }, () => game(["ally"], ["sam"], "a"));
+    expect(storyOf(played)).toContain("Sam has lost 3 in a row");
+    expect(storyOf(played.slice(0, 2)).some((line) => line.includes("lost"))).toBe(false);
+  });
+
+  it("marks a first win after three without one", () => {
+    const played = [
+      ...Array.from({ length: 3 }, () => game(["ally"], ["sam"], "a")),
+      game(["ally"], ["sam"], "b"),
+    ];
+    expect(storyOf(played)).toContain("Sam's first win in 4");
+  });
+
+  it("groups everybody on a run of the same length", () => {
+    const played = [
+      game(["ally", "chris"], ["sam"], "a"),
+      game(["ally", "chris"], ["sam"], "a"),
+      game(["ally", "chris"], ["sam"], "a"),
+    ];
+    expect(storyOf(played)).toContain("Ally and Chris have won 3 in a row");
+  });
+
+  it("names runs of different lengths with each one's count", () => {
+    const played = [
+      game(["chris"], ["sam"], "a"),
+      game(["ally", "chris"], ["sam"], "a"),
+      game(["ally", "chris"], ["sam"], "a"),
+      game(["ally", "chris"], ["sam"], "a"),
+    ];
+    expect(storyOf(played)).toContain("Winning runs: Chris 4, Ally 3");
+  });
+
+  /** Runs are what the group talks about, so they come before anything else. */
+  it("tells of runs before upsets and milestones", () => {
+    const played = Array.from({ length: 10 }, () => game(["ally"], ["sam"], "a"));
+    const story = storyOf(played, { chanceA: 0.3 });
+    expect(story[0]).toBe("Ally has won 10 in a row");
+    expect(story.indexOf("An upset: the winners had a 30% chance")).toBeGreaterThan(0);
   });
 
   /** Six wins is a winning run; it is not also an unbeaten one. */
@@ -137,6 +181,7 @@ describe("matchStory", () => {
       ...Array.from({ length: 3 }, () => game(["ally"], ["sam"], "a")),
     ];
     expect(storyOf(drawn)).toContain("Ally is unbeaten in 6");
+    expect(storyOf(drawn.slice(2))).toContain("Ally is unbeaten in 4");
 
     const won = Array.from({ length: 6 }, () => game(["ally"], ["sam"], "a"));
     expect(storyOf(won).some((line) => line.includes("unbeaten"))).toBe(false);
@@ -199,7 +244,7 @@ describe("matchStory", () => {
       ...Array.from({ length: 9 }, () => game(["ally", "sam"], ["chris", "dan"])),
       game(["ally", "sam", "eve"], ["chris", "dan"], "b"),
     ];
-    expect(storyOf(played, { chanceA: 0.8 })).toHaveLength(4);
+    expect(storyOf(played, { chanceA: 0.8 })).toHaveLength(5);
   });
 
   /** Deleted since: their games still count, but there is nobody to name. */
