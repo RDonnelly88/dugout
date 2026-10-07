@@ -6,6 +6,7 @@ import { ELO } from "@/lib/config";
 import { fadingSummary, ratingBreakdown } from "@/lib/ratings-guide";
 import { displayRating, gameWeight, type PlayerRating } from "@/lib/elo";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
+import RatingWaterfall from "@/components/ratings/RatingWaterfall";
 import ResultStrip from "@/components/players/ResultStrip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
@@ -96,51 +97,69 @@ export default function RatingBreakdown({
         less with each match since, however long ago. Here is all of it added up.
       </p>
 
-      {/* The rating as three numbers that add up: earned, faded, now. */}
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1.5 rounded-xl border border-border bg-surface-2/40 p-3 tabular">
-        <span className="text-muted-foreground">
-          Earned on the night, {pieces.length} {pieces.length === 1 ? "game" : "games"}
-        </span>
-        <span className={cn("text-right", tone(sum.earned))}>{signed(sum.earned)}</span>
-        <span className="text-muted-foreground">Faded away since</span>
-        <span className={cn("text-right", tone(sum.faded))}>{signed(sum.faded)}</span>
-        <span className="text-muted-foreground">Everybody starts on</span>
-        <span className="text-right">{ELO.start}</span>
-        <span className="border-t border-border pt-1.5 font-semibold">{first}&apos;s rating today</span>
-        <span className="border-t border-border pt-1.5 text-right font-semibold">
-          {displayRating(rating.rating)}
-        </span>
-      </div>
+      <RatingWaterfall grid={sum} rating={rating.rating} />
 
-      {/* What happens next, before anybody plays, added up the way it is
-          easiest to follow: every game shrinks, so what gained points gives
-          some up and what cost points gives some back, and the two pull
-          against each other. */}
-      <div className="rounded-xl border border-accent/30 bg-accent/5 p-3">
-        <p className="font-semibold">At the next match, before a ball is kicked</p>
-        <p className="mt-1 text-muted-foreground">
-          Every game loses about {rate}% of what it is worth now, which always comes to about{" "}
-          {rate}% of the way from {first}&apos;s rating back to {ELO.start}.
-        </p>
-        <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1.5 tabular">
-          <span className="text-muted-foreground">
-            The games that gained {first} points{" "}
-            <span className="whitespace-nowrap">({signed(sum.gainedNow)} now)</span> shrink
+      {/* The same figures as a grid that adds up across and down: what the
+          games that gained points and the games that cost them were worth on
+          the night, what fading has done to each since, what each comes to
+          today, and what the next match will do to each. */}
+      <div className="rounded-xl border border-border bg-surface-2/40 p-3">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] gap-x-3 gap-y-1.5 tabular">
+          <span />
+          <span className="text-right text-[11px] uppercase leading-tight tracking-wide text-muted-foreground">
+            Gained
+            <span className="block normal-case tracking-normal">{sum.gained.games} games</span>
           </span>
-          <span className={cn("text-right", tone1(sum.gains))}>{signed1(sum.gains)}</span>
-          <span className="text-muted-foreground">
-            The games that cost them points{" "}
-            <span className="whitespace-nowrap">({signed(sum.lostNow)} now)</span> shrink too, giving back
+          <span className="text-right text-[11px] uppercase leading-tight tracking-wide text-muted-foreground">
+            Cost
+            <span className="block normal-case tracking-normal">{sum.cost.games} games</span>
           </span>
-          <span className={cn("text-right", tone1(sum.losses))}>{signed1(sum.losses)}</span>
-          <span className="border-t border-border pt-1.5 font-semibold">Next match</span>
-          <span className={cn("border-t border-border pt-1.5 text-right font-semibold", tone1(sum.next))}>
-            {signed1(sum.next)}
+          <span className="text-right text-[11px] uppercase leading-tight tracking-wide text-muted-foreground">
+            All
+            <span className="block normal-case tracking-normal">{sum.all.games} games</span>
           </span>
+          {(
+            [
+              ["On the night", "night"],
+              ["Faded since", "faded"],
+              ["Today", "now"],
+            ] as const
+          ).map(([label, key]) => (
+            <div key={key} className="contents">
+              <span className={cn(key === "now" ? "border-t border-border pt-1.5 font-semibold" : "text-muted-foreground")}>
+                {label}
+              </span>
+              {[sum.gained, sum.cost, sum.all].map((column, i) => (
+                <span
+                  key={i}
+                  className={cn(
+                    "text-right",
+                    tone(column[key]),
+                    key === "now" && "border-t border-border pt-1.5 font-semibold"
+                  )}
+                >
+                  {signed(column[key])}
+                </span>
+              ))}
+            </div>
+          ))}
+          <span className="text-muted-foreground">Next match</span>
+          {[sum.gained, sum.cost, sum.all].map((column, i) => (
+            <span key={i} className={cn("text-right text-xs", tone1(column.next))}>
+              {signed1(column.next)}
+            </span>
+          ))}
         </div>
+        <p className="mt-2 border-t border-border pt-2 font-semibold tabular">
+          {ELO.start} {sum.all.now < 0 ? "−" : "+"} {Math.abs(Math.round(sum.all.now))} ={" "}
+          {displayRating(rating.rating)}, {first}&apos;s rating today
+        </p>
         <p className="mt-2 text-xs text-muted-foreground">
-          When what was gained and what was lost come to about the same, they all but cancel and
-          there is next to nothing to fade, however many games are behind it.
+          Every game loses about {rate}% of what it is worth at each match, which always comes to
+          about {rate}% of the way from {first}&apos;s rating back to {ELO.start}. The games that
+          gained points shrink, which costs; the games that cost points shrink too, which gives
+          back. When the two come to about the same they all but cancel, however many games are
+          behind it.
         </p>
       </div>
 
@@ -194,14 +213,14 @@ export default function RatingBreakdown({
           )}
 
           <span className="border-t border-border pt-2 font-semibold">All of it</span>
-          <span className={cn("border-t border-border pt-2 text-right", tone(sum.earned))}>
-            {signed(sum.earned)}
+          <span className={cn("border-t border-border pt-2 text-right", tone(sum.all.night))}>
+            {signed(sum.all.night)}
           </span>
-          <span className={cn("border-t border-border pt-2 text-right font-semibold", tone(sum.now))}>
-            {signed(sum.now)}
+          <span className={cn("border-t border-border pt-2 text-right font-semibold", tone(sum.all.now))}>
+            {signed(sum.all.now)}
           </span>
-          <span className={cn("border-t border-border pt-2 text-right text-xs", tone1(sum.next))}>
-            {signed1(sum.next)}
+          <span className={cn("border-t border-border pt-2 text-right text-xs", tone1(sum.all.next))}>
+            {signed1(sum.all.next)}
           </span>
         </div>
       </div>

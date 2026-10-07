@@ -193,40 +193,52 @@ export function ratingBreakdown(rating: PlayerRating): Piece[] {
     .reverse();
 }
 
+/** One column of `fadingSummary`: a set of games, added up four ways. */
+export interface FadingColumn {
+  games: number;
+  /** What they were worth on their nights. */
+  night: number;
+  /** What fading has taken off that since: `now − night`. */
+  faded: number;
+  /** What they add to the start today. */
+  now: number;
+  /** What the next match does to them before anybody plays. */
+  next: number;
+}
+
 /**
- * A rating's games added up three ways: what they were worth on the night,
- * what fading has taken off them since, and what the next match will take
- * before it starts.
+ * A rating's games added up as a grid: the games that put points on, the
+ * games that took points off, and all of them; each worth so much on the
+ * night, faded by so much since, worth so much today, and moved by so much
+ * at the next match. Every figure the guide shows about a rating is one
+ * cell of it, so they can be seen to add up across and down.
  *
  * Fading is a share of each game's worth, so across a player it is a share
  * of what their games add up to, not of how big any one of them is: the same
- * share of the way back to the start every match. Wins fade down and defeats
- * fade up; somebody whose games roughly cancel out has next to nothing to
- * lose, however many games they have.
+ * share of the way back to the start every match. The games that gained
+ * points shrink, which costs; the games that cost points shrink too, which
+ * gives some back. Somebody whose games roughly cancel out has next to
+ * nothing to fade, however many games they have.
  */
-export function fadingSummary(pieces: Piece[]) {
-  const earned = pieces.reduce((sum, p) => sum + p.settled, 0);
-  const now = pieces.reduce((sum, p) => sum + p.now, 0);
-  const next = pieces.reduce((sum, p) => sum + p.next, 0);
-  const fade = (list: Piece[]) => list.reduce((sum, p) => sum + p.next, 0);
+export function fadingSummary(pieces: Piece[]): {
+  gained: FadingColumn;
+  cost: FadingColumn;
+  all: FadingColumn;
+} {
+  const column = (list: Piece[]): FadingColumn => {
+    const night = list.reduce((sum, p) => sum + p.settled, 0);
+    const now = list.reduce((sum, p) => sum + p.now, 0);
+    return {
+      games: list.length,
+      night,
+      faded: now - night,
+      now,
+      next: list.reduce((sum, p) => sum + p.next, 0),
+    };
+  };
   return {
-    /** Everything the counted games were worth on their nights. */
-    earned,
-    /** What fading has taken off that since: `now − earned`. */
-    faded: now - earned,
-    /** What the counted games add to the start today. */
-    now,
-    /** The change the next match makes before anybody plays. */
-    next,
-    /**
-     * The fading, split the way it is easiest to follow: the games that put
-     * points on shrink, which costs; the games that took points off shrink
-     * too, which gives some back. The two add up to `next`.
-     */
-    gains: fade(pieces.filter((p) => p.now > 0)),
-    losses: fade(pieces.filter((p) => p.now < 0)),
-    /** What the games that put points on are worth now, and those that took them off. */
-    gainedNow: pieces.filter((p) => p.now > 0).reduce((sum, p) => sum + p.now, 0),
-    lostNow: pieces.filter((p) => p.now < 0).reduce((sum, p) => sum + p.now, 0),
+    gained: column(pieces.filter((p) => p.settled > 0)),
+    cost: column(pieces.filter((p) => p.settled < 0)),
+    all: column(pieces),
   };
 }

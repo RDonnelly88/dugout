@@ -196,9 +196,9 @@ describe("fadingSummary", () => {
 
   it("splits the rating into what was earned on the night and what has faded since", () => {
     for (const rating of computeRatings(fixtures).values()) {
-      const sum = fadingSummary(ratingBreakdown(rating));
-      expect(sum.earned + sum.faded).toBeCloseTo(sum.now, 9);
-      expect(ELO.start + sum.now).toBeCloseTo(rating.rating, 9);
+      const { all } = fadingSummary(ratingBreakdown(rating));
+      expect(all.night + all.faded).toBeCloseTo(all.now, 9);
+      expect(ELO.start + all.now).toBeCloseTo(rating.rating, 9);
     }
   });
 
@@ -210,15 +210,29 @@ describe("fadingSummary", () => {
     const before = computeRatings(fixtures).get("a")!;
     const after = computeRatings([...fixtures, match(["x"], ["y"], 1, 0, "2026-11-05")]).get("a")!;
 
-    expect(after.rating - before.rating).toBeCloseTo(fadingSummary(ratingBreakdown(before)).next, 9);
+    expect(after.rating - before.rating).toBeCloseTo(fadingSummary(ratingBreakdown(before)).all.next, 9);
   });
 
-  it("splits the next match into what gains give up and what losses give back", () => {
+  /** The grid the guide draws: every row adds up across, every column down. */
+  it("adds up across, from the games that gained and the games that cost, and down", () => {
     for (const rating of computeRatings(fixtures).values()) {
-      const sum = fadingSummary(ratingBreakdown(rating));
-      expect(sum.gains).toBeLessThanOrEqual(0);
-      expect(sum.losses).toBeGreaterThanOrEqual(0);
-      expect(sum.gains + sum.losses).toBeCloseTo(sum.next, 9);
+      const { gained, cost, all } = fadingSummary(ratingBreakdown(rating));
+      for (const row of ["night", "faded", "now", "next"] as const) {
+        expect(gained[row] + cost[row]).toBeCloseTo(all[row], 9);
+      }
+      // A game worth exactly nothing, a draw between level sides, is in
+      // neither column but still one of their games.
+      expect(gained.games + cost.games).toBeLessThanOrEqual(all.games);
+      for (const column of [gained, cost, all]) {
+        expect(column.night + column.faded).toBeCloseTo(column.now, 9);
+      }
+      expect(gained.night).toBeGreaterThanOrEqual(0);
+      expect(cost.night).toBeLessThanOrEqual(0);
+      // Fading takes from what was gained and gives back what was lost.
+      expect(gained.faded).toBeLessThanOrEqual(0);
+      expect(cost.faded).toBeGreaterThanOrEqual(0);
+      expect(gained.next).toBeLessThanOrEqual(0);
+      expect(cost.next).toBeGreaterThanOrEqual(0);
     }
   });
 
