@@ -202,9 +202,9 @@ describe("what the night was worth", () => {
   it("tells the story of the night from the history it is given", () => {
     const card = shareCard(match(), sides, nameOf, { played: [match()], chanceA: 0.3 })!;
 
-    expect(card.story).toContain("Bibs won with a 30% chance");
+    expect(card.story).toContain("An upset: the winners had a 30% chance");
     expect(shareCard(match(), sides, nameOf)!.story).toEqual(
-      expect.not.arrayContaining(["Bibs won with a 30% chance"])
+      expect.not.arrayContaining(["An upset: the winners had a 30% chance"])
     );
   });
 });

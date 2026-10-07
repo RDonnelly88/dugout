@@ -255,7 +255,6 @@ export function shareCard(
       season: tables.season,
       chanceA: tables.chanceA,
       league: tables.previous && tables.standings ? { before: rankBefore, after: rankOf } : undefined,
-      sides: sideNames,
       nameOf,
     }),
     date: spokenDate(match.date),

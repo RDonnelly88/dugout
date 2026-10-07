@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { matchStory } from "@/lib/match-story";
 import type { Match } from "@/types";
 
-const sides = { A: "Bibs", B: "No bibs" };
 const nameOf = (id: string) => id[0].toUpperCase() + id.slice(1);
 
 let day = 0;
@@ -31,7 +30,7 @@ type Extra = Partial<Parameters<typeof matchStory>[0]>;
 
 /** The story of the last of `played`. */
 const storyOf = (played: Match[], extra: Extra = {}) =>
-  matchStory({ match: played.at(-1)!, played, sides, nameOf, ...extra });
+  matchStory({ match: played.at(-1)!, played, nameOf, ...extra });
 
 /** Everybody here has a few games behind them, so no debuts get in the way. */
 const warmUp = () => [
@@ -42,7 +41,7 @@ const warmUp = () => [
 describe("matchStory", () => {
   it("says when the underdogs won, with the chance they were given", () => {
     const played = [...warmUp(), game(["ally", "sam"], ["chris", "dan"], "b")];
-    expect(storyOf(played, { chanceA: 0.69 })).toContain("No bibs won with a 31% chance");
+    expect(storyOf(played, { chanceA: 0.69 })).toContain("An upset: the winners had a 31% chance");
   });
 
   it("says nothing about the odds when the favourites won", () => {
@@ -52,7 +51,7 @@ describe("matchStory", () => {
 
   it("says when the favourites were held to a draw", () => {
     const played = [...warmUp(), game(["ally", "sam"], ["chris", "dan"], "draw")];
-    expect(storyOf(played, { chanceA: 0.3 })).toContain("No bibs were 70% favourites and were held");
+    expect(storyOf(played, { chanceA: 0.3 })).toContain("The favourites had a 70% chance and were held");
   });
 
   it("marks a first game", () => {
@@ -109,13 +108,13 @@ describe("matchStory", () => {
     expect(storyOf(played)).toContain("Ally and Sam have won 3 in a row");
   });
 
-  it("says when somebody's run was brought to an end, and by whom", () => {
+  it("says when somebody's run was brought to an end", () => {
     const played = [
       ...warmUp(),
       ...Array.from({ length: 4 }, () => game(["ally", "sam"], ["chris", "dan"])),
       game(["ally", "chris"], ["sam", "dan"], "b"),
     ];
-    expect(storyOf(played)).toContain("No bibs ended Ally's run of 4 wins");
+    expect(storyOf(played)).toContain("Ally's run of 4 wins is over");
   });
 
   it("marks a win at last after a run without one", () => {
@@ -166,7 +165,7 @@ describe("matchStory", () => {
       game(["ally", "sam"], ["chris", "dan"], "a", [5, 3]),
       game(["ally", "chris"], ["sam", "dan"], "a", [8, 2]),
     ];
-    expect(storyOf(season, { season })).toContain("The biggest win of the season: 6 goals in it");
+    expect(storyOf(season, { season })).toContain("The biggest win of the season so far, by 6");
   });
 
   it("does not call a win the season's biggest when one before it was bigger", () => {
@@ -212,6 +211,6 @@ describe("matchStory", () => {
 
   it("has nothing to say about a match nobody has played", () => {
     const fixture = { ...game(["ally"], ["sam"]), status: "scheduled" as const, outcome: undefined };
-    expect(matchStory({ match: fixture, played: [], sides, nameOf })).toEqual([]);
+    expect(matchStory({ match: fixture, played: [], nameOf })).toEqual([]);
   });
 });

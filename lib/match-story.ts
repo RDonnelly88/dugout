@@ -76,7 +76,6 @@ export function matchStory({
   season = [],
   chanceA,
   league,
-  sides,
   nameOf,
 }: {
   match: Match;
@@ -84,7 +83,6 @@ export function matchStory({
   season?: Match[];
   chanceA?: number;
   league?: { before: Record<string, number>; after: Record<string, number> };
-  sides: { A: string; B: string };
   /** Undefined for a player deleted since, who has no story to tell. */
   nameOf: (playerId: string) => string | undefined;
 }): string[] {
@@ -96,7 +94,6 @@ export function matchStory({
   const lineUp = known([...match.teamA.players, ...match.teamB.players]);
   const winners = known(outcome === "a" ? match.teamA.players : outcome === "b" ? match.teamB.players : []);
   const losers = known(outcome === "a" ? match.teamB.players : outcome === "b" ? match.teamA.players : []);
-  const winningSide = outcome === "a" ? sides.A : sides.B;
 
   // Each player's games, newest first and this one leading, so a count is
   // where they stood once the final whistle had gone.
@@ -134,12 +131,11 @@ export function matchStory({
   if (chanceA !== undefined) {
     const percent = (chance: number) => Math.round(chance * 100);
     if (outcome === "draw") {
-      const favourite = chanceA >= 0.5 ? "A" : "B";
-      const chance = favourite === "A" ? chanceA : 1 - chanceA;
-      if (chance >= HELD) lines.push(`${sides[favourite]} were ${percent(chance)}% favourites and were held`);
+      const chance = Math.max(chanceA, 1 - chanceA);
+      if (chance >= HELD) lines.push(`The favourites had a ${percent(chance)}% chance and were held`);
     } else {
       const chance = outcome === "a" ? chanceA : 1 - chanceA;
-      if (chance <= UPSET) lines.push(`${winningSide} won with a ${percent(chance)}% chance`);
+      if (chance <= UPSET) lines.push(`An upset: the winners had a ${percent(chance)}% chance`);
     }
   }
 
@@ -155,7 +151,7 @@ export function matchStory({
     );
     const widest = Math.max(0, ...earlier.map((m) => margin(m) ?? 0));
     if (earlier.length > 0 && tonight > widest) {
-      lines.push(`The biggest win of the season: ${tonight} goals in it`);
+      lines.push(`The biggest win of the season so far, by ${tonight}`);
     }
   }
 
@@ -226,8 +222,8 @@ export function matchStory({
   if (ended) {
     lines.push(
       ended.ids.length === 1
-        ? `${winningSide} ended ${name(ended.ids[0])}'s run of ${ended.n} wins`
-        : `${winningSide} ended a run of ${ended.n} wins for ${together(ended.ids.map(name))}`
+        ? `${name(ended.ids[0])}'s run of ${ended.n} wins is over`
+        : `A run of ${ended.n} wins is over for ${together(ended.ids.map(name))}`
     );
   }
 
