@@ -74,44 +74,67 @@ export interface SeasonPositions {
   lines: { playerId: string; positions: (number | null)[] }[];
 }
 
-interface Tally extends Rankable {
+/** A player's line in a season's table, as the view would give it. */
+export interface LeagueRow extends Rankable {
   draws: number;
+}
+
+/** The played matches, oldest first. */
+function inOrder(matches: Match[]): Match[] {
+  return (
+    matches
+      .filter((m) => outcomeOf(m) !== null)
+      // Stable on equal dates, so two games on one night keep the order they
+      // were entered in rather than shuffling between renders.
+      .map((m, i) => ({ m, i }))
+      .sort(
+        (a, b) =>
+          new Date(a.m.date).getTime() - new Date(b.m.date).getTime() || a.i - b.i
+      )
+      .map(({ m }) => m)
+  );
+}
+
+/** Adds one match to the table. */
+function count(tally: Map<string, LeagueRow>, match: Match, values: PointValues) {
+  for (const playerId of [...match.teamA.players, ...match.teamB.players]) {
+    const result = resultFor(match, playerId);
+    if (!result) continue;
+    const row = tally.get(playerId) ?? { playerId, points: 0, played: 0, wins: 0, draws: 0 };
+    row.played += 1;
+    if (result === "win") {
+      row.wins += 1;
+      row.points += values.win;
+    } else if (result === "draw") {
+      row.draws += 1;
+      row.points += values.draw;
+    }
+    tally.set(playerId, row);
+  }
+}
+
+/**
+ * A season's table once `matches` have been counted, by the same rules as
+ * the view: for the table as it stood on a given night, pass the matches up
+ * to that night.
+ */
+export function seasonTable(matches: Match[], values: PointValues): LeagueRow[] {
+  const tally = new Map<string, LeagueRow>();
+  for (const match of inOrder(matches)) count(tally, match, values);
+  return [...tally.values()];
 }
 
 export function seasonPositions(
   matches: Match[],
   values: PointValues
 ): SeasonPositions {
-  const played = matches
-    .filter((m) => outcomeOf(m) !== null)
-    // Stable on equal dates, so two games on one night keep the order they
-    // were entered in rather than shuffling between renders.
-    .map((m, i) => ({ m, i }))
-    .sort(
-      (a, b) =>
-        new Date(a.m.date).getTime() - new Date(b.m.date).getTime() || a.i - b.i
-    )
-    .map(({ m }) => m);
-
-  const tally = new Map<string, Tally>();
+  const played = inOrder(matches);
+  const tally = new Map<string, LeagueRow>();
   const positions = new Map<string, (number | null)[]>();
 
   played.forEach((match, step) => {
-    for (const playerId of [...match.teamA.players, ...match.teamB.players]) {
-      const result = resultFor(match, playerId);
-      if (!result) continue;
-      const row =
-        tally.get(playerId) ??
-        { playerId, points: 0, played: 0, wins: 0, draws: 0 };
-      row.played += 1;
-      if (result === "win") {
-        row.wins += 1;
-        row.points += values.win;
-      } else if (result === "draw") {
-        row.draws += 1;
-        row.points += values.draw;
-      }
-      tally.set(playerId, row);
+    count(tally, match, values);
+    for (const playerId of tally.keys()) {
       if (!positions.has(playerId)) positions.set(playerId, Array(step).fill(null));
     }
 

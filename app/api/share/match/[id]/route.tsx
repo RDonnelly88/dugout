@@ -6,6 +6,7 @@ import { computeRatings } from "@/lib/elo";
 import { recentResults } from "@/lib/recent-results";
 import { outcomeOf, sideOf } from "@/lib/match-result";
 import { matchExpectations } from "@/lib/expected-wins";
+import { pointValues, seasonTable, type LeagueRow } from "@/lib/season-positions";
 import { SIDE_NAMES } from "@/lib/config";
 import type { Match } from "@/types";
 
@@ -110,7 +111,7 @@ export async function GET(
       row.season_id
         ? supabase
             .from("season_player_stats")
-            .select("player_id, player_name, points, played, wins, season_name")
+            .select("points, wins, draws, season_name")
             .eq("season_id", row.season_id)
             .order("points", { ascending: false })
         : Promise.resolve({ data: null }),
@@ -127,6 +128,19 @@ export async function GET(
     [...recentResults(played)].map(([playerId, run]) => [playerId, run.results])
   );
 
+  // The league as it stood either side of this match, counted from the
+  // season's games with what the view says a win and a draw are worth, so a
+  // card for a game from March shows March's table and who it moved.
+  const view = (table ?? []).map((entry) => ({
+    points: entry.points ?? 0,
+    wins: entry.wins ?? 0,
+    draws: entry.draws ?? 0,
+  }));
+  const values = pointValues(view);
+  const season = row.season_id ? played.filter((m) => m.seasonId === row.season_id) : [];
+  const named = (rows: LeagueRow[]) =>
+    rows.map((r) => ({ ...r, name: nameOf(r.playerId) ?? "Unknown" }));
+
   const tables: ShareTables = {
     points,
     changes,
@@ -140,22 +154,13 @@ export async function GET(
       name: nameOf(rating.playerId) ?? "Unknown",
       rating: rating.rating,
     })),
-    standings: (table ?? []).flatMap((entry) =>
-      entry.player_id
-        ? [
-            {
-              playerId: entry.player_id,
-              name: entry.player_name ?? "Unknown",
-              points: entry.points ?? 0,
-              // The season page settles a tie on points by games played and
-              // then wins, so the card has to carry both to land on the same
-              // order it does.
-              played: entry.played ?? 0,
-              wins: entry.wins ?? 0,
-            },
-          ]
-        : []
-    ),
+    season,
+    ...(values && season.length > 0
+      ? {
+          standings: named(seasonTable(season, values)),
+          previous: named(seasonTable(season.filter((m) => m.id !== match.id), values)),
+        }
+      : {}),
     seasonName: table?.[0]?.season_name ?? undefined,
   };
 

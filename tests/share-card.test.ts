@@ -414,3 +414,45 @@ describe("the run each player is on", () => {
     expect(card.a.players[0].results).toBeUndefined();
   });
 });
+
+describe("how far the night moved everybody in the league", () => {
+  const before = [
+    { playerId: "p2", name: "Sam", points: 10, played: 4, wins: 3 },
+    { playerId: "p3", name: "Chris", points: 9, played: 4, wins: 3 },
+    { playerId: "p1", name: "Ross Donnelly", points: 8, played: 4, wins: 2 },
+  ];
+  const after = [
+    { playerId: "p1", name: "Ross Donnelly", points: 11, played: 5, wins: 3 },
+    { playerId: "p2", name: "Sam", points: 10, played: 5, wins: 3 },
+    { playerId: "p3", name: "Chris", points: 9, played: 4, wins: 3 },
+  ];
+
+  it("puts places gained and lost beside each player", () => {
+    const card = shareCard(match(), sides, nameOf, { standings: after, previous: before })!;
+
+    expect(card.a.players[0].moved).toBe(2);
+    expect(card.b.players[0].moved).toBe(-1);
+  });
+
+  it("puts them in the table too", () => {
+    const card = shareCard(match(), sides, nameOf, { standings: after, previous: before })!;
+
+    expect(card.standings.map((row) => row.moved)).toEqual([2, -1, -1]);
+  });
+
+  /** A first game of the season has no place to have moved from. */
+  it("leaves it off somebody new to the table", () => {
+    const card = shareCard(match(), sides, nameOf, {
+      standings: after,
+      previous: before.filter((row) => row.playerId !== "p1"),
+    })!;
+
+    expect(card.a.players[0].moved).toBeUndefined();
+  });
+
+  it("tells the story of who went top", () => {
+    const card = shareCard(match(), sides, nameOf, { standings: after, previous: before })!;
+    expect(card.story).toContain("Ross Donnelly goes top of the league");
+  });
+});
+

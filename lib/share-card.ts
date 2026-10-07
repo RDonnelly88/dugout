@@ -20,6 +20,11 @@ export interface SharePlayer {
    * has no record of.
    */
   change?: number;
+  /**
+   * Places gained in the league on the night, negative for places lost.
+   * Absent for their first game of the season, with no place to move from.
+   */
+  moved?: number;
   /** Where they stand in the season's league, first being top. */
   rank?: number;
   /**
@@ -47,6 +52,8 @@ export interface ShareSide {
 /** One line of a standings table on the card. */
 export interface ShareRow {
   name: string;
+  /** Places gained on the night, negative for places lost; see `SharePlayer.moved`. */
+  moved?: number;
   /** Already rounded and ready to draw: a rating, or a points total. */
   figure: number;
   /** Whether they were in this match, so the tables answer "and us?". */
@@ -91,15 +98,21 @@ export interface ShareTables {
    * than trusted to arrive sorted: a table and a number that disagreed about
    * who is second would both be on the same picture.
    */
-  standings?: {
-    playerId: string;
-    name: string;
-    points: number;
-    played: number;
-    wins: number;
-  }[];
+  standings?: StandingsRow[];
+  /** The league as it stood before this match, for how far everybody moved. */
+  previous?: StandingsRow[];
+  /** The season's matches by the end of this one, for the story. */
+  season?: Match[];
   /** What the season is called, for the heading over its table. */
   seasonName?: string;
+}
+
+interface StandingsRow {
+  playerId: string;
+  name: string;
+  points: number;
+  played: number;
+  wins: number;
 }
 
 export interface ShareCard {
@@ -205,6 +218,9 @@ export function shareCard(
   // five; this is how somebody sixth finds themselves.
   const league = sortPlayersByRank(tables.standings ?? []);
   const rankOf = calculatePlayerRanks(tables.standings ?? []);
+  const rankBefore = calculatePlayerRanks(tables.previous ?? []);
+  const moved = (id: string) =>
+    rankOf[id] !== undefined && rankBefore[id] !== undefined ? rankBefore[id] - rankOf[id] : undefined;
   const names = (ids: string[]): SharePlayer[] =>
     ids.map((id) => ({
       // Deleted since, but they still had a shirt on the night, so they keep
@@ -212,19 +228,22 @@ export function shareCard(
       name: nameOf(id) ?? "Unknown",
       change: tables.changes?.get(id),
       rank: rankOf[id],
+      moved: tables.previous ? moved(id) : undefined,
       results: tables.results?.get(id),
     }));
 
   const top = <T extends { playerId: string; name: string }>(
     rows: T[] | undefined,
     figure: (row: T) => number,
-    place: (row: T, index: number) => number
+    place: (row: T, index: number) => number,
+    shift?: (row: T) => number | undefined
   ): ShareRow[] =>
     (rows ?? []).slice(0, TOP).map((row, index) => ({
       name: row.name,
       figure: Math.round(figure(row)),
       played: inMatch.has(row.playerId),
       place: place(row, index),
+      ...(shift?.(row) !== undefined ? { moved: shift(row) } : {}),
     }));
 
   return {
@@ -233,7 +252,9 @@ export function shareCard(
     story: matchStory({
       match,
       played: tables.played ?? [],
+      season: tables.season,
       chanceA: tables.chanceA,
+      league: tables.previous && tables.standings ? { before: rankBefore, after: rankOf } : undefined,
       sides: sideNames,
       nameOf,
     }),
@@ -243,7 +264,12 @@ export function shareCard(
     // equal to the point of sharing a place does not happen; the row number is
     // the placing. A league is a count, and ties are its normal weather.
     ladder: top(tables.ladder, (row) => row.rating, (_row, index) => index + 1),
-    standings: top(league, (row) => row.points, (row) => rankOf[row.playerId]),
+    standings: top(
+      league,
+      (row) => row.points,
+      (row) => rankOf[row.playerId],
+      tables.previous ? (row) => moved(row.playerId) : undefined
+    ),
     standingsTitle: tableTitle(tables.seasonName),
     a: {
       name: sideNames.A,

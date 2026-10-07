@@ -54,8 +54,8 @@ const INNER = WIDTH - PAD * 2;
 /** The space between two squares of a run. */
 const FORM_GAP = 4;
 
-/** Where a player's league place sits, at the end of their row. */
-const PLACE = 76;
+/** Where a player's league place sits, at the end of their row, with how far it moved. */
+const PLACE = 132;
 
 /** One of the two tables under the line-ups. */
 const TABLE = (INNER - 40) / 2;
@@ -136,6 +136,25 @@ const swingTint = (value: number) =>
 
 /** Where a player's rating move sits, before their run. */
 const MOVE = 84;
+
+/**
+ * Places gained or lost on the night: a small triangle and the count, or
+ * nothing for a player who stayed put or has no place to move from.
+ */
+function Moved({ by, size }: { by?: number; size: number }) {
+  if (!by) return null;
+  const up = by > 0;
+  const tint = up ? C.win : C.loss;
+  const arrow = Math.round(size * 0.7);
+  return (
+    <div style={{ display: "flex", alignItems: "center", fontSize: size, fontWeight: 700, color: tint }}>
+      <svg width={arrow} height={arrow} viewBox="0 0 10 10" style={{ marginRight: 4 }}>
+        <path d={up ? "M5 1 L9.5 9 L0.5 9 Z" : "M0.5 1 L9.5 1 L5 9 Z"} fill={tint} />
+      </svg>
+      {Math.abs(by)}
+    </div>
+  );
+}
 
 /** A player's initials in a ring of their side's colour. */
 function Initials({ player, size, tint }: { player: SharePlayer; size: number; tint: string }) {
@@ -255,6 +274,7 @@ function LineUp({
             style={{
               display: "flex",
               justifyContent: "flex-end",
+              alignItems: "center",
               width: PLACE,
               flexShrink: 0,
               fontSize: Math.min(26, Math.round(height * 0.5)),
@@ -262,7 +282,10 @@ function LineUp({
               color: C.muted,
             }}
           >
-            {player.rank !== undefined ? ordinal(player.rank) : ""}
+            <Moved by={player.moved} size={Math.min(20, Math.round(height * 0.4))} />
+            <div style={{ display: "flex", justifyContent: "flex-end", width: 64 }}>
+              {player.rank !== undefined ? ordinal(player.rank) : ""}
+            </div>
           </div>
         </div>
       ))}
@@ -340,6 +363,7 @@ function Table({ title, unit, rows }: { title: string; unit?: string; rows: Shar
           >
             {row.name}
           </div>
+          <Moved by={row.moved} size={18} />
           <div style={{ display: "flex", justifyContent: "flex-end", width: 66, fontWeight: 700 }}>
             {row.figure}
           </div>

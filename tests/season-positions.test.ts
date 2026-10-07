@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pointValues, seasonPositions } from "@/lib/season-positions";
+import { pointValues, seasonPositions, seasonTable } from "@/lib/season-positions";
 import type { Match } from "@/types";
 
 let n = 0;
@@ -128,3 +128,41 @@ describe("seasonPositions", () => {
     expect(lines.map((l) => l.playerId)).toEqual(["c", "a", "b"]);
   });
 });
+
+describe("seasonTable", () => {
+  it("counts each player's line of the table from the matches", () => {
+    const rows = seasonTable(
+      [
+        night(["ally"], ["sam"], "a", "2026-01-01"),
+        night(["ally"], ["sam"], "draw", "2026-01-08"),
+      ],
+      VALUES
+    );
+
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        { playerId: "ally", points: 4, played: 2, wins: 1, draws: 1 },
+        { playerId: "sam", points: 1, played: 2, wins: 0, draws: 1 },
+      ])
+    );
+  });
+
+  /** The chart's last step and the table are the same answer. */
+  it("ends where the chart of positions ends", () => {
+    const matches = [
+      night(["ally", "chris"], ["sam", "dan"], "a", "2026-01-01"),
+      night(["ally", "sam"], ["chris", "dan"], "b", "2026-01-08"),
+      night(["ally", "dan"], ["sam", "chris"], "draw", "2026-01-15"),
+    ];
+    const { lines } = seasonPositions(matches, VALUES);
+    const order = [...seasonTable(matches, VALUES)].sort((x, y) => y.points - x.points || y.played - x.played || y.wins - x.wins);
+
+    expect(lines.map((line) => line.playerId)).toEqual(order.map((row) => row.playerId));
+  });
+
+  it("leaves out a fixture nobody has played", () => {
+    const fixture = { ...night(["ally"], ["sam"], "a", "2026-02-01"), status: "scheduled" as const, outcome: undefined };
+    expect(seasonTable([fixture], VALUES)).toEqual([]);
+  });
+});
+
