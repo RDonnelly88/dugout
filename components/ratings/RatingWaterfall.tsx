@@ -3,7 +3,7 @@ import { displayRating } from "@/lib/elo";
 import type { fadingSummary } from "@/lib/ratings-guide";
 import { cn } from "@/lib/utils";
 
-type Grid = ReturnType<typeof fadingSummary>;
+type Summary = ReturnType<typeof fadingSummary>;
 
 interface Step {
   label: string;
@@ -18,6 +18,46 @@ const signed = (x: number) =>
 const signed1 = (x: number) =>
   Math.abs(x) < 0.05 ? "0" : `${x > 0 ? "+" : "−"}${Math.abs(x).toFixed(1)}`;
 
+/** The stretch of rating a waterfall is drawn across. */
+export interface WaterfallScale {
+  low: number;
+  high: number;
+}
+
+/** Each step with where it starts and ends, the start and today as levels. */
+function waterfallSteps({ gained, cost, all }: Summary, rating: number) {
+  const steps: Step[] = [
+    { label: "Everybody starts on", level: ELO.start },
+    { label: `The ${gained.games} ${gained.games === 1 ? "game" : "games"} that gained points, on the night`, delta: gained.night },
+    { label: `The ${cost.games} ${cost.games === 1 ? "game" : "games"} that cost points, on the night`, delta: cost.night },
+    { label: "Faded off what was gained since", delta: gained.faded },
+    { label: "Faded off what was lost since, given back", delta: cost.faded },
+    { label: "Rating today", level: rating },
+    { label: "Next match, before a ball is kicked", delta: all.next },
+  ].filter((step) => step.level !== undefined || Math.abs(step.delta!) >= 0.05);
+
+  let at: number = ELO.start;
+  return steps.map((step) => {
+    if (step.level !== undefined) {
+      at = step.level;
+      return { ...step, from: step.level, to: step.level };
+    }
+    const from = at;
+    at += step.delta!;
+    return { ...step, from, to: at };
+  });
+}
+
+/**
+ * The lowest and highest any step of a rating's waterfall reaches. Two
+ * waterfalls side by side are drawn across the extent of both, so the same
+ * width of bar is the same number of points in each.
+ */
+export function waterfallExtent(summary: Summary, rating: number): WaterfallScale {
+  const ends = waterfallSteps(summary, rating).flatMap((d) => [d.from, d.to]);
+  return { low: Math.min(...ends), high: Math.max(...ends) };
+}
+
 /**
  * A rating as a waterfall: from the start, up by everything the games that
  * gained points were worth on the night, down by everything the games that
@@ -29,32 +69,18 @@ const signed1 = (x: number) =>
  * faint line marks the start throughout, so a fade that pulls towards it
  * can be seen doing so.
  */
-export default function RatingWaterfall({ grid, rating }: { grid: Grid; rating: number }) {
-  const { gained, cost, all } = grid;
-  const steps: Step[] = [
-    { label: "Everybody starts on", level: ELO.start },
-    { label: `The ${gained.games} ${gained.games === 1 ? "game" : "games"} that gained points, on the night`, delta: gained.night },
-    { label: `The ${cost.games} ${cost.games === 1 ? "game" : "games"} that cost points, on the night`, delta: cost.night },
-    { label: "Faded off what was gained since", delta: gained.faded },
-    { label: "Faded off what was lost since, given back", delta: cost.faded },
-    { label: "Rating today", level: rating },
-    { label: "Next match, before a ball is kicked", delta: all.next },
-  ].filter((step) => step.level !== undefined || Math.abs(step.delta!) >= 0.05);
-
-  // Where each step starts and ends, for the scale they all share.
-  let at: number = ELO.start;
-  const drawn = steps.map((step) => {
-    if (step.level !== undefined) {
-      at = step.level;
-      return { ...step, from: step.level, to: step.level };
-    }
-    const from = at;
-    at += step.delta!;
-    return { ...step, from, to: at };
-  });
-  const ends = drawn.flatMap((d) => [d.from, d.to]);
-  const low = Math.min(...ends);
-  const high = Math.max(...ends);
+export default function RatingWaterfall({
+  summary,
+  rating,
+  scale,
+}: {
+  summary: Summary;
+  rating: number;
+  /** Drawn across this instead of its own extent, to line up with another. */
+  scale?: WaterfallScale;
+}) {
+  const drawn = waterfallSteps(summary, rating);
+  const { low, high } = scale ?? waterfallExtent(summary, rating);
   const pad = Math.max((high - low) * 0.04, 2);
   const span = high - low + pad * 2;
   const x = (value: number) => ((value - (low - pad)) / span) * 100;
@@ -105,7 +131,7 @@ export default function RatingWaterfall({ grid, rating }: { grid: Grid; rating: 
             >
               {level
                 ? displayRating(step.to)
-                : // The small steps to a tenth, as the grid shows them.
+                : // The small steps to a tenth: a fade of under a point would round to nothing.
                   Math.abs(step.delta!) < 10
                   ? signed1(step.delta!)
                   : signed(step.delta!)}

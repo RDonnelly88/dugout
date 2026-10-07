@@ -207,11 +207,11 @@ export interface FadingColumn {
 }
 
 /**
- * A rating's games added up as a grid: the games that put points on, the
+ * A rating's games added up three ways: the games that put points on, the
  * games that took points off, and all of them; each worth so much on the
  * night, faded by so much since, worth so much today, and moved by so much
- * at the next match. Every figure the guide shows about a rating is one
- * cell of it, so they can be seen to add up across and down.
+ * at the next match. Every step of a rating's waterfall is one of these
+ * figures, so they add up along the way and to the rating at the end.
  *
  * Fading is a share of each game's worth, so across a player it is a share
  * of what their games add up to, not of how big any one of them is: the same
