@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarPlus, ChevronRight, Flag, PartyPopper, Sparkles, TrendingUp, Trophy, UserPlus } from "lucide-react";
+import { CalendarPlus, ChevronRight, Flag, Flame, PartyPopper, Sparkles, TrendingUp, Trophy, UserPlus } from "lucide-react";
 import { useTeam } from "@/contexts/TeamContext";
 import { getCurrentSeason, getMatches, getPlayers, getSeasonPlayerStats, getSeasons } from "@/lib/db";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
@@ -12,7 +12,7 @@ import { usePointValues } from "@/hooks/usePointValues";
 import { usePermission } from "@/lib/permission-utils";
 import { isActivePlayer } from "@/components/players/ActiveFilter";
 import { outcomeOf } from "@/lib/match-result";
-import { matchStory, nightContext } from "@/lib/match-story";
+import { currentRuns, matchStory, nightContext } from "@/lib/match-story";
 import { milestones } from "@/lib/milestones";
 import { shortNames } from "@/lib/short-names";
 import PageHeader from "@/components/PageHeader";
@@ -22,6 +22,23 @@ import RatingLeaderboard from "@/components/ratings/RatingLeaderboard";
 import { NextUp, LastResult } from "./Matchday";
 
 const time = (date: string) => new Date(date).getTime();
+
+/** How far back a player's latest game can be for their run to still be news. */
+const RECENT_NIGHTS = 3;
+
+/** A panel's lines, each with the accent's dot. */
+function Lines({ lines }: { lines: string[] }) {
+  return (
+    <ul className="space-y-2">
+      {lines.map((line) => (
+        <li key={line} className="flex items-baseline gap-3 text-sm">
+          <span className="h-2 w-2 shrink-0 translate-y-[-1px] rounded-full bg-accent" aria-hidden />
+          {line}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 /** A card's heading, and the way through to the page that holds the rest. */
 function Panel({
@@ -123,7 +140,8 @@ const Dashboard = () => {
   const active = useMemo(() => new Set(players.filter(isActivePlayer).map((p) => p.id)), [players]);
 
   // The last night told the way the share card tells it, from the same
-  // story, so the front page and the picture in the group chat never differ.
+  // story, so the front page and the picture in the group chat never differ;
+  // its runs are left to the panel below, which has everybody's.
   const values = usePointValues();
   const story = useMemo(() => {
     if (!last) return [];
@@ -136,8 +154,25 @@ const Dashboard = () => {
       league: night.league,
       nameOf: (id) => byId.get(id)?.name,
       among: (id) => active.has(id),
+      runs: false,
     });
   }, [last, matches, values, byId, active]);
+
+  // The runs the squad is on, each to their own latest game, so somebody
+  // who sat out last week is still on the run they left on. Only those who
+  // have played in the last few nights, so a run from months ago is not news.
+  const runs = useMemo(
+    () =>
+      currentRuns({
+        played,
+        players: [...active],
+        recent: new Set(played.slice(0, RECENT_NIGHTS).map((m) => m.id)),
+        nameOf: (id) => byId.get(id)?.name,
+        // The front page has room for everybody.
+        shown: Infinity,
+      }),
+    [played, active, byId]
+  );
 
   // Round numbers still to come. One brought up last time out is in the
   // story above, told only if it was really brought up then.
@@ -176,14 +211,13 @@ const Dashboard = () => {
 
         {last && story.length > 0 && (
           <Panel title="Last time out" icon={PartyPopper} href={`/matches/${last.id}`} more="The match">
-            <ul className="space-y-2">
-              {story.map((line) => (
-                <li key={line} className="flex items-baseline gap-3 text-sm">
-                  <span className="h-2 w-2 shrink-0 translate-y-[-1px] rounded-full bg-accent" aria-hidden />
-                  {line}
-                </li>
-              ))}
-            </ul>
+            <Lines lines={story} />
+          </Panel>
+        )}
+
+        {runs.length > 0 && (
+          <Panel title="Runs going" icon={Flame}>
+            <Lines lines={runs} />
           </Panel>
         )}
 

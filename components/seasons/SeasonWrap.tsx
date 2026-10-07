@@ -4,9 +4,11 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
-import { ArrowRight, Flame, Sparkles, TrendingUp, Users, Zap } from "lucide-react";
+import { ArrowRight, CloudRain, Flame, Shield, Sparkles, TrendingUp, Users, Zap } from "lucide-react";
 import { seasonWrap } from "@/lib/season-wrap";
 import { seasonNights } from "@/lib/season-story";
+import { matchStory, nightContext } from "@/lib/match-story";
+import { outcomeOf } from "@/lib/match-result";
 import { displayRating } from "@/lib/elo";
 import { getMatches } from "@/lib/db";
 import { useTeam } from "@/contexts/TeamContext";
@@ -19,6 +21,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Match, Player } from "@/types";
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
+
+/** How many story lines each night of the season gets. */
+const NIGHT_LINES = 3;
+/** The length a run is first told at. */
+const RUN_STARTS = 3;
 
 function Award({
   icon: Icon,
@@ -132,13 +139,38 @@ export default function SeasonWrap({
 
   const values = usePointValues();
   const wrap = useMemo(() => seasonWrap(history, season, values), [history, season, values]);
-  const nights = useMemo(
-    () => seasonNights(season, { upsetMatchId: wrap.upset?.matchId, finished }),
-    [season, wrap.upset?.matchId, finished]
-  );
   const byId = useMemo(
     () => new Map(players.map((player) => [player.id, player])),
     [players]
+  );
+  // Each night told as the share card told it at the time: the runs, the
+  // milestones, the new names at the top. A few lines a night, so the season
+  // reads as a diary rather than a list of everything.
+  const stories = useMemo(() => {
+    const told = new Map<string, string[]>();
+    for (const match of season) {
+      if (outcomeOf(match) === null) continue;
+      const night = nightContext(match, history, values);
+      told.set(
+        match.id,
+        matchStory({
+          match,
+          played: night.played,
+          season: night.season,
+          chanceA: night.chanceA,
+          league: night.league,
+          nameOf: (id) => byId.get(id)?.name,
+          lines: NIGHT_LINES,
+          // A run when it starts and at every five, not every week it grows.
+          worth: (n) => n === RUN_STARTS || n % 5 === 0,
+        })
+      );
+    }
+    return told;
+  }, [season, history, values, byId]);
+  const nights = useMemo(
+    () => seasonNights(season, { upsetMatchId: wrap.upset?.matchId, finished, stories }),
+    [season, wrap.upset?.matchId, finished, stories]
   );
 
   const awards = [
@@ -163,6 +195,28 @@ export default function SeasonWrap({
         <Named
           player={byId.get(wrap.streak.playerId)}
           detail={`${wrap.streak.length} wins on the bounce`}
+        />
+      ),
+    },
+    wrap.unbeaten && {
+      icon: Shield,
+      title: "Unbeaten run",
+      stamp: `${wrap.unbeaten.length} unbeaten`,
+      body: (
+        <Named
+          player={byId.get(wrap.unbeaten.playerId)}
+          detail={`${wrap.unbeaten.length} games without a defeat`}
+        />
+      ),
+    },
+    wrap.slump && {
+      icon: CloudRain,
+      title: "Rough patch",
+      stamp: `${wrap.slump.length} lost`,
+      body: (
+        <Named
+          player={byId.get(wrap.slump.playerId)}
+          detail={`${wrap.slump.length} defeats on the bounce`}
         />
       ),
     },

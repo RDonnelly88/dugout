@@ -72,4 +72,22 @@ describe("seasonNights", () => {
     expect(nights[1].score).toBeUndefined();
     expect(nights[1].outcome).toBe("b");
   });
+
+  it("tells every night between that has something worth saying", () => {
+    const first = match("2026-01-01", 2, 1);
+    const quiet = match("2026-02-01", 1, 1);
+    const eventful = match("2026-03-01", 3, 0);
+    const last = match("2026-04-01", 4, 2);
+    const nights = seasonNights([first, quiet, eventful, last], {
+      finished: true,
+      stories: new Map([
+        [eventful.id, ["Ally has won 3 in a row"]],
+        [quiet.id, []],
+      ]),
+    });
+
+    expect(nights.map((n) => n.matchId)).toEqual([first.id, eventful.id, last.id]);
+    expect(nights[1].labels).toEqual([]);
+    expect(nights[1].story).toEqual(["Ally has won 3 in a row"]);
+  });
 });
