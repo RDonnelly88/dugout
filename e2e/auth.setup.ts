@@ -23,7 +23,7 @@ setup("authenticate", async ({ page, context }) => {
 
   // Landing anywhere but /login is the proof the session took.
   await expect(page).not.toHaveURL(/\/login/, { timeout: 15_000 });
-  await expect(page.getByRole("link", { name: /players/i }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: /squad/i }).first()).toBeVisible();
 
   fs.mkdirSync(".auth", { recursive: true });
   await context.storageState({ path: STATE });

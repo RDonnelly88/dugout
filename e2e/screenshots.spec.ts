@@ -14,6 +14,10 @@ const dir = (project: string) => `e2e/screenshots/${project}`;
 
 async function shot(page: Page, project: string, name: string) {
   fs.mkdirSync(dir(project), { recursive: true });
+  // A full-page shot draws anything fixed where the first screen left it, so
+  // the phone's tab bar would sit across the middle of every long page. Put
+  // it at the foot, where the page ends, for the picture only.
+  await page.addStyleTag({ content: 'nav[aria-label="Main"] { position: static !important; }' });
   await page.screenshot({ path: `${dir(project)}/${name}.png`, fullPage: true });
 }
 
@@ -54,6 +58,8 @@ const PAGES = [
   { path: "/seasons", name: "04-seasons" },
   { path: "/ratings", name: "04b-ratings" },
   { path: "/compare", name: "04c-compare" },
+  { path: "/lineups", name: "04d-lineups" },
+  { path: "/web", name: "04e-squad-web" },
   { path: "/team", name: "05-team" },
   { path: "/settings", name: "06-settings" },
   { path: "/matches/create", name: "07-create-match" },

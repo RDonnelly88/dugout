@@ -88,6 +88,9 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
   );
 
   const ratings = useMemo(() => computeRatings(matches), [matches]);
+  // Somebody on the winning side with games behind them who barely faded,
+  // to show it is distance from the start that fades, not games played.
+  const nearly = example?.winner.players.find((p) => p.counted > 0 && Math.abs(p.faded) < 0.5);
 
   const fade = fadeCurve();
   const night = threeWays();
@@ -265,10 +268,17 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
                   ))}
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
-                A debutant has nothing to fade, so takes the result alone.
-                Somebody above {ELO.start} gives a little back as their older
-                games age, and somebody below it gains a little. Rounding each
-                column can leave a total a point out.
+                Fading is every older game losing about{" "}
+                {Math.round((1 - gameWeight(1)) * 1000) / 10}% of what it was
+                worth. The games that gained points shrink, and so do the ones
+                that cost points, which gives some back. When the two come to
+                about the same they all but cancel
+                {nearly ? <>, as they did for {byId.get(nearly.playerId)?.name ?? "one of them"}</> : null}
+                , however many games are behind them; a debutant has nothing to
+                fade at all. A game reaching {ELO.window} matches old drops out
+                altogether, which can move somebody more than the rest put
+                together. Take anybody apart below to follow every point.
+                Rounding each column can leave a total a point out.
               </p>
             </div>
           </Section>
@@ -359,8 +369,11 @@ export default function RatingsGuide({ players }: { players: Player[] }) {
                 is ever re-judged. But every match the squad plays makes your
                 games a match older, so each counts for a little less and your
                 rating eases back towards {ELO.start} — up if you are below it,
-                down if you are above. The rating card says &ldquo;while
-                away&rdquo; beside a change like that.
+                down if you are above, and by more the further from it you
+                are. When one of your games reaches {ELO.window} matches old
+                it drops out altogether, which can be a bigger step. The
+                rating card says &ldquo;while away&rdquo; beside a change like
+                that, and the breakdown below shows what your next one will be.
               </dd>
             </div>
             <div>

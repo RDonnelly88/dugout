@@ -16,7 +16,7 @@ const ChartEmptyState: React.FC<ChartEmptyStateProps> = ({ seasonName }) => {
           {seasonName ? `Player position changes in ${seasonName}` : 'Player position changes'}
         </CardDescription>
       </CardHeader>
-      <CardContent className="text-center py-10">
+      <CardContent className="text-center py-10 sm:py-10">
         <Users className="mx-auto h-10 w-10 text-muted-foreground mb-4" />
         <p className="text-muted-foreground">
           Not enough matches played to track positions.

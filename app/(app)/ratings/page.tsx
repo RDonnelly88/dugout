@@ -20,6 +20,7 @@ import ActiveFilter, {
   type ActiveScope,
 } from "@/components/players/ActiveFilter";
 import PageHeader from "@/components/PageHeader";
+import StatsNav from "@/components/StatsNav";
 import RatingsGuide from "@/components/ratings/RatingsGuide";
 import ChartPlayerPicker, { MAX_LINES } from "@/components/ratings/ChartPlayerPicker";
 import BeatingTheOdds from "@/components/xw/BeatingTheOdds";
@@ -74,21 +75,15 @@ export default function RatingsPage() {
 
   return (
     <div className="page-container animate-slide-up">
+      <StatsNav />
       <PageHeader
         title="Ratings"
         actions={<RatingsGuide players={players} />}
         subtitle={
           <>
-            Elo, adapted for five-a-side. A side is rated at the average of its
-            players and beating a stronger team says more than beating a
-            weaker one. Each result is settled on the night and never
-            revisited, and it fades as the squad plays on: only the last{" "}
-            {ELO.window} matches count, the newest most, so a good spell two
-            years ago no longer props anybody up. A win is a win — a thrashing counts the same as
-            a scrape. Everybody has a rating from their first game, and one
-            under {ELO.settledAfter} games is marked as a rough guess. Time
-            away lets your games age, so a rating eases back towards{" "}
-            {ELO.start} until you play again.
+            Who the results say is strongest right now. Every game is settled
+            on the night and fades as the squad plays on, so only the last{" "}
+            {ELO.window} matches count. Everybody starts on {ELO.start}.
           </>
         }
       />

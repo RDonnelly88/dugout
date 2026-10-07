@@ -15,11 +15,11 @@ import SideNamesCard from "@/components/team/SideNamesCard";
 import PageHeader from "@/components/PageHeader";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
-import { PlusCircle, Users, Share2, UserPlus } from "lucide-react";
+import { PlusCircle, Users, UserPlus } from "lucide-react";
 
 const TeamManagement = () => {
   const { currentTeam, userRole, inviteToTeam, createTeam } = useTeam();
@@ -176,250 +176,125 @@ const TeamManagement = () => {
     }
   };
 
+  // One dialog for the page, opened from wherever "Create a team" is offered.
+  const createDialog = (
+    <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+      <DialogContent className="sm:max-w-md bg-surface border-border">
+        <DialogHeader>
+          <DialogTitle className="text-foreground">Create a team</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
+            A fresh squad, with its own players, matches and seasons.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="team-name" className="text-muted-foreground">Team name</Label>
+            <Input
+              id="team-name"
+              placeholder="Monday five-a-side"
+              value={newTeamName}
+              onChange={(e) => setNewTeamName(e.target.value)}
+              className="bg-surface-2/50 border-border focus:border-accent/50 focus:ring-accent/20"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={handleCreateTeam} disabled={!newTeamName.trim() || isCreatingTeam}>
+            {isCreatingTeam ? "Creating..." : "Create team"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
+  const createButton = (
+    <Button variant="outline" className="w-full gap-2" onClick={() => setIsCreateDialogOpen(true)}>
+      <PlusCircle className="h-4 w-4" />
+      Create a team
+    </Button>
+  );
+
   if (!currentTeam) {
     return (
       <div className="page-container animate-fade-in">
-        <PageHeader
-          title="Team"
-          subtitle={<>Create a team to start recording players and matches</>}
-        />
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <PageHeader title="Team" subtitle="Create a team to start recording players and matches." />
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Create Your First Team</CardTitle>
-              <CardDescription>Get started by creating a team to manage players and matches</CardDescription>
+              <CardTitle>Start a team</CardTitle>
+              <CardDescription>You will be its admin, and can invite the rest.</CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="flex items-center gap-2" size="lg">
-                    <PlusCircle className="h-5 w-5" />
-                    Create New Team
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md bg-surface border-border">
-                  <DialogHeader>
-                    <DialogTitle className="text-foreground">Create New Team</DialogTitle>
-                    <DialogDescription className="text-muted-foreground">
-                      Create a new team to organize your players and matches
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="team-name" className="text-muted-foreground">Team Name</Label>
-                      <Input
-                        id="team-name"
-                        placeholder="Enter team name"
-                        value={newTeamName}
-                        onChange={(e) => setNewTeamName(e.target.value)}
-                        className="bg-surface-2/50 border-border focus:border-accent/50 focus:ring-accent/20"
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsCreateDialogOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      type="button" 
-                      onClick={handleCreateTeam}
-                      disabled={!newTeamName.trim() || isCreatingTeam}
-                    >
-                      {isCreatingTeam ? "Creating..." : "Create Team"}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </CardContent>
+            <CardContent>{createButton}</CardContent>
           </Card>
-          
           <JoinTeamForm />
         </div>
+        {createDialog}
       </div>
     );
   }
 
+  const admin = userRole === "admin";
+
   return (
     <div className="page-container animate-fade-in">
-      <PageHeader
-        title="Team"
-        subtitle={<>Who is in the squad, and who can change it</>}
-        actions={
-        
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <PlusCircle className="h-4 w-4" />
-              Create New Team
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md bg-surface border-border">
-            <DialogHeader>
-              <DialogTitle className="text-foreground">Create New Team</DialogTitle>
-              <DialogDescription className="text-muted-foreground">
-                Create a new team to organize your players and matches
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="team-name" className="text-muted-foreground">Team Name</Label>
-                <Input
-                  id="team-name"
-                  placeholder="Enter team name"
-                  value={newTeamName}
-                  onChange={(e) => setNewTeamName(e.target.value)}
-                  className="bg-surface-2/50 border-border focus:border-accent/50 focus:ring-accent/20"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsCreateDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="button" 
-                onClick={handleCreateTeam}
-                disabled={!newTeamName.trim() || isCreatingTeam}
-              >
-                {isCreatingTeam ? "Creating..." : "Create Team"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        }
-      />
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="col-span-2">
+      <PageHeader title="Team" subtitle={`Who can see and change ${currentTeam.name}.`} />
+
+      {/* What a team's admin comes here to do comes first; starting or
+          joining another team is something done once, so it sits last. */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-accent" />
-                Team Members
+                Members
               </CardTitle>
-              <CardDescription>Manage members of {currentTeam.name}</CardDescription>
+              <CardDescription>
+                Admins can add results and change the squad; viewers can look round.
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <TeamMembersTable 
+              <TeamMembersTable
                 teamMembers={teamMembers}
                 isLoading={isLoading}
                 userRole={userRole}
                 currentTeamId={currentTeam.id}
                 refetch={refetch}
               />
+              {admin && (
+                <div className="mt-6 border-t border-border pt-6">
+                  <h4 className="mb-3 flex items-center gap-2 font-semibold">
+                    <UserPlus className="h-4 w-4 text-accent" />
+                    Invite somebody
+                  </h4>
+                  <InviteMemberForm currentTeam={currentTeam} inviteToTeam={inviteToTeam} refetch={refetch} />
+                </div>
+              )}
             </CardContent>
           </Card>
-        </div>
-        
-        <div className="col-span-1 space-y-8">
-          <TeamSwitcher />
-          
-          {userRole === "admin" && (
-            <>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Share2 className="h-5 w-5 text-accent" />
-                    Share team
-                  </CardTitle>
-                  <CardDescription>Share your team with others</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <TeamShareCard />
-                </CardContent>
-              </Card>
 
-              <SideNamesCard />
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <UserPlus className="h-5 w-5 text-accent" />
-                    Invite member
-                  </CardTitle>
-                  <CardDescription>Add new members to your team</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <InviteMemberForm 
-                    currentTeam={currentTeam}
-                    inviteToTeam={inviteToTeam}
-                    refetch={refetch}
-                  />
-                </CardContent>
-              </Card>
-            </>
-          )}
-          
-          {/* Always show these options regardless of user role */}
+          {admin && <TeamShareCard />}
+          {admin && <SideNamesCard />}
+        </div>
+
+        <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <PlusCircle className="h-5 w-5 text-accent" />
-                Create New Team
-              </CardTitle>
-              <CardDescription>Start a fresh team for your players and matches</CardDescription>
+              <CardTitle>Other teams</CardTitle>
+              <CardDescription>Switch to another squad, start one, or join one by its ID.</CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col items-center py-6">
-              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="flex w-full items-center justify-center gap-2">
-                    <PlusCircle className="h-4 w-4" />
-                    Create New Team
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md bg-surface border-border">
-                  <DialogHeader>
-                    <DialogTitle className="text-foreground">Create New Team</DialogTitle>
-                    <DialogDescription className="text-muted-foreground">
-                      Create a new team to organize your players and matches
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="team-name" className="text-muted-foreground">Team Name</Label>
-                      <Input
-                        id="team-name"
-                        placeholder="Enter team name"
-                        value={newTeamName}
-                        onChange={(e) => setNewTeamName(e.target.value)}
-                        className="bg-surface-2/50 border-border focus:border-accent/50 focus:ring-accent/20"
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsCreateDialogOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      type="button" 
-                      onClick={handleCreateTeam}
-                      disabled={!newTeamName.trim() || isCreatingTeam}
-                    >
-                      {isCreatingTeam ? "Creating..." : "Create Team"}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+            <CardContent className="space-y-3">
+              <TeamSwitcher />
+              {createButton}
             </CardContent>
           </Card>
-          
-          {/* Always show Join Team form regardless of user role */}
           <JoinTeamForm />
         </div>
       </div>
+      {createDialog}
     </div>
   );
 };

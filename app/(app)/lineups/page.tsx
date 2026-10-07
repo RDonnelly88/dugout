@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Suspense, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -21,12 +22,12 @@ import {
 import MeasureToggle from "@/components/MeasureToggle";
 import PointsBar from "@/components/PointsBar";
 import { lineupReport, LINEUP_MAX } from "@/lib/lineup";
-import { withinTimeline, type Timeline } from "@/lib/timeline";
-import { ringOrder, squadWeb } from "@/lib/squad-web";
+import { LAST_MONTHS, readTimeline, withinTimeline } from "@/lib/timeline";
+import { squadWeb } from "@/lib/squad-web";
 import { sideOf } from "@/lib/match-result";
 import { usePointValues } from "@/hooks/usePointValues";
-import SquadWeb from "@/components/lineups/SquadWeb";
 import PageHeader from "@/components/PageHeader";
+import StatsNav from "@/components/StatsNav";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import ActiveFilter, { isActivePlayer, type ActiveScope } from "@/components/players/ActiveFilter";
 import MatchCard from "@/components/matches/MatchCard";
@@ -52,26 +53,8 @@ import {
 import { cn } from "@/lib/utils";
 import type { Match, Player } from "@/types";
 
-const LAST_MONTHS = 12;
 /** Who-to-add suggestions shown before the list stops. */
 const ADDITIONS_SHOWN = 5;
-
-/**
- * The timeline lives in the address as one short token, so a line-up can be
- * sent to the group chat and open on the same question: `all`, `recent`,
- * `year`, `s:<season id>` or `r:<from>_<to>`.
- */
-function readTimeline(token: string | null): Timeline {
-  if (!token || token === "all") return { kind: "all" };
-  if (token === "recent") return { kind: "recent", matches: ELO.window };
-  if (token === "year") return { kind: "months", months: LAST_MONTHS };
-  if (token.startsWith("s:")) return { kind: "season", seasonId: token.slice(2) };
-  if (token.startsWith("r:")) {
-    const [from, to] = token.slice(2).split("_");
-    return { kind: "range", from: from || undefined, to: to || undefined };
-  }
-  return { kind: "all" };
-}
 
 const timelineChoice = (token: string | null) =>
   token?.startsWith("r:") ? "range" : (token ?? "all");
@@ -377,42 +360,6 @@ function LineupLab() {
     () => squadWeb(scoped, odds, new Set(candidates)),
     [scoped, odds, candidates]
   );
-  const seating = useMemo(() => ringOrder(web), [web]);
-
-  /** A line tapped in the web opens that pair, from the top of the page. */
-  const openPair = (a: string, b: string) => {
-    update({ p: `${a},${b}` });
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
-  };
-
-  const webCard = (
-    <Card className={picked.length > 0 ? "reveal" : undefined}>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2">
-          <Network className="h-5 w-5 text-accent" />
-          The squad web
-        </CardTitle>
-        <CardDescription>
-          Everybody{scope === "active" ? " active" : ""} round a ring, with a line wherever two of
-          them have shared a side in this stretch. Tap a face to light up their links, or a line
-          to open that pair here.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <SquadWeb
-          web={web}
-          order={seating}
-          byId={byId}
-          picked={picked}
-          onOpenPair={openPair}
-          onAddPlayer={toggle}
-          values={values}
-        />
-      </CardContent>
-    </Card>
-  );
-
   const report = useMemo(
     () => (picked.length > 0 ? lineupReport(scoped, odds, picked, candidates) : null),
     [scoped, odds, picked, candidates]
@@ -458,16 +405,17 @@ function LineupLab() {
 
   return (
     <div className="page-container animate-slide-up">
+      <StatsNav />
       <PageHeader
         title="Line-up lab"
-        subtitle="Pick up to five players and see how they do on the same side: their record together, who is making the difference, and who would complete them — and, a tap away, the same games against the odds."
+        subtitle="Who plays well together. Pick up to five and see their record on the same side, or read the whole squad as a web."
       />
 
       {/* One column on a phone, held to the screen: an auto-sized column would
           stretch to the full width of the rail of match cards inside it. */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
         <Card className="h-fit lg:sticky lg:top-6">
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 sm:pb-3">
             <CardTitle className="flex items-center gap-2">
               <FlaskConical className="h-5 w-5 text-accent" />
               The line-up
@@ -577,17 +525,23 @@ function LineupLab() {
           ) : !report ? (
             <>
               <Card>
-                <CardContent className="py-12 text-center">
+                <CardContent className="py-12 text-center sm:py-12">
                   <Handshake className="mx-auto mb-3 h-8 w-8 text-accent" />
                   <p className="font-medium">Who plays well together?</p>
                   <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
-                    Pick two or three of the squad, or tap a line in the web below, for their record
-                    on the same side. Switch to against the odds to allow for who else was on each
-                    side.
+                    Pick two or three of the squad for their record on the same side, or find a
+                    pair on the squad web. Switch to against the odds to allow for who else was on
+                    each side.
                   </p>
+                  <Link
+                    href="/web"
+                    className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
+                  >
+                    <Network className="h-4 w-4" />
+                    The squad web
+                  </Link>
                 </CardContent>
               </Card>
-              {webCard}
             </>
           ) : (
             <>
@@ -603,7 +557,7 @@ function LineupLab() {
 
               {report.without.length > 0 && (
                 <Card className="reveal">
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-3 sm:pb-3">
                     <CardTitle>With and without</CardTitle>
                     <CardDescription>
                       The same group with one of them missing from the side, and each of them on
@@ -647,7 +601,7 @@ function LineupLab() {
 
               {additions.length > 0 && (
                 <Card className="reveal">
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-3 sm:pb-3">
                     <CardTitle className="flex items-center gap-2">
                       <UserPlus className="h-5 w-5 text-accent" />
                       Who completes {picked.length === 1 ? "them" : "the set"}?
@@ -707,7 +661,7 @@ function LineupLab() {
 
               {nightsTogether.length > 0 && (
                 <Card className="reveal">
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-3 sm:pb-3">
                     <CardTitle>
                       {picked.length === 1 ? "Their games" : "The nights together"}
                     </CardTitle>
@@ -726,8 +680,6 @@ function LineupLab() {
                   </CardContent>
                 </Card>
               )}
-
-              {webCard}
             </>
           )}
         </div>

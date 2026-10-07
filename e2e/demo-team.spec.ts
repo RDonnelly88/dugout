@@ -24,8 +24,8 @@ test("shows the demo squad and says that is what it is", async ({ page }) => {
   await expect(page.getByText(/looking at the demo team/i)).toBeVisible();
 
   // The seeded squad, not an empty state.
-  await expect(page.getByRole("heading", { name: "Ade" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Baz" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /\bAde\b/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /\bBaz\b/ })).toBeVisible();
 });
 
 test("offers nothing that would change it", async ({ page }) => {
@@ -35,6 +35,7 @@ test("offers nothing that would change it", async ({ page }) => {
   // Adding, editing and deleting are all admin-only, and nobody is an admin of
   // a team with no members.
   await expect(page.getByRole("link", { name: /add player/i })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /manage/i })).toHaveCount(0);
   await expect(page.getByRole("link", { name: /^edit /i })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^delete /i })).toHaveCount(0);
 });

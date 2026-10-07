@@ -15,8 +15,6 @@ import {
   UserCog,
   Settings,
   TrendingUp,
-  ArrowLeftRight,
-  FlaskConical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -28,30 +26,78 @@ import TeamSelector from "@/components/TeamSelector";
 import TeamSwitcher from "@/components/team/TeamSwitcher";
 import DemoBanner from "@/components/team/DemoBanner";
 
+/**
+ * Where the app goes, in the order people reach for it. The first five are
+ * the tab bar on a phone; `also` lists the other paths that light a tab up,
+ * so the three stats pages share one.
+ */
 const menuItems = [
   { path: "/", label: "Home", icon: Home },
-  { path: "/players", label: "Players", icon: Users },
-  { path: "/matches", label: "Matches", icon: CalendarDays },
   { path: "/seasons", label: "Seasons", icon: Trophy },
-  { path: "/ratings", label: "Ratings", icon: TrendingUp },
-  { path: "/compare", label: "Compare", icon: ArrowLeftRight },
-  { path: "/lineups", label: "Line-ups", icon: FlaskConical },
+  { path: "/matches", label: "Results", icon: CalendarDays },
+  { path: "/players", label: "Squad", icon: Users },
+  { path: "/ratings", label: "Stats", icon: TrendingUp, also: ["/lineups", "/web", "/compare"] },
   { path: "/team", label: "Team", icon: UserCog },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 
+const TABS = menuItems.slice(0, 5);
+
 const quickActions = [
-  { path: "/players/add", label: "Add Player" },
-  { path: "/matches/create", label: "Create Match" },
-  { path: "/seasons/create", label: "Create Season" },
+  { path: "/matches/create", label: "Pick the teams" },
+  { path: "/players/add", label: "Add a player" },
+  { path: "/seasons/create", label: "New season" },
 ];
 
 /**
  * `/` is only active on an exact match — every other path starts with it, so a
  * prefix test would light up Home on every page.
  */
-function isActive(pathname: string, path: string) {
-  return path === "/" ? pathname === "/" : pathname.startsWith(path);
+function isActive(pathname: string, path: string, also: string[] = []) {
+  if (path === "/") return pathname === "/";
+  return [path, ...also].some((p) => pathname.startsWith(p));
+}
+
+/**
+ * The phone's way round the app: five tabs a thumb can reach, rather than a
+ * menu behind a button. Team and Settings stay in the drawer, being visited
+ * once a season.
+ */
+function TabBar({ pathname }: { pathname: string }) {
+  return (
+    <nav
+      aria-label="Main"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
+    >
+      <ul className="mx-auto grid max-w-md grid-cols-5">
+        {TABS.map(({ path, label, icon: Icon, also }) => {
+          const active = isActive(pathname, path, also);
+          return (
+            <li key={path}>
+              <Link
+                href={path}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "focus-ring flex flex-col items-center gap-0.5 pb-2 pt-2.5 text-[11px] font-medium transition-colors",
+                  active ? "text-accent" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex h-7 w-12 items-center justify-center rounded-full transition-colors",
+                    active && "bg-accent/15"
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                </span>
+                {label}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
 }
 
 const navLinkClass = (active: boolean, collapsed = false) =>
@@ -112,12 +158,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <TeamSelector />
               </div>
 
-              {menuItems.map(({ path, label, icon: Icon }) => (
+              {menuItems.map(({ path, label, icon: Icon, also }) => (
                 <Link
                   key={path}
                   href={path}
                   onClick={() => setIsMenuOpen(false)}
-                  className={navLinkClass(isActive(pathname, path))}
+                  className={navLinkClass(isActive(pathname, path, also))}
                 >
                   <Icon className="h-5 w-5" />
                   <span>{label}</span>
@@ -166,11 +212,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         <ScrollArea className="flex-1">
           <div className="py-4">
-            {menuItems.map(({ path, label, icon: Icon }) => (
+            {menuItems.map(({ path, label, icon: Icon, also }) => (
               <Link
                 key={path}
                 href={path}
-                className={navLinkClass(isActive(pathname, path), isSidebarCollapsed)}
+                className={navLinkClass(isActive(pathname, path, also), isSidebarCollapsed)}
               >
                 <Icon className="h-5 w-5" />
                 {!isSidebarCollapsed && <span>{label}</span>}
@@ -193,7 +239,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </ScrollArea>
       </aside>
 
-      <main className="flex h-full flex-col bg-background text-foreground">
+      {/* min-w-0, because a grid track is otherwise as wide as its widest
+          content: one chart or nowrap row was enough to push the whole page
+          past the edge of a phone. */}
+      <main className="flex h-full min-w-0 flex-col bg-background pb-[calc(4rem+env(safe-area-inset-bottom))] text-foreground md:pb-0">
         {/* One bar, one row: the menu button and the team sit together with the
             same gap as everything else, rather than the button floating over
             the bar at a fixed offset. */}
@@ -213,6 +262,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         {children}
       </main>
+
+      <TabBar pathname={pathname} />
     </div>
   );
 }

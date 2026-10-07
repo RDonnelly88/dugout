@@ -91,7 +91,7 @@ export default function MatchCard({
         {result ? (
           <span className={TEXT[result]}>{LABEL[result]}</span>
         ) : (
-          <span>{outcome === null ? "Fixture" : outcome === "draw" ? "Drawn" : "Full time"}</span>
+          <span>{outcome === null ? "Fixture" : outcome === "draw" ? "Drawn" : `${outcome === "a" ? sides.A : sides.B} won`}</span>
         )}
       </span>
       {line("a", sides.A, a)}

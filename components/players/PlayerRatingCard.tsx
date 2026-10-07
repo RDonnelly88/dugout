@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, ChevronUp, Minus, TrendingUp } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { usePlayerRatings } from "@/hooks/usePlayerRatings";
 import RatingHistoryChart from "@/components/ratings/RatingHistoryChart";
-import Counter from "@/components/Counter";
 import { displayRating } from "@/lib/elo";
 import { ELO } from "@/lib/config";
 import { awayExplanation } from "@/components/ratings/away";
@@ -54,16 +53,12 @@ export default function PlayerRatingCard({
     );
   }
 
-  // What the squad's most recent match did to this rating, whether or not they
-  // were in it. Their own last game is a different question, and answering
-  // that one here made a rating look freshly earned months after it was.
-  const change = Math.round(rating.lastChange);
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-accent" />
-          Rating
+          Rating over time
         </CardTitle>
         <CardDescription>
           {rating.unsettled
@@ -72,27 +67,8 @@ export default function PlayerRatingCard({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex items-end justify-between gap-4">
-          <p className="text-4xl font-bold tabular">
-            <Counter value={displayRating(rating.rating)} from={ELO.start} />
-          </p>
-          <p
-            className={`flex items-center gap-0.5 text-sm tabular ${
-              change > 0 ? "text-win" : change < 0 ? "text-loss" : "text-muted-foreground"
-            }`}
-          >
-            {change > 0 ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : change < 0 ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <Minus className="h-4 w-4" />
-            )}
-            {Math.abs(change)} {rating.missed === 0 ? "last game" : "while away"}
-          </p>
-        </div>
-        {/* Said in words under the number: a rise beside "missed one" read
-            as a reward for not turning up. */}
+        {/* Said in words: a rise beside "missed one" read as a reward for
+            not turning up. */}
         {rating.missed > 0 && (
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
             {awayExplanation(rating.missed)}

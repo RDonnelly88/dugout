@@ -16,6 +16,17 @@ describe("keepSelection", () => {
     expect(keepSelection(null, [player("a"), player("b", false), player("c")])).toEqual(["a", "c"]);
   });
 
+  /**
+   * The page renders once before the squad has loaded, with an empty list.
+   * Settling on nobody then left every active player unpicked once the squad
+   * did arrive.
+   */
+  it("waits for the squad before picking anybody", () => {
+    const beforeLoad = keepSelection(null, []);
+    expect(beforeLoad).toBeNull();
+    expect(keepSelection(beforeLoad, [player("a"), player("b")])).toEqual(["a", "b"]);
+  });
+
   it("keeps the picks when the same squad arrives again as a new list", () => {
     const squad = [player("a"), player("b"), player("c", false)];
     const picked = ["c"];

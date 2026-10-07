@@ -76,16 +76,16 @@ const AddEditPlayer = () => {
         <Button variant="ghost" size="sm" asChild>
           <Link href="/players">
             <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to Players
+            The squad
           </Link>
         </Button>
       </div>
 
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle>{isAddMode ? "Add Player" : "Edit Player"}</CardTitle>
+          <CardTitle>{isAddMode ? "Add a player" : "Edit player"}</CardTitle>
           <CardDescription>
-            {isAddMode ? "Create a new player" : "Edit an existing player"}
+            {isAddMode ? "Somebody new to the squad." : "Their name, face, and whether they are playing at the moment."}
           </CardDescription>
         </CardHeader>
         <CardContent>

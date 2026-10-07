@@ -92,8 +92,8 @@ const MatchDetail = () => {
         onEditClick={() => setIsEditing(true)}
       />
 
-      <Card className="mb-8 overflow-hidden">
-        <CardContent className="p-0">
+      <Card className="overflow-hidden">
+        <CardContent className="p-0 sm:p-0">
           <MatchScore
             match={match}
             isCompleted={isCompleted}
@@ -117,14 +117,13 @@ const MatchDetail = () => {
         </CardContent>
       </Card>
 
-      {/* Teams Display */}
-      <TeamsList 
-        match={match} 
-        players={players} 
-        getPlayerName={getPlayerName} 
-      />
-
-      {isCompleted && <MatchImpact match={match} players={players} />}
+      {/* A result lists the sides with what it did to each player; a
+          fixture, with nothing moved yet, just the line-ups. */}
+      {isCompleted ? (
+        <MatchImpact match={match} players={players} />
+      ) : (
+        <TeamsList match={match} players={players} getPlayerName={getPlayerName} />
+      )}
 
       {/* Match Notes */}
       {match.notes && (

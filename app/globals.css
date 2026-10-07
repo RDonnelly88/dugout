@@ -283,6 +283,16 @@ html[data-theme="dark"] {
     border-color: hsl(var(--border));
   }
 
+  /*
+   * A grid item will not shrink below its content's width unless told to, so
+   * a single chart or line that refuses to wrap widens its whole column and
+   * pushes the page past the edge of a phone. Every grid item may shrink;
+   * anything that genuinely needs room says so itself.
+   */
+  :where(.grid) > * {
+    min-width: 0;
+  }
+
   body {
     background-color: hsl(var(--bg));
     color: hsl(var(--foreground));

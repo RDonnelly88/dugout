@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { workedExample, fadeCurve, ratingBreakdown, threeWays } from "@/lib/ratings-guide";
+import { workedExample, fadeCurve, fadingSummary, ratingBreakdown, threeWays } from "@/lib/ratings-guide";
 import { computeRatings } from "@/lib/elo";
 import { ELO } from "@/lib/config";
 import type { Match } from "@/types";
@@ -180,5 +180,54 @@ describe("ratingBreakdown", () => {
 
     expect(pieces).toHaveLength(ELO.window);
     expect(pieces.some((p) => p.matchId === opener.id)).toBe(false);
+  });
+});
+
+describe("fadingSummary", () => {
+  const fixtures = [
+    match(["a", "b"], ["c", "d"], 1, 0, "2026-11-01"),
+    match(["a", "c"], ["b", "d"], 0, 1, "2026-11-02"),
+    match(["a", "d"], ["b", "c"], 1, 1, "2026-11-03"),
+    match(["b", "c"], ["a", "d"], 2, 0, "2026-11-04"),
+  ];
+
+  it("splits the rating into what was earned on the night and what has faded since", () => {
+    for (const rating of computeRatings(fixtures).values()) {
+      const sum = fadingSummary(ratingBreakdown(rating));
+      expect(sum.earned + sum.faded).toBeCloseTo(sum.now, 9);
+      expect(ELO.start + sum.now).toBeCloseTo(rating.rating, 9);
+    }
+  });
+
+  /**
+   * The figure the guide promises is what the next match does to somebody
+   * not in it. Played out, it has to be exactly that.
+   */
+  it("says what the next match will do to a rating before a ball is kicked", () => {
+    const before = computeRatings(fixtures).get("a")!;
+    const after = computeRatings([...fixtures, match(["x"], ["y"], 1, 0, "2026-11-05")]).get("a")!;
+
+    expect(after.rating - before.rating).toBeCloseTo(fadingSummary(ratingBreakdown(before)).next, 9);
+  });
+
+  it("splits the next match into what gains give up, what losses give back and what leaves", () => {
+    for (const rating of computeRatings(fixtures).values()) {
+      const sum = fadingSummary(ratingBreakdown(rating));
+      expect(sum.gains).toBeLessThanOrEqual(0);
+      expect(sum.losses).toBeGreaterThanOrEqual(0);
+      expect(sum.gains + sum.losses + (sum.leaving?.next ?? 0)).toBeCloseTo(sum.next, 9);
+    }
+  });
+
+  it("names the game about to leave the window, which takes all it has left", () => {
+    const opener = match(["a"], ["b"], 1, 0, "2025-06-01");
+    const since = Array.from({ length: ELO.window - 1 }, (_, i) =>
+      match([`p${i}`], [`q${i}`], 1, 0, new Date(Date.UTC(2025, 6, 1 + i)).toISOString().slice(0, 10))
+    );
+    const sum = fadingSummary(ratingBreakdown(computeRatings([opener, ...since]).get("a")!));
+
+    expect(sum.leaving?.matchId).toBe(opener.id);
+    expect(sum.leaving!.next).toBeCloseTo(-sum.leaving!.now, 9);
+    expect(sum.gains + sum.losses).toBeCloseTo(0, 9);
   });
 });

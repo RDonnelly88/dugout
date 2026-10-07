@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Minus, Plus } from "lucide-react";
 import PlayerAvatar from "@/components/players/PlayerAvatar";
 import { SegmentedControl, SegmentedControlItem } from "@/components/ui/segmented-control";
 import type { Ledger } from "@/lib/expected-wins";
@@ -24,6 +25,13 @@ const LABEL = RING + NODE / 2 + 8;
  */
 const px = (value: number) => Math.round(value * 100) / 100;
 
+/**
+ * The fewest games a link needs to be drawn, to start with. Under five a
+ * points-a-game figure swings on a single night, and a ring of everybody
+ * anyone has ever shared a pitch with is too dense to read.
+ */
+const MIN_GAMES = 5;
+
 const STROKE = { ahead: "stroke-win", behind: "stroke-loss", level: "stroke-border-strong" } as const;
 const TEXT = { ahead: "text-win", behind: "text-loss", level: "text-muted-foreground" } as const;
 
@@ -44,6 +52,7 @@ export default function PlayerWeb({
   opponents,
   playerFor,
   values,
+  across = "the season",
 }: {
   player: Player;
   /** Their own season, the baseline a spoke is read against. */
@@ -53,13 +62,21 @@ export default function PlayerWeb({
   playerFor: (id: string) => Player | undefined;
   /** What a win and a draw were worth this season, read off its table. */
   values: PointValues;
+  /** The stretch the baseline covers, as the caption names it. */
+  across?: string;
 }) {
   const [side, setSide] = useState<"with" | "against">("with");
+  const [minGames, setMinGames] = useState(MIN_GAMES);
   const measure = "record";
   const points = values;
   const baseline = pointsPerGame(own, points);
 
-  const entries = side === "with" ? mates : opponents;
+  const all = side === "with" ? mates : opponents;
+  // Never past the most games anybody has, so the ring always keeps the
+  // people they have played most with, however short the stretch.
+  const mostAny = Math.max(1, ...all.map((e) => e.ledger.played));
+  const threshold = Math.min(minGames, mostAny);
+  const entries = useMemo(() => all.filter((e) => e.ledger.played >= threshold), [all, threshold]);
   const ring = useMemo(
     () =>
       [...entries].sort(
@@ -88,7 +105,7 @@ export default function PlayerWeb({
   const name = (id: string) => playerFor(id)?.name ?? "Unknown";
   const first = (id: string) => name(id).split(/\s+/)[0];
 
-  if (ring.length === 0) return null;
+  if (all.length === 0) return null;
 
   return (
     <div className="flex flex-col gap-3">
@@ -106,6 +123,34 @@ export default function PlayerWeb({
             Against
           </SegmentedControlItem>
         </SegmentedControl>
+
+        {/* Any number, a step at a time: the density is the reader's call. */}
+        <div className="flex h-8 items-center gap-1 rounded-full border border-border bg-surface px-1 text-xs">
+          <button
+            type="button"
+            onClick={() => setMinGames(Math.max(1, threshold - 1))}
+            disabled={threshold <= 1}
+            aria-label="Fewer games needed"
+            className="focus-ring flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-40"
+          >
+            <Minus className="h-3.5 w-3.5" />
+          </button>
+          <span className="min-w-[6.5rem] text-center font-medium tabular" aria-live="polite">
+            {threshold}+ {side === "with" ? "together" : "meetings"}
+          </span>
+          <button
+            type="button"
+            onClick={() => setMinGames(Math.min(mostAny, threshold + 1))}
+            disabled={threshold >= mostAny}
+            aria-label="More games needed"
+            className="focus-ring flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-40"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        <span className="flex items-center text-xs text-muted-foreground tabular">
+          {ring.length} of {all.length} shown
+        </span>
       </div>
 
       <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="mx-auto w-full max-w-[360px] overflow-visible" aria-hidden>
@@ -184,7 +229,7 @@ export default function PlayerWeb({
           <span className={cn("font-semibold", TEXT[tone(selected.ledger, measure, points, baseline)])}>
             {ppg(pointsPerGame(selected.ledger, points))} pts a game
           </span>{" "}
-          {side === "with" ? "with them" : "against them"}, and {ppg(baseline)} across the season.
+          {side === "with" ? "with them" : "against them"}, and {ppg(baseline)} across {across}.
           {!enoughGames(selected.ledger) && <span className="opacity-70"> Too few games to say much.</span>}
         </p>
       )}

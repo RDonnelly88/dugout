@@ -78,7 +78,7 @@ export default function RatingLeaderboard({
           <li key={rating.playerId}>
             <TransitionLink
               href={`/players/${rating.playerId}`}
-              className={`focus-ring relative flex items-center gap-3 overflow-hidden rounded-lg border bg-surface px-3 py-2.5 transition-colors hover:border-border-strong ${
+              className={`focus-ring relative flex items-center gap-2 overflow-hidden rounded-lg border bg-surface px-2.5 py-2.5 transition-colors sm:gap-3 sm:px-3 hover:border-border-strong ${
                 // The top of the ladder lit like a leader's board.
                 index === 0 ? "border-accent/50 glow-accent" : "border-border"
               }`}
@@ -103,7 +103,9 @@ export default function RatingLeaderboard({
                 {index + 1}
               </span>
               <PlayerAvatar name={player.name} image={player.image} size="sm" className="relative" />
-              <span className="relative min-w-0 flex-1 truncate font-medium">
+              {/* Wrapping rather than cut short: a surname is what tells
+                  the two Davies apart. */}
+              <span className="relative min-w-0 flex-1 font-medium leading-tight">
                 {player.name}
               </span>
               <span className="relative hidden text-xs text-muted-foreground sm:block">
@@ -139,7 +141,7 @@ export default function RatingLeaderboard({
               <span
                 // Wide enough for an arrow and two digits. At w-12 a swing of
                 // twelve points rendered as "1".
-                className="relative w-14 shrink-0 text-right text-xs"
+                className="relative w-11 shrink-0 text-right text-xs sm:w-14"
                 title={
                   played
                     ? "Change from the last match"
@@ -148,7 +150,7 @@ export default function RatingLeaderboard({
               >
                 <Delta change={rating.lastChange} />
               </span>
-              <span className="relative w-14 text-right text-base font-bold tabular">
+              <span className="relative w-12 shrink-0 text-right text-base font-bold tabular sm:w-14">
                 {/* Counted from the mark everybody starts on, so the number
                     travels the distance this player has actually covered
                     rather than up from nought. */}

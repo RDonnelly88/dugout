@@ -56,19 +56,23 @@ const TeamSelection = ({
 
   return (
     <div className="space-y-6">
-      <section>
-        <h3 className="eyebrow mb-3 flex items-center gap-2">
-          <Shield className="h-4 w-4 text-accent" />
-          Team formations
-        </h3>
+      {/* Two empty pitches before anybody is picked said nothing but took a
+          phone's whole screen; they appear once there are sides to show. */}
+      {teamAPlayers.length + teamBPlayers.length > 0 && (
+        <section>
+          <h3 className="eyebrow mb-3 flex items-center gap-2">
+            <Shield className="h-4 w-4 text-accent" />
+            The sides
+          </h3>
 
-        <Formation
-          teamA={teamAPlayers}
-          teamB={teamBPlayers}
-          teamSize={Math.max(teamAPlayers.length, teamBPlayers.length).toString()}
-          onRemovePlayer={togglePlayer}
-        />
-      </section>
+          <Formation
+            teamA={teamAPlayers}
+            teamB={teamBPlayers}
+            teamSize={Math.max(teamAPlayers.length, teamBPlayers.length).toString()}
+            onRemovePlayer={togglePlayer}
+          />
+        </section>
+      )}
 
       {bench.length > 0 && (
         <section>
