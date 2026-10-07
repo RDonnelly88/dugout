@@ -313,6 +313,7 @@ export function wrappedSlides({
             opponents={story.opponents}
             playerFor={playerFor}
             values={values}
+            everyone
           />
         </Card>
       ),
